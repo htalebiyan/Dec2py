@@ -1,0 +1,5 @@
+#!/bin/sh
+rm job.*.out
+rm job.*.err
+rm *_*_*_*.out
+rm *_*_*_*.err
