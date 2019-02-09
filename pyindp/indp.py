@@ -6,6 +6,7 @@ import platform
 import networkx as nx
 import copy
 import random
+import sys
 
 #HOME_DIR="/Users/Andrew/"
 #if platform.system() == "Linux":
@@ -14,7 +15,7 @@ import random
 def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_actions=False):
     """INDP optimization problem. Also solves td-INDP if T > 1.
     :param N: An InfrastructureNetwork instance (created in infrastructure.py)
-    :param v_r: Number of resources given to each layer in each timestep.
+    :param v_r: Vector of number of resources given to each layer in each timestep. If the size of the vector is 1, it shows the total number of resources for all layers.
     :param T: Number of timesteps to optimize over.
     :param layers: Layer IDs of N included in the optimization. (Default is water (1) and power (3)).
     :param controlled_layers: Layer IDs that can be recovered in this optimization. Used for decentralized optimization.
@@ -172,18 +173,49 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                 m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G[u][v]['data']['inf_data'].functionality,"Flow arc functionality constraint("+`u`+","+`v`+","+`t`+")")
 
         #Resource availability constraints.
+        isSepResource = 0
+        if isinstance(v_r, (int, long)):
+            totalResource = v_r
+        else:
+            if len(v_r) != 1:
+                isSepResource = 1
+                totalResource = sum(v_r)
+                if len(v_r) != len(layers):
+                    print "\n***ERROR: The number of resource cap values does not match the number of layers.***\n"
+                    sys.exit()
+            else:
+                totalResource = v_r[0]
+            
         resourceLeftConstr=LinExpr()
+        if isSepResource:
+            resourceLeftConstrSep = [LinExpr() for i in range(len(v_r))]
+                                     
         for u,v,a in A_hat_prime:
+            indexLayer = a['data']['inf_data'].layer - 1
             if T == 1:
                 resourceLeftConstr+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_'+`u`+","+`v`+","+`t`)
+                if isSepResource:
+                    resourceLeftConstrSep[indexLayer]+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_'+`u`+","+`v`+","+`t`)
             else:
                 resourceLeftConstr+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_tilde_'+`u`+","+`v`+","+`t`)
+                if isSepResource:
+                    resourceLeftConstrSep[indexLayer]+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_tilde_'+`u`+","+`v`+","+`t`)
+
         for n,d in N_hat_prime:
+            indexLayer = n[1] - 1
             if T == 1:
                 resourceLeftConstr+=d['data']['inf_data'].resource_usage*m.getVarByName('w_'+`n`+","+`t`)
+                if isSepResource:
+                    resourceLeftConstrSep[indexLayer]+=d['data']['inf_data'].resource_usage*m.getVarByName('w_'+`n`+","+`t`)
             else:
                 resourceLeftConstr+=d['data']['inf_data'].resource_usage*m.getVarByName('w_tilde_'+`n`+","+`t`)
-        m.addConstr(resourceLeftConstr,GRB.LESS_EQUAL,v_r,"Resource availability constraint at "+`t`+".")
+                if isSepResource:
+                    resourceLeftConstrSep[indexLayer]+=d['data']['inf_data'].resource_usage*m.getVarByName('w_tilde_'+`n`+","+`t`)
+
+        m.addConstr(resourceLeftConstr,GRB.LESS_EQUAL,totalResource,"Resource availability constraint at "+`t`+".")
+        if isSepResource:
+            for k in range(len(v_r)):
+                m.addConstr(resourceLeftConstrSep[k],GRB.LESS_EQUAL,v_r[k],"Resource availability constraint at "+`t`+ " for layer "+`k`+".")
 
         # Interdependency constraints
         infeasible_actions=[]
@@ -249,7 +281,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                 else:
                     m.addConstr(m.getVarByName('y_tilde_'+`u`+","+`v`+","+`t`)*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+`s.id`+","+`t`),"Geographical space constraint for arc ("+`u`+","+`v`+")")
       
-    #print "Solving..."
+#    print "Solving..."
     m.update()
     m.optimize()
     indp_results=INDPResults()
@@ -313,6 +345,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
             # Calculate total costs.
             indp_results.add_cost(t,"Total",flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost)
             indp_results.add_cost(t,"Total no disconnection",spacePrepCost+arcCost+flowCost+nodeCost)
+	                
         return [m,indp_results]
     else:
         print m.getAttr("Status"),": SOLUTION NOT FOUND. (Check data and/or violated constraints)."
@@ -447,7 +480,7 @@ def run_sample(params):
     params["V"]=2
     run_indp(params)
 
-def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,validate=False,save=True,suffix="",forced_actions=False):
+def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,validate=False,save=True,suffix="",forced_actions=False,saveModel=True):
     """ Runs an INDP problem with specified parameters. Outputs to directory specified in params['OUTPUT_DIR'].
     :param params: Global parameters.
     :param layers: Layers to consider in the infrastructure network.
@@ -464,26 +497,36 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         params["NUM_ITERATIONS"]=1
     if not controlled_layers:
         controlled_layers = layers
+        
     v_r=params["V"]
+    if isinstance(v_r, (int, long)):
+        outDirSuffixRes = `v_r`
+    elif len(v_r)==1:
+        outDirSuffixRes = `v_r[0]`
+    else:
+        outDirSuffixRes = `sum(v_r)`+'_SepRes'
+            
     indp_results=INDPResults()
     if T == 1:
-        print "Running INDP (T=1)."
+        print "Running INDP (T=1) or iterative INDP."
         print "Num iters=",params["NUM_ITERATIONS"]
         # Run INDP for 1 time step (original INDP).
-        output_dir=params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`params["V"]`
+        output_dir=params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+outDirSuffixRes
         # Initial calculations.
         results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers)
         indp_results=results[1]
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
-        print "Num iters=",params["NUM_ITERATIONS"]
+
         for i in range(params["NUM_ITERATIONS"]):
-            print "i=",i
+            print "Time Step (iINDP)=",i,"/",params["NUM_ITERATIONS"]
             results=indp(InterdepNet,v_r,T,layers,controlled_layers=controlled_layers,forced_actions=forced_actions)
             indp_results.extend(results[1],t_offset=i+1)
+            if saveModel:
+                save_INDP_model_to_file(results[0],output_dir+"/Model",i)
             # Modify network to account for recovery and calculate components.
             apply_recovery(InterdepNet,indp_results,i+1)
             indp_results.add_components(i+1,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
-            print "Num_iters=",params["NUM_ITERATIONS"]
+#            print "Num_iters=",params["NUM_ITERATIONS"]
     else:
         # td-INDP formulations. Includes "DELTA_T" parameter for sliding windows to increase
         # efficiency.
@@ -494,6 +537,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         if "WINDOW_LENGTH" in params:
             time_window_length=params["WINDOW_LENGTH"]
             num_time_windows=T
+        output_dir=params["OUTPUT_DIR"]+"_m"+`params["MAGNITUDE"]`+"_v"+outDirSuffixRes
         print "Running td-INDP (T="+`T`+", Window size="+`time_window_length`+")"
         # Initial percolation calculations.
         results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers,functionality=functionality)
@@ -512,6 +556,8 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
                         functionality_t[max_t+d+1]=functionality_t[max_t]
             # Run td-INDP.
             results=indp(InterdepNet,v_r,time_window_length+1,layers,controlled_layers=controlled_layers,functionality=functionality_t,forced_actions=forced_actions)
+            if saveModel:
+                save_INDP_model_to_file(results[0],output_dir+"/Model",n)
             if "WINDOW_LENGTH" in params:
                 indp_results.extend(results[1],t_offset=n+1,t_start=1,t_end=2)
                 # Modify network for recovery actions and calculate components.
@@ -523,7 +569,6 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
                     # Modify network to account for recovery actions.
                     apply_recovery(InterdepNet,indp_results,t)
                     indp_results.add_components(1,INDPComponents.calculate_components(results[0],InterdepNet,t,layers=controlled_layers))
-        output_dir=params["OUTPUT_DIR"]+"_m"+`params["MAGNITUDE"]`+"_v"+`params["V"]`
     # Save results of INDP run.
     if save:
         if not os.path.exists(output_dir):
@@ -662,3 +707,17 @@ def baseline_metrics(BASE_DIR="/Users/Andrew/Dropbox/iINDP",layers=[1,2,3]):
     print "Nominal flow cost:       ",opt_flow_cost
 #baseline_metrics(layers=[1,3],BASE_DIR=HOME_DIR+"/Dropbox/iINDP")
 
+def save_INDP_model_to_file(model,outModelDir,t):
+    if not os.path.exists(outModelDir):
+        os.makedirs(outModelDir) 
+    # Write models to file   
+    lname = "/Model_t%d.lp" % t
+    model.write(outModelDir+lname)
+    model.update()
+     # Write solution to file
+    sname = "/Solution_t%d.txt" % t
+    fileID = open(outModelDir+sname, 'w')
+    for vv in model.getVars():
+        fileID.write('%s %g\n' % (vv.varName, vv.x))
+    fileID.write('Obj: %g' % model.objVal)
+    fileID.close()

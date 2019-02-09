@@ -22,7 +22,7 @@ def batch_run(params,layers,player_ordering=[3,1]):
         print(InterdepNet)
     else:
         InterdepNet=params["N"]
-    for i in range(1,1000):
+    for i in range(1,2):
         print("Running sample",i,"...")
         add_failure_scenario(InterdepNet,BASE_DIR="../data/INDP_7-20-2015/",magnitude=params["MAGNITUDE"],v=params["V"],sim_number=i)
         params["N"]=InterdepNet
@@ -87,7 +87,7 @@ def run_indp_sample():
 
 def run_indp_L3_V3(mags):
     for m in mags:
-        params={"NUM_ITERATIONS":50,"OUTPUT_DIR":'../results/indp_results_L3',"MAGNITUDE":m,"V":3,"T":1,"ALGORITHM":"INDP"}
+        params={"NUM_ITERATIONS":20,"OUTPUT_DIR":'../results/indp_results_L3',"MAGNITUDE":m,"V":[1,1,1],"T":1,"ALGORITHM":"INDP"}
         batch_run(params,layers=[1,2,3])
 
 def run_indp_L2_V2(mags):
@@ -116,7 +116,7 @@ def run_tdindp_L2_V2_inf(mags):
     
 def run_tdindp_L3_V3(mags):
     for m in mags:
-        params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L3',"MAGNITUDE":m,"V":3,"T":50,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
+        params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L3',"MAGNITUDE":m,"V":[1,1,1],"T":20,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
         batch_run(params,layers=[1,2,3])
         
 def main():
@@ -149,7 +149,7 @@ def main():
 
 if __name__ == "__main__":
 #    run_indp_sample()
-#    run_tdindp_L2_V2([8])
-    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
+#    run_indp_L3_V3([8])
+#    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
     run_tdindp_L3_V3([8])
 #    main()
