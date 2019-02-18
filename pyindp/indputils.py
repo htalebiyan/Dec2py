@@ -142,7 +142,11 @@ class INDPResults:
                     data=string.split(str.strip(line),",")
                     t=int(data[0])
                     comps=data[1:]
-                    indp_result.add_components(t,INDPComponents.from_csv_string(comps))
+                    if comps[0]!='':
+                        indp_result.add_components(t,INDPComponents.from_csv_string(comps))
+                    else:
+                        print "Caution: No component."
+                        pass
         return indp_result
 
     @classmethod

@@ -233,7 +233,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                         else:
                             interdepLConstr+=m.getVarByName('w_'+`src`+","+`t`)*gamma
                     interdepRConstr+=m.getVarByName('w_'+`n`+","+`t`)
-                    m.addConstr(interdepLConstr,GRB.GREATER_EQUAL,interdepRConstr,"Interdependency constraint for node "+`v`+","+`t`)
+                    m.addConstr(interdepLConstr,GRB.GREATER_EQUAL,interdepRConstr,"Interdependency constraint for node "+`n`+","+`t`)
             else:
                 if n in interdep_nodes[t]:
                     #print interdep_nodes[t]
@@ -243,13 +243,13 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                         src=interdep[0]
                         gamma=interdep[1]
                         if not N_hat.has_node(src):
-                            #print "Forcing",`n`,"to be 0 (dep. on",`src`,")"
+                            print "Forcing",`n`,"to be 0 (dep. on",`src`,")"
                             infeasible_actions.append(n)
                             interdepLConstr+=0
                         else:
                             interdepLConstr+=m.getVarByName('w_'+`src`+","+`t`)*gamma
                     interdepRConstr+=m.getVarByName('w_'+`n`+","+`t`)
-                    m.addConstr(interdepLConstr,GRB.GREATER_EQUAL,interdepRConstr,"Interdependency constraint for node "+`v`+","+`t`)
+                    m.addConstr(interdepLConstr,GRB.GREATER_EQUAL,interdepRConstr,"Interdependency constraint for node "+`n`+","+`t`)
 
         # Forced actions (if applicable)
         if forced_actions:
@@ -480,7 +480,7 @@ def run_sample(params):
     params["V"]=2
     run_indp(params)
 
-def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,validate=False,save=True,suffix="",forced_actions=False,saveModel=True):
+def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,validate=False,save=True,suffix="",forced_actions=False,saveModel=False,print_cmd_line=True):
     """ Runs an INDP problem with specified parameters. Outputs to directory specified in params['OUTPUT_DIR'].
     :param params: Global parameters.
     :param layers: Layers to consider in the infrastructure network.
@@ -504,12 +504,14 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
     elif len(v_r)==1:
         outDirSuffixRes = `v_r[0]`
     else:
-        outDirSuffixRes = `sum(v_r)`+'_SepRes'
+        outDirSuffixRes = `sum(v_r)`+'_Layer_Res_Cap'
             
     indp_results=INDPResults()
     if T == 1:
-        print "Running INDP (T=1) or iterative INDP."
-        print "Num iters=",params["NUM_ITERATIONS"]
+        if print_cmd_line:
+            print "Running INDP (T=1) or iterative INDP."
+            print "Num iters=",params["NUM_ITERATIONS"]
+            
         # Run INDP for 1 time step (original INDP).
         output_dir=params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+outDirSuffixRes
         # Initial calculations.
@@ -518,8 +520,9 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
 
         for i in range(params["NUM_ITERATIONS"]):
-            print "Time Step (iINDP)=",i,"/",params["NUM_ITERATIONS"]
-            results=indp(InterdepNet,v_r,T,layers,controlled_layers=controlled_layers,forced_actions=forced_actions)
+            if print_cmd_line:
+                print "Time Step (iINDP)=",i,"/",params["NUM_ITERATIONS"]
+            results=indp(InterdepNet,v_r,T,layers,controlled_layers=controlled_layers,forced_actions=forced_actions,functionality=functionality)
             indp_results.extend(results[1],t_offset=i+1)
             if saveModel:
                 save_INDP_model_to_file(results[0],output_dir+"/Model",i)
@@ -538,9 +541,11 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
             time_window_length=params["WINDOW_LENGTH"]
             num_time_windows=T
         output_dir=params["OUTPUT_DIR"]+"_m"+`params["MAGNITUDE"]`+"_v"+outDirSuffixRes
-        print "Running td-INDP (T="+`T`+", Window size="+`time_window_length`+")"
+        if print_cmd_line:
+            print "Running td-INDP (T="+`T`+", Window size="+`time_window_length`+")"
         # Initial percolation calculations.
-        results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers,functionality=functionality)
+        results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers)
+        indp_results=results[1]
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
         for n in range(num_time_windows):
             functionality_t={}
@@ -707,15 +712,15 @@ def baseline_metrics(BASE_DIR="/Users/Andrew/Dropbox/iINDP",layers=[1,2,3]):
     print "Nominal flow cost:       ",opt_flow_cost
 #baseline_metrics(layers=[1,3],BASE_DIR=HOME_DIR+"/Dropbox/iINDP")
 
-def save_INDP_model_to_file(model,outModelDir,t):
+def save_INDP_model_to_file(model,outModelDir,t,l=0):
     if not os.path.exists(outModelDir):
         os.makedirs(outModelDir) 
     # Write models to file   
-    lname = "/Model_t%d.lp" % t
+    lname = "/Model_t%d_l%d.lp" % (t,l)
     model.write(outModelDir+lname)
     model.update()
      # Write solution to file
-    sname = "/Solution_t%d.txt" % t
+    sname = "/Solution_t%d.txt" % (t,l)
     fileID = open(outModelDir+sname, 'w')
     for vv in model.getVars():
         fileID.write('%s %g\n' % (vv.varName, vv.x))

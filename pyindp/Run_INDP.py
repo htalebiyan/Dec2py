@@ -1,6 +1,7 @@
 import sys
 import random
 from indp import *
+from Dindp import *
 import gametree
 import os.path
 
@@ -35,6 +36,8 @@ def batch_run(params,layers,player_ordering=[3,1]):
             run_inrg(params,layers=layers,player_ordering=player_ordering)
         elif params["ALGORITHM"]=="BACKWARDS_INDUCTION":
             gametree.run_backwards_induction(InterdepNet,i,players=layers,player_ordering=player_ordering,T=params["T"],outdir=params["OUTPUT_DIR"])
+        elif params["ALGORITHM"]=="JUDGMENT_CALL":
+            run_judgment_call(params,layers=layers,T=params["T"],saveJCModel=True)
 
 def single_scenario_run(params,layers,player_ordering=[3,1],num_samples=1):
     """ Batch run INDP optimization problem for all samples (currently 1-1000), given global parameters.                  
@@ -87,6 +90,11 @@ def run_indp_sample():
 
 def run_indp_L3_V3(mags):
     for m in mags:
+        params={"NUM_ITERATIONS":20,"OUTPUT_DIR":'../results/indp_results_L3',"MAGNITUDE":m,"V":3,"T":1,"ALGORITHM":"INDP"}
+        batch_run(params,layers=[1,2,3])
+        
+def run_indp_L3_V3_Layer_Res_Cap(mags):
+    for m in mags:
         params={"NUM_ITERATIONS":20,"OUTPUT_DIR":'../results/indp_results_L3',"MAGNITUDE":m,"V":[1,1,1],"T":1,"ALGORITHM":"INDP"}
         batch_run(params,layers=[1,2,3])
 
@@ -113,12 +121,23 @@ def run_tdindp_L2_V2_inf(mags):
     params={"SIM_NUMBER":"INF","NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L2_inf',"MAGNITUDE":0,"V":2,"T":212,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
     single_scenario_run(params,layers=[1,3])
 
-    
 def run_tdindp_L3_V3(mags):
+    for m in mags:
+        params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L3',"MAGNITUDE":m,"V":3,"T":20,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
+        batch_run(params,layers=[1,2,3])  
+        
+def run_tdindp_L3_V3_Layer_Res_Cap(mags):
     for m in mags:
         params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L3',"MAGNITUDE":m,"V":[1,1,1],"T":20,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
         batch_run(params,layers=[1,2,3])
+
+def run_dindp_L3_V3(mags):
+    for m in mags:
+        params={"NUM_ITERATIONS":20,"OUTPUT_DIR":'../results/judgeCall_results_L3',"MAGNITUDE":m,"V":[1,1,1],"T":1,"ALGORITHM":"JUDGMENT_CALL"}
+        batch_run(params,layers=[1,2,3])
         
+
+
 def main():
     """ Run as: python Run_INDP.py <algorithm=indp|tdindp|infoshare> <num_layers=1|2|3> <num_resources=1|2|3> <magnitude=6|8|9> """
     args=sys.argv
@@ -148,8 +167,20 @@ def main():
         globals()[fun_name](mags)
 
 if __name__ == "__main__":
-#    run_indp_sample()
-#    run_indp_L3_V3([8])
-#    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
-    run_tdindp_L3_V3([8])
 #    main()
+    mags = [8]
+#  failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
+#    run_dindp_L3_V3(mags)
+#    run_indp_L3_V3(mags)
+#    run_indp_L3_V3_Layer_Res_Cap(mags)
+    run_tdindp_L3_V3(mags)
+#    run_tdindp_L3_V3_Layer_Res_Cap(mags)
+
+
+#    method_name = ['judgeCall_results','indp_results','indp_results',
+#            'tdindp_results','tdindp_results']
+#    resource_cap = ['','','_SepRes','','_SepRes']
+#    suffixes = ['sum','','','','']
+#    sample_range=range(1,11)
+#    df = aggregate_results(mags,method_name,resource_cap,suffixes,3,3,sample_range)
+#    plot_results(df)
