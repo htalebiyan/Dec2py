@@ -83,7 +83,7 @@ class INDPResults:
         self.add_num_components(t,components.num_components)
         self.add_gc_size(t,components.gc_size)
     def to_csv(self,outdir,sample_num=1,suffix=""):
-        action_file=outdir+"/actions_"+`sample_num`+"_"+suffix+".csv"
+        action_file =outdir+"/actions_"+`sample_num`+"_"+suffix+".csv"
         costs_file =outdir+"/costs_"  +`sample_num`+"_"+suffix+".csv"
         perc_file  =outdir+"/percolation_"+`sample_num`+"_"+suffix+".csv"
         comp_file  =outdir+"/components_"+`sample_num`+"_"+suffix+".csv"
@@ -145,7 +145,7 @@ class INDPResults:
                     if comps[0]!='':
                         indp_result.add_components(t,INDPComponents.from_csv_string(comps))
                     else:
-                        print "Caution: No component."
+#                        print "Caution: No component."
                         pass
         return indp_result
 

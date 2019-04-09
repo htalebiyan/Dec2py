@@ -23,13 +23,13 @@ def batch_run(params,layers,player_ordering=[3,1]):
         print(InterdepNet)
     else:
         InterdepNet=params["N"]
-    for i in range(1,2):
+    for i in range(1,11):
         print("Running sample",i,"...")
         add_failure_scenario(InterdepNet,BASE_DIR="../data/INDP_7-20-2015/",magnitude=params["MAGNITUDE"],v=params["V"],sim_number=i)
         params["N"]=InterdepNet
         params["SIM_NUMBER"]=i
         if params["ALGORITHM"]=="INDP":
-            run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers)
+            run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers,saveModel=True)
         elif params["ALGORITHM"]=="INFO_SHARE":
             run_info_share(params,layers=layers,T=params["T"])
         elif params["ALGORITHM"]=="INRG":
@@ -37,7 +37,7 @@ def batch_run(params,layers,player_ordering=[3,1]):
         elif params["ALGORITHM"]=="BACKWARDS_INDUCTION":
             gametree.run_backwards_induction(InterdepNet,i,players=layers,player_ordering=player_ordering,T=params["T"],outdir=params["OUTPUT_DIR"])
         elif params["ALGORITHM"]=="JUDGMENT_CALL":
-            run_judgment_call(params,layers=layers,T=params["T"],saveJCModel=True)
+            run_judgment_call(params,layers=layers,T=params["T"],saveJCModel=False)
 
 def single_scenario_run(params,layers,player_ordering=[3,1],num_samples=1):
     """ Batch run INDP optimization problem for all samples (currently 1-1000), given global parameters.                  
@@ -173,14 +173,15 @@ if __name__ == "__main__":
 #    run_dindp_L3_V3(mags)
 #    run_indp_L3_V3(mags)
 #    run_indp_L3_V3_Layer_Res_Cap(mags)
-    run_tdindp_L3_V3(mags)
+#    run_tdindp_L3_V3(mags)
 #    run_tdindp_L3_V3_Layer_Res_Cap(mags)
 
 
-#    method_name = ['judgeCall_results','indp_results','indp_results',
-#            'tdindp_results','tdindp_results']
-#    resource_cap = ['','','_SepRes','','_SepRes']
-#    suffixes = ['sum','','','','']
-#    sample_range=range(1,11)
-#    df = aggregate_results(mags,method_name,resource_cap,suffixes,3,3,sample_range)
-#    plot_results(df)
+    method_name = ['judgeCall_results','indp_results','indp_results',
+            'tdindp_results','tdindp_results']
+    resource_cap = ['_Layer_Res_Cap','','_Layer_Res_Cap','','_Layer_Res_Cap']
+    suffixes = ['sum','','','','']
+    sample_range=range(1,11)
+    df = aggregate_results(mags,method_name,resource_cap,suffixes,3,3,sample_range)
+    df = correct_tdindp_results(df,mags,method_name,sample_range)
+    plot_results(df,cost_type='Total',mags=mags)

@@ -332,6 +332,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                     nodeVar = 'w_'+`n`+","+`t`
                 nodeCost+=d['data']['inf_data'].reconstruction_cost*m.getVarByName(nodeVar).x
             indp_results.add_cost(t,"Node",nodeCost)
+
             # Calculate under/oversupply costs.
             for n,d in N_hat.nodes_iter(data=True):
                 overSuppCost+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+`n`+","+`t`).x
@@ -522,10 +523,10 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         for i in range(params["NUM_ITERATIONS"]):
             if print_cmd_line:
                 print "Time Step (iINDP)=",i,"/",params["NUM_ITERATIONS"]
-            results=indp(InterdepNet,v_r,T,layers,controlled_layers=controlled_layers,forced_actions=forced_actions,functionality=functionality)
+            results=indp(InterdepNet,v_r,T,layers,controlled_layers=controlled_layers,forced_actions=forced_actions)
             indp_results.extend(results[1],t_offset=i+1)
             if saveModel:
-                save_INDP_model_to_file(results[0],output_dir+"/Model",i)
+                save_INDP_model_to_file(results[0],output_dir+"/Model",i+1)
             # Modify network to account for recovery and calculate components.
             apply_recovery(InterdepNet,indp_results,i+1)
             indp_results.add_components(i+1,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
@@ -544,7 +545,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         if print_cmd_line:
             print "Running td-INDP (T="+`T`+", Window size="+`time_window_length`+")"
         # Initial percolation calculations.
-        results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers)
+        results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers,functionality=functionality)
         indp_results=results[1]
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
         for n in range(num_time_windows):
@@ -562,7 +563,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
             # Run td-INDP.
             results=indp(InterdepNet,v_r,time_window_length+1,layers,controlled_layers=controlled_layers,functionality=functionality_t,forced_actions=forced_actions)
             if saveModel:
-                save_INDP_model_to_file(results[0],output_dir+"/Model",n)
+                save_INDP_model_to_file(results[0],output_dir+"/Model",n+1)
             if "WINDOW_LENGTH" in params:
                 indp_results.extend(results[1],t_offset=n+1,t_start=1,t_end=2)
                 # Modify network for recovery actions and calculate components.
@@ -720,7 +721,7 @@ def save_INDP_model_to_file(model,outModelDir,t,l=0):
     model.write(outModelDir+lname)
     model.update()
      # Write solution to file
-    sname = "/Solution_t%d.txt" % (t,l)
+    sname = "/Solution_t%d_l%d.txt" % (t,l)
     fileID = open(outModelDir+sname, 'w')
     for vv in model.getVars():
         fileID.write('%s %g\n' % (vv.varName, vv.x))

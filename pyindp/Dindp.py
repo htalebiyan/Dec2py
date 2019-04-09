@@ -118,17 +118,48 @@ def aggregate_results(mags,method_name,resource_cap,suffixes,L,v,sample_range):
     
     return agg_results
     
-def plot_results(df,x='t',y='cost',cost_type='Total'):
+def plot_results(df,x='t',y='cost',cost_type='Total',mags=[6]):
     sns.set()
     
     df['resource_cap'] = df['resource_cap'].replace('', 'Network Cap')
-    df['resource_cap'] = df['resource_cap'].replace('_SepRes', 'Layer Cap')
-    
+    df['resource_cap'] = df['resource_cap'].replace('_Layer_Res_Cap', 'Layer Cap')
+        
     colors = ["windows blue", "amber", "red"]
-    with sns.xkcd_palette(colors):
-        ax = sns.lineplot(x=x, y=y, hue="method", style='resource_cap',
-                          markers=True,
-                      data=df[df['cost_type'] == cost_type])
-        ax.set(xticks=np.arange(0,21,2))
-
-    
+    for m in mags:
+        plt.figure()
+        with sns.xkcd_palette(colors):
+            ax = sns.lineplot(x=x, y=y, hue="method", style='resource_cap',
+                markers=False, ci=95,
+                data=df[(df['cost_type']==cost_type)&(df['Magnitude']==m)])
+            ax.set(xticks=np.arange(0,21,2), title='Magnitude = '+`m`)
+            
+def correct_tdindp_results(df,mags,method_name,sample_range):    
+    # correct total cost of td-indp
+    resource_cap = ['_Layer_Res_Cap', '']
+    tVector = df['t'].unique().tolist()
+    for t in tVector:
+        for m in mags:
+            for rc in resource_cap:
+                for sr in sample_range:
+                    rows = df[(df['t']==t)&(df['Magnitude']==m)&
+                             (df['method']=='tdindp_results')&(df['resource_cap']==rc)&
+                             (df['sample']==sr)]
+                    
+                    if t!=int(tVector[-1]) and t!=0:
+                        rowsNext = df[(df['t']==t+1)&(df['Magnitude']==m)&
+                         (df['method']=='tdindp_results')&(df['resource_cap']==rc)&
+                         (df['sample']==sr)]
+                        
+                        nodeCost=rows[rows['cost_type']=='Node']['cost'].values
+                        arcCost=rows[rows['cost_type']=='Arc']['cost'].values
+                        flowCost=rowsNext[rowsNext['cost_type']=='Flow']['cost'].values
+                        overSuppCost=rowsNext[rowsNext['cost_type']=='Over Supply']['cost'].values
+                        underSuppCost=rowsNext[rowsNext['cost_type']=='Under Supply']['cost'].values
+                        spacePrepCost=rows[rows['cost_type']=='Space Prep']['cost'].values
+                        
+                        totalCost = flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost
+                        
+                        df.loc[(df['t']==t)&(df['Magnitude']==m)&(df['method']=='tdindp_results')&
+                            (df['resource_cap']==rc)&(df['sample']==sr)&
+                            (df['cost_type']=='Total'),'cost'] = totalCost
+    return df
