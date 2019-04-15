@@ -74,7 +74,7 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
             # Re-evaluate judgments based on other agents' decisions
             for P in layers:
                 if print_cmd:
-                    print "Layer ",P,"|Relaization|Iteration ",i,"/",num_iterations             
+                    print "Layer ",P,"|Re-evaluation|Iteration ",i,"/",num_iterations             
                 mNeg={x:y[0] for x,y in uncorrectedResults.items() if x != P}   
                 m = uncorrectedResults[P][0]
                 N = InterdepNet
@@ -213,6 +213,7 @@ def create_judgment_matrix(N,T,layers,v_r=[],actions=[],judgment_type="OPTIMISTI
     G_prime_nodes = [n[0] for n in N.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in layers]
     G_prime = N.G.subgraph(G_prime_nodes)
     N_prime = [n for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].functionality==0.0]
+    N_prime_nodes = [n[0] for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].functionality==0.0]
     
     for t in range(T):
         functionality[t]={}
@@ -245,9 +246,14 @@ def create_judgment_matrix(N,T,layers,v_r=[],actions=[],judgment_type="OPTIMISTI
                     elif judgment_type == "DEMAND":
                         functionality[t][n]=priorityList[n][1]
                     elif judgment_type == "DET-DEMAND":
-                        resCap = sum(v_r)
-                        detPrior = dict(sorted(priorityList.items(), 
-                            key=operator.itemgetter(1), reverse=True)[t*resCap:(t+1)*resCap])
+                        resCap = sum(v_r)*len(layers)/len(v_r)
+                        sortedpriorityList = sorted(priorityList.items(), 
+                            key=operator.itemgetter(1), reverse=True)
+                        detPrior = []
+                        for i in sortedpriorityList:
+                            if i[0] in N_prime_nodes and i not in detPrior and len(detPrior)<(t+1)*resCap:
+                                detPrior.append(i[0])
+                        
                         if n in detPrior:                        
                             functionality[t][n]=1.0
                         else:
@@ -314,6 +320,7 @@ def Decentralized_INDP_Realized_Performance(N,m,mNeg,indp_results,T=1,
     G_prime = N.G.subgraph(G_prime_nodes)
     # Damaged nodes in whole network
     N_prime = [n for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].functionality==0.0]
+    N_prime_nodes = [n[0] for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].functionality==0.0]
     # Nodes in controlled network.
     N_hat_nodes   = [n[0] for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in controlled_layers]
     N_hat = G_prime.subgraph(N_hat_nodes)
@@ -348,12 +355,13 @@ def Decentralized_INDP_Realized_Performance(N,m,mNeg,indp_results,T=1,
                 uVar='w_'+`u`+","+`t`  
                 srcLayer = a['data']['inf_data'].source_layer
                 srcValue = round(mNeg[srcLayer].getVarByName(uVar).x)
-                ifUFunctional = (u in N_prime and srcValue == 0.0)
+                ifuNonFunctional = (u in N_prime_nodes and srcValue == 0.0)
                 vVar='w_'+`v`+","+`t` 
                 destValue = round(m.getVarByName(vVar).x)
-                if ifUFunctional and destValue==1.0:
+#                print '('+ `ifuNonFunctional` + ',' + `destValue` + ')'
+                if ifuNonFunctional and destValue==1.0:
                     if print_cmd:
-                        print 'CORRECTION: '+vVar+'='+ `destValue`+' depends on '+uVar+'='+`srcValue`+' ->Now '+vVar+'=0.0'
+                        print 'CORRECTION: '+vVar+'='+ `destValue`+' depends on nonfunctional '+uVar+' ->Now '+vVar+'=0.0'
                     m.getVarByName(vVar).LB = 0.0
                     m.getVarByName(vVar).UB = 0.0                     
                     

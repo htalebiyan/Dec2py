@@ -23,7 +23,7 @@ def batch_run(params,layers,player_ordering=[3,1],judgment_type="OPTIMISTIC"):
         print(InterdepNet)
     else:
         InterdepNet=params["N"]
-    for i in range(1,2):
+    for i in range(1,51):
         print("Running sample",i,"...")
         add_failure_scenario(InterdepNet,BASE_DIR="../data/INDP_7-20-2015/",magnitude=params["MAGNITUDE"],v=params["V"],sim_number=i)
         params["N"]=InterdepNet
@@ -168,24 +168,24 @@ def main():
 
 if __name__ == "__main__":
 #    main()
-    mags = [8]
+    mags = [6,9]
 #    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
-#    for jc in ["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]:
-#        run_dindp_L3_V3(mags,judgment_type=jc)
-#    run_indp_L3_V3(mags)
-#    run_indp_L3_V3_Layer_Res_Cap(mags)
-#    run_tdindp_L3_V3(mags)
-#    run_tdindp_L3_V3_Layer_Res_Cap(mags)
-    run_dindp_L3_V3(mags,judgment_type='PESSIMISTIC')
+    for jc in ["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]:
+        run_dindp_L3_V3(mags,judgment_type=jc)
+    run_indp_L3_V3(mags)
+    run_indp_L3_V3_Layer_Res_Cap(mags)
+    run_tdindp_L3_V3(mags)
+    run_tdindp_L3_V3_Layer_Res_Cap(mags)
+#    run_dindp_L3_V3(mags,judgment_type='RANDOM')
 
-#    method_name = ['judgeCall_OPTIMISTIC_results','judgeCall_PESSIMISTIC_results',
-#                   'judgeCall_DEMAND_results','judgeCall_DET-DEMAND_results',
-#                   'judgeCall_RANDOM_results','indp_results','indp_results',
-#            'tdindp_results','tdindp_results']
-#    resource_cap = ['_Layer_Res_Cap','_Layer_Res_Cap','_Layer_Res_Cap',
-#                    '_Layer_Res_Cap','_Layer_Res_Cap',
-#                    '','_Layer_Res_Cap','','_Layer_Res_Cap']
-#    suffixes = ['Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','','','','']
+    method_name = ['judgeCall_OPTIMISTIC_results','judgeCall_PESSIMISTIC_results',
+                   'judgeCall_DEMAND_results','judgeCall_DET-DEMAND_results',
+                   'judgeCall_RANDOM_results','indp_results','indp_results',
+            'tdindp_results','tdindp_results']
+    resource_cap = ['_Layer_Res_Cap','_Layer_Res_Cap','_Layer_Res_Cap',
+                    '_Layer_Res_Cap','_Layer_Res_Cap',
+                    '','_Layer_Res_Cap','','_Layer_Res_Cap']
+    suffixes = ['Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','','','','']
     
 #    method_name = ['judgeCall_OPTIMISTIC_results','judgeCall_PESSIMISTIC_results',
 #                   'judgeCall_RANDOM_results','indp_results','tdindp_results']
@@ -193,7 +193,7 @@ if __name__ == "__main__":
 #    suffixes = ['Real_sum','Real_sum','Real_sum','','']
 #
 #    
-#    sample_range=range(1,51)
-#    df = aggregate_results(mags,method_name,resource_cap,suffixes,3,3,sample_range)
-#    df = correct_tdindp_results(df,mags,method_name,sample_range)
-#    plot_results(df,cost_type='Total',mags=mags)
+    sample_range=range(1,51)
+    df = aggregate_results(mags,method_name,resource_cap,suffixes,3,3,sample_range)
+    df = correct_tdindp_results(df,mags,method_name,sample_range)
+    plot_results(df,cost_type='Total',mags=mags)
