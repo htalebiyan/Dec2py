@@ -5,7 +5,7 @@ from Dindp import *
 import gametree
 import os.path
 
-def batch_run(params,layers,player_ordering=[3,1]):
+def batch_run(params,layers,player_ordering=[3,1],judgment_type="OPTIMISTIC"):
     """ Batch run INDP optimization problem for all samples (currently 1-1000), given global parameters. 
     Format for params:
     "NUM_ITERATIONS": For single timestep INDP, specifies how many iterations to run.
@@ -23,13 +23,13 @@ def batch_run(params,layers,player_ordering=[3,1]):
         print(InterdepNet)
     else:
         InterdepNet=params["N"]
-    for i in range(1,11):
+    for i in range(1,2):
         print("Running sample",i,"...")
         add_failure_scenario(InterdepNet,BASE_DIR="../data/INDP_7-20-2015/",magnitude=params["MAGNITUDE"],v=params["V"],sim_number=i)
         params["N"]=InterdepNet
         params["SIM_NUMBER"]=i
         if params["ALGORITHM"]=="INDP":
-            run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers,saveModel=True)
+            run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers,saveModel=False)
         elif params["ALGORITHM"]=="INFO_SHARE":
             run_info_share(params,layers=layers,T=params["T"])
         elif params["ALGORITHM"]=="INRG":
@@ -37,7 +37,7 @@ def batch_run(params,layers,player_ordering=[3,1]):
         elif params["ALGORITHM"]=="BACKWARDS_INDUCTION":
             gametree.run_backwards_induction(InterdepNet,i,players=layers,player_ordering=player_ordering,T=params["T"],outdir=params["OUTPUT_DIR"])
         elif params["ALGORITHM"]=="JUDGMENT_CALL":
-            run_judgment_call(params,layers=layers,T=params["T"],saveJCModel=False)
+            run_judgment_call(params,layers=layers,T=params["T"],saveJCModel=True,judgment_type=judgment_type)
 
 def single_scenario_run(params,layers,player_ordering=[3,1],num_samples=1):
     """ Batch run INDP optimization problem for all samples (currently 1-1000), given global parameters.                  
@@ -131,10 +131,10 @@ def run_tdindp_L3_V3_Layer_Res_Cap(mags):
         params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L3',"MAGNITUDE":m,"V":[1,1,1],"T":20,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
         batch_run(params,layers=[1,2,3])
 
-def run_dindp_L3_V3(mags):
+def run_dindp_L3_V3(mags,judgment_type="OPTIMISTIC"):
     for m in mags:
-        params={"NUM_ITERATIONS":20,"OUTPUT_DIR":'../results/judgeCall_results_L3',"MAGNITUDE":m,"V":[1,1,1],"T":1,"ALGORITHM":"JUDGMENT_CALL"}
-        batch_run(params,layers=[1,2,3])
+        params={"NUM_ITERATIONS":20,"OUTPUT_DIR":'../results/judgeCall_'+judgment_type+'_results_L3',"MAGNITUDE":m,"V":[1,1,1],"T":1,"ALGORITHM":"JUDGMENT_CALL"}
+        batch_run(params,layers=[1,2,3],judgment_type=judgment_type)
         
 
 
@@ -169,19 +169,31 @@ def main():
 if __name__ == "__main__":
 #    main()
     mags = [8]
-#  failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
-#    run_dindp_L3_V3(mags)
+#    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
+#    for jc in ["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]:
+#        run_dindp_L3_V3(mags,judgment_type=jc)
 #    run_indp_L3_V3(mags)
 #    run_indp_L3_V3_Layer_Res_Cap(mags)
 #    run_tdindp_L3_V3(mags)
 #    run_tdindp_L3_V3_Layer_Res_Cap(mags)
+    run_dindp_L3_V3(mags,judgment_type='PESSIMISTIC')
 
-
-    method_name = ['judgeCall_results','indp_results','indp_results',
-            'tdindp_results','tdindp_results']
-    resource_cap = ['_Layer_Res_Cap','','_Layer_Res_Cap','','_Layer_Res_Cap']
-    suffixes = ['sum','','','','']
-    sample_range=range(1,11)
-    df = aggregate_results(mags,method_name,resource_cap,suffixes,3,3,sample_range)
-    df = correct_tdindp_results(df,mags,method_name,sample_range)
-    plot_results(df,cost_type='Total',mags=mags)
+#    method_name = ['judgeCall_OPTIMISTIC_results','judgeCall_PESSIMISTIC_results',
+#                   'judgeCall_DEMAND_results','judgeCall_DET-DEMAND_results',
+#                   'judgeCall_RANDOM_results','indp_results','indp_results',
+#            'tdindp_results','tdindp_results']
+#    resource_cap = ['_Layer_Res_Cap','_Layer_Res_Cap','_Layer_Res_Cap',
+#                    '_Layer_Res_Cap','_Layer_Res_Cap',
+#                    '','_Layer_Res_Cap','','_Layer_Res_Cap']
+#    suffixes = ['Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','','','','']
+    
+#    method_name = ['judgeCall_OPTIMISTIC_results','judgeCall_PESSIMISTIC_results',
+#                   'judgeCall_RANDOM_results','indp_results','tdindp_results']
+#    resource_cap = ['_Layer_Res_Cap','_Layer_Res_Cap','_Layer_Res_Cap','','']
+#    suffixes = ['Real_sum','Real_sum','Real_sum','','']
+#
+#    
+#    sample_range=range(1,51)
+#    df = aggregate_results(mags,method_name,resource_cap,suffixes,3,3,sample_range)
+#    df = correct_tdindp_results(df,mags,method_name,sample_range)
+#    plot_results(df,cost_type='Total',mags=mags)

@@ -713,15 +713,15 @@ def baseline_metrics(BASE_DIR="/Users/Andrew/Dropbox/iINDP",layers=[1,2,3]):
     print "Nominal flow cost:       ",opt_flow_cost
 #baseline_metrics(layers=[1,3],BASE_DIR=HOME_DIR+"/Dropbox/iINDP")
 
-def save_INDP_model_to_file(model,outModelDir,t,l=0):
+def save_INDP_model_to_file(model,outModelDir,t,l=0,suffix=''):
     if not os.path.exists(outModelDir):
         os.makedirs(outModelDir) 
     # Write models to file   
-    lname = "/Model_t%d_l%d.lp" % (t,l)
+    lname = "/Model_t%d_l%d_%s.lp" % (t,l,suffix)
     model.write(outModelDir+lname)
     model.update()
      # Write solution to file
-    sname = "/Solution_t%d_l%d.txt" % (t,l)
+    sname = "/Solution_t%d_l%d_%s.txt" % (t,l,suffix)
     fileID = open(outModelDir+sname, 'w')
     for vv in model.getVars():
         fileID.write('%s %g\n' % (vv.varName, vv.x))
