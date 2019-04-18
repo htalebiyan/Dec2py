@@ -4,8 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from indp import *
 import os.path
+import operator
 
-def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJCModel=False,validate=False,judgment_type="OPTIMISTIC"):
+def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJCModel=False,validate=False,judgment_type="OPTIMISTIC",auction_type=None):
     """ Solves an INDP problem with specified parameters using a decentralized hueristic called Judgment Call . Outputs to directory specified in params['OUTPUT_DIR'].
     :param params: Global parameters.
     :param layers: Layers to consider in the infrastructure network.
@@ -27,10 +28,14 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
  
     v_r = params["V"]
     num_iterations = params["NUM_ITERATIONS"]
-    output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_Layer_Res_Cap'
+    if auction_type:
+        output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_auction_layer_cap'
+    else:
+        output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_fixed_layer_cap'
     
     Dindp_results={P:INDPResults() for P in layers}   
     Dindp_results_Real={P:INDPResults() for P in layers} 
+    currentTotalCost = {}
     if T == 1: 
         # Initial calculations.
         indp_results_initial=indp(InterdepNet,0,1,layers,controlled_layers=layers)
@@ -43,21 +48,37 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
         for P in layers:
             Dindp_results[P].add_cost(0,'Total',0.0) #Add a zero entry for t=0 for each layer
             Dindp_results_Real[P].add_cost(0,'Total',0.0) #Add a zero entry for t=0 for each layer
+        
+        res_allocate = {}
         for i in range(num_iterations):
             if print_cmd:
-                print "Iteration ",i,"/",num_iterations
+                print "\n\nIteration ",i,"/",num_iterations-1,
             uncorrectedResults = {}  
+            
+            v_r_applied = []
+            if auction_type:
+                res_allocate[i]=auction_resources(sum(v_r),params,currentTotalCost,
+                    layers=[1,2,3],T=1,print_cmd=True,judgment_type=judgment_type,
+                    auction_type=auction_type)
+               
+                for key, value in res_allocate[i].items():
+                    v_r_applied.append(len(value))
+            else:
+                v_r_applied = v_r
+                
+            if print_cmd:
+                print "\nJudgment: ",                    
             for P in layers:
                 negP=[x for x in layers if x != P]
                 if print_cmd:
-                    print "Layer ",P,"|Iteration ",i,"/",num_iterations
+                    print '\033[1m'+"Layer-%d"%(P)+'\033[1m',
                     
-                functionality = create_judgment_matrix(InterdepNet,T,negP,v_r,
+                functionality = create_judgment_matrix(InterdepNet,T,negP,v_r_applied,
                                         actions=None,judgment_type=judgment_type) 
                 #"OPTIMISTIC", "PESSIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"
                 
                 # Make decision based on judgments before communication
-                indp_results = indp(InterdepNet,v_r[P-1],1,layers=layers,
+                indp_results = indp(InterdepNet,v_r_applied[P-1],1,layers=layers,
                                     controlled_layers=[P],
                                     functionality=functionality)
                 # Save models for re-evaluation after communication
@@ -72,9 +93,11 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
                 Dindp_results[P].add_components(i+1,INDPComponents.calculate_components(indp_results[0],InterdepNet,layers=[P]))
             
             # Re-evaluate judgments based on other agents' decisions
+            if print_cmd:
+                print "\nRe-evaluation: ",
             for P in layers:
                 if print_cmd:
-                    print "Layer ",P,"|Re-evaluation|Iteration ",i,"/",num_iterations             
+                    print '\033[1m'+"Layer-%d"%(P),         
                 mNeg={x:y[0] for x,y in uncorrectedResults.items() if x != P}   
                 m = uncorrectedResults[P][0]
                 N = InterdepNet
@@ -85,6 +108,10 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
                                 controlled_layers=[P])
                 Dindp_results_Real[P].extend(indp_results_Real,t_offset=i+1)
                 
+                if auction_type:
+                    currentTotalCost[P]=indp_results_Real[0]['costs']['Total']
+        
+        # Calculate sum of costs    
         Dindp_results_sum = INDPResults()
         Dindp_results_Real_sum = INDPResults()
         cost_types = Dindp_results[1][0]['costs'].keys()
@@ -101,14 +128,22 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
                          sumTemp_Real += Dindp_results_Real[P][i]['costs'][cost_type]
                 Dindp_results_sum.add_cost(i,cost_type,sumTemp)
                 Dindp_results_Real_sum.add_cost(i,cost_type,sumTemp_Real)
-
+                
+        if auction_type:
+            output_dir_auction = output_dir + '/auctions'
+            if not os.path.exists(output_dir_auction):
+                os.makedirs(output_dir_auction)    
+            write_auction_csv(output_dir_auction,res_allocate,sample_num=params["SIM_NUMBER"],suffix="")    
         # Save results of D-iINDP run to file.
-        if saveJC:        
+        if saveJC:   
+            output_dir_agents = output_dir + '/agents'
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
+            if not os.path.exists(output_dir_agents):
+                os.makedirs(output_dir_agents)
             for P in layers:
-                Dindp_results[P].to_csv(output_dir,params["SIM_NUMBER"],suffix=`P`)
-                Dindp_results_Real[P].to_csv(output_dir,params["SIM_NUMBER"],suffix='Real_'+`P`)
+                Dindp_results[P].to_csv(output_dir_agents,params["SIM_NUMBER"],suffix=`P`)
+                Dindp_results_Real[P].to_csv(output_dir_agents,params["SIM_NUMBER"],suffix='Real_'+`P`)
             Dindp_results_sum.to_csv(output_dir,params["SIM_NUMBER"],suffix='sum')
             Dindp_results_Real_sum.to_csv(output_dir,params["SIM_NUMBER"],suffix='Real_sum')
     else:
@@ -131,6 +166,8 @@ def aggregate_results(mags,method_name,resource_cap,suffixes,L,v,sample_range):
                                 sample_range=sample_range,suffix=suffixes[i])
             
             outdir = '../results/average_cost_all/'
+            if not os.path.exists(outdir):
+                os.makedirs(outdir) 
             costs_file =outdir+method_name[i]+full_suffix+"_average_costs.csv"
             with open(costs_file,'w') as f:
                 f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total\n")
@@ -154,20 +191,21 @@ def aggregate_results(mags,method_name,resource_cap,suffixes,L,v,sample_range):
     
     return agg_results
     
-def plot_results(df,x='t',y='cost',cost_type='Total',mags=[6]):
+def plot_results(df,x='t',y='cost',cost_type='Total',mags=[6],ci=None):
     sns.set()
     
     df['resource_cap'] = df['resource_cap'].replace('', 'Network Cap')
-    df['resource_cap'] = df['resource_cap'].replace('_Layer_Res_Cap', 'Layer Cap')
-        
-    colors = ["windows blue", "amber", "red"]
+    df['resource_cap'] = df['resource_cap'].replace('_fixed_layer_cap', 'Layer Cap')
+    df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap', 'Auction Cap') 
+#    colors = ["windows blue", "amber", "red"]
     for m in mags:
         plt.figure()
         with sns.color_palette("muted"):
             ax = sns.lineplot(x=x, y=y, hue="method", style='resource_cap',
-                markers=False, ci=95,
+                markers=False, ci=ci,
                 data=df[(df['cost_type']==cost_type)&(df['Magnitude']==m)])
             ax.set(xticks=np.arange(0,21,2), title='Magnitude = '+`m`)
+    return ax    
             
 def correct_tdindp_results(df,mags,method_name,sample_range):    
     # correct total cost of td-indp
@@ -333,20 +371,22 @@ def Decentralized_INDP_Realized_Performance(N,m,mNeg,indp_results,T=1,
     #print "A_hat_prime=",A_hat_prime
     S=N.S
     
+    m.update() # If you have unstaged changes in the model
+    mCopy = m.copy() # Avoid modifying the original model
     # Fix decision variables (so the decision for the current time step doesn't change)  
     for t in range(T):
         for n in N_hat_nodes:
             nodeVar='w_'+`n`+","+`t`  
-            m.getVarByName(nodeVar).LB = round(m.getVarByName(nodeVar).x)
-            m.getVarByName(nodeVar).UB = round(m.getVarByName(nodeVar).x) 
+            mCopy.getVarByName(nodeVar).LB = round(m.getVarByName(nodeVar).x)
+            mCopy.getVarByName(nodeVar).UB = round(m.getVarByName(nodeVar).x) 
         for u,v,a in A_hat_prime:
             arcVar='y_'+`u`+","+`v`+","+`t`   
-            m.getVarByName(arcVar).LB = round(m.getVarByName(arcVar).x)
-            m.getVarByName(arcVar).UB = round(m.getVarByName(arcVar).x) 
+            mCopy.getVarByName(arcVar).LB = round(m.getVarByName(arcVar).x)
+            mCopy.getVarByName(arcVar).UB = round(m.getVarByName(arcVar).x) 
         for s in S:
             zoneVar = 'z_'+`s.id`+","+`t`
-            m.getVarByName(zoneVar).LB = round(m.getVarByName(zoneVar).x)
-            m.getVarByName(zoneVar).UB = round(m.getVarByName(zoneVar).x) 
+            mCopy.getVarByName(zoneVar).LB = round(m.getVarByName(zoneVar).x)
+            mCopy.getVarByName(zoneVar).UB = round(m.getVarByName(zoneVar).x) 
             
         # Correct decisions based on the wrong guess (which has not been realized) 
         for u,v,a in G_prime.edges_iter(data=True):
@@ -362,17 +402,15 @@ def Decentralized_INDP_Realized_Performance(N,m,mNeg,indp_results,T=1,
                 if ifuNonFunctional and destValue==1.0:
                     if print_cmd:
                         print 'CORRECTION: '+vVar+'='+ `destValue`+' depends on nonfunctional '+uVar+' ->Now '+vVar+'=0.0'
-                    m.getVarByName(vVar).LB = 0.0
-                    m.getVarByName(vVar).UB = 0.0                     
-                    
-    '''
-    	OBJ & OUTPUT
-    '''       
-    m.update()
-    m.optimize()                    
+                    mCopy.getVarByName(vVar).LB = 0.0
+                    mCopy.getVarByName(vVar).UB = 0.0  
+                                       
+    ''' OBJ & OUTPUT '''       
+    mCopy.update()
+    mCopy.optimize()                    
     # Save results.
     indp_results_Real=INDPResults()
-    if m.getAttr("Status")==GRB.OPTIMAL:
+    if mCopy.getAttr("Status")==GRB.OPTIMAL:
         for t in range(T):
             costs = indp_results.results[t]['costs']    
             nodeCost=costs["Node"]
@@ -384,22 +422,136 @@ def Decentralized_INDP_Realized_Performance(N,m,mNeg,indp_results,T=1,
             flowCost=0.0
             overSuppCost=0.0
             underSuppCost=0.0
-
             # Calculate under/oversupply costs.
             for n,d in N_hat.nodes_iter(data=True):
-                overSuppCost+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+`n`+","+`t`).x
-                underSuppCost+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+`n`+","+`t`).x
+                overSuppCost+= d['data']['inf_data'].oversupply_penalty*mCopy.getVarByName('delta+_'+`n`+","+`t`).x
+                underSuppCost+=d['data']['inf_data'].undersupply_penalty*mCopy.getVarByName('delta-_'+`n`+","+`t`).x
             indp_results_Real.add_cost(t,"Over Supply",overSuppCost)
             indp_results_Real.add_cost(t,"Under Supply",underSuppCost)
             # Calculate flow costs.
             for u,v,a in N_hat.edges_iter(data=True):
-                flowCost+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+`u`+","+`v`+","+`t`).x
+                flowCost+=a['data']['inf_data'].flow_cost*mCopy.getVarByName('x_'+`u`+","+`v`+","+`t`).x
             indp_results_Real.add_cost(t,"Flow",flowCost)
             # Calculate total costs.
             indp_results_Real.add_cost(t,"Total",flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost)
             indp_results_Real.add_cost(t,"Total no disconnection",spacePrepCost+arcCost+flowCost+nodeCost)
             
     if saveJCModel:
-        save_INDP_model_to_file(m,output_dir+"/Model",iteration,controlled_layers[0],suffix='Real')  
+        save_INDP_model_to_file(mCopy,output_dir+"/Model",iteration,controlled_layers[0],suffix='Real')  
         
     return indp_results_Real
+
+def auction_resources(v_r,params,currentTotalCost={},layers=[1,2,3],T=1,print_cmd=True,judgment_type="OPTIMISTIC",auction_type="second_price"):
+    """ Solves an INDP problem with specified parameters using a decentralized hueristic called Judgment Call . Outputs to directory specified in params['OUTPUT_DIR'].
+    :param params: Global parameters.
+    :param layers: Layers to consider in the infrastructure network.
+    :param T: Number of time steps per analyses (1 for D-iINDP and T>1 for D-tdINDP)
+    :param saveJC: If true, the results are saved to files
+    :param print_cmd: If true, the results are printed to console
+    :param validate: (Currently not used.)
+    """
+    # Initialize failure scenario.
+    InterdepNet=None
+    if "N" not in params:
+        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",sim_number=params['SIM_NUMBER'],magnitude=params["MAGNITUDE"])
+    else:
+        InterdepNet=params["N"]
+        
+    if "NUM_ITERATIONS" not in params:
+        params["NUM_ITERATIONS"]=1
+ 
+    resource_allocation = {P:[] for P in layers}
+    num_iterations = params["NUM_ITERATIONS"]
+    
+    functioanlity = {}
+    if not currentTotalCost:
+        if print_cmd:
+            print "\nCalculating current total cost...",
+        for P in layers:
+            negP=[x for x in layers if x != P]         
+            functionality = create_judgment_matrix(InterdepNet,1,negP,v_r,
+                                    actions=None,judgment_type=judgment_type) 
+            '''!!! check what v_r must be for det demand JC'''
+            indp_results = indp(InterdepNet,v_r=0,T=1,layers=layers,
+                                controlled_layers=[P],
+                                functionality=functionality)
+            currentTotalCost[P] = indp_results[1][0]['costs']['Total']
+            
+    if T == 1: 
+        if print_cmd:
+            print "\nAuction: ",
+        for v in range(v_r):
+            newTotalCost={}
+            valuation={}
+            indp_results={}
+            if print_cmd:
+                print '\033[1m'+"Resource-%d"%(v+1)+'\033[1m' ,
+            for P in layers:
+                negP=[x for x in layers if x != P]
+                if not functioanlity:
+                    functionality = create_judgment_matrix(InterdepNet,T,negP,v_r,
+                                            actions=None,judgment_type=judgment_type) 
+                '''!!! check what v_r must be for det demand JC'''
+                indp_results[P] = indp(InterdepNet,v_r=len(resource_allocation[P])+1,
+                            T=1,layers=layers,controlled_layers=[P],functionality=functionality)
+                newTotalCost[P] = indp_results[P][1][0]['costs']['Total']
+                valuation[P] = currentTotalCost[P]-newTotalCost[P]
+            winner = max(valuation.iteritems(), key=operator.itemgetter(1))[0]
+            if valuation[winner]!=0:
+                resource_allocation[winner].append(v+1)            
+                currentTotalCost[winner] = newTotalCost[winner]  
+            else:
+                pass
+    else:
+        print 'hahahaha'
+        
+    return resource_allocation
+
+def write_auction_csv(outdir,res_allocate,sample_num=1,suffix=""):
+    auction_file=outdir+"/auctions_"+`sample_num`+"_"+suffix+".csv"
+    header = "t,"
+    for key,value in res_allocate[0].items():
+        header += "P"+`key`+","
+    with open(auction_file,'w') as f:
+        f.write(header+"\n")
+        for t,value in res_allocate.items():
+            row = `t+1`+","
+            for p,value2 in value.items():
+                row += `len(value2)`+','
+            f.write(row+"\n")
+            
+def compare_auction_allocation(outdir,compare_to_dir,sample_range,T=1,layers=[1,3],suffix="",ci=None):
+    cols=['t','resource','method','sim','layer']
+    df = pd.DataFrame(columns=cols)
+    for i in sample_range:
+        for t in range(T):
+            for P in range(len(layers)):
+                df=df.append({'t':t+1,'resource':0.0,'method':'optimal','sim':i,'layer':`P+1`}, ignore_index=True)
+        action_file=compare_to_dir+"/actions_"+`i`+"_"+suffix+".csv"                
+        if os.path.isfile(action_file):
+            with open(action_file) as f:
+                lines=f.readlines()[1:]
+                for line in lines:
+                    data=string.split(str.strip(line),",")
+                    t=int(data[0])
+                    action=str.strip(data[1])
+                    P = int(action[-1])
+                    if '/' in action:
+                        addition = 0.5
+                    else:
+                        addition = 1.0
+                    df.loc[(df['t']==t)&(df['method']=='optimal')&(df['sim']==i)&(df['layer']==`P`),'resource']+=addition
+                    
+        auction_file=outdir+"/auctions_"+`i`+"_"+suffix+".csv"
+        if os.path.isfile(auction_file):
+            with open(auction_file) as f:
+                lines=f.readlines()[1:]
+                for line in lines:
+                    data=string.split(str.strip(line),",")
+                    t=int(data[0])
+                    for P in range(len(layers)):
+                        df=df.append({'t':t,'resource':int(data[P+1]),'method':'auction','sim':i,'layer':`P+1`}, ignore_index=True)
+     
+    plt.figure()                  
+    ax = sns.lineplot(x='t',y='resource',style='method',hue='layer',data=df,ci=ci, palette=sns.color_palette("muted",3))                        
+    ax.set(xticks=np.arange(0,21,1))

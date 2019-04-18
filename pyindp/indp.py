@@ -505,7 +505,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
     elif len(v_r)==1:
         outDirSuffixRes = `v_r[0]`
     else:
-        outDirSuffixRes = `sum(v_r)`+'_Layer_Res_Cap'
+        outDirSuffixRes = `sum(v_r)`+'_fixed_layer_Cap'
             
     indp_results=INDPResults()
     if T == 1:
