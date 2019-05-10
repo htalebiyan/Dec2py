@@ -2,6 +2,8 @@ import networkx as nx
 import indputils
 import re
 import string
+import numpy as np
+import os
 
 class InfrastructureNode(object):
     def __init__(self,id,net_id,local_id=""):
@@ -407,6 +409,40 @@ def add_failure_scenario(G,BASE_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,si
                 #if float(func[1]) == 0.0:
                 #    print "Arc ((",`func[0][1]`+","+`func[0][3]`+"),("+`func[0][2]`+","+`func[0][3]`+")) broken."
 
+def add_Wu_failure_scenario(G,BASE_DIR="../data/Wu_Scenarios/",noSet=1,noSce=15,noNet=3):
+    dam_nodes = {}
+    dam_arcs = {}
+    folderDir = BASE_DIR+'Set%d/Sce%d/' % (noSet,noSce)
+    
+    # Load failure scenarios.
+    if os.path.exists(folderDir):  
+        for k in range(1,noNet+1):
+            dam_nodes[k] = np.loadtxt(folderDir+
+                                    'N%d_Damaged_Nodes.txt' % k).astype('int')
+            dam_arcs[k] = np.loadtxt(folderDir+
+                                    'N%d_Damaged_Arcs.txt' % k).astype('int')        
+        for k in range(1,noNet+1):
+            if dam_nodes[k].size!=0:
+                if dam_nodes[k].size==1:
+                    dam_nodes[k] = [dam_nodes[k]]
+                for v in dam_nodes[k]:
+                    G.G.node[(v+1,k)]['data']['inf_data'].functionality=0.0
+                    G.G.node[(v+1,k)]['data']['inf_data'].repaired=0.0
+                    print "Node (",`v+1`+","+`k`+") broken."
+            if dam_arcs[k].size!=0:
+                if dam_arcs[k].size==1:
+                    dam_arcs[k] = [dam_arcs[k]]
+                for a in dam_arcs[k]:
+                    G.G[(a[0]+1,k)][(a[1]+1,k)]['data']['inf_data'].functionality=0.0
+                    G.G[(a[0]+1,k)][(a[1]+1,k)]['data']['inf_data'].repaired=0.0
+                    print "Arc ((",`a[0]+1`+","+`k`+"),("+`a[1]+1`+","+`k`+")) broken."
+                    
+                    G.G[(a[1]+1,k)][(a[0]+1,k)]['data']['inf_data'].functionality=0.0
+                    G.G[(a[1]+1,k)][(a[0]+1,k)]['data']['inf_data'].repaired=0.0
+                    print "Arc ((",`a[1]+1`+","+`k`+"),("+`a[0]+1`+","+`k`+")) broken."
+    else:
+        pass #Undamaging scenrios are not presesnted with any file or folder in the datasets      
+          
 def load_recovery_scenario(N,T,action_file):
     with open(action_file) as f:
         lines=f.readlines()[1:]

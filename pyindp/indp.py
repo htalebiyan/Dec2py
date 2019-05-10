@@ -2,9 +2,9 @@ from infrastructure import *
 from indputils import *
 from gurobipy import *
 import string
-import platform
+#import platform
 import networkx as nx
-import copy
+#import copy
 import random
 import sys
 
