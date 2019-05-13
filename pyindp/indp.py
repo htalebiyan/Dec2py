@@ -7,6 +7,7 @@ import networkx as nx
 import copy
 import random
 import sys
+import numpy as np
 
 #HOME_DIR="/Users/Andrew/"
 #if platform.system() == "Linux":
@@ -508,6 +509,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         outDirSuffixRes = `sum(v_r)`+'_Layer_Res_Cap'
             
     indp_results=INDPResults()
+    network_history = {}
     if T == 1:
         if print_cmd_line:
             print "Running INDP (T=1) or iterative INDP."
@@ -519,7 +521,8 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers)
         indp_results=results[1]
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
-
+        network_history[0] = InterdepNet.copy()
+        
         for i in range(params["NUM_ITERATIONS"]):
             if print_cmd_line:
                 print "Time Step (iINDP)=",i,"/",params["NUM_ITERATIONS"]
@@ -530,6 +533,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
             # Modify network to account for recovery and calculate components.
             apply_recovery(InterdepNet,indp_results,i+1)
             indp_results.add_components(i+1,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
+            network_history[i+1] = InterdepNet.copy()
 #            print "Num_iters=",params["NUM_ITERATIONS"]
     else:
         # td-INDP formulations. Includes "DELTA_T" parameter for sliding windows to increase
@@ -548,6 +552,8 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers,functionality=functionality)
         indp_results=results[1]
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
+        network_history[0] = InterdepNet.copy()
+        
         for n in range(num_time_windows):
             functionality_t={}
             # Slide functionality matrix according to sliding time window.
@@ -569,6 +575,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
                 # Modify network for recovery actions and calculate components.
                 apply_recovery(InterdepNet,results[1],1)
                 indp_results.add_components(n+1,INDPComponents.calculate_components(results[0],InterdepNet,1,layers=controlled_layers))
+                network_history[n+1] = InterdepNet.copy()
             else:
                 indp_results.extend(results[1],t_offset=1)
                 for t in range(1,T):
@@ -580,6 +587,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         indp_results.to_csv(output_dir,params["SIM_NUMBER"],suffix=suffix)
+        save_results_as_matrix(network_history,output_dir,indp_results,layers,params["SIM_NUMBER"],suffix=suffix)
     return indp_results
         
 
@@ -727,3 +735,37 @@ def save_INDP_model_to_file(model,outModelDir,t,l=0):
         fileID.write('%s %g\n' % (vv.varName, vv.x))
     fileID.write('Obj: %g' % model.objVal)
     fileID.close()
+    
+def save_results_as_matrix(N,output_dir,indp_results,layers,sim_number,suffix):
+    matrix_out_dir = output_dir+'/matrices'
+    if not os.path.exists(matrix_out_dir):
+        os.makedirs(matrix_out_dir) 
+    func_matrix_dict = {}
+    action_matrix_dict = {}
+    time_steps = indp_results.results.keys()
+    node_list={l:[] for l in layers}
+    for n,d in N[0].G.nodes_iter(data=True):
+        node_list[n[1]].append(n[0])
+
+    for l in layers:
+        func_matrix_dict[l] = np.ones((len(node_list[l]), len(time_steps)))
+        action_matrix_dict[l] = np.ones((len(node_list[l]), len(time_steps)))
+        
+    for t in time_steps:
+        for n,d in N[t].G.nodes_iter(data=True):
+            net_id = n[1]
+            local_id = n[0]-1
+            func_matrix_dict[net_id][local_id,t]=d['data']['inf_data'].functionality
+            action_matrix_dict[net_id][local_id,t]=d['data']['inf_data'].functionality
+                
+        for u,v,a in N[t].G.edges_iter(data=True):
+            if a['data']['inf_data'].is_interdep:
+                if N[t].G.node[v]['data']['inf_data'].functionality == 1.0:
+                    if N[t].G.node[u]['data']['inf_data'].functionality == 0.0:
+                        func_matrix_dict[v[1]][v[0]-1,t]=0.0
+    
+    for l in layers:       
+        action_file =matrix_out_dir+'/actions_matrix_'+`sim_number`+'_layer_'+`l`+'_'+suffix+".csv"        
+        np.savetxt(action_file, action_matrix_dict[l], delimiter=",")
+        funct_file =matrix_out_dir+'/func_matrix_'+`sim_number`+'_layer_'+`l`+'_'+suffix+".csv"        
+        np.savetxt(funct_file, func_matrix_dict[l], delimiter=",")

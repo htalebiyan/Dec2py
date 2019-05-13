@@ -23,7 +23,8 @@ def batch_run(params,layers,player_ordering=[3,1]):
         print(InterdepNet)
     else:
         InterdepNet=params["N"]
-    for i in range(1,11):
+#    count_interdependencies(InterdepNet)
+    for i in range(1,3):
         print("Running sample",i,"...")
         add_failure_scenario(InterdepNet,BASE_DIR="../data/INDP_7-20-2015/",magnitude=params["MAGNITUDE"],v=params["V"],sim_number=i)
         params["N"]=InterdepNet
@@ -169,19 +170,19 @@ def main():
 if __name__ == "__main__":
 #    main()
     mags = [8]
-#  failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
+#    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
 #    run_dindp_L3_V3(mags)
-#    run_indp_L3_V3(mags)
-#    run_indp_L3_V3_Layer_Res_Cap(mags)
-#    run_tdindp_L3_V3(mags)
-#    run_tdindp_L3_V3_Layer_Res_Cap(mags)
+    run_indp_L3_V3(mags)
+    run_indp_L3_V3_Layer_Res_Cap(mags)
+    run_tdindp_L3_V3(mags)
+    run_tdindp_L3_V3_Layer_Res_Cap(mags)
+    
 
-
-    method_name = ['judgeCall_results','indp_results','indp_results',
-            'tdindp_results','tdindp_results']
-    resource_cap = ['_Layer_Res_Cap','','_Layer_Res_Cap','','_Layer_Res_Cap']
-    suffixes = ['sum','','','','']
-    sample_range=range(1,11)
-    df = aggregate_results(mags,method_name,resource_cap,suffixes,3,3,sample_range)
-    df = correct_tdindp_results(df,mags,method_name,sample_range)
-    plot_results(df,cost_type='Total',mags=mags)
+#    method_name = ['indp_results','indp_results',
+#            'tdindp_results','tdindp_results']
+#    resource_cap = ['','_Layer_Res_Cap','','_Layer_Res_Cap']
+#    suffixes = ['','','','']
+#    sample_range=range(1,11)
+#    df = aggregate_results(mags,method_name,resource_cap,suffixes,3,3,sample_range)
+#    df = correct_tdindp_results(df,mags,method_name,sample_range)
+#    plot_results(df,cost_type='Total',mags=mags)
