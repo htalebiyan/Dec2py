@@ -31,7 +31,7 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1],judgment_type="O
         
     for m in failSce_param['mags']:   
         for i in failSce_param['sample_range']:
-            print '\n---Running Magnitude'+`m`+' sample '+`i`+'...' 
+            print '\n---Running Magnitude '+`m`+' sample '+`i`+'...' 
             
             params["N"]=InterdepNet
             params["SIM_NUMBER"]=i
@@ -51,7 +51,7 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1],judgment_type="O
             elif params["ALGORITHM"]=="BACKWARDS_INDUCTION":
                 gametree.run_backwards_induction(InterdepNet,i,players=layers,player_ordering=player_ordering,T=params["T"],outdir=params["OUTPUT_DIR"])
             elif params["ALGORITHM"]=="JUDGMENT_CALL":
-                run_judgment_call(params,layers=layers,T=params["T"],saveJCModel=False)
+                run_judgment_call(params,layers=layers,T=params["T"],saveJCModel=True)
 
 def single_scenario_run(params,layers,player_ordering=[3,1],num_samples=1):
     """ Batch run INDP optimization problem for all samples (currently 1-1000), given global parameters.                  
@@ -193,20 +193,22 @@ if __name__ == "__main__":
 ##    main()
 
     ''' Decide the failure scenario'''
-    failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(0,96)}
+    failSce_param = {"type":"WU","set_range":range(1,2),"sce_range":range(15,16)}
+#    failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(0,96)}
 #    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
 #    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
 
         
-    run_indp_L3_V3(failSce_param)
-    run_indp_L3_V3_Layer_Res_Cap(failSce_param)
-    run_tdindp_L3_V3(failSce_param)
-    run_tdindp_L3_V3_Layer_Res_Cap(failSce_param)
+#    run_indp_L3_V3(failSce_param)
+#    run_indp_L3_V3_Layer_Res_Cap(failSce_param)
+#    run_tdindp_L3_V3(failSce_param)
+#    run_tdindp_L3_V3_Layer_Res_Cap(failSce_param)
 #    run_inrg_sample()
 #    run_inrg_L2_V2(failSce_param)
         
-    for jc in ["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]:
-        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type="second_price")
+#    for jc in ["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]:
+    for jc in ["DET-DEMAND"]:
+#        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type="second_price")
         run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type=None)
 #    
 #    """ Print Results """ 
