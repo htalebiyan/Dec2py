@@ -79,7 +79,6 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
                     
                 functionality[P] = create_judgment_matrix(InterdepNet,T,negP,v_r_applied,
                                         actions=None,judgment_type=judgment_type) 
-                #"OPTIMISTIC", "PESSIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"
                 
                 # Make decision based on judgments before communication
                 indp_results = indp(InterdepNet,v_r_applied[P-1],1,layers=layers,
@@ -300,10 +299,11 @@ def create_judgment_matrix(N,T,layers,v_r=[],actions=[],judgment_type="OPTIMISTI
                 sortedpriorityList = sorted(priorityList.items(), 
                     key=operator.itemgetter(1), reverse=True)
                 
+                num_layers = len(layers)
                 if isinstance(v_r, (int, long)):
-                    resCap = v_r
+                    resCap = int(v_r/num_layers)
                 else:
-                    resCap = sum(v_r)   
+                    resCap = int(sum(v_r)/num_layers)  
                            
                 for u,v,a in N.G.edges_iter(data=True):
                     if a['data']['inf_data'].is_interdep and u[1] in layers:
@@ -589,21 +589,20 @@ def correct_tdindp_results(df,mags,method_name,sample_range):
                             (df['cost_type']=='Total'),'cost'] = totalCost
     return df
     
-def plot_performance_curves(df,x='t',y='cost',cost_type='Total',method_name=['tdindp_results'],mags=[6],ci=None):
+def plot_performance_curves(df,x='t',y='cost',cost_type='Total',method_name=['tdindp_results'],ci=None):
     sns.set()
-#    colors = ["windows blue", "amber", "red"]
-    for m in mags:
-        plt.figure()
-        with sns.color_palette("muted"):
-            ax = sns.lineplot(x=x, y=y, hue="method", style='resource_cap',
-                markers=False, ci=ci,
-                data=df[(df['cost_type']==cost_type)&(df['Magnitude']==m)&(df['method'].isin(method_name))])
-            ax.set(xticks=np.arange(0,21,2), title='Magnitude = '+`m`)
+
+    plt.figure()
+    with sns.color_palette("muted"):
+        ax = sns.lineplot(x=x, y=y, hue="method", style='resource_cap',
+            markers=False, ci=ci,
+            data=df[(df['cost_type']==cost_type)&(df['method'].isin(method_name))])              
     return ax
 
-def plot_relative_performance(df,mags,sample_range,cost_type='Total'):    
+def plot_relative_performance(df,sample_range,cost_type='Total'):    
     sns.set()
     resource_cap = df.resource_cap.unique().tolist()
+    mags=df.Magnitude.unique().tolist()
     method_name = df.method.unique().tolist()
     columns = ['Magnitude','cost_type','method','resource_cap','sample','Area','lambda_TC']
     lambda_df = pd.DataFrame(columns=columns)
@@ -616,7 +615,7 @@ def plot_relative_performance(df,mags,sample_range,cost_type='Total'):
                              (df['resource_cap']==rc)]
                       
                     if not rows.empty:
-                        area = np.trapz(rows.cost,dx=1)
+                        area = np.trapz(rows.cost[:10],dx=1)
                     else:
                         area = 'nan'
                     
@@ -630,7 +629,7 @@ def plot_relative_performance(df,mags,sample_range,cost_type='Total'):
                     lambda_df=lambda_df.append(tempdf,ignore_index=True)
                 print 'm %d|method %s|resource cap %s' %(m,jc,rc)  
           
-    ref_method = 'tdindp_results'
+    ref_method = 'indp_results'
     ref_rc = 'Network Cap'
     for m in mags:
         cond = ((lambda_df['Magnitude']==m)&(lambda_df['method']==ref_method)&
@@ -660,23 +659,21 @@ def plot_relative_performance(df,mags,sample_range,cost_type='Total'):
                             (lambda_df['resource_cap']==rc)&(lambda_df['sample']==sr)&
                             (lambda_df['cost_type']==cost_type),'lambda_TC']=lambda_TC
                                                         
-        plt.figure()
+    plt.figure()
 #        plt.rc('text', usetex=True)
 #        plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-        color = sns.color_palette("RdYlGn", 7) #sns.color_palette("YlOrRd", 7)
-        ax = sns.barplot(x='resource_cap',y='lambda_TC',hue="method",
-                         data=lambda_df[(lambda_df['Magnitude']==m)&(lambda_df['cost_type']==cost_type)&(lambda_df['lambda_TC']!='nan')], 
-                         palette=color, linewidth=0.5,edgecolor=[.25,.25,.25],
-                        capsize=.05,errcolor=[.25,.25,.25],errwidth=1)  
-             
-        ax.grid(which='major', axis='y', color=[.75,.75,.75], linewidth=.75)
-        ax.set_xlabel(r'Resource Distribution Method')
-        ax.set_ylabel(r'Mean Relative Measure, E[$\lambda_{%s}$]'%('TC'))
-        ax.xaxis.set_label_position('bottom')  
-    #    ax.xaxis.tick_top()
-        ax.set_facecolor('w')   
-        ax.set(title='Magnitude = '+`m`)
-        plt.legend(handles=ax.get_legend_handles_labels()[0][:7],loc=0,frameon =True,
-                   framealpha=0.0, ncol=1)   
-        print 'm %d|' %(m)  
+    color = sns.color_palette("RdYlGn", 7) #sns.color_palette("YlOrRd", 7)
+    ax = sns.barplot(x='resource_cap',y='lambda_TC',hue="method",
+                     data=lambda_df[(lambda_df['cost_type']==cost_type)&(lambda_df['lambda_TC']!='nan')], 
+                     palette=color, linewidth=0.5,edgecolor=[.25,.25,.25],
+                    capsize=.05,errcolor=[.25,.25,.25],errwidth=1)  
+         
+    ax.grid(which='major', axis='y', color=[.75,.75,.75], linewidth=.75)
+    ax.set_xlabel(r'Resource Distribution Method')
+    ax.set_ylabel(r'Mean Relative Measure, E[$\lambda_{%s}$]'%('TC'))
+    ax.xaxis.set_label_position('bottom')  
+#    ax.xaxis.tick_top()
+    ax.set_facecolor('w')   
+    plt.legend(handles=ax.get_legend_handles_labels()[0][:7],loc=0,frameon =True,
+               framealpha=0.0, ncol=1,bbox_to_anchor=(1.1, 0.1))   
     return ax, lambda_df
