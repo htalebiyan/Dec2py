@@ -407,6 +407,33 @@ def add_failure_scenario(G,BASE_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,si
                 #if float(func[1]) == 0.0:
                 #    print "Arc ((",`func[0][1]`+","+`func[0][3]`+"),("+`func[0][2]`+","+`func[0][3]`+")) broken."
 
+def add_custom_failure_scenario(G,BASE_DIR="../data/INDP_7-20-2015/"):
+    import csv
+    with open(BASE_DIR+'Initial_node.csv') as csvfile:
+        data = csv.reader(csvfile, delimiter=',')
+        for row in data:
+            rawN = row[0]
+            rawN = rawN.split(',')
+            n = (int(rawN[0].strip(' )(')),int(rawN[1].strip(' )(')))
+            state = float(row[1])
+            G.G.node[n]['data']['inf_data'].functionality=state
+            G.G.node[n]['data']['inf_data'].repaired=state
+            
+    with open(BASE_DIR+'Initial_links.csv') as csvfile:
+       data = csv.reader(csvfile, delimiter=',')
+       for row in data:
+           rawUV = row[0]
+           rawUV = rawUV.split(',')
+           u = (int(rawUV[0].strip(' )(')),int(rawUV[1].strip(' )(')))
+           v = (int(rawUV[2].strip(' )(')),int(rawUV[3].strip(' )(')))
+           state = float(row[1])
+           if state==0.0:
+               G.G[u][v]['data']['inf_data'].functionality=state
+               G.G[u][v]['data']['inf_data'].repaired=state
+            
+               G.G[v][u]['data']['inf_data'].functionality=state
+               G.G[v][u]['data']['inf_data'].repaired=state  
+           
 def load_recovery_scenario(N,T,action_file):
     with open(action_file) as f:
         lines=f.readlines()[1:]

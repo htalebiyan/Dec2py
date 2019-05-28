@@ -24,13 +24,18 @@ def batch_run(params,layers,player_ordering=[3,1]):
     else:
         InterdepNet=params["N"]
 #    count_interdependencies(InterdepNet)
-    for i in range(1,3):
+    for i in range(1,2):
         print("Running sample",i,"...")
-        add_failure_scenario(InterdepNet,BASE_DIR="../data/INDP_7-20-2015/",magnitude=params["MAGNITUDE"],v=params["V"],sim_number=i)
+        
+        if params["MAGNITUDE"]==0:
+            add_custom_failure_scenario(InterdepNet,BASE_DIR="../data/custom_disruption/")
+        else:
+            add_failure_scenario(InterdepNet,BASE_DIR="../data/INDP_7-20-2015/",magnitude=params["MAGNITUDE"],v=params["V"],sim_number=i)
+            
         params["N"]=InterdepNet
         params["SIM_NUMBER"]=i
         if params["ALGORITHM"]=="INDP":
-            run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers,saveModel=True)
+            run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers,saveModel=False)
         elif params["ALGORITHM"]=="INFO_SHARE":
             run_info_share(params,layers=layers,T=params["T"])
         elif params["ALGORITHM"]=="INRG":
@@ -169,7 +174,7 @@ def main():
 
 if __name__ == "__main__":
 #    main()
-    mags = [8]
+    mags = [0]
 #    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
 #    run_dindp_L3_V3(mags)
     run_indp_L3_V3(mags)
