@@ -28,30 +28,33 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1]):
     if failSce_param['type']=='WU':
         failSce_param['sample_range']=failSce_param['set_range']
         failSce_param['mags']=failSce_param['sce_range']
-        
+
+    listHD = pd.read_csv('damagedElements_sliceQuantile_0.95.csv')
     for m in failSce_param['mags']:   
         for i in failSce_param['sample_range']:
-            print '\n---Running Magnitude '+`m`+' sample '+`i`+'...' 
+            if len(listHD.loc[(listHD.set == i) & (listHD.sce == m)].index):
             
-            params["N"]=InterdepNet
-            params["SIM_NUMBER"]=i
-            params["MAGNITUDE"]=m
-            
-            if failSce_param['type']=='WU':
-                add_Wu_failure_scenario(InterdepNet,BASE_DIR="../data/Wu_Scenarios/",noSet=i,noSce=m,noNet=3)
-            elif failSce_param['type']=='ANDRES':
-                add_failure_scenario(InterdepNet,BASE_DIR="../data/INDP_7-20-2015/",magnitude=m,v=params["V"],sim_number=i)
-            
-            if params["ALGORITHM"]=="INDP":
-                run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers,saveModel=True)
-            elif params["ALGORITHM"]=="INFO_SHARE":
-                run_info_share(params,layers=layers,T=params["T"])
-            elif params["ALGORITHM"]=="INRG":
-                run_inrg(params,layers=layers,player_ordering=player_ordering)
-            elif params["ALGORITHM"]=="BACKWARDS_INDUCTION":
-                gametree.run_backwards_induction(InterdepNet,i,players=layers,player_ordering=player_ordering,T=params["T"],outdir=params["OUTPUT_DIR"])
-            elif params["ALGORITHM"]=="JUDGMENT_CALL":
-                run_judgment_call(params,layers=layers,T=params["T"],saveJCModel=True)
+                print '\n---Running Magnitude '+`m`+' sample '+`i`+'...' 
+                
+                params["N"]=InterdepNet
+                params["SIM_NUMBER"]=i
+                params["MAGNITUDE"]=m
+                
+                if failSce_param['type']=='WU':
+                    add_Wu_failure_scenario(InterdepNet,BASE_DIR="../data/Wu_Scenarios/",noSet=i,noSce=m,noNet=3)
+                elif failSce_param['type']=='ANDRES':
+                    add_failure_scenario(InterdepNet,BASE_DIR="../data/INDP_7-20-2015/",magnitude=m,v=params["V"],sim_number=i)
+                
+                if params["ALGORITHM"]=="INDP":
+                    run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers,saveModel=True)
+                elif params["ALGORITHM"]=="INFO_SHARE":
+                    run_info_share(params,layers=layers,T=params["T"])
+                elif params["ALGORITHM"]=="INRG":
+                    run_inrg(params,layers=layers,player_ordering=player_ordering)
+                elif params["ALGORITHM"]=="BACKWARDS_INDUCTION":
+                    gametree.run_backwards_induction(InterdepNet,i,players=layers,player_ordering=player_ordering,T=params["T"],outdir=params["OUTPUT_DIR"])
+                elif params["ALGORITHM"]=="JUDGMENT_CALL":
+                    run_judgment_call(params,layers=layers,T=params["T"],saveJCModel=True)
 
 def single_scenario_run(params,layers,player_ordering=[3,1],num_samples=1):
     """ Batch run INDP optimization problem for all samples (currently 1-1000), given global parameters.                  
@@ -112,7 +115,7 @@ def run_inrg_sample():
     run_inrg(params,layers=[1,2],player_ordering=[1,2],suffix="")
     
 def run_indp_L3_V3(failSce_param):
-    params={"NUM_ITERATIONS":20,"OUTPUT_DIR":'../results/indp_results_L3',"V":3,"T":1,"ALGORITHM":"INDP"}
+    params={"NUM_ITERATIONS":10,"OUTPUT_DIR":'../results/indp_results_L3',"V":3,"T":1,"ALGORITHM":"INDP"}
     batch_run(params,failSce_param,layers=[1,2,3])
         
 def run_indp_L3_V3_Layer_Res_Cap(failSce_param):
@@ -148,7 +151,7 @@ def run_tdindp_L3_V3_Layer_Res_Cap(failSce_param):
     batch_run(params,failSce_param,layers=[1,2,3])
 
 def run_dindp_L3_V3(failSce_param,judgment_type=None,auction_type=None):
-    params={"NUM_ITERATIONS":20,"OUTPUT_DIR":'../results/judgeCall_'+judgment_type+'_results_L3',
+    params={"NUM_ITERATIONS":10,"OUTPUT_DIR":'../results/judgeCall_'+judgment_type+'_results_L3',
             "V":[1,1,1],"T":1,"ALGORITHM":"JUDGMENT_CALL",
             "JUDGMENT_TYPE":judgment_type,"AUCTION_TYPE":auction_type}
     batch_run(params,failSce_param,layers=[1,2,3])
@@ -193,7 +196,7 @@ if __name__ == "__main__":
 ##    main()
 
     ''' Decide the failure scenario'''
-    failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(3,6)}
+    failSce_param = {"type":"WU","set_range":range(2,3),"sce_range":range(13,14)}
 #    failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(0,96)}
 #    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
 #    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
@@ -207,9 +210,9 @@ if __name__ == "__main__":
 #    run_inrg_L2_V2(failSce_param)
         
 ##    for jc in ["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]:
-#    for jc in ["PESSIMISTIC","OPTIMISTIC"]:
-##        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type="second_price")
-#        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type=None)
+    for jc in ["OPTIMISTIC"]:
+#        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type="second_price")
+        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type=None)
 ##    
 ##    """ Print Results """ 
 ##    method_name = ['judgeCall_PESSIMISTIC_results','judgeCall_RANDOM_results',
@@ -227,24 +230,24 @@ if __name__ == "__main__":
 ##                    '','_fixed_layer_cap','','_fixed_layer_cap']
 ##    suffixes = ['Real_sum','Real_sum','Real_sum','Real_sum','Real_sum',
 ##                'Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','','','','']
-####   
+#####   
 #    method_name = ['judgeCall_PESSIMISTIC_results','judgeCall_OPTIMISTIC_results',
 #                   'indp_results']
 #    resource_cap = ['_fixed_layer_cap','_fixed_layer_cap','']
 #    suffixes = ['Real_sum','Real_sum','']
-#####
-#####
-#    sample_range=failSce_param["set_range"]
-#    mags=failSce_param['sce_range']
-#    df = read_and_aggregate_results(mags,method_name,resource_cap,suffixes,3,3,sample_range)
+#######
+#######
+    sample_range=failSce_param["set_range"]
+    mags=failSce_param['sce_range']
+    df = read_and_aggregate_results(mags,method_name,resource_cap,suffixes,3,3,sample_range)
 #    df = correct_tdindp_results(df,mags,method_name,sample_range)
-#    
-#    
-#        
-#    df['resource_cap'] = df['resource_cap'].replace('', 'Network Cap')
-#    df['resource_cap'] = df['resource_cap'].replace('_fixed_layer_cap', 'Layer Cap')
-#    df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap', 'Auction') 
-#    plot_performance_curves(df,cost_type='Total',method_name=method_name,ci=None)
+    
+    
+        
+    df['resource_cap'] = df['resource_cap'].replace('', 'Network Cap')
+    df['resource_cap'] = df['resource_cap'].replace('_fixed_layer_cap', 'Layer Cap')
+    df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap', 'Auction') 
+    plot_performance_curves(df,cost_type='Total',method_name=method_name,ci=None)
     ax,lambda_df = plot_relative_performance(df,sample_range=sample_range)
 ####    df[df['sample']<20]
 #    

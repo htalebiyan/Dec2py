@@ -89,7 +89,7 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
                 Dindp_results[P].extend(indp_results[1],t_offset=i+1)
                 # Save models to file
                 if saveJCModel:
-                    save_INDP_model_to_file(indp_results[0],output_dir+"/Model",i,P)
+                    save_INDP_model_to_file(indp_results[0],output_dir+"/Model",i+1,P)
 
                 # Modify network to account for recovery and calculate components.
                 apply_recovery(InterdepNet,Dindp_results[P],i+1)
@@ -105,7 +105,7 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
                 m = uncorrectedResults[P][0]
                 N = InterdepNet
                 indp_results_Real,realizations = Decentralized_INDP_Realized_Performance(N,m,
-                                mNeg,uncorrectedResults[P][1],T,i,
+                                mNeg,uncorrectedResults[P][1],T,i+1,
                                 output_dir=output_dir,layers=layers,
                                 print_cmd=print_cmd,saveJCModel=saveJCModel,
                                 functionality=functionality[P],controlled_layers=[P])
@@ -117,7 +117,7 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
                     output_dir_judgments= output_dir + '/judgments'
                     write_judgments_csv(output_dir_judgments,functionality[P],realizations,
                                         sample_num=params["SIM_NUMBER"],
-                                        agent=P,time=i,suffix="")      
+                                        agent=P,time=i+1,suffix="")      
         # Calculate sum of costs    
         Dindp_results_sum = INDPResults()
         Dindp_results_Real_sum = INDPResults()
@@ -131,8 +131,8 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
                     sumTemp_Real = indp_results_initial[1][0]['costs'][cost_type]
                 else:
                     for P in layers:
-                         sumTemp += Dindp_results[P][i]['costs'][cost_type]
-                         sumTemp_Real += Dindp_results_Real[P][i]['costs'][cost_type]
+                        sumTemp += Dindp_results[P][i]['costs'][cost_type]
+                        sumTemp_Real += Dindp_results_Real[P][i]['costs'][cost_type]
                 Dindp_results_sum.add_cost(i,cost_type,sumTemp)
                 Dindp_results_Real_sum.add_cost(i,cost_type,sumTemp_Real)
                 
@@ -219,16 +219,18 @@ def Decentralized_INDP_Realized_Performance(N,m,mNeg,indp_results,T=1,
                 ifuNonFunctional = (u in N_prime_nodes and srcValue == 0.0)
                 vVar='w_'+`v`+","+`t` 
                 destValue = round(m.getVarByName(vVar).x)
-                
+                ifvFunctional = not (v in N_prime_nodes and destValue == 0.0)
                 if saveJCModel:
                     realCount += 1
                     realizations[t][realCount]={'uValue':srcValue,'vValue':destValue,
                                 'vName':v,'uName':u,'udamaged':(u in N_prime_nodes),
-                                'ufunctional':ifuNonFunctional,'vCorrected':False}
+                                'uNonfunctional':ifuNonFunctional,'vfunctional':ifvFunctional,
+                                'vCorrected':False}
 #                print '('+ `ifuNonFunctional` + ',' + `destValue` + ')'
-                if ifuNonFunctional and destValue==1.0:
+                
+                if ifuNonFunctional and ifvFunctional:
                     if print_cmd:
-                        print 'CORRECTION: '+vVar+'='+ `destValue`+' depends on nonfunctional '+uVar+' ->Now '+vVar+'=0.0'
+                        print 'CORRECTION: functional '+vVar+' forced to 0.0 b/c depends on nonfunctional '+uVar
                     mCopy.getVarByName(vVar).LB = 0.0
                     mCopy.getVarByName(vVar).UB = 0.0  
                     if saveJCModel:
@@ -507,55 +509,58 @@ def write_judgments_csv(outdir,functionality,realizations,sample_num=1,agent=1,t
         os.makedirs(outdir)  
     judge_file=outdir+'/judge_'+`sample_num`+"_agent"+`agent`+'_time'+`time`+'_'+suffix+".csv"
     
-    header = "no.,src node,src layer,judged src functionaluty,src actual value,if src damaged,if src nonfunctional,dest Name, dest judged layer, dest value, if dest corrected"
+    header = "no.,src node,src layer,judged src functionaluty,src actual value,if src damaged,if src nonfunctional,dest Name, dest layer, dest value,if dest functional, if dest corrected"
     with open(judge_file,'w') as f:
         f.write(header+"\n")
         for t,timeValue in realizations.items():
             for c,Value in timeValue.items():
                 u = realizations[t][c]['uName']
                 row = `c`+','+`u[0]`+','+`u[1]`+','+`functionality[t][u]`+','+`realizations[t][c]['uValue']`+\
-                    ','+`realizations[t][c]['udamaged']`+','+`realizations[t][c]['ufunctional']`+\
+                    ','+`realizations[t][c]['udamaged']`+','+`realizations[t][c]['uNonfunctional']`+\
                     ','+`realizations[t][c]['vName'][0]`+','+`realizations[t][c]['vName'][1]`+\
-                    ','+`realizations[t][c]['vValue']`+','+`realizations[t][c]['vCorrected']`
+                    ','+`realizations[t][c]['vValue']`+','+`realizations[t][c]['vfunctional']`+','+`realizations[t][c]['vCorrected']`
                 f.write(row+'\n')
 
 def read_and_aggregate_results(mags,method_name,resource_cap,suffixes,L,v,sample_range):
     columns = ['t','Magnitude','cost_type','method','resource_cap','sample','cost']
     agg_results = pd.DataFrame(columns=columns)
+    listHD = pd.read_csv('damagedElements_sliceQuantile_0.95.csv')
+            
     for m in mags:
         for i in range(len(method_name)):
             full_suffix = '_L'+`L`+'_m'+`m`+'_v'+`v`+resource_cap[i]
             result_dir = '../results/'+method_name[i]+full_suffix
             
-            # Save average values to file
-            results_average = INDPResults()
-            results_average = results_average.from_results_dir(outdir=result_dir,
-                                sample_range=sample_range,suffix=suffixes[i])
-            
-            outdir = '../results/average_cost_all/'
-            if not os.path.exists(outdir):
-                os.makedirs(outdir) 
-            costs_file =outdir+method_name[i]+full_suffix+"_average_costs.csv"
-            with open(costs_file,'w') as f:
-                f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total\n")
-                for t in results_average.results:
-                    costs=results_average.results[t]['costs']
-                    f.write(`t`+","+`costs["Space Prep"]`+","+`costs["Arc"]`+","
-                            +`costs["Node"]`+","+`costs["Over Supply"]`+","+
-                            `costs["Under Supply"]`+","+`costs["Flow"]`+","+
-                            `costs["Total"]`+"\n")            
+#            # Save average values to file
+#            results_average = INDPResults()
+#            results_average = results_average.from_results_dir(outdir=result_dir,
+#                                sample_range=sample_range,suffix=suffixes[i])
+#            
+#            outdir = '../results/average_cost_all/'
+#            if not os.path.exists(outdir):
+#                os.makedirs(outdir) 
+#            costs_file =outdir+method_name[i]+full_suffix+"_average_costs.csv"
+#            with open(costs_file,'w') as f:
+#                f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total\n")
+#                for t in results_average.results:
+#                    costs=results_average.results[t]['costs']
+#                    f.write(`t`+","+`costs["Space Prep"]`+","+`costs["Arc"]`+","
+#                            +`costs["Node"]`+","+`costs["Over Supply"]`+","+
+#                            `costs["Under Supply"]`+","+`costs["Flow"]`+","+
+#                            `costs["Total"]`+"\n")            
                     
             # Save all results to Pandas dataframe
             sample_result = INDPResults()
             for s in sample_range:
-                sample_result=sample_result.from_csv(result_dir,s,suffix=suffixes[i])
-                for t in sample_result.results:
-                    for c in sample_result.cost_types:
-                        values = [t,m,c,method_name[i],resource_cap[i],s,
-                                float(sample_result[t]['costs'][c])]
-#                        df2 = pd.DataFrame(values, columns=columns)
-                        agg_results = agg_results.append(dict(zip(columns,values)), ignore_index=True)
-    
+                if len(listHD.loc[(listHD.set == s) & (listHD.sce == m)].index):#!!!!!!!!!!!
+                    sample_result=sample_result.from_csv(result_dir,s,suffix=suffixes[i])
+                    for t in sample_result.results:
+                        for c in sample_result.cost_types:
+                            values = [t,m,c,method_name[i],resource_cap[i],s,
+                                    float(sample_result[t]['costs'][c])]
+    #                        df2 = pd.DataFrame(values, columns=columns)
+                            agg_results = agg_results.append(dict(zip(columns,values)), ignore_index=True)
+            print 'm %d|%s|Aggregated' %(m,method_name[i])  
     return agg_results
 
 def correct_tdindp_results(df,mags,method_name,sample_range):    
@@ -606,28 +611,31 @@ def plot_relative_performance(df,sample_range,cost_type='Total'):
     method_name = df.method.unique().tolist()
     columns = ['Magnitude','cost_type','method','resource_cap','sample','Area','lambda_TC']
     lambda_df = pd.DataFrame(columns=columns)
+    listHD = pd.read_csv('damagedElements_sliceQuantile_0.95.csv')
     for m in mags:
         for jc in method_name:
             for rc in resource_cap:
-                for sr in sample_range:
-                    rows = df[(df['Magnitude']==m)&(df['method']==jc)&
-                             (df['sample']==sr)&(df['cost_type']==cost_type)&
-                             (df['resource_cap']==rc)]
-                      
-                    if not rows.empty:
-                        area = np.trapz(rows.cost[:10],dx=1)
-                    else:
-                        area = 'nan'
-                    
-                    tempdf = pd.Series()
-                    tempdf['Magnitude'] = m
-                    tempdf['cost_type'] = cost_type
-                    tempdf['method'] = jc
-                    tempdf['resource_cap'] = rc                    
-                    tempdf['sample'] = sr  
-                    tempdf['Area'] = area  
-                    lambda_df=lambda_df.append(tempdf,ignore_index=True)
-                print 'm %d|method %s|resource cap %s' %(m,jc,rc)  
+                if jc=='indp_results' or rc=='Layer Cap':#!!!!!!!!!!!!!!!
+                    for sr in sample_range:
+                        if len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):#!!!!!!!!!!!
+                            rows = df[(df['Magnitude']==m)&(df['method']==jc)&
+                                     (df['sample']==sr)&(df['cost_type']==cost_type)&
+                                     (df['resource_cap']==rc)]
+                              
+                            if not rows.empty:
+                                area = np.trapz(rows.cost[:20],dx=1)
+                            else:
+                                area = 'nan'
+                            
+                            tempdf = pd.Series()
+                            tempdf['Magnitude'] = m
+                            tempdf['cost_type'] = cost_type
+                            tempdf['method'] = jc
+                            tempdf['resource_cap'] = rc                    
+                            tempdf['sample'] = sr  
+                            tempdf['Area'] = area  
+                            lambda_df=lambda_df.append(tempdf,ignore_index=True)
+                    print 'm %d|method %s|resource cap %s' %(m,jc,rc)  
           
     ref_method = 'indp_results'
     ref_rc = 'Network Cap'
@@ -638,26 +646,27 @@ def plot_relative_performance(df,sample_range,cost_type='Total'):
             print 'Reference type is not here!'
             break
         for sr in sample_range: 
-            ref_area=float(lambda_df.loc[(lambda_df['Magnitude']==m)&(lambda_df['method']==ref_method)&
-                            (lambda_df['resource_cap']==ref_rc)&(lambda_df['sample']==sr)&
-                            (lambda_df['cost_type']==cost_type),'Area'].values)
-            for jc in method_name:
-                for rc in resource_cap:
-                    area = lambda_df.loc[(lambda_df['Magnitude']==m)&(lambda_df['method']==jc)&
-                            (lambda_df['resource_cap']==rc)&(lambda_df['sample']==sr)&
-                            (lambda_df['cost_type']==cost_type),'Area'].values
+            if len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):#!!!!!!!!!!!
+                ref_area=float(lambda_df.loc[(lambda_df['Magnitude']==m)&(lambda_df['method']==ref_method)&
+                                (lambda_df['resource_cap']==ref_rc)&(lambda_df['sample']==sr)&
+                                (lambda_df['cost_type']==cost_type),'Area'].values)
+                for jc in method_name:
+                    for rc in resource_cap:
+                        area = lambda_df.loc[(lambda_df['Magnitude']==m)&(lambda_df['method']==jc)&
+                                (lambda_df['resource_cap']==rc)&(lambda_df['sample']==sr)&
+                                (lambda_df['cost_type']==cost_type),'Area'].values
+                            
+                        lambda_TC = 'nan'
+                        if ref_area != 0.0 and area != 'nan':
+                            lambda_TC = (ref_area-float(area))/ref_area
+                        elif area == 0.0:
+                            lambda_TC = 0.0
+                        else:
+                            pass
                         
-                    lambda_TC = 'nan'
-                    if ref_area != 0.0 and area != 'nan':
-                        lambda_TC = (ref_area-float(area))/ref_area
-                    elif area == 0.0:
-                        lambda_TC = 0.0
-                    else:
-                        pass
-                    
-                    lambda_df.loc[(lambda_df['Magnitude']==m)&(lambda_df['method']==jc)&
-                            (lambda_df['resource_cap']==rc)&(lambda_df['sample']==sr)&
-                            (lambda_df['cost_type']==cost_type),'lambda_TC']=lambda_TC
+                        lambda_df.loc[(lambda_df['Magnitude']==m)&(lambda_df['method']==jc)&
+                                (lambda_df['resource_cap']==rc)&(lambda_df['sample']==sr)&
+                                (lambda_df['cost_type']==cost_type),'lambda_TC']=lambda_TC
                                                         
     plt.figure()
 #        plt.rc('text', usetex=True)
