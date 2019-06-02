@@ -12,7 +12,7 @@ import sys
 #if platform.system() == "Linux":
 #    HOME_DIR="/home/andrew/"
 
-def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_actions=False):
+def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_actions=False,fixed_vars=None):
     """INDP optimization problem. Also solves td-INDP if T > 1.
     :param N: An InfrastructureNetwork instance (created in infrastructure.py)
     :param v_r: Vector of number of resources given to each layer in each timestep. If the size of the vector is 1, it shows the total number of resources for all layers.
@@ -103,10 +103,11 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
             else:
                 objFunc+=(float(a['data']['inf_data'].reconstruction_cost)/2.0)*m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))
         for n,d in N_hat_prime:
-            if T == 1:
-                objFunc+=d['data']['inf_data'].reconstruction_cost*m.getVarByName('w_'+str(n)+","+str(t))
-            else:
-                objFunc+=d['data']['inf_data'].reconstruction_cost*m.getVarByName('w_tilde_'+str(n)+","+str(t))
+            if d['data']['inf_data'].repaired==0.0:
+                if T == 1:
+                    objFunc+=d['data']['inf_data'].reconstruction_cost*m.getVarByName('w_'+str(n)+","+str(t))
+                else:
+                    objFunc+=d['data']['inf_data'].reconstruction_cost*m.getVarByName('w_tilde_'+str(n)+","+str(t))
         for n,d in N_hat.nodes_iter(data=True):
             objFunc+=d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t))
             objFunc+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t))
@@ -267,7 +268,17 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                     else:
                         recovery_sum+=m.getVarByName('y_tilde_'+`u`+","+`v`+","+`t`)
                 m.addConstr(recovery_sum,GRB.GREATER_EQUAL,1,"Forced action constraint")
-
+                
+        # Variables we wish to be fixed    
+        if fixed_vars:
+            for varName,value in fixed_vars.items():
+                if m.getVarByName(varName) is None:
+                    print varName
+                    pass
+                else:
+                    m.getVarByName(varName).LB = value
+                    m.getVarByName(varName).UB = value
+                
         # Geographic space constraints
         for s in S:
             for n,d in N_hat_prime:
@@ -369,8 +380,19 @@ def apply_recovery(N,indp_results,t):
             # Node recovery action.
             node=tuple([int(x) for x in string.split(action,".")])
             #print "Applying recovery:",node
+            N.G.node[node]['data']['inf_data'].repaired=1.0
             N.G.node[node]['data']['inf_data'].functionality=1.0
+            
+    for u,v,a in N.G.edges_iter(data=True):
+        if a['data']['inf_data'].is_interdep:
+            if N.G.node[u]['data']['inf_data'].functionality == 0.0:
+                N.G.node[v]['data']['inf_data'].functionality = 0.0
+            elif N.G.node[v]['data']['inf_data'].repaired == 1.0:
+                N.G.node[v]['data']['inf_data'].functionality = 1.0
+            else:
+                print "Seriously?! A non-binary functionality value?!"
 
+                
 def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
     """Creates a functionality map for input into the functionality parameter in the indp function.
     :param N: An InfrastructureNetwork instance (created in infrastructure.py)
@@ -518,6 +540,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         # Initial calculations.
         results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers)
         indp_results=results[1]
+        apply_recovery(InterdepNet,indp_results,0)
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
 
         for i in range(params["NUM_ITERATIONS"]):
