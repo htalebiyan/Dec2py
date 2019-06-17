@@ -97,14 +97,14 @@ class INDPResults:
             for t in self.results:
                 costs=self.results[t]['costs']
                 f.write(`t`+","+`costs["Space Prep"]`+","+`costs["Arc"]`+","+`costs["Node"]`+","+`costs["Over Supply"]`+","+`costs["Under Supply"]`+","+`costs["Flow"]`+","+`costs["Total"]`+"\n")
-        with open(perc_file,'w') as f:
-            f.write("t,gc_size,num_components\n")
-            for t in self.results:
-                f.write(`t`+","+`self.results[t]['gc_size']`+","+`self.results[t]['num_components']`+"\n")
-        with open(comp_file,'w') as f:
-            f.write("t,components\n")
-            for t in self.results:
-                f.write(`t`+","+self.results[t]['components'].to_csv_string()+"\n")
+#        with open(perc_file,'w') as f:
+#            f.write("t,gc_size,num_components\n")
+#            for t in self.results:
+#                f.write(`t`+","+`self.results[t]['gc_size']`+","+`self.results[t]['num_components']`+"\n")
+#        with open(comp_file,'w') as f:
+#            f.write("t,components\n")
+#            for t in self.results:
+#                f.write(`t`+","+self.results[t]['components'].to_csv_string()+"\n")
     @classmethod
     def from_csv(clss,outdir,sample_num=1,suffix=""):
         action_file=outdir+"/actions_"+`sample_num`+"_"+suffix+".csv"
@@ -112,7 +112,7 @@ class INDPResults:
         perc_file  =outdir+"/percolation_"+`sample_num`+"_"+suffix+".csv"
         comp_file  =outdir+"/components_" +`sample_num`+"_"+suffix+".csv"
         indp_result=INDPResults()
-        if os.path.isfile(action_file):
+        if os.path.isfile(action_file): #!!!
             with open(action_file) as f:
                 lines=f.readlines()[1:]
                 for line in lines:
@@ -129,24 +129,24 @@ class INDPResults:
                     costs=data[1:]
                     for ct in range(len(cost_types)):
                         indp_result.add_cost(t,cost_types[ct],float(costs[ct]))
-            with open(perc_file) as f:
-                lines=f.readlines()[1:]
-                for line in lines:
-                    data=string.split(str.strip(line),",")
-                    t=int(data[0])
-                    indp_result.add_gc_size(t,int(data[1]))
-                    indp_result.add_num_components(t,int(data[2]))
-            with open(comp_file) as f:
-                lines=f.readlines()[1:]
-                for line in lines:
-                    data=string.split(str.strip(line),",")
-                    t=int(data[0])
-                    comps=data[1:]
-                    if comps[0]!='':
-                        indp_result.add_components(t,INDPComponents.from_csv_string(comps))
-                    else:
-#                        print "Caution: No component."
-                        pass
+#            with open(perc_file) as f:
+#                lines=f.readlines()[1:]
+#                for line in lines:
+#                    data=string.split(str.strip(line),",")
+#                    t=int(data[0])
+#                    indp_result.add_gc_size(t,int(data[1]))
+#                    indp_result.add_num_components(t,int(data[2]))
+#            with open(comp_file) as f:
+#                lines=f.readlines()[1:]
+#                for line in lines:
+#                    data=string.split(str.strip(line),",")
+#                    t=int(data[0])
+#                    comps=data[1:]
+#                    if comps[0]!='':
+#                        indp_result.add_components(t,INDPComponents.from_csv_string(comps))
+#                    else:
+##                        print "Caution: No component."
+#                        pass
         return indp_result
 
     @classmethod

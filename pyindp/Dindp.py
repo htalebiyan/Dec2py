@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 from indp import *
 import os.path
 import operator
+import networkx as nx
+from infrastructure import *
+from indputils import *
 
 def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJCModel=False,validate=False):
     """ Solves an INDP problem with specified parameters using a decentralized hueristic called Judgment Call . Outputs to directory specified in params['OUTPUT_DIR'].
@@ -40,9 +43,11 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
     Dindp_results_Real={P:INDPResults() for P in layers} 
     currentTotalCost = {}
     if T == 1: 
+        print "Running Judgment Call with type "+judgment_type #+" and "+auction_type #!!!
+        if print_cmd:
+            print "Num iters=",params["NUM_ITERATIONS"]
         # Initial calculations.
         indp_results_initial=indp(InterdepNet,0,1,layers,controlled_layers=layers)
-        
         # Initial costs are just saved to cost_#_sum.csv not to cost_#_P.csv (to be corrected)
         # Initial components are not saved (to be corrected)
         # Components of all layers are not saved to components_#_sum.csv(to be corrected)
@@ -55,7 +60,7 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
         res_allocate = {}
         for i in range(num_iterations):
             if print_cmd:
-                print "\nIteration "+`i`+"/"+`num_iterations-1`
+                print "\n--Iteration "+`i`+"/"+`num_iterations-1`
             
             v_r_applied = []
             if auction_type:
@@ -71,20 +76,22 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
             functionality = {p:{} for p in layers}
             uncorrectedResults = {}  
             if print_cmd:
-                print "\nJudgment: ",                    
+                print "Judgment: ",                    
             for P in layers:
-                negP=[x for x in layers if x != P]
                 if print_cmd:
                     print "Layer-%d"%(P),
                     
+                negP=[x for x in layers if x != P]    
                 functionality[P] = create_judgment_matrix(InterdepNet,T,negP,v_r_applied,
                                         actions=None,judgment_type=judgment_type) 
                 
                 # Make decision based on judgments before communication
                 indp_results = indp(InterdepNet,v_r_applied[P-1],1,layers=layers,
                                 controlled_layers=[P],functionality= functionality[P])
+                        
                 # Save models for re-evaluation after communication
-                uncorrectedResults[P] = indp_results
+                uncorrectedResults[P] = indp_results[1]
+                
                 # Save results of decisions based on judgments 
                 Dindp_results[P].extend(indp_results[1],t_offset=i+1)
                 # Save models to file
@@ -97,27 +104,25 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
             
             # Re-evaluate judgments based on other agents' decisions
             if print_cmd:
-                print "\nRe-evaluation: "
+                print "\nRe-evaluation: ",
             for P in layers:
                 if print_cmd:
-                    print "Layer-%d"%(P)        
-                mNeg={x:y[0] for x,y in uncorrectedResults.items() if x != P}   
-                m = uncorrectedResults[P][0]
-                N = InterdepNet
-                indp_results_Real,realizations = Decentralized_INDP_Realized_Performance(N,m,
-                                mNeg,uncorrectedResults[P][1],T,i+1,
-                                output_dir=output_dir,layers=layers,
-                                print_cmd=print_cmd,saveJCModel=saveJCModel,
-                                functionality=functionality[P],controlled_layers=[P])
-                Dindp_results_Real[P].extend(indp_results_Real,t_offset=i+1)
+                    print "Layer-%d"%(P),  
+                                     
+                indp_results_Real,realizations = Decentralized_INDP_Realized_Performance(InterdepNet,i+1,
+                                uncorrectedResults[P],functionality=functionality[P],T=1,layers=layers,controlled_layers=[P],
+                                output_dir=output_dir,print_cmd=print_cmd,saveJCModel=saveJCModel)  
+                             
+                Dindp_results_Real[P].extend(indp_results_Real[1],t_offset=i+1)
                 
                 if auction_type:
                     currentTotalCost[P]=indp_results_Real[0]['costs']['Total']
                 if saveJCModel:
+                    save_INDP_model_to_file(indp_results_Real[0],output_dir+"/Model",i+1,P,suffix='Real')  
                     output_dir_judgments= output_dir + '/judgments'
-                    write_judgments_csv(output_dir_judgments,functionality[P],realizations,
+                    write_judgments_csv(InterdepNet,output_dir_judgments,functionality[P],realizations,
                                         sample_num=params["SIM_NUMBER"],
-                                        agent=P,time=i+1,suffix="")      
+                                        agent=P,time=i+1,suffix="")       
         # Calculate sum of costs    
         Dindp_results_sum = INDPResults()
         Dindp_results_Real_sum = INDPResults()
@@ -164,114 +169,165 @@ demand deficit at the end of each step according to the what the other agent
 actually decides (as opposed to according to the guess)
 For output items, look at the description of Decentralized_INDP()
 '''
-def Decentralized_INDP_Realized_Performance(N,m,mNeg,indp_results,T=1,
-                                            iteration=0,output_dir='',
-                                            print_cmd=False,saveJCModel=False,
-                                            layers=[1,3],controlled_layers=[1],
-                                            functionality=[]):
+def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionality,
+                                            T=1,layers=[1,2,3],controlled_layers=[1],
+                                            output_dir='',print_cmd=False,saveJCModel=False):
+    
     G_prime_nodes = [n[0] for n in N.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in layers]
     G_prime = N.G.subgraph(G_prime_nodes)
-    # Damaged nodes in whole network
-    N_prime = [n for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].functionality==0.0]
-    N_prime_nodes = [n[0] for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].functionality==0.0]
     # Nodes in controlled network.
     N_hat_nodes   = [n[0] for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in controlled_layers]
-    N_hat = G_prime.subgraph(N_hat_nodes)
-    # Damaged nodes in controlled network.
-    N_hat_prime= [n for n in N_hat.nodes_iter(data=True) if n[1]['data']['inf_data'].functionality==0.0]
-    # Damaged arcs in whole network
-    A_prime = [(u,v,a) for u,v,a in G_prime.edges_iter(data=True) if a['data']['inf_data'].functionality==0.0]
-    # Damaged arcs in controlled network.
-    A_hat_prime = [(u,v,a) for u,v,a in A_prime if N_hat.has_node(u) and N_hat.has_node(v)]
-    #print "A_hat_prime=",A_hat_prime
-    S=N.S
+#    N_hat = G_prime.subgraph(N_hat_nodes)
     
-    m.update() # If you have unstaged changes in the model
-    mCopy = m.copy() # Avoid modifying the original model
-    mCopy.setParam('OutputFlag',False)
-    # Fix decision variables (so the decision for the current time step doesn't change)  
-    
+    interdep_nodes={}
+    for u,v,a in G_prime.edges_iter(data=True):
+        if a['data']['inf_data'].is_interdep and G_prime.node[v]['data']['inf_data'].net_id in controlled_layers:
+            if v not in interdep_nodes:
+                interdep_nodes[v]=[]
+            interdep_nodes[v].append((u,G_prime.node[u]['data']['inf_data'].functionality))
+            
     realizations = {}
-    for t in range(T):
-        if t not in realizations:
-            realizations[t] = {}
-        for n in N_hat_nodes:
-            nodeVar='w_'+`n`+","+`t`  
-            mCopy.getVarByName(nodeVar).LB = round(m.getVarByName(nodeVar).x)
-            mCopy.getVarByName(nodeVar).UB = round(m.getVarByName(nodeVar).x) 
-        for u,v,a in A_hat_prime:
-            arcVar='y_'+`u`+","+`v`+","+`t`   
-            mCopy.getVarByName(arcVar).LB = round(m.getVarByName(arcVar).x)
-            mCopy.getVarByName(arcVar).UB = round(m.getVarByName(arcVar).x) 
-        for s in S:
-            zoneVar = 'z_'+`s.id`+","+`t`
-            mCopy.getVarByName(zoneVar).LB = round(m.getVarByName(zoneVar).x)
-            mCopy.getVarByName(zoneVar).UB = round(m.getVarByName(zoneVar).x) 
-            
-        # Correct decisions based on the wrong guess (which has not been realized) 
-        realCount = 0
-        for u,v,a in G_prime.edges_iter(data=True):
-            if N_hat.has_node(v) and a['data']['inf_data'].is_interdep:
-#                print 'src '+ `u` + ' dest ' + `v`
-                uVar='w_'+`u`+","+`t` 
-                srcLayer = a['data']['inf_data'].source_layer
-                srcValue = round(mNeg[srcLayer].getVarByName(uVar).x)
-                ifuNonFunctional = (u in N_prime_nodes and srcValue == 0.0)
-                vVar='w_'+`v`+","+`t` 
-                destValue = round(m.getVarByName(vVar).x)
-                ifvFunctional = not (v in N_prime_nodes and destValue == 0.0)
-                if saveJCModel:
-                    realCount += 1
-                    realizations[t][realCount]={'uValue':srcValue,'vValue':destValue,
-                                'vName':v,'uName':u,'udamaged':(u in N_prime_nodes),
-                                'uNonfunctional':ifuNonFunctional,'vfunctional':ifvFunctional,
-                                'vCorrected':False}
-#                print '('+ `ifuNonFunctional` + ',' + `destValue` + ')'
-                
-                if ifuNonFunctional and ifvFunctional:
-                    if print_cmd:
-                        print 'CORRECTION: functional '+vVar+' forced to 0.0 b/c depends on nonfunctional '+uVar
-                    mCopy.getVarByName(vVar).LB = 0.0
-                    mCopy.getVarByName(vVar).UB = 0.0  
-                    if saveJCModel:
-                        realizations[t][realCount]['vCorrected'] = True
-                                       
-    ''' OBJ & OUTPUT '''       
-    mCopy.update()
-    mCopy.optimize()                    
-    # Save results.
-    indp_results_Real=INDPResults()
-    if mCopy.getAttr("Status")==GRB.OPTIMAL:
-        for t in range(T):
-            costs = indp_results.results[t]['costs']    
-            nodeCost=costs["Node"]
-            indp_results_Real.add_cost(t,"Node",nodeCost)
-            arcCost=costs["Arc"]
-            indp_results_Real.add_cost(t,"Arc",arcCost)
-            spacePrepCost=costs["Space Prep"]
-            indp_results_Real.add_cost(t,"Space Prep",spacePrepCost)
-            flowCost=0.0
-            overSuppCost=0.0
-            underSuppCost=0.0
-            # Calculate under/oversupply costs.
-            for n,d in N_hat.nodes_iter(data=True):
-                overSuppCost+= d['data']['inf_data'].oversupply_penalty*mCopy.getVarByName('delta+_'+`n`+","+`t`).x
-                underSuppCost+=d['data']['inf_data'].undersupply_penalty*mCopy.getVarByName('delta-_'+`n`+","+`t`).x
-            indp_results_Real.add_cost(t,"Over Supply",overSuppCost)
-            indp_results_Real.add_cost(t,"Under Supply",underSuppCost)
-            # Calculate flow costs.
-            for u,v,a in N_hat.edges_iter(data=True):
-                flowCost+=a['data']['inf_data'].flow_cost*mCopy.getVarByName('x_'+`u`+","+`v`+","+`t`).x
-            indp_results_Real.add_cost(t,"Flow",flowCost)
-            # Calculate total costs.
-            indp_results_Real.add_cost(t,"Total",flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost)
-            indp_results_Real.add_cost(t,"Total no disconnection",spacePrepCost+arcCost+flowCost+nodeCost)
-            
-    if saveJCModel:
-        save_INDP_model_to_file(mCopy,output_dir+"/Model",iteration,controlled_layers[0],suffix='Real')  
+    for t in range(T): 
         
-    return indp_results_Real,realizations
-    
+        realCount = 0  
+        realizations = {t:{}}         
+        for v, value in interdep_nodes.iteritems():
+            for u in value:     
+                if functionality[t][u[0]]==1.0 and G_prime.node[u[0]]['data']['inf_data'].functionality==0.0:
+                    functionality[t][u[0]] = 0.0
+
+            sum_u_functioanlity = 0.0
+            for u in value:
+                sum_u_functioanlity += u[1]
+            if saveJCModel:
+                realCount += 1
+                realizations[t][realCount]={'uValue':sum_u_functioanlity,
+                            'vValue':G_prime.node[v]['data']['inf_data'].functionality,
+                            'vRepaired':G_prime.node[v]['data']['inf_data'].repaired,
+                            'vName':v,'uName':value,
+                            'vCorrected':False}    
+                if sum_u_functioanlity == 0.0 and  G_prime.node[v]['data']['inf_data'].functionality==1.0:
+                    realizations[t][realCount]['vCorrected'] = True
+                    if print_cmd:
+                        print 'Correcting '+`v`+ ' to 0 (dep. on '+`value`+ ')'     
+                        
+#            elif sum_u_functioanlity != 0.0:
+#                if G_prime.node[v]['data']['inf_data'].repaired == 1.0 and G_prime.node[v]['data']['inf_data'].functionality == 0.0:
+##                    N.G.node[v]['data']['inf_data'].functionality=1.0
+#                    if saveJCModel:
+#                        realizations[t][realCount]['vCorrected'] = True
+#                    if print_cmd:
+#                        print 'Correcting '+`v`+ ' (prev. repaired) to 1 (dep. on '+`value`+')'
+#            else:
+#                print "Seriously?! sum_u_functioanlity?! "
+
+    indp_results_Real = indp(N,0,1,layers=layers,controlled_layers=controlled_layers,functionality=functionality)  
+    for t in range(T):
+        costs = indp_results.results[t]['costs']    
+        nodeCost=costs["Node"]
+        indp_results_Real[1][t]['costs']["Node"]=nodeCost
+        arcCost=costs["Arc"]
+        indp_results_Real[1][t]['costs']["Arc"]=arcCost
+        spacePrepCost=costs["Space Prep"]
+        indp_results_Real[1][t]['costs']["Space Prep"]=spacePrepCost
+        flowCost=indp_results_Real[1][t]['costs']["Flow"]
+        overSuppCost=indp_results_Real[1][t]['costs']["Over Supply"]
+        underSuppCost=indp_results_Real[1][t]['costs']["Under Supply"]
+        # Calculate total costs.
+        indp_results_Real[1][t]['costs']["Total"]=flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost
+        indp_results_Real[1][t]["Total no disconnection"]=spacePrepCost+arcCost+flowCost+nodeCost
+            
+    return indp_results_Real,realizations    
+#    m=Model('indp')
+#    m.setParam('OutputFlag',False)
+#    
+#    for t in range(T):
+#        # Add over/undersupply variables for each node.
+#        for n,d in N_hat.nodes_iter(data=True):
+#            m.addVar(name='delta+_'+str(n)+","+str(t),lb=0.0)
+#            m.addVar(name='delta-_'+str(n)+","+str(t),lb=0.0)
+#
+#        # Add flow variables for each arc.
+#        for u,v,a in N_hat.edges_iter(data=True):
+#            m.addVar(name='x_'+str(u)+","+str(v)+","+str(t),lb=0.0)
+#    m.update()
+#
+#    # Populate objective function.
+#    objFunc=LinExpr()
+#    for t in range(T):
+#        for n,d in N_hat.nodes_iter(data=True):
+#            objFunc+=d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t))
+#            objFunc+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t))
+#        for u,v,a in N_hat.edges_iter(data=True):
+#            objFunc+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+str(u)+","+str(v)+","+str(t))
+#            
+#            
+#    m.setObjective(objFunc,GRB.MINIMIZE)
+#    m.update()
+#    
+#    #Constraints.
+#    for t in range(T):
+#         # Conservation of flow constraint. (2) in INDP paper.
+#        for n,d in N_hat.nodes_iter(data=True):
+#            outFlowConstr=LinExpr()
+#            inFlowConstr= LinExpr()
+#            demandConstr= LinExpr()
+#            for u,v,a in N_hat.out_edges(n,data=True):
+#                outFlowConstr+=m.getVarByName('x_'+`u`+","+`v`+","+`t`)
+#            for u,v,a in N_hat.in_edges(n,data=True):
+#                inFlowConstr+= m.getVarByName('x_'+`u`+","+`v`+","+`t`)
+#            demandConstr+=d['data']['inf_data'].demand - m.getVarByName('delta+_'+`n`+","+`t`) + m.getVarByName('delta-_'+`n`+","+`t`)
+#            m.addConstr(outFlowConstr-inFlowConstr,GRB.EQUAL,demandConstr,"Flow conservation constraint "+`n`+","+`t`)
+#        # Flow functionality constraints.
+#        for u,v,a in N_hat.edges_iter(data=True):
+#            m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G.node[u]['data']['inf_data'].functionality,"Flow in functionality constraint ("+`u`+","+`v`+","+`t`+")")
+#            m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G.node[v]['data']['inf_data'].functionality,"Flow out functionality constraint ("+`u`+","+`v`+","+`t`+")")
+#            m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G[u][v]['data']['inf_data'].functionality,"Flow arc functionality constraint("+`u`+","+`v`+","+`t`+")")
+
+##    print "Solving..."
+#    m.update()
+#    m.optimize()
+#    indp_results_Real=INDPResults()
+#    # Save results.
+#    if m.getAttr("Status")==GRB.OPTIMAL:
+#        for t in range(T):
+#            costs = indp_results.results[t]['costs']    
+#            nodeCost=costs["Node"]
+#            indp_results_Real.add_cost(t,"Node",nodeCost)
+#            arcCost=costs["Arc"]
+#            indp_results_Real.add_cost(t,"Arc",arcCost)
+#            spacePrepCost=costs["Space Prep"]
+#            indp_results_Real.add_cost(t,"Space Prep",spacePrepCost)
+#            flowCost=0.0
+#            overSuppCost=0.0
+#            underSuppCost=0.0
+#            # Calculate under/oversupply costs.
+#            for n,d in N_hat.nodes_iter(data=True):
+#                overSuppCost+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+`n`+","+`t`).x
+#                underSuppCost+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+`n`+","+`t`).x
+#            indp_results_Real.add_cost(t,"Over Supply",overSuppCost)
+#            indp_results_Real.add_cost(t,"Under Supply",underSuppCost)
+#            # Calculate flow costs.
+#            for u,v,a in N_hat.edges_iter(data=True):
+#                flowCost+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+`u`+","+`v`+","+`t`).x
+#            indp_results_Real.add_cost(t,"Flow",flowCost)
+#            # Calculate total costs.
+#            indp_results_Real.add_cost(t,"Total",flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost)
+#            indp_results_Real.add_cost(t,"Total no disconnection",spacePrepCost+arcCost+flowCost+nodeCost)
+#	                
+#        if saveJCModel:
+#            save_INDP_model_to_file(m,output_dir+"/Model",iteration,controlled_layers[0],suffix='Real')  
+#            
+#        return [m,indp_results_Real],realizations
+#    else:
+#        print m.getAttr("Status"),": SOLUTION NOT FOUND. (Check data and/or violated constraints)."
+#        m.computeIIS()
+#        print ('\nThe following constraint(s) cannot be satisfied:')
+#        for c in m.getConstrs():
+#            if c.IISConstr:
+#                print('%s' % c.constrName)
+#        return None
+
 def create_judgment_matrix(N,T,layers,v_r=[],actions=[],judgment_type="OPTIMISTIC"):
     """Creates a functionality map for input into the functionality parameter in the indp function.
     :param N: An InfrastructureNetwork instance (created in infrastructure.py)
@@ -301,7 +357,7 @@ def create_judgment_matrix(N,T,layers,v_r=[],actions=[],judgment_type="OPTIMISTI
                 sortedpriorityList = sorted(priorityList.items(), 
                     key=operator.itemgetter(1), reverse=True)
                 
-                num_layers = len(layers)
+                num_layers = 1 #len(layers)
                 if isinstance(v_r, (int, long)):
                     resCap = int(v_r/num_layers)
                 else:
@@ -504,62 +560,74 @@ def compare_auction_allocation(outdir,compare_to_dir,sample_range,T=1,layers=[1,
     ax = sns.lineplot(x='t',y='resource',style='method',hue='layer',data=df,ci=ci, palette=sns.color_palette("muted",3))                        
     ax.set(xticks=np.arange(0,21,1))
 
-def write_judgments_csv(outdir,functionality,realizations,sample_num=1,agent=1,time=0,suffix=""):
+def write_judgments_csv(N,outdir,functionality,realizations,sample_num=1,agent=1,time=0,suffix=""):
     if not os.path.exists(outdir):
         os.makedirs(outdir)  
-    judge_file=outdir+'/judge_'+`sample_num`+"_agent"+`agent`+'_time'+`time`+'_'+suffix+".csv"
-    
-    header = "no.,src node,src layer,judged src functionaluty,src actual value,if src damaged,if src nonfunctional,dest Name, dest layer, dest value,if dest functional, if dest corrected"
-    with open(judge_file,'w') as f:
-        f.write(header+"\n")
-        for t,timeValue in realizations.items():
-            for c,Value in timeValue.items():
-                u = realizations[t][c]['uName']
-                row = `c`+','+`u[0]`+','+`u[1]`+','+`functionality[t][u]`+','+`realizations[t][c]['uValue']`+\
-                    ','+`realizations[t][c]['udamaged']`+','+`realizations[t][c]['uNonfunctional']`+\
-                    ','+`realizations[t][c]['vName'][0]`+','+`realizations[t][c]['vName'][1]`+\
-                    ','+`realizations[t][c]['vValue']`+','+`realizations[t][c]['vfunctional']`+','+`realizations[t][c]['vCorrected']`
-                f.write(row+'\n')
-
-def read_and_aggregate_results(mags,method_name,resource_cap,suffixes,L,v,sample_range):
-    columns = ['t','Magnitude','cost_type','method','resource_cap','sample','cost']
-    agg_results = pd.DataFrame(columns=columns)
-    listHD = pd.read_csv('damagedElements_sliceQuantile_0.95.csv')
+        
+    interdep_nodes_src={}
+    for u,v,a in N.G.edges_iter(data=True):
+        if a['data']['inf_data'].is_interdep and N.G.node[v]['data']['inf_data'].net_id==agent:
+            if u not in interdep_nodes_src:
+                interdep_nodes_src[u]=[]
+            interdep_nodes_src[u].append(v)
             
+    if interdep_nodes_src:
+        judge_file=outdir+'/judge_'+`sample_num`+"_agent"+`agent`+'_time'+`time`+'_'+suffix+".csv"
+        
+        header = "no.,src node,src layer,src actual func, src overall func,src judge func,dest Name,dest layer,dest uncorrected value, dest repair,if dest corrected"
+        with open(judge_file,'w') as f:
+            f.write(header+"\n")
+            for t,timeValue in realizations.items():
+                for c,Value in timeValue.items():
+                    judge_dict = realizations[t][c]
+                    for u in judge_dict['uName']:
+                        row = `c`+','+`u[0]`+','+`u[1]`+','\
+                            +`judge_dict['uValue']`+','+`functionality[t][u[0]]`+','\
+                            +`judge_dict['vName']`+','+`judge_dict['vValue']`+','\
+                            +`judge_dict['vRepaired']`+','\
+                            +`realizations[t][c]['vCorrected']`
+                        f.write(row+'\n')
+    else:
+        print 'No judgment by agent '+`agent`+'.'
+
+def read_and_aggregate_results(mags,method_name,resource_cap,suffixes,L,sample_range,no_resources=[3],listHDadd=None):
+    columns = ['t','Magnitude','cost_type','method','resource_cap','no_resources','sample','cost']
+    agg_results = pd.DataFrame(columns=columns)
+    listHD = pd.read_csv(listHDadd)        
     for m in mags:
         for i in range(len(method_name)):
-            full_suffix = '_L'+`L`+'_m'+`m`+'_v'+`v`+resource_cap[i]
-            result_dir = '../results/'+method_name[i]+full_suffix
-            
-#            # Save average values to file
-#            results_average = INDPResults()
-#            results_average = results_average.from_results_dir(outdir=result_dir,
-#                                sample_range=sample_range,suffix=suffixes[i])
-#            
-#            outdir = '../results/average_cost_all/'
-#            if not os.path.exists(outdir):
-#                os.makedirs(outdir) 
-#            costs_file =outdir+method_name[i]+full_suffix+"_average_costs.csv"
-#            with open(costs_file,'w') as f:
-#                f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total\n")
-#                for t in results_average.results:
-#                    costs=results_average.results[t]['costs']
-#                    f.write(`t`+","+`costs["Space Prep"]`+","+`costs["Arc"]`+","
-#                            +`costs["Node"]`+","+`costs["Over Supply"]`+","+
-#                            `costs["Under Supply"]`+","+`costs["Flow"]`+","+
-#                            `costs["Total"]`+"\n")            
-                    
-            # Save all results to Pandas dataframe
-            sample_result = INDPResults()
-            for s in sample_range:
-                if len(listHD.loc[(listHD.set == s) & (listHD.sce == m)].index):#!!!!!!!!!!!
-                    sample_result=sample_result.from_csv(result_dir,s,suffix=suffixes[i])
-                    for t in sample_result.results:
-                        for c in sample_result.cost_types:
-                            values = [t,m,c,method_name[i],resource_cap[i],s,
-                                    float(sample_result[t]['costs'][c])]
-    #                        df2 = pd.DataFrame(values, columns=columns)
-                            agg_results = agg_results.append(dict(zip(columns,values)), ignore_index=True)
+            for rc in no_resources:
+                full_suffix = '_L'+`L`+'_m'+`m`+'_v'+`rc`+resource_cap[i]
+                result_dir = '../results/'+method_name[i]+full_suffix
+                
+#                # Save average values to file #!!!!!!!!!!!
+#                results_average = INDPResults()
+#                results_average = results_average.from_results_dir(outdir=result_dir,
+#                                    sample_range=sample_range,suffix=suffixes[i])
+#                
+#                outdir = '../results/average_cost_all/'
+#                if not os.path.exists(outdir):
+#                    os.makedirs(outdir) 
+#                costs_file =outdir+method_name[i]+full_suffix+"_average_costs.csv"
+#                with open(costs_file,'w') as f:
+#                    f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total\n")
+#                    for t in results_average.results:
+#                        costs=results_average.results[t]['costs']
+#                        f.write(`t`+","+`costs["Space Prep"]`+","+`costs["Arc"]`+","
+#                                +`costs["Node"]`+","+`costs["Over Supply"]`+","+
+#                                `costs["Under Supply"]`+","+`costs["Flow"]`+","+
+#                                `costs["Total"]`+"\n")            
+                        
+                # Save all results to Pandas dataframe
+                sample_result = INDPResults()
+                for s in sample_range:
+                    if listHDadd==None or len(listHD.loc[(listHD.set == s) & (listHD.sce == m)].index):
+                        sample_result=sample_result.from_csv(result_dir,s,suffix=suffixes[i])
+                        for t in sample_result.results:
+                            for c in sample_result.cost_types:
+                                values = [t,m,c,method_name[i],resource_cap[i],rc,s,
+                                        float(sample_result[t]['costs'][c])]
+                                agg_results = agg_results.append(dict(zip(columns,values)), ignore_index=True)
             print 'm %d|%s|Aggregated' %(m,method_name[i])  
     return agg_results
 
@@ -596,93 +664,115 @@ def correct_tdindp_results(df,mags,method_name,sample_range):
     
 def plot_performance_curves(df,x='t',y='cost',cost_type='Total',method_name=['tdindp_results'],ci=None):
     sns.set()
-
-    plt.figure()
-    with sns.color_palette("muted"):
-        ax = sns.lineplot(x=x, y=y, hue="method", style='resource_cap',
-            markers=False, ci=ci,
-            data=df[(df['cost_type']==cost_type)&(df['method'].isin(method_name))])              
-    return ax
-
-def plot_relative_performance(df,sample_range,cost_type='Total'):    
+    no_resources = df.no_resources.unique().tolist()
+    for nr in no_resources:
+        plt.figure()
+        with sns.color_palette("muted"):
+            ax = sns.lineplot(x=x, y=y, hue="method", style='resource_cap',
+                markers=False, ci=ci,
+                data=df[(df['cost_type']==cost_type)&
+                        (df['method'].isin(method_name))&
+                        (df['no_resources']==nr)])              
+            ax.set_title(r'Total resources = %d'%(nr))
+            
+def plot_relative_performance(df,sample_range,cost_type='Total',listHDadd=None):    
     sns.set()
     resource_cap = df.resource_cap.unique().tolist()
+    no_resources = df.no_resources.unique().tolist()
     mags=df.Magnitude.unique().tolist()
     method_name = df.method.unique().tolist()
-    columns = ['Magnitude','cost_type','method','resource_cap','sample','Area','lambda_TC']
+    columns = ['Magnitude','cost_type','method','resource_cap','no_resources','sample','Area','lambda_TC']
     lambda_df = pd.DataFrame(columns=columns)
-    listHD = pd.read_csv('damagedElements_sliceQuantile_0.95.csv')
+    listHD = pd.read_csv(listHDadd)    
+    
     for m in mags:
         for jc in method_name:
             for rc in resource_cap:
                 if jc=='indp_results' or rc=='Layer Cap':#!!!!!!!!!!!!!!!
                     for sr in sample_range:
-                        if len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):#!!!!!!!!!!!
-                            rows = df[(df['Magnitude']==m)&(df['method']==jc)&
-                                     (df['sample']==sr)&(df['cost_type']==cost_type)&
-                                     (df['resource_cap']==rc)]
-                              
-                            if not rows.empty:
-                                area = np.trapz(rows.cost[:20],dx=1)
-                            else:
-                                area = 'nan'
-                            
-                            tempdf = pd.Series()
-                            tempdf['Magnitude'] = m
-                            tempdf['cost_type'] = cost_type
-                            tempdf['method'] = jc
-                            tempdf['resource_cap'] = rc                    
-                            tempdf['sample'] = sr  
-                            tempdf['Area'] = area  
-                            lambda_df=lambda_df.append(tempdf,ignore_index=True)
-                    print 'm %d|method %s|resource cap %s' %(m,jc,rc)  
+                        for nr in no_resources:
+                            if listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):
+                                rows = df[(df['Magnitude']==m)&(df['method']==jc)&
+                                         (df['sample']==sr)&(df['cost_type']==cost_type)&
+                                         (df['resource_cap']==rc)&(df['no_resources']==nr)]
+                                  
+                                if not rows.empty:
+                                    area = np.trapz(rows.cost[:20],dx=1)
+                                else:
+                                    area = 'nan'
+                                
+                                tempdf = pd.Series()
+                                tempdf['Magnitude'] = m
+                                tempdf['cost_type'] = cost_type
+                                tempdf['method'] = jc
+                                tempdf['resource_cap'] = rc   
+                                tempdf['no_resources'] = nr 
+                                tempdf['sample'] = sr  
+                                tempdf['Area'] = area  
+                                lambda_df=lambda_df.append(tempdf,ignore_index=True)
+        print 'm %d|lambda_TC calculated' %(m)  
           
     ref_method = 'indp_results'
     ref_rc = 'Network Cap'
     for m in mags:
-        cond = ((lambda_df['Magnitude']==m)&(lambda_df['method']==ref_method)&
-                        (lambda_df['resource_cap']==ref_rc)&(lambda_df['cost_type']==cost_type)).any()
-        if not cond:
-            print 'Reference type is not here!'
-            break
-        for sr in sample_range: 
-            if len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):#!!!!!!!!!!!
-                ref_area=float(lambda_df.loc[(lambda_df['Magnitude']==m)&(lambda_df['method']==ref_method)&
-                                (lambda_df['resource_cap']==ref_rc)&(lambda_df['sample']==sr)&
-                                (lambda_df['cost_type']==cost_type),'Area'].values)
-                for jc in method_name:
-                    for rc in resource_cap:
-                        area = lambda_df.loc[(lambda_df['Magnitude']==m)&(lambda_df['method']==jc)&
-                                (lambda_df['resource_cap']==rc)&(lambda_df['sample']==sr)&
-                                (lambda_df['cost_type']==cost_type),'Area'].values
+        for nr in no_resources:
+            cond = ((lambda_df['Magnitude']==m)&(lambda_df['method']==ref_method)&
+                            (lambda_df['resource_cap']==ref_rc)&
+                            (lambda_df['cost_type']==cost_type)&
+                            (lambda_df['no_resources']==nr)).any()
+            if not cond:
+                print 'Reference type is not here! for m %d|resource %d' %(m,nr)
+                break
+            for sr in sample_range: 
+                if listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):
+                    ref_area=float(lambda_df.loc[(lambda_df['Magnitude']==m)&
+                                    (lambda_df['method']==ref_method)&
+                                    (lambda_df['resource_cap']==ref_rc)&
+                                    (lambda_df['sample']==sr)&
+                                    (lambda_df['cost_type']==cost_type)&
+                                    (lambda_df['no_resources']==nr),'Area'].values)
+                    for jc in method_name:
+                        for rc in resource_cap:
+                            area = lambda_df.loc[(lambda_df['Magnitude']==m)&
+                                    (lambda_df['method']==jc)&
+                                    (lambda_df['resource_cap']==rc)&
+                                    (lambda_df['sample']==sr)&
+                                    (lambda_df['cost_type']==cost_type)&
+                                    (lambda_df['no_resources']==nr),'Area'].values
+                                
+                            lambda_TC = 'nan'
+                            if ref_area != 0.0 and area != 'nan':
+                                lambda_TC = (ref_area-float(area))/ref_area
+                            elif area == 0.0:
+                                lambda_TC = 0.0
+                            else:
+                                pass
                             
-                        lambda_TC = 'nan'
-                        if ref_area != 0.0 and area != 'nan':
-                            lambda_TC = (ref_area-float(area))/ref_area
-                        elif area == 0.0:
-                            lambda_TC = 0.0
-                        else:
-                            pass
-                        
-                        lambda_df.loc[(lambda_df['Magnitude']==m)&(lambda_df['method']==jc)&
-                                (lambda_df['resource_cap']==rc)&(lambda_df['sample']==sr)&
-                                (lambda_df['cost_type']==cost_type),'lambda_TC']=lambda_TC
-                                                        
-    plt.figure()
-#        plt.rc('text', usetex=True)
-#        plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-    color = sns.color_palette("RdYlGn", 7) #sns.color_palette("YlOrRd", 7)
-    ax = sns.barplot(x='resource_cap',y='lambda_TC',hue="method",
-                     data=lambda_df[(lambda_df['cost_type']==cost_type)&(lambda_df['lambda_TC']!='nan')], 
-                     palette=color, linewidth=0.5,edgecolor=[.25,.25,.25],
-                    capsize=.05,errcolor=[.25,.25,.25],errwidth=1)  
-         
-    ax.grid(which='major', axis='y', color=[.75,.75,.75], linewidth=.75)
-    ax.set_xlabel(r'Resource Distribution Method')
-    ax.set_ylabel(r'Mean Relative Measure, E[$\lambda_{%s}$]'%('TC'))
-    ax.xaxis.set_label_position('bottom')  
-#    ax.xaxis.tick_top()
-    ax.set_facecolor('w')   
-    plt.legend(handles=ax.get_legend_handles_labels()[0][:7],loc=0,frameon =True,
-               framealpha=0.0, ncol=1,bbox_to_anchor=(1.1, 0.1))   
-    return ax, lambda_df
+                            lambda_df.loc[(lambda_df['Magnitude']==m)&
+                                    (lambda_df['method']==jc)&
+                                    (lambda_df['resource_cap']==rc)&
+                                    (lambda_df['sample']==sr)&
+                                    (lambda_df['cost_type']==cost_type)&
+                                    (lambda_df['no_resources']==nr),'lambda_TC']=lambda_TC
+    for nr in no_resources:                                                  
+        plt.figure()
+#            plt.rc('text', usetex=True)
+#            plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+        color = sns.color_palette("RdYlGn", 7) #sns.color_palette("YlOrRd", 7)
+        ax = sns.barplot(x='resource_cap',y='lambda_TC',hue="method",
+                         data=lambda_df[(lambda_df['cost_type']==cost_type)&
+                                        (lambda_df['lambda_TC']!='nan')&
+                                        (lambda_df['no_resources']==nr)], 
+                         palette=color, linewidth=0.5,edgecolor=[.25,.25,.25],
+                        capsize=.05,errcolor=[.25,.25,.25],errwidth=1)  
+             
+        ax.grid(which='major', axis='y', color=[.75,.75,.75], linewidth=.75)
+        ax.set_xlabel(r'Resource Distribution Method')
+        ax.set_ylabel(r'Mean Relative Measure, E[$\lambda_{%s}$]'%('TC'))
+        ax.xaxis.set_label_position('bottom')  
+        ax.set_title(r'Total resources = %d'%(nr))
+#        ax.xaxis.tick_top()
+        ax.set_facecolor('w')   
+        plt.legend(handles=ax.get_legend_handles_labels()[0][:7],loc=0,frameon =True,
+                   framealpha=0.0, ncol=1,bbox_to_anchor=(1.1, 0.1))   
+    return lambda_df

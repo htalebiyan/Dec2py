@@ -198,9 +198,9 @@ def load_percolation_model(supply_net):
 
 def load_infrastructure_data(BASE_DIR="../data/INDP_7-20-2015/",external_interdependency_dir=None,magnitude=6,v=3,sim_number=1,cost_scale=1.0):
     if "../data/INDP_7-20-2015" in BASE_DIR:
-        print "Loading a network.."
+#        print "Loading a network.." #!!!
         G = load_infrastructure_array_format(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,magnitude=magnitude,v=v,sim_number=sim_number,cost_scale=cost_scale)
-        print G
+#        print G #!!!
         return G
         
     #elif BASE_DIR == "../data/INDP_4-12-2016":
@@ -409,7 +409,7 @@ def add_failure_scenario(G,BASE_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,si
                 #if float(func[1]) == 0.0:
                 #    print "Arc ((",`func[0][1]`+","+`func[0][3]`+"),("+`func[0][2]`+","+`func[0][3]`+")) broken."
 
-def add_Wu_failure_scenario(G,BASE_DIR="../data/Wu_Scenarios/",noSet=1,noSce=15,noNet=3):
+def add_Wu_failure_scenario(G,BASE_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1,noNet=3):
     dam_nodes = {}
     dam_arcs = {}
     folderDir = BASE_DIR+'Set%d/Sce%d/' % (noSet,noSce)
@@ -428,28 +428,18 @@ def add_Wu_failure_scenario(G,BASE_DIR="../data/Wu_Scenarios/",noSet=1,noSce=15,
                 for v in dam_nodes[k]:
                     G.G.node[(v+1,k)]['data']['inf_data'].functionality=0.0
                     G.G.node[(v+1,k)]['data']['inf_data'].repaired=0.0
-                    print "Node (",`v+1`+","+`k`+") broken."
+#                    print "Node (",`v+1`+","+`k`+") broken."
             if dam_arcs[k].size!=0:
                 if dam_arcs[k].size==2:
                     dam_arcs[k] = [dam_arcs[k]]
                 for a in dam_arcs[k]:
                     G.G[(a[0]+1,k)][(a[1]+1,k)]['data']['inf_data'].functionality=0.0
                     G.G[(a[0]+1,k)][(a[1]+1,k)]['data']['inf_data'].repaired=0.0
-                    print "Arc ((",`a[0]+1`+","+`k`+"),("+`a[1]+1`+","+`k`+")) broken."
+#                    print "Arc ((",`a[0]+1`+","+`k`+"),("+`a[1]+1`+","+`k`+")) broken."
                     
                     G.G[(a[1]+1,k)][(a[0]+1,k)]['data']['inf_data'].functionality=0.0
                     G.G[(a[1]+1,k)][(a[0]+1,k)]['data']['inf_data'].repaired=0.0
-                    print "Arc ((",`a[1]+1`+","+`k`+"),("+`a[0]+1`+","+`k`+")) broken."
-                    
-        for u,v,a in G.G.edges_iter(data=True):
-            if a['data']['inf_data'].is_interdep:
-                if G.G.node[u]['data']['inf_data'].functionality == 0.0:
-                    G.G.node[v]['data']['inf_data'].functionality = 0.0
-                elif G.G.node[v]['data']['inf_data'].repaired == 1.0:
-                    G.G.node[v]['data']['inf_data'].functionality = 1.0
-                else:
-                    print "Seriously?! A non-binary functionality value?!"
-                    
+#                    print "Arc ((",`a[1]+1`+","+`k`+"),("+`a[0]+1`+","+`k`+")) broken."               
     else:
         pass #Undamaging scenrios are not presesnted with any file or folder in the datasets      
           
