@@ -59,8 +59,7 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
         
         res_allocate = {}
         for i in range(num_iterations):
-            if print_cmd:
-                print "\n--Iteration "+`i`+"/"+`num_iterations-1`
+            print "\n--Iteration "+`i`+"/"+`num_iterations-1`
             
             v_r_applied = []
             if auction_type:
@@ -76,10 +75,10 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
             functionality = {p:{} for p in layers}
             uncorrectedResults = {}  
             if print_cmd:
-                print "Judgment: ",                    
+                print "Judgment: "                
             for P in layers:
                 if print_cmd:
-                    print "Layer-%d"%(P),
+                    print "Layer-%d"%(P)
                     
                 negP=[x for x in layers if x != P]    
                 functionality[P] = create_judgment_matrix(InterdepNet,T,negP,v_r_applied,
@@ -104,14 +103,15 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
             
             # Re-evaluate judgments based on other agents' decisions
             if print_cmd:
-                print "\nRe-evaluation: ",
+                print "Re-evaluation: "
             for P in layers:
                 if print_cmd:
-                    print "Layer-%d"%(P),  
+                    print "Layer-%d"%(P)  
                                      
                 indp_results_Real,realizations = Decentralized_INDP_Realized_Performance(InterdepNet,i+1,
-                                uncorrectedResults[P],functionality=functionality[P],T=1,layers=layers,controlled_layers=[P],
-                                output_dir=output_dir,print_cmd=print_cmd,saveJCModel=saveJCModel)  
+                                uncorrectedResults[P],functionality= functionality[P],
+                                T=1,layers=layers,controlled_layers=[P],
+                                print_cmd=print_cmd,saveJCModel=saveJCModel)  
                              
                 Dindp_results_Real[P].extend(indp_results_Real[1],t_offset=i+1)
                 
@@ -171,7 +171,7 @@ For output items, look at the description of Decentralized_INDP()
 '''
 def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionality,
                                             T=1,layers=[1,2,3],controlled_layers=[1],
-                                            output_dir='',print_cmd=False,saveJCModel=False):
+                                            print_cmd=False,saveJCModel=False):
     
     G_prime_nodes = [n[0] for n in N.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in layers]
     G_prime = N.G.subgraph(G_prime_nodes)
@@ -185,31 +185,30 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
             if v not in interdep_nodes:
                 interdep_nodes[v]=[]
             interdep_nodes[v].append((u,G_prime.node[u]['data']['inf_data'].functionality))
-            
-    realizations = {}
-    for t in range(T): 
-        
+    
+    functionality_realized = functionality.copy()        
+    for t in range(T):     
+        for u, value in functionality[t].iteritems():     
+            if functionality[t][u]==1.0 and G_prime.node[u]['data']['inf_data'].functionality==0.0:
+                functionality_realized[t][u] = 0.0
+             
         realCount = 0  
         realizations = {t:{}}         
         for v, value in interdep_nodes.iteritems():
-            for u in value:     
-                if functionality[t][u[0]]==1.0 and G_prime.node[u[0]]['data']['inf_data'].functionality==0.0:
-                    functionality[t][u[0]] = 0.0
-
             sum_u_functioanlity = 0.0
             for u in value:
                 sum_u_functioanlity += u[1]
-            if saveJCModel:
-                realCount += 1
-                realizations[t][realCount]={'uValue':sum_u_functioanlity,
-                            'vValue':G_prime.node[v]['data']['inf_data'].functionality,
-                            'vRepaired':G_prime.node[v]['data']['inf_data'].repaired,
-                            'vName':v,'uName':value,
-                            'vCorrected':False}    
-                if sum_u_functioanlity == 0.0 and  G_prime.node[v]['data']['inf_data'].functionality==1.0:
-                    realizations[t][realCount]['vCorrected'] = True
-                    if print_cmd:
-                        print 'Correcting '+`v`+ ' to 0 (dep. on '+`value`+ ')'     
+            
+            realCount += 1
+            realizations[t][realCount]={'uValue':u[1],
+                        'vValue':G_prime.node[v]['data']['inf_data'].functionality,
+                        'vRepaired':G_prime.node[v]['data']['inf_data'].repaired,
+                        'vName':v,'uName':u[0],
+                        'vCorrected':False}    
+            if sum_u_functioanlity == 0.0 and G_prime.node[v]['data']['inf_data'].functionality==1.0:
+                realizations[t][realCount]['vCorrected'] = True
+                if print_cmd:
+                    print 'Correcting '+`v`+' to 0 (dep. on '+`value`+')'     
                         
 #            elif sum_u_functioanlity != 0.0:
 #                if G_prime.node[v]['data']['inf_data'].repaired == 1.0 and G_prime.node[v]['data']['inf_data'].functionality == 0.0:
@@ -220,8 +219,8 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
 #                        print 'Correcting '+`v`+ ' (prev. repaired) to 1 (dep. on '+`value`+')'
 #            else:
 #                print "Seriously?! sum_u_functioanlity?! "
-
-    indp_results_Real = indp(N,0,1,layers=layers,controlled_layers=controlled_layers,functionality=functionality)  
+# 
+    indp_results_Real = indp(N,0,1,layers=layers,controlled_layers=controlled_layers,functionality=functionality_realized)  
     for t in range(T):
         costs = indp_results.results[t]['costs']    
         nodeCost=costs["Node"]
@@ -238,95 +237,7 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
         indp_results_Real[1][t]["Total no disconnection"]=spacePrepCost+arcCost+flowCost+nodeCost
             
     return indp_results_Real,realizations    
-#    m=Model('indp')
-#    m.setParam('OutputFlag',False)
-#    
-#    for t in range(T):
-#        # Add over/undersupply variables for each node.
-#        for n,d in N_hat.nodes_iter(data=True):
-#            m.addVar(name='delta+_'+str(n)+","+str(t),lb=0.0)
-#            m.addVar(name='delta-_'+str(n)+","+str(t),lb=0.0)
-#
-#        # Add flow variables for each arc.
-#        for u,v,a in N_hat.edges_iter(data=True):
-#            m.addVar(name='x_'+str(u)+","+str(v)+","+str(t),lb=0.0)
-#    m.update()
-#
-#    # Populate objective function.
-#    objFunc=LinExpr()
-#    for t in range(T):
-#        for n,d in N_hat.nodes_iter(data=True):
-#            objFunc+=d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t))
-#            objFunc+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t))
-#        for u,v,a in N_hat.edges_iter(data=True):
-#            objFunc+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+str(u)+","+str(v)+","+str(t))
-#            
-#            
-#    m.setObjective(objFunc,GRB.MINIMIZE)
-#    m.update()
-#    
-#    #Constraints.
-#    for t in range(T):
-#         # Conservation of flow constraint. (2) in INDP paper.
-#        for n,d in N_hat.nodes_iter(data=True):
-#            outFlowConstr=LinExpr()
-#            inFlowConstr= LinExpr()
-#            demandConstr= LinExpr()
-#            for u,v,a in N_hat.out_edges(n,data=True):
-#                outFlowConstr+=m.getVarByName('x_'+`u`+","+`v`+","+`t`)
-#            for u,v,a in N_hat.in_edges(n,data=True):
-#                inFlowConstr+= m.getVarByName('x_'+`u`+","+`v`+","+`t`)
-#            demandConstr+=d['data']['inf_data'].demand - m.getVarByName('delta+_'+`n`+","+`t`) + m.getVarByName('delta-_'+`n`+","+`t`)
-#            m.addConstr(outFlowConstr-inFlowConstr,GRB.EQUAL,demandConstr,"Flow conservation constraint "+`n`+","+`t`)
-#        # Flow functionality constraints.
-#        for u,v,a in N_hat.edges_iter(data=True):
-#            m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G.node[u]['data']['inf_data'].functionality,"Flow in functionality constraint ("+`u`+","+`v`+","+`t`+")")
-#            m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G.node[v]['data']['inf_data'].functionality,"Flow out functionality constraint ("+`u`+","+`v`+","+`t`+")")
-#            m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G[u][v]['data']['inf_data'].functionality,"Flow arc functionality constraint("+`u`+","+`v`+","+`t`+")")
 
-##    print "Solving..."
-#    m.update()
-#    m.optimize()
-#    indp_results_Real=INDPResults()
-#    # Save results.
-#    if m.getAttr("Status")==GRB.OPTIMAL:
-#        for t in range(T):
-#            costs = indp_results.results[t]['costs']    
-#            nodeCost=costs["Node"]
-#            indp_results_Real.add_cost(t,"Node",nodeCost)
-#            arcCost=costs["Arc"]
-#            indp_results_Real.add_cost(t,"Arc",arcCost)
-#            spacePrepCost=costs["Space Prep"]
-#            indp_results_Real.add_cost(t,"Space Prep",spacePrepCost)
-#            flowCost=0.0
-#            overSuppCost=0.0
-#            underSuppCost=0.0
-#            # Calculate under/oversupply costs.
-#            for n,d in N_hat.nodes_iter(data=True):
-#                overSuppCost+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+`n`+","+`t`).x
-#                underSuppCost+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+`n`+","+`t`).x
-#            indp_results_Real.add_cost(t,"Over Supply",overSuppCost)
-#            indp_results_Real.add_cost(t,"Under Supply",underSuppCost)
-#            # Calculate flow costs.
-#            for u,v,a in N_hat.edges_iter(data=True):
-#                flowCost+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+`u`+","+`v`+","+`t`).x
-#            indp_results_Real.add_cost(t,"Flow",flowCost)
-#            # Calculate total costs.
-#            indp_results_Real.add_cost(t,"Total",flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost)
-#            indp_results_Real.add_cost(t,"Total no disconnection",spacePrepCost+arcCost+flowCost+nodeCost)
-#	                
-#        if saveJCModel:
-#            save_INDP_model_to_file(m,output_dir+"/Model",iteration,controlled_layers[0],suffix='Real')  
-#            
-#        return [m,indp_results_Real],realizations
-#    else:
-#        print m.getAttr("Status"),": SOLUTION NOT FOUND. (Check data and/or violated constraints)."
-#        m.computeIIS()
-#        print ('\nThe following constraint(s) cannot be satisfied:')
-#        for c in m.getConstrs():
-#            if c.IISConstr:
-#                print('%s' % c.constrName)
-#        return None
 
 def create_judgment_matrix(N,T,layers,v_r=[],actions=[],judgment_type="OPTIMISTIC"):
     """Creates a functionality map for input into the functionality parameter in the indp function.
@@ -574,19 +485,18 @@ def write_judgments_csv(N,outdir,functionality,realizations,sample_num=1,agent=1
     if interdep_nodes_src:
         judge_file=outdir+'/judge_'+`sample_num`+"_agent"+`agent`+'_time'+`time`+'_'+suffix+".csv"
         
-        header = "no.,src node,src layer,src actual func, src overall func,src judge func,dest Name,dest layer,dest uncorrected value, dest repair,if dest corrected"
+        header = "no.,src node,src layer,src actual func,src judge func,dest Name,dest layer,dest uncorrected func, dest repair,if dest corrected"
         with open(judge_file,'w') as f:
             f.write(header+"\n")
             for t,timeValue in realizations.items():
                 for c,Value in timeValue.items():
-                    judge_dict = realizations[t][c]
-                    for u in judge_dict['uName']:
-                        row = `c`+','+`u[0]`+','+`u[1]`+','\
-                            +`judge_dict['uValue']`+','+`functionality[t][u[0]]`+','\
-                            +`judge_dict['vName']`+','+`judge_dict['vValue']`+','\
-                            +`judge_dict['vRepaired']`+','\
-                            +`realizations[t][c]['vCorrected']`
-                        f.write(row+'\n')
+                    row = `c`+','+`Value['uName']`+','\
+                        +`Value['uValue']`+','+`functionality[t][Value['uName']]`+','\
+                        +`Value['vName']`+','+`Value['vValue']`+','\
+                        +`Value['vRepaired']`+','\
+                        +`Value['vCorrected']`
+                        
+                    f.write(row+'\n')
     else:
         print 'No judgment by agent '+`agent`+'.'
 

@@ -72,47 +72,46 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
     for t in range(T):
         # Add geographical space variables.
         for s in S:
-            m.addVar(name='z_'+str(s.id)+","+str(t),vtype=GRB.BINARY)
+            m.addVar(name='z_'+`s.id`+","+`t`,vtype=GRB.BINARY)
         # Add over/undersupply variables for each node.
         for n,d in N_hat.nodes_iter(data=True):
-            m.addVar(name='delta+_'+str(n)+","+str(t),lb=0.0)
-            m.addVar(name='delta-_'+str(n)+","+str(t),lb=0.0)
+            m.addVar(name='delta+_'+`n`+","+`t`,lb=0.0)
+            m.addVar(name='delta-_'+`n`+","+`t`,lb=0.0)
         # Add functionality binary variables for each node in N'.
         for n,d in N_hat.nodes_iter(data=True):
-            m.addVar(name='w_'+str(n)+","+str(t),vtype=GRB.BINARY)
+            m.addVar(name='w_'+`n`+","+`t`,vtype=GRB.BINARY)
             if T > 1:
-                m.addVar(name='w_tilde_'+str(n)+","+str(t),vtype=GRB.BINARY)
+                m.addVar(name='w_tilde_'+`n`+","+`t`,vtype=GRB.BINARY)
         # Add flow variables for each arc.
         for u,v,a in N_hat.edges_iter(data=True):
-            m.addVar(name='x_'+str(u)+","+str(v)+","+str(t),lb=0.0)
+            m.addVar(name='x_'+`u`+","+`v`+","+`t`,lb=0.0)
         # Add functionality binary variables for each arc in A'.
         for u,v,a in A_hat_prime:
-            m.addVar(name='y_'+str(u)+","+str(v)+","+str(t),vtype=GRB.BINARY)
+            m.addVar(name='y_'+`u`+","+`v`+","+`t`,vtype=GRB.BINARY)
             if T > 1:
-                m.addVar(name='y_tilde_'+str(u)+","+str(v)+","+str(t),vtype=GRB.BINARY)
+                m.addVar(name='y_tilde_'+`u`+","+`v`+","+`t`,vtype=GRB.BINARY)
     m.update()
 
     # Populate objective function.
     objFunc=LinExpr()
     for t in range(T):
         for s in S:
-            objFunc+=s.cost*m.getVarByName('z_'+str(s.id)+","+str(t))
+            objFunc+=s.cost*m.getVarByName('z_'+`s.id`+","+`t`)
         for u,v,a in A_hat_prime:
             if T == 1:
-                objFunc+=(float(a['data']['inf_data'].reconstruction_cost)/2.0)*m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))
+                objFunc+=(float(a['data']['inf_data'].reconstruction_cost)/2.0)*m.getVarByName('y_'+`u`+","+`v`+","+`t`)
             else:
-                objFunc+=(float(a['data']['inf_data'].reconstruction_cost)/2.0)*m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))
+                objFunc+=(float(a['data']['inf_data'].reconstruction_cost)/2.0)*m.getVarByName('y_tilde_'+`u`+","+`v`+","+`t`)
         for n,d in N_hat_prime:
-#            if d['data']['inf_data'].repaired==0.0:
             if T == 1:
-                objFunc+=d['data']['inf_data'].reconstruction_cost*m.getVarByName('w_'+str(n)+","+str(t))
+                objFunc+=d['data']['inf_data'].reconstruction_cost*m.getVarByName('w_'+`n`+","+`t`)
             else:
-                objFunc+=d['data']['inf_data'].reconstruction_cost*m.getVarByName('w_tilde_'+str(n)+","+str(t))
+                objFunc+=d['data']['inf_data'].reconstruction_cost*m.getVarByName('w_tilde_'+`n`+","+`t`)
         for n,d in N_hat.nodes_iter(data=True):
-            objFunc+=d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t))
-            objFunc+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t))
+            objFunc+=d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+`n`+","+`t`)
+            objFunc+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+`n`+","+`t`)
         for u,v,a in N_hat.edges_iter(data=True):
-            objFunc+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+str(u)+","+str(v)+","+str(t))
+            objFunc+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+`u`+","+`v`+","+`t`)
             
             
     m.setObjective(objFunc,GRB.MINIMIZE)
@@ -122,9 +121,9 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
     # Time-dependent constraints.
     if T > 1:
         for n,d in N_hat.nodes_iter(data=True):
-            m.addConstr(m.getVarByName('w_'+str(n)+",0"),GRB.EQUAL,0)
+            m.addConstr(m.getVarByName('w_'+`n`+",0"),GRB.EQUAL,0)
         for u,v,a in A_hat_prime:
-            m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+",0"),GRB.EQUAL,0)
+            m.addConstr(m.getVarByName('y_'+`u`+","+`v`+",0"),GRB.EQUAL,0)
         
         
     for t in range(T):
@@ -203,16 +202,15 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                     resourceLeftConstrSep[indexLayer]+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_tilde_'+`u`+","+`v`+","+`t`)
 
         for n,d in N_hat_prime:
-            if d['data']['inf_data'].repaired==0.0:
-                indexLayer = n[1] - 1
-                if T == 1:
-                    resourceLeftConstr+=d['data']['inf_data'].resource_usage*m.getVarByName('w_'+`n`+","+`t`)
-                    if isSepResource:
-                        resourceLeftConstrSep[indexLayer]+=d['data']['inf_data'].resource_usage*m.getVarByName('w_'+`n`+","+`t`)
-                else:
-                    resourceLeftConstr+=d['data']['inf_data'].resource_usage*m.getVarByName('w_tilde_'+`n`+","+`t`)
-                    if isSepResource:
-                        resourceLeftConstrSep[indexLayer]+=d['data']['inf_data'].resource_usage*m.getVarByName('w_tilde_'+`n`+","+`t`)
+            indexLayer = n[1] - 1
+            if T == 1:
+                resourceLeftConstr+=d['data']['inf_data'].resource_usage*m.getVarByName('w_'+`n`+","+`t`)
+                if isSepResource:
+                    resourceLeftConstrSep[indexLayer]+=d['data']['inf_data'].resource_usage*m.getVarByName('w_'+`n`+","+`t`)
+            else:
+                resourceLeftConstr+=d['data']['inf_data'].resource_usage*m.getVarByName('w_tilde_'+`n`+","+`t`)
+                if isSepResource:
+                    resourceLeftConstrSep[indexLayer]+=d['data']['inf_data'].resource_usage*m.getVarByName('w_tilde_'+`n`+","+`t`)
 
         m.addConstr(resourceLeftConstr,GRB.LESS_EQUAL,totalResource,"Resource availability constraint at "+`t`+".")
         if isSepResource:
@@ -273,11 +271,10 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
         # Geographic space constraints
         for s in S:
             for n,d in N_hat_prime:
-                if d['data']['inf_data'].repaired==0.0:
-                    if T == 1:
-                        m.addConstr(m.getVarByName('w_'+`n`+","+`t`)*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+`s.id`+","+`t`),"Geographical space constraint for node "+`n`+","+`t`)
-                    else:
-                        m.addConstr(m.getVarByName('w_tilde_'+`n`+","+`t`)*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+`s.id`+","+`t`),"Geographical space constraint for node "+`n`+","+`t`)
+                if T == 1:
+                    m.addConstr(m.getVarByName('w_'+`n`+","+`t`)*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+`s.id`+","+`t`),"Geographical space constraint for node "+`n`+","+`t`)
+                else:
+                    m.addConstr(m.getVarByName('w_tilde_'+`n`+","+`t`)*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+`s.id`+","+`t`),"Geographical space constraint for node "+`n`+","+`t`)
             for u,v,a in A_hat_prime:
                 if T== 1:
                     m.addConstr(m.getVarByName('y_'+`u`+","+`v`+","+`t`)*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+`s.id`+","+`t`),"Geographical space constraint for arc ("+`u`+","+`v`+")")
@@ -299,13 +296,12 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
             spacePrepCost=0.0
             # Record node recovery actions.
             for n,d in N_hat_prime:
-                if d['data']['inf_data'].repaired==0.0:
-                    nodeVar='w_tilde_'+`n`+","+`t`
-                    if T == 1:
-                        nodeVar='w_'+`n`+","+`t`
-                    if round(m.getVarByName(nodeVar).x)==1:
-                        action=`n[0]`+"."+`n[1]`
-                        indp_results.add_action(t,action)
+                nodeVar='w_tilde_'+`n`+","+`t`
+                if T == 1:
+                    nodeVar='w_'+`n`+","+`t`
+                if round(m.getVarByName(nodeVar).x)==1:
+                    action=`n[0]`+"."+`n[1]`
+                    indp_results.add_action(t,action)
                         #if T == 1:
                         #N.G.node[n]['data']['inf_data'].functionality=1.0
             # Record edge recovery actions.
@@ -331,11 +327,10 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
             indp_results.add_cost(t,"Arc",arcCost)
             # Calculate node preparation costs.
             for n,d in N_hat_prime:
-                if d['data']['inf_data'].repaired==0.0:
-                    nodeVar = 'w_tilde_'+`n`+","+`t`
-                    if T == 1:
-                        nodeVar = 'w_'+`n`+","+`t`
-                    nodeCost+=d['data']['inf_data'].reconstruction_cost*m.getVarByName(nodeVar).x
+                nodeVar = 'w_tilde_'+`n`+","+`t`
+                if T == 1:
+                    nodeVar = 'w_'+`n`+","+`t`
+                nodeCost+=d['data']['inf_data'].reconstruction_cost*m.getVarByName(nodeVar).x
             indp_results.add_cost(t,"Node",nodeCost)
 
             # Calculate under/oversupply costs.
@@ -376,7 +371,15 @@ def apply_recovery(N,indp_results,t):
             #print "Applying recovery:",node
             N.G.node[node]['data']['inf_data'].repaired=1.0
             N.G.node[node]['data']['inf_data'].functionality=1.0
-                
+
+#        for u,v,a in N.G.edges_iter(data=True):
+#            if a['data']['inf_data'].is_interdep:
+#                if N.G.node[u]['data']['inf_data'].functionality == 0.0:
+#                    N.G.node[v]['data']['inf_data'].functionality = 0.0
+#                else:
+#                    if N.G.node[v]['data']['inf_data'].repaired == 1.0:
+#                        N.G.node[v]['data']['inf_data'].functionality = 1.0
+                        
 def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
     """Creates a functionality map for input into the functionality parameter in the indp function.
     :param N: An InfrastructureNetwork instance (created in infrastructure.py)
@@ -527,8 +530,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
 
         for i in range(params["NUM_ITERATIONS"]):
-            if print_cmd_line:
-                print "Time Step (iINDP)=",i,"/",params["NUM_ITERATIONS"]
+            print "Time Step (iINDP)=",i,"/",params["NUM_ITERATIONS"]
             results=indp(InterdepNet,v_r,T,layers,controlled_layers=controlled_layers,forced_actions=forced_actions)
             indp_results.extend(results[1],t_offset=i+1)
             if saveModel:
