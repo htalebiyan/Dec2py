@@ -144,6 +144,10 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
                         sumTemp_Real += Dindp_results_Real[P][i]['costs'][cost_type]
                 Dindp_results_sum.add_cost(i,cost_type,sumTemp)
                 Dindp_results_Real_sum.add_cost(i,cost_type,sumTemp_Real)
+            
+            for P in layers:
+                for a in Dindp_results[P][i]['actions']:
+                    Dindp_results_sum.add_action(i,a) 
                 
         if auction_type:
             output_dir_auction = output_dir + '/auctions'

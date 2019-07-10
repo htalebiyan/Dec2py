@@ -4,6 +4,7 @@ from gurobipy import *
 import string
 #import platform
 import networkx as nx
+import matplotlib.pyplot as plt
 #import copy
 import random
 import sys
@@ -727,3 +728,72 @@ def save_INDP_model_to_file(model,outModelDir,t,l=0,suffix=''):
         fileID.write('%s %g\n' % (vv.varName, vv.x))
     fileID.write('Obj: %g' % model.objVal)
     fileID.close()
+    
+def plot_indp_sample(params,folderSuffix="",suffix=""):
+    plt.figure()
+    InterdepNet=load_sample()
+    pos=nx.spring_layout(InterdepNet.G)
+    for key,value in pos.items():
+         pos[(1,1)][0] =  0.5
+         pos[(5,2)][0] =  0.5
+         pos[(2,1)][0] =  0.0
+         pos[(6,2)][0] =  0.0
+         pos[(3,1)][0] =  2.0
+         pos[(7,2)][0] =  2.0
+         pos[(4,1)][0] =  1.5
+         pos[(8,2)][0] =  1.5
+         pos[(6,2)][1] =  0.0
+         pos[(8,2)][1] =  0.0
+         pos[(5,2)][1] =  1.0
+         pos[(7,2)][1] =  1.0
+         pos[(2,1)][1] =  2.0
+         pos[(4,1)][1] =  2.0
+         pos[(1,1)][1] =  3.0
+         pos[(3,1)][1] =  3.0
+         
+    node_dict={1:[(1,1),(2,1),(3,1),(4,1)], 11:[(3,1)], 12:[(1,1),(2,1),(4,1)], 
+               2:[(5,2),(6,2),(7,2),(8,2)], 21:[(5,2)], 22:[(6,2),(7,2),(8,2)]}
+    arc_dict= {1: [((1,1),(2,1)),((1,1),(4,1)),((3,1),(4,1))], 
+                   2: [((5,2),(6,2)),((7,2),(6,2)),((7,2),(8,2))]} 
+
+    labels=dict((n,(n[0],d['data']['inf_data'].demand)) for n,d in InterdepNet.G.nodes(data=True))  
+
+    v_r = params["V"]
+    if isinstance(v_r, (int, long)):
+        totalResource = v_r
+    else:
+        if len(v_r) != 1:
+            totalResource = sum(v_r)
+        else:
+            totalResource = v_r[0]
+            
+    output_dir=params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`totalResource`+folderSuffix
+    action_file =output_dir+"/actions_"+`params["SIM_NUMBER"]`+"_"+suffix+".csv"
+    actions = {0:[]}
+    if os.path.isfile(action_file):
+        with open(action_file) as f:
+            lines=f.readlines()[1:]
+            for line in lines:
+                data=string.split(str.strip(line),",")
+                t=int(data[0])
+                action=str.strip(data[1])
+                if t not in actions:
+                    actions[t]=[]
+                actions[t].append(action)
+                
+    T = max(actions.keys())  
+    for t, value in actions.items():
+        plt.subplot(1, T+1 ,t+1, aspect='equal') 
+        plt.title('Time = %d' % t)
+        for a in value:
+            data=string.split(str.strip(a),".")
+            node_dict[int(data[1])*10+1].append((int(data[0]),int(data[1])))
+            node_dict[int(data[1])*10+2].remove((int(data[0]),int(data[1])))
+        nx.draw(InterdepNet.G, pos,labels=labels,node_color='w')
+        nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[1],node_color='r',node_size=900,alpha=0.6)
+        nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[2],node_color='b',node_size=900,alpha=0.6)
+        nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[12],node_color='w',node_shape="x",node_size=300)
+        nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[22],node_color='w',node_shape="x",node_size=300)
+        nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[1],width=1,alpha=0.9,edge_color='r')
+        nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[2],width=1,alpha=0.9,edge_color='b')
+        
