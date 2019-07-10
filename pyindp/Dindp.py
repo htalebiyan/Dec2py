@@ -8,6 +8,7 @@ import operator
 import networkx as nx
 from infrastructure import *
 from indputils import *
+import copy
 
 def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJCModel=False,validate=False):
     """ Solves an INDP problem with specified parameters using a decentralized hueristic called Judgment Call . Outputs to directory specified in params['OUTPUT_DIR'].
@@ -34,8 +35,10 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
  
     v_r = params["V"]
     num_iterations = params["NUM_ITERATIONS"]
-    if auction_type:
+    if auction_type=="second_price":
         output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_auction_layer_cap'
+    elif auction_type=="second_price_uniform":
+        output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_auction_layer_cap_uniform'
     else:
         output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_fixed_layer_cap'
     
@@ -58,13 +61,14 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
             Dindp_results_Real[P].add_cost(0,'Total',0.0) #Add a zero entry for t=0 for each layer
         
         res_allocate = {}
+        PoA = {}
         for i in range(num_iterations):
             print "\n--Iteration "+`i`+"/"+`num_iterations-1`
             
             v_r_applied = []
             if auction_type:
-                res_allocate[i]=auction_resources(sum(v_r),params,currentTotalCost,
-                    layers=[1,2,3],T=1,print_cmd=True,judgment_type=judgment_type,
+                res_allocate[i],PoA[i]=auction_resources(sum(v_r),params,currentTotalCost,
+                    layers=[1,2,3],T=1,print_cmd=print_cmd,judgment_type=judgment_type,
                     auction_type=auction_type)
                
                 for key, value in res_allocate[i].items():
@@ -116,7 +120,7 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
                 Dindp_results_Real[P].extend(indp_results_Real[1],t_offset=i+1)
                 
                 if auction_type:
-                    currentTotalCost[P]=indp_results_Real[0]['costs']['Total']
+                    currentTotalCost[P]=indp_results_Real[1][0]['costs']['Total']
                 if saveJCModel:
                     save_INDP_model_to_file(indp_results_Real[0],output_dir+"/Model",i+1,P,suffix='Real')  
                     output_dir_judgments= output_dir + '/judgments'
@@ -143,7 +147,7 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
                 
         if auction_type:
             output_dir_auction = output_dir + '/auctions'
-            write_auction_csv(output_dir_auction,res_allocate,sample_num=params["SIM_NUMBER"],suffix="")    
+            write_auction_csv(output_dir_auction,res_allocate,PoA,sample_num=params["SIM_NUMBER"],suffix="")    
         # Save results of D-iINDP run to file.
         if saveJC:   
             output_dir_agents = output_dir + '/agents'
@@ -186,7 +190,7 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
                 interdep_nodes[v]=[]
             interdep_nodes[v].append((u,G_prime.node[u]['data']['inf_data'].functionality))
     
-    functionality_realized = functionality.copy()        
+    functionality_realized = copy.deepcopy(functionality)       
     for t in range(T):     
         for u, value in functionality[t].iteritems():     
             if functionality[t][u]==1.0 and G_prime.node[u]['data']['inf_data'].functionality==0.0:
@@ -199,7 +203,7 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
             for u in value:
                 sum_u_functioanlity += u[1]
             
-            realCount += 1
+            realCount += 1 
             realizations[t][realCount]={'uValue':u[1],
                         'vValue':G_prime.node[v]['data']['inf_data'].functionality,
                         'vRepaired':G_prime.node[v]['data']['inf_data'].repaired,
@@ -209,17 +213,7 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
                 realizations[t][realCount]['vCorrected'] = True
                 if print_cmd:
                     print 'Correcting '+`v`+' to 0 (dep. on '+`value`+')'     
-                        
-#            elif sum_u_functioanlity != 0.0:
-#                if G_prime.node[v]['data']['inf_data'].repaired == 1.0 and G_prime.node[v]['data']['inf_data'].functionality == 0.0:
-##                    N.G.node[v]['data']['inf_data'].functionality=1.0
-#                    if saveJCModel:
-#                        realizations[t][realCount]['vCorrected'] = True
-#                    if print_cmd:
-#                        print 'Correcting '+`v`+ ' (prev. repaired) to 1 (dep. on '+`value`+')'
-#            else:
-#                print "Seriously?! sum_u_functioanlity?! "
-# 
+                     
     indp_results_Real = indp(N,0,1,layers=layers,controlled_layers=controlled_layers,functionality=functionality_realized)  
     for t in range(T):
         costs = indp_results.results[t]['costs']    
@@ -376,100 +370,165 @@ def auction_resources(v_r,params,currentTotalCost={},layers=[1,2,3],T=1,print_cm
     resource_allocation = {P:[] for P in layers}
     num_iterations = params["NUM_ITERATIONS"]
     
-    functioanlity = {}
     if not currentTotalCost:
         if print_cmd:
             print "Calculating current total cost..."
-        for P in layers:
-            negP=[x for x in layers if x != P]         
-            functionality = create_judgment_matrix(InterdepNet,1,negP,v_r,
-                                    actions=None,judgment_type=judgment_type) 
+        for P in layers:     
             '''!!! check what v_r must be for det demand JC'''
             indp_results = indp(InterdepNet,v_r=0,T=1,layers=layers,
-                                controlled_layers=[P],
-                                functionality=functionality)
+                                controlled_layers=[P])
             currentTotalCost[P] = indp_results[1][0]['costs']['Total']
+            
+    indp_results = indp(InterdepNet,v_r=0,T=1,layers=layers,
+                                controlled_layers=layers)
+    current_optimal_total_cost = indp_results[1][0]['costs']['Total']
+    indp_results = indp(InterdepNet,v_r=v_r,T=1,layers=layers,
+                                controlled_layers=layers)
+    optimal_total_cost = indp_results[1][0]['costs']['Total']
+    optimal_valuation = current_optimal_total_cost - optimal_total_cost
             
     if T == 1: 
         if print_cmd:
-            print "Auction: ",
+            print "Auction: "
+        sum_valuation = 0
+        PoA = 0
         for v in range(v_r):
             newTotalCost={}
             valuation={}
             indp_results={}
             if print_cmd:
-                print "Resource-%d"%(v+1),
-            for P in layers:
-                negP=[x for x in layers if x != P]
-                if not functioanlity:
+                print "Resource-%d"%(v+1)
+                
+            if auction_type=='second_price_uniform':
+                for P in layers:
+                    totalCostBounds = []
+                    for jt in ["PESSIMISTIC","OPTIMISTIC"]:
+                        negP=[x for x in layers if x != P]
+                        functionality = create_judgment_matrix(InterdepNet,T,negP,v_r,
+                                                actions=None,judgment_type=jt) 
+                        '''!!! check what v_r must be for det demand JC'''
+                        indp_results = indp(InterdepNet,v_r=len(resource_allocation[P])+1,
+                                    T=1,layers=layers,controlled_layers=[P],functionality=functionality)
+                        totalCostBounds.append(indp_results[1][0]['costs']['Total'])
+                    newTotalCost[P] = np.random.uniform(min(totalCostBounds),
+                                                    max(totalCostBounds),1)[0]
+                    valuation[P] = currentTotalCost[P]-newTotalCost[P]
+            else:
+                for P in layers:
+                    negP=[x for x in layers if x != P]
                     functionality = create_judgment_matrix(InterdepNet,T,negP,v_r,
                                             actions=None,judgment_type=judgment_type) 
-                '''!!! check what v_r must be for det demand JC'''
-                indp_results[P] = indp(InterdepNet,v_r=len(resource_allocation[P])+1,
-                            T=1,layers=layers,controlled_layers=[P],functionality=functionality)
-                newTotalCost[P] = indp_results[P][1][0]['costs']['Total']
-                valuation[P] = currentTotalCost[P]-newTotalCost[P]
+                    '''!!! check what v_r must be for det demand JC'''
+                    indp_results = indp(InterdepNet,v_r=len(resource_allocation[P])+1,
+                                T=1,layers=layers,controlled_layers=[P],functionality=functionality)
+                    newTotalCost[P] = indp_results[1][0]['costs']['Total']
+                    valuation[P] = currentTotalCost[P]-newTotalCost[P]
+            
             winner = max(valuation.iteritems(), key=operator.itemgetter(1))[0]
             if valuation[winner]!=0:
+                if print_cmd:
+                    print "Player %d wins!" % winner
+                sum_valuation += valuation[winner]
                 resource_allocation[winner].append(v+1)            
                 currentTotalCost[winner] = newTotalCost[winner]  
             else:
-                pass
+                if print_cmd:
+                    print "No auction winner!"
+        if sum_valuation!=0:
+            PoA = optimal_valuation/sum_valuation
+        else:
+            PoA = -10
     else:
         print 'hahahaha'
         
-    return resource_allocation
+    return resource_allocation,PoA
 
-def write_auction_csv(outdir,res_allocate,sample_num=1,suffix=""):
+def write_auction_csv(outdir,res_allocate,PoA,sample_num=1,suffix=""):
     if not os.path.exists(outdir):
         os.makedirs(outdir)        
     auction_file=outdir+"/auctions_"+`sample_num`+"_"+suffix+".csv"
     header = "t,"
     for key,value in res_allocate[0].items():
         header += "P"+`key`+","
+    header += "PoA"    
     with open(auction_file,'w') as f:
         f.write(header+"\n")
         for t,value in res_allocate.items():
             row = `t+1`+","
             for p,value2 in value.items():
                 row += `len(value2)`+','
+            row += `PoA[t]`
             f.write(row+"\n")
             
-def compare_auction_allocation(outdir,compare_to_dir,sample_range,T=1,layers=[1,3],suffix="",ci=None):
-    cols=['t','resource','method','sim','layer']
-    df = pd.DataFrame(columns=cols)
-    for i in sample_range:
-        for t in range(T):
-            for P in range(len(layers)):
-                df=df.append({'t':t+1,'resource':0.0,'method':'optimal','sim':i,'layer':`P+1`}, ignore_index=True)
-        action_file=compare_to_dir+"/actions_"+`i`+"_"+suffix+".csv"                
-        if os.path.isfile(action_file):
-            with open(action_file) as f:
-                lines=f.readlines()[1:]
-                for line in lines:
-                    data=string.split(str.strip(line),",")
-                    t=int(data[0])
-                    action=str.strip(data[1])
-                    P = int(action[-1])
-                    if '/' in action:
-                        addition = 0.5
-                    else:
-                        addition = 1.0
-                    df.loc[(df['t']==t)&(df['method']=='optimal')&(df['sim']==i)&(df['layer']==`P`),'resource']+=addition
-                    
-        auction_file=outdir+"/auctions_"+`i`+"_"+suffix+".csv"
-        if os.path.isfile(auction_file):
-            with open(auction_file) as f:
-                lines=f.readlines()[1:]
-                for line in lines:
-                    data=string.split(str.strip(line),",")
-                    t=int(data[0])
-                    for P in range(len(layers)):
-                        df=df.append({'t':t,'resource':int(data[P+1]),'method':'auction','sim':i,'layer':`P+1`}, ignore_index=True)
-     
-    plt.figure()                  
-    ax = sns.lineplot(x='t',y='resource',style='method',hue='layer',data=df,ci=ci, palette=sns.color_palette("muted",3))                        
-    ax.set(xticks=np.arange(0,21,1))
+def resourcec_allocation(df,optimal_method,sample_range,auction_types=['second_price'],T=1,layers=[1,3],suffix="",ci=None,listHDadd=None):
+    no_resources = df.no_resources.unique().tolist()
+    sce_range= df.Magnitude.unique().tolist()
+    method_name = df.method.unique().tolist()
+    if listHDadd:
+        listHD = pd.read_csv(listHDadd)   
+    
+    cols=['t','resource','method','sample','sce','layer','no_res','PoA']
+    df_res = pd.DataFrame(columns=cols)
+    
+    for nr in no_resources:
+        for mn in method_name:
+            for sce in sce_range:
+                for i in sample_range:
+                    if listHDadd==None or len(listHD.loc[(listHD.set == i) & (listHD.sce == sce)].index):                        
+                        if mn=='tdindp_results' or mn=='indp_results':
+                            compare_to_dir= '../results/'+mn+'_L3_m'+str(sce)+'_v'+str(nr)
+                            for t in range(T):
+                                for P in range(len(layers)):
+                                    df_res=df_res.append({'t':t+1,'resource':0.0,'method':mn,'sample':i,'sce':sce,'layer':`P+1`,'no_res':nr,'PoA':1}, ignore_index=True)
+                            action_file=compare_to_dir+"/actions_"+str(i)+"_"+suffix+".csv"                
+                            if os.path.isfile(action_file):
+                                with open(action_file) as f:
+                                    lines=f.readlines()[1:]
+                                    for line in lines:
+                                        data=string.split(str.strip(line),",")
+                                        t=int(data[0])
+                                        action=str.strip(data[1])
+                                        P = int(action[-1])
+                                        if '/' in action:
+                                            addition = 0.5
+                                        else:
+                                            addition = 1.0
+                                        df_res.loc[(df_res['t']==t)&(df_res['method']==mn)&(df_res['sample']==i)&(df_res['sce']==sce)&(df_res['layer']==`P`)&(df_res['no_res']==nr),'resource']+=addition        
+                        else:   
+                            for at in auction_types:
+                                if at == 'second_price':
+                                    outdir= '../results/'+mn+'_L3_m'+str(sce)+'_v'+str(nr)+'_auction_layer_cap/auctions/'
+                                elif at == 'second_price_uniform':
+                                    outdir= '../results/'+mn+'_L3_m'+str(sce)+'_v'+str(nr)+'_auction_layer_cap_uniform/auctions/'
+                                auction_file=outdir+"/auctions_"+str(i)+"_"+suffix+".csv"
+                                if os.path.isfile(auction_file):
+                                    with open(auction_file) as f:
+                                        lines=f.readlines()[1:]
+                                        for line in lines:
+                                            data=string.split(str.strip(line),",")
+                                            t=int(data[0])
+                                            for P in range(len(layers)):
+                                                poa = float(data[len(layers)+1])
+                                                df_res=df_res.append({'t':t,'resource':float(data[P+1]),'method':mn+'_'+at,'sample':i,'sce':sce,'layer':`P+1`,'no_res':nr,'PoA':poa}, ignore_index=True)
+            print 'Resource allocation|%s|no_res:%d' %(mn,nr)
+    return df_res
+
+def plot_auction_allocation(df_res,ci=None):
+    no_resources = df_res.no_res.unique().tolist()
+    no_methods = len(df_res.method.unique().tolist())
+    T = len(df_res.t.unique().tolist())
+    for nr in no_resources:        
+        plt.figure()           
+        ax = sns.lineplot(x='t',y='resource',style='layer',hue='method',
+                          data=df_res[(df_res['no_res']==nr)],
+                          ci=ci, palette=sns.color_palette("muted",no_methods))                        
+        ax.set(xticks=np.arange(0,T+1,1))
+        ax.set_title(r'Total resources = %d'%(nr))
+        
+        plt.figure()         
+        ax = sns.barplot(x="t", y="PoA", hue='method', data=df_res[(df_res['no_res']==nr)&(df_res['PoA']!=0.0)&(df_res['PoA']!=-10)])
+        ax.set_title(r'Total resources = %d'%(nr))
+        ax.set_ylim(0,min(10,ax.get_ylim()[1]))
 
 def write_judgments_csv(N,outdir,functionality,realizations,sample_num=1,agent=1,time=0,suffix=""):
     if not os.path.exists(outdir):
@@ -575,6 +634,7 @@ def correct_tdindp_results(df,mags,method_name,sample_range):
 def plot_performance_curves(df,x='t',y='cost',cost_type='Total',method_name=['tdindp_results'],ci=None):
     sns.set()
     no_resources = df.no_resources.unique().tolist()
+    T = len(df[x].unique().tolist())
     for nr in no_resources:
         plt.figure()
         with sns.color_palette("muted"):
@@ -584,8 +644,9 @@ def plot_performance_curves(df,x='t',y='cost',cost_type='Total',method_name=['td
                         (df['method'].isin(method_name))&
                         (df['no_resources']==nr)])              
             ax.set_title(r'Total resources = %d'%(nr))
+            ax.set(xticks=np.arange(0,T+1,1))
             
-def plot_relative_performance(df,sample_range,cost_type='Total',listHDadd=None):    
+def relative_performance(df,sample_range,cost_type='Total',listHDadd=None):    
     sns.set()
     resource_cap = df.resource_cap.unique().tolist()
     no_resources = df.no_resources.unique().tolist()
@@ -598,31 +659,30 @@ def plot_relative_performance(df,sample_range,cost_type='Total',listHDadd=None):
     for m in mags:
         for jc in method_name:
             for rc in resource_cap:
-                if jc=='indp_results' or rc=='Layer Cap':#!!!!!!!!!!!!!!!
-                    for sr in sample_range:
-                        for nr in no_resources:
-                            if listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):
-                                rows = df[(df['Magnitude']==m)&(df['method']==jc)&
-                                         (df['sample']==sr)&(df['cost_type']==cost_type)&
-                                         (df['resource_cap']==rc)&(df['no_resources']==nr)]
-                                  
-                                if not rows.empty:
-                                    area = np.trapz(rows.cost[:20],dx=1)
-                                else:
-                                    area = 'nan'
-                                
-                                tempdf = pd.Series()
-                                tempdf['Magnitude'] = m
-                                tempdf['cost_type'] = cost_type
-                                tempdf['method'] = jc
-                                tempdf['resource_cap'] = rc   
-                                tempdf['no_resources'] = nr 
-                                tempdf['sample'] = sr  
-                                tempdf['Area'] = area  
-                                lambda_df=lambda_df.append(tempdf,ignore_index=True)
+                for sr in sample_range:
+                    for nr in no_resources:
+                        if listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):
+                            rows = df[(df['Magnitude']==m)&(df['method']==jc)&
+                                     (df['sample']==sr)&(df['cost_type']==cost_type)&
+                                     (df['resource_cap']==rc)&(df['no_resources']==nr)]
+                              
+                            if not rows.empty:
+                                area = np.trapz(rows.cost[:20],dx=1)
+                            else:
+                                area = 'nan'
+                            
+                            tempdf = pd.Series()
+                            tempdf['Magnitude'] = m
+                            tempdf['cost_type'] = cost_type
+                            tempdf['method'] = jc
+                            tempdf['resource_cap'] = rc   
+                            tempdf['no_resources'] = nr 
+                            tempdf['sample'] = sr  
+                            tempdf['Area'] = area  
+                            lambda_df=lambda_df.append(tempdf,ignore_index=True)
         print 'm %d|lambda_TC calculated' %(m)  
           
-    ref_method = 'indp_results'
+    ref_method = 'tdindp_results'
     ref_rc = 'Network Cap'
     for m in mags:
         for nr in no_resources:
@@ -664,6 +724,12 @@ def plot_relative_performance(df,sample_range,cost_type='Total',listHDadd=None):
                                     (lambda_df['sample']==sr)&
                                     (lambda_df['cost_type']==cost_type)&
                                     (lambda_df['no_resources']==nr),'lambda_TC']=lambda_TC
+    return lambda_df
+
+def plot_relative_performance(lambda_df,cost_type='Total'):    
+    sns.set()
+    no_resources = lambda_df.no_resources.unique().tolist()    
+
     for nr in no_resources:                                                  
         plt.figure()
 #            plt.rc('text', usetex=True)
@@ -685,4 +751,3 @@ def plot_relative_performance(df,sample_range,cost_type='Total',listHDadd=None):
         ax.set_facecolor('w')   
         plt.legend(handles=ax.get_legend_handles_labels()[0][:7],loc=0,frameon =True,
                    framealpha=0.0, ncol=1,bbox_to_anchor=(1.1, 0.1))   
-    return lambda_df

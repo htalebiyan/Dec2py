@@ -33,14 +33,14 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1]):
         if failSce_param['filtered_List']!=None:
             listHD = pd.read_csv(failSce_param['filtered_List'])
             
-    for m in failSce_param['mags']:   
+    for m in failSce_param['mags']:    
         for i in failSce_param['sample_range']:
             if failSce_param['filtered_List']==None or len(listHD.loc[(listHD.set == i) & (listHD.sce == m)].index):
             
                 print '\n---Running Magnitude '+`m`+' sample '+`i`+'...'
                 
                 print("Initializing network...")
-                InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependency_dir="../data/INDP_4-12-2016",sim_number=0,magnitude=6,v=params["V"])  
+                InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependency_dir="../data/INDP_4-12-2016",sim_number=0,magnitude=6,v=params["V"])  # #!!!
                     
                 params["N"]=InterdepNet
                 params["SIM_NUMBER"]=i
@@ -153,8 +153,12 @@ def run_tdindp_L2_V2_inf(failSce_param):
     single_scenario_run(params,failSce_param,layers=[1,3])
 
 def run_tdindp_L3_V3(failSce_param):
-    params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L3',"V":3,"T":20,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
+    params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L3',"V":3,"T":10,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
     batch_run(params,failSce_param,layers=[1,2,3])  
+
+def run_tdindp_L3_V6(failSce_param):
+    params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L3',"V":6,"T":10,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
+    batch_run(params,failSce_param,layers=[1,2,3]) 
         
 def run_tdindp_L3_V3_Layer_Res_Cap(failSce_param):
     params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L3',"V":[1,1,1],"T":20,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
@@ -214,70 +218,86 @@ if __name__ == "__main__":
 
     ''' Decide the failure scenario'''
     listFilteredSce = 'damagedElements_sliceQuantile_0.95.csv'
-#    failSce_param = {"type":"WU","set_range":range(24,25),"sce_range":range(5,6),
-#                     'filtered_List':listFilteredSce}
+    failSce_param = {"type":"WU","set_range":range(5,6),"sce_range":range(46,47),
+                     'filtered_List':listFilteredSce}
     failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(0,96),
                      'filtered_List':listFilteredSce}
-#    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
-#    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
+##    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
+##    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
 
-        
-    run_indp_L3_V3(failSce_param)
-    run_indp_L3_V6(failSce_param)
+     
+#    run_indp_L3_V3(failSce_param)
+#    run_indp_L3_V6(failSce_param)
 ##    run_indp_L3_V3_Layer_Res_Cap(failSce_param)
-##    run_tdindp_L3_V3(failSce_param)
-##    run_tdindp_L3_V3_Layer_Res_Cap(failSce_param)
-##    run_inrg_sample()
-##    run_inrg_L2_V2(failSce_param)
-#        
-#    for jc in ["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]:
+#    run_tdindp_L3_V3(failSce_param)
+#    run_tdindp_L3_V6(failSce_param)
+####    run_tdindp_L3_V3_Layer_Res_Cap(failSce_param)
+####    run_inrg_sample()
+####    run_inrg_L2_V2(failSce_param)
+###        
+##    for jc in ["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]:
     for jc in ["PESSIMISTIC","OPTIMISTIC"]:
-#        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type="second_price")
-        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type=None)
-        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type=None)
-##    
-##    """ Print Results """ 
-##    method_name = ['judgeCall_PESSIMISTIC_results','judgeCall_RANDOM_results',
-##                   'judgeCall_DEMAND_results','judgeCall_DET-DEMAND_results',
-##                   'judgeCall_OPTIMISTIC_results',                   
-##                   'judgeCall_PESSIMISTIC_results','judgeCall_RANDO M_results',
-##                   'judgeCall_DEMAND_results','judgeCall_DET-DEMAND_results',
-##                   'judgeCall_OPTIMISTIC_results', 
-##                   'indp_results','indp_results',
-##                   'tdindp_results','tdindp_results']
-##    resource_cap = ['_fixed_layer_cap','_fixed_layer_cap','_fixed_layer_cap',
-##                    '_fixed_layer_cap','_fixed_layer_cap',
-##                    '_auction_layer_cap','_auction_layer_cap','_auction_layer_cap',
-##                    '_auction_layer_cap','_auction_layer_cap',
-##                    '','_fixed_layer_cap','','_fixed_layer_cap']
-##    suffixes = ['Real_sum','Real_sum','Real_sum','Real_sum','Real_sum',
-##                'Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','','','','']
-#####   
+        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type="second_price")
+        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type="second_price")
+        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type="second_price_uniform")
+        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type="second_price_uniform")
+#        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type=None)
+#        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type=None)
+        
+
+####    
+###    """ Print Results """ 
+###    method_name = ['judgeCall_PESSIMISTIC_results','judgeCall_RANDOM_results',
+###                   'judgeCall_DEMAND_results','judgeCall_DET-DEMAND_results',
+###                   'judgeCall_OPTIMISTIC_results',                   
+###                   'judgeCall_PESSIMISTIC_results','judgeCall_RANDO M_results',
+###                   'judgeCall_DEMAND_results','judgeCall_DET-DEMAND_results',
+###                   'judgeCall_OPTIMISTIC_results', 
+###                   'indp_results','indp_results',
+###                   'tdindp_results','tdindp_results']
+###    resource_cap = ['_fixed_layer_cap','_fixed_layer_cap','_fixed_layer_cap',
+###                    '_fixed_layer_cap','_fixed_layer_cap',
+###                    '_auction_layer_cap','_auction_layer_cap','_auction_layer_cap',
+###                    '_auction_layer_cap','_auction_layer_cap',
+###                    '','_fixed_layer_cap','','_fixed_layer_cap']
+###    suffixes = ['Real_sum','Real_sum','Real_sum','Real_sum','Real_sum',
+###                'Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','','','','']
+######   
     method_name = ['judgeCall_PESSIMISTIC_results',
                    'judgeCall_OPTIMISTIC_results',
-                   'indp_results']
-    resource_cap = ['_fixed_layer_cap','_fixed_layer_cap','']
-    suffixes = ['Real_sum','Real_sum','']
-#######
-#######
+                   'judgeCall_PESSIMISTIC_results',
+                   'judgeCall_OPTIMISTIC_results',
+                   'judgeCall_PESSIMISTIC_results',
+                   'judgeCall_OPTIMISTIC_results',
+                   'indp_results','tdindp_results']
+    resource_cap = ['_fixed_layer_cap','_fixed_layer_cap',
+                    '_auction_layer_cap','_auction_layer_cap',
+                    '_auction_layer_cap_uniform','_auction_layer_cap_uniform','','']
+    suffixes = ['Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','','']
+##########
+##########
     sample_range=failSce_param["set_range"]
     mags=failSce_param['sce_range']
     df = read_and_aggregate_results(mags,method_name,resource_cap,suffixes,L=3,
                                     sample_range=sample_range,no_resources=[3,6],
                                     listHDadd=failSce_param['filtered_List'])
-#    df = correct_tdindp_results(df,mags,method_name,sample_range)
+    df = correct_tdindp_results(df,mags,method_name,sample_range)
     
     
         
     df['resource_cap'] = df['resource_cap'].replace('', 'Network Cap')
     df['resource_cap'] = df['resource_cap'].replace('_fixed_layer_cap', 'Layer Cap')
     df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap', 'Auction') 
+    df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap_uniform', 'Auction Uniform') 
     plot_performance_curves(df,cost_type='Total',method_name=method_name,ci=None)
-    lambda_df = plot_relative_performance(df,sample_range=sample_range,listHDadd=failSce_param['filtered_List'])
+    lambda_df = relative_performance(df,sample_range=sample_range,listHDadd=failSce_param['filtered_List'])
+    plot_relative_performance(lambda_df)
 #    
     """ Comparing the resource allocation by octioan and optimal"""    
-#    outdir= '../results/judgeCall_OPTIMISTIC_results_L3_m9_v3_auction_layer_cap'
-#    compare_to_dir= '../results/tdindp_results_L3_m9_v3'
-#    
-#    outdir+='/auctions'
-#    compare_auction_allocation(outdir,compare_to_dir,T=20,layers=[1,2,3],sample_range=sample_range,ci=None)
+    optimal_method= 'tdindp_results'
+    auction_types = ['second_price','second_price_uniform']
+    resource_allocation=resourcec_allocation(df,optimal_method,sample_range=sample_range,
+                            auction_types=auction_types,T=10,
+                            layers=[1,2,3],ci=None,
+                            listHDadd=failSce_param['filtered_List'])
+    plot_auction_allocation(resource_allocation,ci=None)

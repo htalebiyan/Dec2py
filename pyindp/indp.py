@@ -371,14 +371,6 @@ def apply_recovery(N,indp_results,t):
             #print "Applying recovery:",node
             N.G.node[node]['data']['inf_data'].repaired=1.0
             N.G.node[node]['data']['inf_data'].functionality=1.0
-
-#        for u,v,a in N.G.edges_iter(data=True):
-#            if a['data']['inf_data'].is_interdep:
-#                if N.G.node[u]['data']['inf_data'].functionality == 0.0:
-#                    N.G.node[v]['data']['inf_data'].functionality = 0.0
-#                else:
-#                    if N.G.node[v]['data']['inf_data'].repaired == 1.0:
-#                        N.G.node[v]['data']['inf_data'].functionality = 1.0
                         
 def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
     """Creates a functionality map for input into the functionality parameter in the indp function.
@@ -550,8 +542,8 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
             time_window_length=params["WINDOW_LENGTH"]
             num_time_windows=T
         output_dir=params["OUTPUT_DIR"]+"_m"+`params["MAGNITUDE"]`+"_v"+outDirSuffixRes
-        if print_cmd_line:
-            print "Running td-INDP (T="+`T`+", Window size="+`time_window_length`+")"
+        
+        print "Running td-INDP (T="+`T`+", Window size="+`time_window_length`+")"
         # Initial percolation calculations.
         results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers,functionality=functionality)
         indp_results=results[1]
