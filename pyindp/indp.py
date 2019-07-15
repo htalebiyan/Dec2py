@@ -435,24 +435,28 @@ def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependen
     return InterdepNet
 
 
-def initialize_sample_network(params,layers=[1,2]):
-    """ Initializes sample 2x8 network (used in INRG examples)
+def initialize_sample_network(params={},layers=[1,2]):
+    """ Initializes sample 2x6 network 
     :param params: (Currently not used).
     :param layers: (Currently not used).
     :returns: An interdependent InfrastructureNetwork.
     """
     InterdepNet=InfrastructureNetwork("2x8_centralized")
-    node_to_demand_dict={(1,1):5,(2,1):-1,(3,1):-2,(4,1):-2,(5,2):-2,(6,2):6,(7,2):1,(8,2):-5}
-    space_to_nodes_dict={1:[(1,1),(5,2)],2:[(2,1),(6,2)],3:[(3,1),(7,2)],4:[(4,1),(8,2)]}
-    arc_list= [((1,1),(2,1)),((1,1),(4,1)),((1,1),(3,1)),((6,2),(5,2)),((6,2),(8,2)),((7,2),(5,2)),((7,2),(8,2))]
-    interdep_list=[((1,1),(5,2)),((2,1),(6,2)),((3,1),(7,2)),((4,1),(8,2))]
-    failed_nodes=[(1,1),(2,1),(3,1),(5,2),(6,2),(7,2)]
+    node_to_demand_dict={(1,1):5,(2,1):-1,(3,1):-2,(4,1):-2,(5,1):-4,(6,1):4,
+                         (7,2):-2,(8,2):6,(9,2):1,(10,2):-5,(11,2):4,(12,2):-4}
+    space_to_nodes_dict={1:[(1,1),(7,2)],2:[(2,1),(8,2)],
+                    3:[(3,1),(5,1),(9,2),(11,2)],4:[(4,1),(6,1),(10,2),(12,2)]}
+    arc_list= [((1,1),(2,1)),((1,1),(4,1)),((1,1),(3,1)),((6,1),(4,1)),((6,1),(5,1)),
+               ((8,2),(7,2)),((8,2),(10,2)),((9,2),(7,2)),((9,2),(10,2)),((9,2),(12,2)),((11,2),(12,2))]
+    interdep_list=[((1,1),(7,2)),((2,1),(8,2)),((9,2),(3,1)),((4,1),(10,2))]
+    failed_nodes=[(1,1),(2,1),(3,1),(5,1),(6,1),
+                  (7,2),(8,2),(9,2),(11,2),(12,2)]
     global_index=1
     for n in node_to_demand_dict:
         nn=InfrastructureNode(global_index,n[1],n[0])
         nn.demand=node_to_demand_dict[n]
         nn.reconstruction_cost=abs(nn.demand)
-        nn.oversupply_penalty=0.0
+        nn.oversupply_penalty=50
         nn.undersupply_penalty=50
         nn.resource_usage=1
         if n in failed_nodes:
@@ -730,32 +734,39 @@ def save_INDP_model_to_file(model,outModelDir,t,l=0,suffix=''):
     fileID.close()
     
 def plot_indp_sample(params,folderSuffix="",suffix=""):
-    plt.figure()
-    InterdepNet=load_sample()
+    plt.figure(figsize=(16,8))
+    InterdepNet=initialize_sample_network()
     pos=nx.spring_layout(InterdepNet.G)
     for key,value in pos.items():
          pos[(1,1)][0] =  0.5
-         pos[(5,2)][0] =  0.5
+         pos[(7,2)][0] =  0.5
          pos[(2,1)][0] =  0.0
-         pos[(6,2)][0] =  0.0
+         pos[(8,2)][0] =  0.0
          pos[(3,1)][0] =  2.0
-         pos[(7,2)][0] =  2.0
+         pos[(9,2)][0] =  2.0
          pos[(4,1)][0] =  1.5
-         pos[(8,2)][0] =  1.5
-         pos[(6,2)][1] =  0.0
+         pos[(10,2)][0] =  1.5
+         pos[(5,1)][0] =  3.0
+         pos[(11,2)][0] =  3.0
+         pos[(6,1)][0] =  2.5
+         pos[(12,2)][0] =  2.5
          pos[(8,2)][1] =  0.0
-         pos[(5,2)][1] =  1.0
+         pos[(10,2)][1] =  0.0
+         pos[(12,2)][1] =  0.0
          pos[(7,2)][1] =  1.0
+         pos[(9,2)][1] =  1.0
+         pos[(11,2)][1] =  1.0
          pos[(2,1)][1] =  2.0
          pos[(4,1)][1] =  2.0
+         pos[(6,1)][1] =  2.0
          pos[(1,1)][1] =  3.0
          pos[(3,1)][1] =  3.0
-         
-    node_dict={1:[(1,1),(2,1),(3,1),(4,1)], 11:[(3,1)], 12:[(1,1),(2,1),(4,1)], 
-               2:[(5,2),(6,2),(7,2),(8,2)], 21:[(5,2)], 22:[(6,2),(7,2),(8,2)]}
-    arc_dict= {1: [((1,1),(2,1)),((1,1),(4,1)),((3,1),(4,1))], 
-                   2: [((5,2),(6,2)),((7,2),(6,2)),((7,2),(8,2))]} 
+         pos[(5,1)][1] =  3.0
 
+    node_dict={1:[(1,1),(2,1),(3,1),(4,1),(5,1),(6,1)], 11:[(4,1)], 12:[(1,1),(2,1),(3,1),(5,1),(6,1)], 
+               2:[(7,2),(8,2),(9,2),(10,2),(11,2),(12,2)], 21:[(10,2)], 22:[(7,2),(8,2),(9,2),(11,2),(12,2)]}
+    arc_dict= {1: [((1,1),(2,1)),((1,1),(3,1)),((1,1),(4,1)),((6,1),(4,1)),((6,1),(5,1))], 
+                   2: [((8,2),(7,2)),((8,2),(10,2)),((9,2),(7,2)),((9,2),(10,2)),((9,2),(12,2)),((11,2),(12,2))]} 
     labels=dict((n,(n[0],d['data']['inf_data'].demand)) for n,d in InterdepNet.G.nodes(data=True))  
 
     v_r = params["V"]
@@ -783,7 +794,7 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
                 
     T = max(actions.keys())  
     for t, value in actions.items():
-        plt.subplot(1, T+1 ,t+1, aspect='equal') 
+        plt.subplot(2, (T+1)/2+1 ,t+1, aspect='equal') 
         plt.title('Time = %d' % t)
         for a in value:
             data=string.split(str.strip(a),".")
@@ -796,4 +807,5 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
         nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[22],node_color='w',node_shape="x",node_size=300)
         nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[1],width=1,alpha=0.9,edge_color='r')
         nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[2],width=1,alpha=0.9,edge_color='b')
-        
+    plt.tight_layout()   
+    plt.savefig(output_dir+'/plot_net'+folderSuffix+'.png',dpi=300)

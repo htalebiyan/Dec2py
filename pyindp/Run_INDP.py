@@ -108,26 +108,41 @@ def max_damage_sample(mag):
 def run_indp_sample():
     import warnings
     warnings.filterwarnings("ignore")
-    InterdepNet=load_sample()
-    params={"NUM_ITERATIONS":4, "OUTPUT_DIR":'../results/sample_indp_2-1_samp2',"V":4,"T":4,"WINDOW_LENGTH":4,"ALGORITHM":"INDP"}
+    InterdepNet=initialize_sample_network()
+    params={"NUM_ITERATIONS":7, "OUTPUT_DIR":'../results/sample_indp_2-1_samp2_L2',"V":2,"T":1,"WINDOW_LENGTH":1,"ALGORITHM":"INDP"}
     params["N"]=InterdepNet
     params["MAGNITUDE"]=0
     params["SIM_NUMBER"]=0
     run_indp(params,layers=[1,2],T=params["T"],suffix="",saveModel=True,print_cmd_line=True)
-    plot_indp_sample(params)
+#    plot_indp_sample(params)
     
-    InterdepNet=load_sample()
-    params["N"]=InterdepNet
-    params["ALGORITHM"]="JUDGMENT_CALL"
-    params["JUDGMENT_TYPE"]="PESSIMISTIC"
-    params["OUTPUT_DIR"]='../results/judgeCall_'+params["JUDGMENT_TYPE"]+'_results_L3'
-    params["V"]=[2,2]
-    params["T"]=1
-    params["AUCTION_TYPE"]=None
-    run_judgment_call(params,layers=[1,2],T=params["T"],saveJCModel=True,print_cmd=True)
-    plot_indp_sample(params,folderSuffix='_fixed_layer_cap',suffix="sum")
+    for jc in ["OPTIMISTIC"]:#!!! "PESSIMISTIC",
+        InterdepNet=initialize_sample_network()
+        params["N"]=InterdepNet
+        params["NUM_ITERATIONS"]=7
+        params["ALGORITHM"]="JUDGMENT_CALL"
+        params["JUDGMENT_TYPE"]=jc
+        params["OUTPUT_DIR"]='../results/judgeCall_'+jc+'_results_L2'
+        params["V"]=[1,1]
+        params["T"]=1
+        params["AUCTION_TYPE"]="second_price"
+        run_judgment_call(params,layers=[1,2],T=params["T"],saveJCModel=True,print_cmd=True)
+#        plot_indp_sample(params,folderSuffix='_auction_layer_cap',suffix="sum")
     
+    method_name=['sample_indp_2-1_samp2','judgeCall_OPTIMISTIC_results','judgeCall_PESSIMISTIC_results']
+    resource_cap=['','_auction_layer_cap','_auction_layer_cap']
+    suffixes=['','Real_sum','Real_sum']
+    df = read_and_aggregate_results(mags=[0],method_name=method_name,
+        resource_cap=resource_cap,suffixes=suffixes,L=2,sample_range=[0],no_resources=[2])  
+    plot_performance_curves(df,cost_type='Total',method_name=method_name,ci=None)
+#    lambda_df = relative_performance(df,sample_range=[0])
+#    plot_relative_performance(lambda_df)   
+    
+    resource_allocation=resourcec_allocation(df,sample_range=[0],
+                            L=2,T=5,layers=[1,2])
+    plot_auction_allocation(resource_allocation,ci=None)
 
+    
 def run_inrg_sample():
     InterdepNet=load_sample()
     params={"NUM_ITERATIONS":4,"OUTPUT_DIR":'../results/sample_inrg_1-2_samp2',"V":1,"T":1,"ALGORITHM":"INRG"}
@@ -232,7 +247,7 @@ def main():
 
 if __name__ == "__main__":    
     run_indp_sample()
-        
+
 ##    main()
 
 #    ''' Decide the failure scenario'''
@@ -313,10 +328,7 @@ if __name__ == "__main__":
 #    plot_relative_performance(lambda_df)
 ##    
 #    """ Comparing the resource allocation by octioan and optimal"""    
-#    optimal_method= 'tdindp_results'
-#    auction_types = ['second_price','second_price_uniform']
-#    resource_allocation=resourcec_allocation(df,optimal_method,sample_range=sample_range,
-#                            auction_types=auction_types,T=10,
-#                            layers=[1,2,3],ci=None,
+#    resource_allocation=resourcec_allocation(df,sample_range=sample_range,
+#                            T=10,layers=[1,2,3],ci=None,
 #                            listHDadd=failSce_param['filtered_List'])
 #    plot_auction_allocation(resource_allocation,ci=None)
