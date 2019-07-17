@@ -34,12 +34,12 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
     G_prime_nodes = [n[0] for n in N.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in layers]
     G_prime = N.G.subgraph(G_prime_nodes)
     # Damaged nodes in whole network
-    N_prime = [n for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].functionality==0.0]
+    N_prime = [n for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].repaired==0.0]
     # Nodes in controlled network.
     N_hat_nodes   = [n[0] for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in controlled_layers]
     N_hat = G_prime.subgraph(N_hat_nodes)
     # Damaged nodes in controlled network.
-    N_hat_prime= [n for n in N_hat.nodes_iter(data=True) if n[1]['data']['inf_data'].functionality==0.0]
+    N_hat_prime= [n for n in N_hat.nodes_iter(data=True) if n[1]['data']['inf_data'].repaired==0.0]
     # Damaged arcs in whole network
     A_prime = [(u,v,a) for u,v,a in G_prime.edges_iter(data=True) if a['data']['inf_data'].functionality==0.0]
     # Damaged arcs in controlled network.
@@ -372,6 +372,13 @@ def apply_recovery(N,indp_results,t):
             #print "Applying recovery:",node
             N.G.node[node]['data']['inf_data'].repaired=1.0
             N.G.node[node]['data']['inf_data'].functionality=1.0
+            
+    for u,v,a in N.G.edges_iter(data=True):
+        if a['data']['inf_data'].is_interdep:
+            if N.G.node[u]['data']['inf_data'].functionality == 0.0 and N.G.node[v]['data']['inf_data'].functionality==1.0:
+                N.G.node[v]['data']['inf_data'].functionality = 0.0
+            if N.G.node[u]['data']['inf_data'].functionality == 1.0 and N.G.node[v]['data']['inf_data'].repaired==1.0 and N.G.node[v]['data']['inf_data'].functionality==0.0:
+                N.G.node[v]['data']['inf_data'].functionality = 1.0
                         
 def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
     """Creates a functionality map for input into the functionality parameter in the indp function.
@@ -385,7 +392,7 @@ def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
     functionality={}
     G_prime_nodes = [n[0] for n in N.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in layers]
     G_prime = N.G.subgraph(G_prime_nodes)
-    N_prime = [n for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].functionality==0.0]
+    N_prime = [n for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].repaired==0.0]
     for t in range(T):
         functionality[t]={}
         functional_nodes=[]

@@ -116,7 +116,7 @@ def run_indp_sample():
     run_indp(params,layers=[1,2],T=params["T"],suffix="",saveModel=True,print_cmd_line=True)
 #    plot_indp_sample(params)
     
-    for jc in ["OPTIMISTIC"]:#!!! "PESSIMISTIC",
+    for jc in ["PESSIMISTIC","OPTIMISTIC"]:#!!! 
         InterdepNet=initialize_sample_network()
         params["N"]=InterdepNet
         params["NUM_ITERATIONS"]=7
@@ -135,8 +135,8 @@ def run_indp_sample():
     df = read_and_aggregate_results(mags=[0],method_name=method_name,
         resource_cap=resource_cap,suffixes=suffixes,L=2,sample_range=[0],no_resources=[2])  
     plot_performance_curves(df,cost_type='Total',method_name=method_name,ci=None)
-#    lambda_df = relative_performance(df,sample_range=[0])
-#    plot_relative_performance(lambda_df)   
+    lambda_df = relative_performance(df,sample_range=[0])
+    plot_relative_performance(lambda_df)   
     
     resource_allocation=resourcec_allocation(df,sample_range=[0],
                             L=2,T=5,layers=[1,2])
@@ -246,9 +246,7 @@ def main():
         globals()[fun_name](mags)
 
 if __name__ == "__main__":    
-    run_indp_sample()
-
-##    main()
+#    run_indp_sample()
 
 #    ''' Decide the failure scenario'''
 #    listFilteredSce = 'damagedElements_sliceQuantile_0.95.csv'
@@ -258,8 +256,8 @@ if __name__ == "__main__":
 #                     'filtered_List':listFilteredSce}
 ##    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
 ##    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
-
-     
+#
+#     
 #    run_indp_L3_V3(failSce_param)
 #    run_indp_L3_V6(failSce_param)
 ##    run_indp_L3_V3_Layer_Res_Cap(failSce_param)
@@ -277,8 +275,8 @@ if __name__ == "__main__":
 #        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type="second_price_uniform")
 #        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type=None)
 #        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type=None)
-        
-
+#        
+#
 ####    
 ###    """ Print Results """ 
 ###    method_name = ['judgeCall_PESSIMISTIC_results','judgeCall_RANDOM_results',
@@ -297,38 +295,38 @@ if __name__ == "__main__":
 ###    suffixes = ['Real_sum','Real_sum','Real_sum','Real_sum','Real_sum',
 ###                'Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','','','','']
 ######   
-#    method_name = ['judgeCall_PESSIMISTIC_results',
-#                   'judgeCall_OPTIMISTIC_results',
-#                   'judgeCall_PESSIMISTIC_results',
-#                   'judgeCall_OPTIMISTIC_results',
-#                   'judgeCall_PESSIMISTIC_results',
-#                   'judgeCall_OPTIMISTIC_results',
-#                   'indp_results','tdindp_results']
-#    resource_cap = ['_fixed_layer_cap','_fixed_layer_cap',
-#                    '_auction_layer_cap','_auction_layer_cap',
-#                    '_auction_layer_cap_uniform','_auction_layer_cap_uniform','','']
-#    suffixes = ['Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','','']
-###########
-###########
+    method_name = ['judgeCall_PESSIMISTIC_results',
+                   'judgeCall_OPTIMISTIC_results',
+                   'judgeCall_PESSIMISTIC_results',
+                   'judgeCall_OPTIMISTIC_results',
+                   'judgeCall_PESSIMISTIC_results',
+                   'judgeCall_OPTIMISTIC_results',
+                   'indp_results']
+    resource_cap = ['_fixed_layer_cap','_fixed_layer_cap',
+                    '_auction_layer_cap','_auction_layer_cap',
+                    '_auction_layer_cap_uniform','_auction_layer_cap_uniform','']
+    suffixes = ['Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','']
+##########
+##########
 #    sample_range=failSce_param["set_range"]
 #    mags=failSce_param['sce_range']
 #    df = read_and_aggregate_results(mags,method_name,resource_cap,suffixes,L=3,
 #                                    sample_range=sample_range,no_resources=[3,6],
 #                                    listHDadd=failSce_param['filtered_List'])
 #    df = correct_tdindp_results(df,mags,method_name,sample_range)
+    
+    
+        
+    df['resource_cap'] = df['resource_cap'].replace('', 'Network Cap')
+    df['resource_cap'] = df['resource_cap'].replace('_fixed_layer_cap', 'Layer Cap')
+    df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap', 'Auction') 
+    df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap_uniform', 'Auction Uniform') 
+    plot_performance_curves(df,cost_type='Total',method_name=method_name,ci=None)
+    lambda_df = relative_performance(df,sample_range=sample_range,listHDadd=failSce_param['filtered_List'])
+    plot_relative_performance(lambda_df)
 #    
-#    
-#        
-#    df['resource_cap'] = df['resource_cap'].replace('', 'Network Cap')
-#    df['resource_cap'] = df['resource_cap'].replace('_fixed_layer_cap', 'Layer Cap')
-#    df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap', 'Auction') 
-#    df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap_uniform', 'Auction Uniform') 
-#    plot_performance_curves(df,cost_type='Total',method_name=method_name,ci=None)
-#    lambda_df = relative_performance(df,sample_range=sample_range,listHDadd=failSce_param['filtered_List'])
-#    plot_relative_performance(lambda_df)
-##    
-#    """ Comparing the resource allocation by octioan and optimal"""    
-#    resource_allocation=resourcec_allocation(df,sample_range=sample_range,
-#                            T=10,layers=[1,2,3],ci=None,
-#                            listHDadd=failSce_param['filtered_List'])
-#    plot_auction_allocation(resource_allocation,ci=None)
+    """ Comparing the resource allocation by octioan and optimal"""    
+    resource_allocation=resourcec_allocation(df,sample_range=sample_range,
+                            T=10,layers=[1,2,3],ci=None,
+                            listHDadd=failSce_param['filtered_List'])
+    plot_auction_allocation(resource_allocation,ci=None)

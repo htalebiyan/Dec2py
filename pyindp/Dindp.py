@@ -183,9 +183,6 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
     
     G_prime_nodes = [n[0] for n in N.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in layers]
     G_prime = N.G.subgraph(G_prime_nodes)
-    # Nodes in controlled network.
-    N_hat_nodes   = [n[0] for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in controlled_layers]
-#    N_hat = G_prime.subgraph(N_hat_nodes)
     
     interdep_nodes={}
     for u,v,a in G_prime.edges_iter(data=True):
