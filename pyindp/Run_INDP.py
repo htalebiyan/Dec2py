@@ -295,17 +295,17 @@ if __name__ == "__main__":
 ###    suffixes = ['Real_sum','Real_sum','Real_sum','Real_sum','Real_sum',
 ###                'Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','','','','']
 ######   
-    method_name = ['judgeCall_PESSIMISTIC_results',
+    method_name = [
                    'judgeCall_OPTIMISTIC_results',
-                   'judgeCall_PESSIMISTIC_results',
+                   
                    'judgeCall_OPTIMISTIC_results',
-                   'judgeCall_PESSIMISTIC_results',
+                   
                    'judgeCall_OPTIMISTIC_results',
                    'indp_results']
-    resource_cap = ['_fixed_layer_cap','_fixed_layer_cap',
-                    '_auction_layer_cap','_auction_layer_cap',
-                    '_auction_layer_cap_uniform','_auction_layer_cap_uniform','']
-    suffixes = ['Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','']
+    resource_cap = ['_fixed_layer_cap',
+                    '_auction_layer_cap',
+                    '_auction_layer_cap_uniform','']
+    suffixes = ['Real_sum','Real_sum','Real_sum','']
 ##########
 ##########
 #    sample_range=failSce_param["set_range"]
