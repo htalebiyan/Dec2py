@@ -23,6 +23,8 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
     
     judgment_type = params["JUDGMENT_TYPE"]
     auction_type = params["AUCTION_TYPE"]
+    valuation_type = params["VALUATION_TYPE"]
+    
     # Initialize failure scenario.
     InterdepNet=None
     if "N" not in params:
@@ -35,10 +37,8 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
  
     v_r = params["V"]
     num_iterations = params["NUM_ITERATIONS"]
-    if auction_type=="second_price":
-        output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_auction_layer_cap'
-    elif auction_type=="second_price_uniform":
-        output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_auction_layer_cap_uniform'
+    if auction_type=="MDFP":
+        output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_auction_'+valuation_type
     else:
         output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_fixed_layer_cap'
     
@@ -69,7 +69,7 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
             if auction_type:
                 res_allocate[i],PoA[i]=auction_resources(sum(v_r),params,currentTotalCost,
                     layers=layers,T=1,print_cmd=print_cmd,judgment_type=judgment_type,
-                    auction_type=auction_type)
+                    auction_type=auction_type,valuation_type=valuation_type)
                
                 for key, value in res_allocate[i].items():
                     v_r_applied.append(len(value))
@@ -349,7 +349,11 @@ def demand_based_priority_List(N,layers):
                     prob[n[0]] = [max(p),np.random.choice([0, 1], p=[1-max(p), max(p)])]                
     return prob
 
-def auction_resources(v_r,params,currentTotalCost={},layers=[1,2,3],T=1,print_cmd=True,judgment_type="OPTIMISTIC",auction_type="second_price"):
+def auction_resources(v_r,params,currentTotalCost={},layers=[1,2,3],T=1,print_cmd=True,judgment_type="OPTIMISTIC",auction_type="MDFP",valuation_type='DTC_uniform'):
+    """ allocate resources based on different types of auction and valuatoin.
+    :param auction_type: Type of the auction: MDFP(Multiunit Dynamic First-price auction).
+    :param valuation_type: Type of the valuation: DTC (Differential Total Cost), DTC_unifrom (DTC w/ Unifrom distribution).
+    """
     # Initialize failure scenario.
     InterdepNet=None
     if "N" not in params:
@@ -395,7 +399,7 @@ def auction_resources(v_r,params,currentTotalCost={},layers=[1,2,3],T=1,print_cm
             if print_cmd:
                 print "Resource-%d"%(v+1)
                 
-            if auction_type=='second_price_uniform':
+            if valuation_type=='DTC_uniform':
                 for P in layers:
                     totalCostBounds = []
                     for jt in ["PESSIMISTIC","OPTIMISTIC"]:
@@ -412,7 +416,7 @@ def auction_resources(v_r,params,currentTotalCost={},layers=[1,2,3],T=1,print_cm
                         valuation[P] = currentTotalCost[P]-newTotalCost[P]
                     else:
                         valuation[P] = 0.0
-            else:
+            elif valuation_type=='DTC':
                 for P in layers:
                     negP=[x for x in layers if x != P]
                     functionality = create_judgment_matrix(InterdepNet,T,negP,v_r,
@@ -424,7 +428,10 @@ def auction_resources(v_r,params,currentTotalCost={},layers=[1,2,3],T=1,print_cm
                     if indp_results[1][0]['actions']!=[]:
                         valuation[P] = currentTotalCost[P]-newTotalCost[P]
                     else:
-                        valuation[P] = 0.0
+                        valuation[P] = 0.0                       
+            else:
+                import sys
+                sys.exit( "Wrong valuation type!!!")
             
             winner = max(valuation.iteritems(), key=operator.itemgetter(1))[0]
             PoA['winner'].append(valuation[winner])
@@ -473,7 +480,7 @@ def resourcec_allocation(df,sample_range,T=1,L=3,layers=[1,3],suffix="",ci=None,
     
     cols=['t','resource','method','sample','sce','layer','no_res','PoA']
     df_res = pd.DataFrame(columns=cols)
-    optimal_method = ['tdindp_results','indp_results','sample_indp_2-1_samp2']
+    optimal_method = ['tdindp_results','indp_results','sample_indp_10Node']
     for nr in no_resources:
         for mn in method_name:
             for sce in sce_range:
@@ -500,7 +507,7 @@ def resourcec_allocation(df,sample_range,T=1,L=3,layers=[1,3],suffix="",ci=None,
                                         df_res.loc[(df_res['t']==t)&(df_res['method']==mn)&(df_res['sample']==i)&(df_res['sce']==sce)&(df_res['layer']==`P`)&(df_res['no_res']==nr),'resource']+=addition        
                         else:   
                             for at in auction_types:
-                                outdir= '../results/'+mn+'_L'+`L`+'_m'+str(sce)+'_v'+str(nr)+at+'/auctions/'
+                                outdir= '../results/'+mn+'_L'+`L`+'_m'+str(sce)+'_v'+str(nr)+at+'/auctions'
                                 auction_file=outdir+"/auctions_"+str(i)+"_"+suffix+".csv"
                                 if os.path.isfile(auction_file):
                                     with open(auction_file) as f:
@@ -648,7 +655,7 @@ def plot_performance_curves(df,x='t',y='cost',cost_type='Total',method_name=['td
             ax.set_title(r'Total resources = %d'%(nr))
             ax.set(xticks=np.arange(0,T+1,1))
             
-def relative_performance(df,sample_range,cost_type='Total',listHDadd=None):    
+def relative_performance(df,sample_range,cost_type='Total',listHDadd=None,ref_method='indp_results',ref_rc=''):    
     sns.set()
     resource_cap = df.resource_cap.unique().tolist()
     no_resources = df.no_resources.unique().tolist()
@@ -684,9 +691,7 @@ def relative_performance(df,sample_range,cost_type='Total',listHDadd=None):
                             tempdf['Area'] = area  
                             lambda_df=lambda_df.append(tempdf,ignore_index=True)
         print 'm %d|lambda_TC calculated' %(m)  
-          
-    ref_method = 'sample_indp_2-1_samp2' #!!! 'tdindp_results'
-    ref_rc = '' #!!! 'Network Cap'
+        
     for m in mags:
         for nr in no_resources:
             cond = ((lambda_df['Magnitude']==m)&(lambda_df['method']==ref_method)&

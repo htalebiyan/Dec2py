@@ -109,7 +109,7 @@ def run_indp_sample():
     import warnings
     warnings.filterwarnings("ignore")
     InterdepNet=initialize_sample_network()
-    params={"NUM_ITERATIONS":7, "OUTPUT_DIR":'../results/sample_indp_2-1_samp2_L2',"V":2,"T":1,"WINDOW_LENGTH":1,"ALGORITHM":"INDP"}
+    params={"NUM_ITERATIONS":7, "OUTPUT_DIR":'../results/sample_indp_10Node_L2',"V":2,"T":1,"WINDOW_LENGTH":1,"ALGORITHM":"INDP"}
     params["N"]=InterdepNet
     params["MAGNITUDE"]=0
     params["SIM_NUMBER"]=0
@@ -122,24 +122,24 @@ def run_indp_sample():
         params["NUM_ITERATIONS"]=7
         params["ALGORITHM"]="JUDGMENT_CALL"
         params["JUDGMENT_TYPE"]=jc
-        params["OUTPUT_DIR"]='../results/judgeCall_'+jc+'_results_L2'
+        params["OUTPUT_DIR"]='../results/sample_judgeCall_10Node_'+jc+'_results_L2'
         params["V"]=[1,1]
         params["T"]=1
-        params["AUCTION_TYPE"]="second_price"
+        params["AUCTION_TYPE"]="MDFP"
+        params["VALUATION_TYPE"]="DTC"
         run_judgment_call(params,layers=[1,2],T=params["T"],saveJCModel=True,print_cmd=True)
 #        plot_indp_sample(params,folderSuffix='_auction_layer_cap',suffix="sum")
     
-    method_name=['sample_indp_2-1_samp2','judgeCall_OPTIMISTIC_results','judgeCall_PESSIMISTIC_results']
-    resource_cap=['','_auction_layer_cap','_auction_layer_cap']
+    method_name=['sample_indp_10Node','sample_judgeCall_10Node_OPTIMISTIC_results','sample_judgeCall_10Node_PESSIMISTIC_results']
+    resource_cap=['','_auction_DTC','_auction_DTC']
     suffixes=['','Real_sum','Real_sum']
     df = read_and_aggregate_results(mags=[0],method_name=method_name,
         resource_cap=resource_cap,suffixes=suffixes,L=2,sample_range=[0],no_resources=[2])  
     plot_performance_curves(df,cost_type='Total',method_name=method_name,ci=None)
-    lambda_df = relative_performance(df,sample_range=[0])
+    lambda_df = relative_performance(df,sample_range=[0],ref_method='sample_indp_10Node')
     plot_relative_performance(lambda_df)   
     
-    resource_allocation=resourcec_allocation(df,sample_range=[0],
-                            L=2,T=5,layers=[1,2])
+    resource_allocation=resourcec_allocation(df,sample_range=[0],L=2,T=5,layers=[1,2])
     plot_auction_allocation(resource_allocation,ci=None)
 
     
@@ -196,16 +196,18 @@ def run_tdindp_L3_V3_Layer_Res_Cap(failSce_param):
     params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L3',"V":[1,1,1],"T":20,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
     batch_run(params,failSce_param,layers=[1,2,3])
 
-def run_dindp_L3_V3(failSce_param,judgment_type=None,auction_type=None):
+def run_dindp_L3_V3(failSce_param,judgment_type=None,auction_type=None,valuation_type=None):
     params={"NUM_ITERATIONS":10,"OUTPUT_DIR":'../results/judgeCall_'+judgment_type+'_results_L3',
             "V":[1,1,1],"T":1,"ALGORITHM":"JUDGMENT_CALL",
-            "JUDGMENT_TYPE":judgment_type,"AUCTION_TYPE":auction_type}
+            "JUDGMENT_TYPE":judgment_type,"AUCTION_TYPE":auction_type,
+            "VALUATION_TYPE":valuation_type}
     batch_run(params,failSce_param,layers=[1,2,3])
 
-def run_dindp_L3_V6(failSce_param,judgment_type=None,auction_type=None):
+def run_dindp_L3_V6(failSce_param,judgment_type=None,auction_type=None,valuation_type=None):
     params={"NUM_ITERATIONS":10,"OUTPUT_DIR":'../results/judgeCall_'+judgment_type+'_results_L3',
             "V":[2,2,2],"T":1,"ALGORITHM":"JUDGMENT_CALL",
-            "JUDGMENT_TYPE":judgment_type,"AUCTION_TYPE":auction_type}
+            "JUDGMENT_TYPE":judgment_type,"AUCTION_TYPE":auction_type,
+            "VALUATION_TYPE":valuation_type}
     
     batch_run(params,failSce_param,layers=[1,2,3])
                 
@@ -246,14 +248,14 @@ def main():
         globals()[fun_name](mags)
 
 if __name__ == "__main__":    
-#    run_indp_sample()
+    run_indp_sample()
 
 #    ''' Decide the failure scenario'''
-#    listFilteredSce = 'damagedElements_sliceQuantile_0.95.csv'
-#    failSce_param = {"type":"WU","set_range":range(5,6),"sce_range":range(46,47),
-#                     'filtered_List':listFilteredSce}
-#    failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(0,96),
-#                     'filtered_List':listFilteredSce}
+    listFilteredSce = 'damagedElements_sliceQuantile_0.95.csv'
+    failSce_param = {"type":"WU","set_range":range(5,6),"sce_range":range(46,47),
+                     'filtered_List':listFilteredSce}
+    failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(0,96),
+                     'filtered_List':listFilteredSce}
 ##    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
 ##    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
 #
@@ -269,10 +271,10 @@ if __name__ == "__main__":
 ###        
 ##    for jc in ["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]:
 #    for jc in ["PESSIMISTIC","OPTIMISTIC"]:
-#        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type="second_price")
-#        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type="second_price")
-#        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type="second_price_uniform")
-#        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type="second_price_uniform")
+#        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type="MDFP",valuation_type='DTC')
+#        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type="MDFP",valuation_type='DTC')
+#        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type="MDFP",valuation_type='DTC_uniform')
+#        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type="MDFP",valuation_type='DTC_uniform')
 #        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type=None)
 #        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type=None)
 #        
@@ -294,39 +296,39 @@ if __name__ == "__main__":
 ###                    '','_fixed_layer_cap','','_fixed_layer_cap']
 ###    suffixes = ['Real_sum','Real_sum','Real_sum','Real_sum','Real_sum',
 ###                'Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','','','','']
-######   
-    method_name = [
-                   'judgeCall_OPTIMISTIC_results',
-                   
-                   'judgeCall_OPTIMISTIC_results',
-                   
-                   'judgeCall_OPTIMISTIC_results',
-                   'indp_results']
-    resource_cap = ['_fixed_layer_cap',
-                    '_auction_layer_cap',
-                    '_auction_layer_cap_uniform','']
-    suffixes = ['Real_sum','Real_sum','Real_sum','']
-##########
-##########
+########   
+#    method_name = [
+#                   'judgeCall_OPTIMISTIC_results',
+#                   
+#                   'judgeCall_OPTIMISTIC_results',
+#                   
+#                   'judgeCall_OPTIMISTIC_results',
+#                   'indp_results']
+#    resource_cap = ['_fixed_layer_cap',
+#                    '_auction_layer_cap',
+#                    '_auction_layer_cap_uniform','']
+#    suffixes = ['Real_sum','Real_sum','Real_sum','']
+############
+############
 #    sample_range=failSce_param["set_range"]
 #    mags=failSce_param['sce_range']
 #    df = read_and_aggregate_results(mags,method_name,resource_cap,suffixes,L=3,
 #                                    sample_range=sample_range,no_resources=[3,6],
 #                                    listHDadd=failSce_param['filtered_List'])
-#    df = correct_tdindp_results(df,mags,method_name,sample_range)
-    
-    
-        
-    df['resource_cap'] = df['resource_cap'].replace('', 'Network Cap')
-    df['resource_cap'] = df['resource_cap'].replace('_fixed_layer_cap', 'Layer Cap')
-    df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap', 'Auction') 
-    df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap_uniform', 'Auction Uniform') 
-    plot_performance_curves(df,cost_type='Total',method_name=method_name,ci=None)
-    lambda_df = relative_performance(df,sample_range=sample_range,listHDadd=failSce_param['filtered_List'])
-    plot_relative_performance(lambda_df)
+##    df = correct_tdindp_results(df,mags,method_name,sample_range)
 #    
-    """ Comparing the resource allocation by octioan and optimal"""    
-    resource_allocation=resourcec_allocation(df,sample_range=sample_range,
-                            T=10,layers=[1,2,3],ci=None,
-                            listHDadd=failSce_param['filtered_List'])
-    plot_auction_allocation(resource_allocation,ci=None)
+#    
+##        
+##    df['resource_cap'] = df['resource_cap'].replace('', 'Network Cap')
+##    df['resource_cap'] = df['resource_cap'].replace('_fixed_layer_cap', 'Layer Cap')
+##    df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap', 'Auction') 
+##    df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap_uniform', 'Auction Uniform') 
+#    plot_performance_curves(df,cost_type='Total',method_name=method_name,ci=None)
+#    lambda_df = relative_performance(df,sample_range=sample_range,listHDadd=failSce_param['filtered_List'])
+#    plot_relative_performance(lambda_df)
+##    
+#    """ Comparing the resource allocation by octioan and optimal"""    
+#    resource_allocation=resourcec_allocation(df,sample_range=sample_range,
+#                            T=10,layers=[1,2,3],ci=None,
+#                            listHDadd=failSce_param['filtered_List'])
+#    plot_auction_allocation(resource_allocation,ci=None)
