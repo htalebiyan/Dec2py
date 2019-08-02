@@ -37,8 +37,8 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
  
     v_r = params["V"]
     num_iterations = params["NUM_ITERATIONS"]
-    if auction_type=="MDFP":
-        output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_auction_'+valuation_type
+    if auction_type:
+        output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_auction_'+auction_type+'_'+valuation_type
     else:
         output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_fixed_layer_cap'
     
@@ -62,12 +62,13 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
         
         res_allocate = {}
         PoA = {}
+        valuations={}
         for i in range(num_iterations):
             print "\n--Iteration "+`i`+"/"+`num_iterations-1`
             
             v_r_applied = []
             if auction_type:
-                res_allocate[i],PoA[i]=auction_resources(sum(v_r),params,currentTotalCost,
+                res_allocate[i],PoA[i],valuations[i]=auction_resources(sum(v_r),params,
                     layers=layers,T=1,print_cmd=print_cmd,judgment_type=judgment_type,
                     auction_type=auction_type,valuation_type=valuation_type)
                
@@ -119,8 +120,6 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
                              
                 Dindp_results_Real[P].extend(indp_results_Real[1],t_offset=i+1)
                 
-                if auction_type:
-                    currentTotalCost[P]=indp_results_Real[1][0]['costs']['Total']
                 if saveJCModel:
                     save_INDP_model_to_file(indp_results_Real[0],output_dir+"/Model",i+1,P,suffix='Real')  
                     output_dir_judgments= output_dir + '/judgments'
@@ -151,7 +150,7 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
                 
         if auction_type:
             output_dir_auction = output_dir + '/auctions'
-            write_auction_csv(output_dir_auction,res_allocate,PoA,sample_num=params["SIM_NUMBER"],suffix="")    
+            write_auction_csv(output_dir_auction,res_allocate,PoA,valuations,sample_num=params["SIM_NUMBER"],suffix="")    
         # Save results of D-iINDP run to file.
         if saveJC:   
             output_dir_agents = output_dir + '/agents'
@@ -349,10 +348,10 @@ def demand_based_priority_List(N,layers):
                     prob[n[0]] = [max(p),np.random.choice([0, 1], p=[1-max(p), max(p)])]                
     return prob
 
-def auction_resources(v_r,params,currentTotalCost={},layers=[1,2,3],T=1,print_cmd=True,judgment_type="OPTIMISTIC",auction_type="MDFP",valuation_type='DTC_uniform'):
+def auction_resources(v_r,params,layers=[1,2,3],T=1,print_cmd=True,judgment_type="OPTIMISTIC",auction_type="MDD",valuation_type='DTC_uniform'):
     """ allocate resources based on different types of auction and valuatoin.
-    :param auction_type: Type of the auction: MDFP(Multiunit Dynamic First-price auction).
-    :param valuation_type: Type of the valuation: DTC (Differential Total Cost), DTC_unifrom (DTC w/ Unifrom distribution).
+    :param auction_type: Type of the auction: MDD(Multiunit Dynamic Descending (First-price, Dutch) auction), MDA(Multiunit Dynamic Ascending (Second-price, English) auction).
+    :param valuation_type: Type of the valuation: DTC (Differential Total Cost), DTC_unifrom (DTC with uniform distribution), MDDN (Max Demand Damaged Nodes).
     """
     # Initialize failure scenario.
     InterdepNet=None
@@ -360,23 +359,95 @@ def auction_resources(v_r,params,currentTotalCost={},layers=[1,2,3],T=1,print_cm
         InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",sim_number=params['SIM_NUMBER'],magnitude=params["MAGNITUDE"])
     else:
         InterdepNet=params["N"]
-        
     if "NUM_ITERATIONS" not in params:
         params["NUM_ITERATIONS"]=1
- 
-    resource_allocation = {P:[] for P in layers}
-    num_iterations = params["NUM_ITERATIONS"]
+    num_iterations = params["NUM_ITERATIONS"]   
+                     
+    #Compute Valuations
+    if print_cmd:
+        print "Compute Valuations (" + valuation_type + ")"
+    valuation, optimal_valuation = compute_valuations(v_r,InterdepNet,layers=layers,
+                                T=1,print_cmd=True,judgment_type=judgment_type,
+                                valuation_type=valuation_type)
     
-    if not currentTotalCost:
-        if print_cmd:
-            print "Calculating current total cost..."
-        for P in layers:     
-            '''!!! check what v_r must be for det demand JC'''
-            indp_results = indp(InterdepNet,v_r=0,T=1,layers=layers,
-                                controlled_layers=[P])
-            currentTotalCost[P] = indp_results[1][0]['costs']['Total']
+    #Auctioning
+    if print_cmd:
+        print "Auction (" + auction_type + ")" 
+    resource_allocation = {P:[] for P in layers}
+    PoA = {}
+    PoA['optimal'] = optimal_valuation  
+    PoA['winner'] = [] 
+    sum_valuation = 0
+    if auction_type=="MDD":
+        cur_valuation = {v+1:{} for v in range(v_r)}
+        for v in range(v_r):
+            if print_cmd:
+                print "Resource-%d"%(v+1),
+            for P in layers:
+                cur_valuation[v+1][P]= valuation[P][len(resource_allocation[P])]
+            winner = max(cur_valuation[v+1].iteritems(), key=operator.itemgetter(1))[0]
+            PoA['winner'].append(cur_valuation[v+1][winner])
+            if cur_valuation[v+1][winner]!=0:
+                if print_cmd:
+                    print "Player %d wins!" % winner
+                sum_valuation += cur_valuation[v+1][winner]
+                resource_allocation[winner].append(v+1) 
+            else:
+                if print_cmd:
+                    print "No auction winner!"
+    if auction_type=="MDA":
+        all_valuations = []
+        for p,value in valuation.items():
+            all_valuations.extend(value)
+        all_valuations.sort()
+        Q = {0:v_r*len(layers)} 
+        q = {P:{0:v_r} for P in layers}
+        p = {0: 0.0}
+        t = 0
+        while Q[t]>v_r:
+            t += 1
+            p[t] = all_valuations[t-1]
+            Q[t] = 0.0
+            for P in layers:
+                q[P][t] = 0
+                for i in range(len(valuation[P])):
+                    if valuation[P][i] >= p[t]:
+                        q[P][t] += 1
+                    else:
+                        break
+                Q[t] += q[P][t]
             
-           
+        sum_valuation = p[t]*Q[t]
+        PoA['winner'] = [p[t] for v in range(int(Q[t]))]
+        if Q[t]<v_r:
+            for v in range(int(v_r-Q[t])):
+                PoA['winner'].append(0.0)
+                if print_cmd:
+                    print "No auction winner for resource %d!" %(Q[t]+v+1)                
+        for P in layers:
+            resource_allocation[P] = range(1,q[P][t]+1)
+
+    if sum_valuation!=0:
+        PoA['poa'] = optimal_valuation/sum_valuation
+    else:
+        PoA['poa'] = -10
+    
+    return resource_allocation,PoA,valuation
+
+def compute_valuations(v_r,InterdepNet,layers=[1,2,3],T=1,print_cmd=True,judgment_type="OPTIMISTIC",valuation_type='DTC_uniform'):
+    """ computes bidders' valuations for different number of resources
+    :param valuation_type: Type of the valuation: DTC (Differential Total Cost), DTC_unifrom (DTC with uniform distribution), MDDN (Max Demand Damaged Nodes).
+    """
+    
+    """ Calculating current total cost """
+    currentTotalCost={}
+    for P in layers:     
+        '''!!! check what v_r must be for det demand JC'''
+        indp_results = indp(InterdepNet,v_r=0,T=1,layers=layers,
+                            controlled_layers=[P])
+        currentTotalCost[P] = indp_results[1][0]['costs']['Total']
+            
+    """ Optimal Valuation """      
     indp_results = indp(InterdepNet,v_r=0,T=1,layers=layers,
                                 controlled_layers=layers)
     optimal_total_cost_current = indp_results[1][0]['costs']['Total']
@@ -384,93 +455,89 @@ def auction_resources(v_r,params,currentTotalCost={},layers=[1,2,3],T=1,print_cm
                                 controlled_layers=layers)
     optimal_total_cost = indp_results[1][0]['costs']['Total']
     optimal_valuation = optimal_total_cost_current - optimal_total_cost
-
-    PoA = {}
-    PoA['optimal'] = optimal_valuation  
-    PoA['winner'] = []          
-    if T == 1: 
-        if print_cmd:
-            print "Auction: "
-        sum_valuation = 0
-        for v in range(v_r):
-            newTotalCost={}
-            valuation={}
-            indp_results={}
+    
+    valuation={P:[] for P in layers}     
+    if T == 1: # For iterative INDP formulation
+        for P in layers:
             if print_cmd:
-                print "Resource-%d"%(v+1)
-                
-            if valuation_type=='DTC_uniform':
-                for P in layers:
+                print "Bidder-%d"%(P),
+            if valuation_type=='DTC':
+                for v in range(v_r):  
+                    indp_results={}
+                    negP=[x for x in layers if x != P]
+                    functionality = create_judgment_matrix(InterdepNet,T,negP,v_r,
+                                            actions=None,judgment_type=judgment_type) 
+                    '''!!! check what v_r must be for det demand JC'''
+                    indp_results = indp(InterdepNet,v_r=v+1,
+                                T=1,layers=layers,controlled_layers=[P],functionality=functionality)
+                    newTotalCost = indp_results[1][0]['costs']['Total']
+                    if indp_results[1][0]['actions']!=[]:
+                        valuation[P].append(currentTotalCost[P]-newTotalCost)
+                        currentTotalCost[P] = newTotalCost
+                    else:
+                        valuation[P].append(0.0)
+                    
+            elif valuation_type=='DTC_uniform':
+                for v in range(v_r):  
+                    indp_results={}
                     totalCostBounds = []
                     for jt in ["PESSIMISTIC","OPTIMISTIC"]:
                         negP=[x for x in layers if x != P]
                         functionality = create_judgment_matrix(InterdepNet,T,negP,v_r,
                                                 actions=None,judgment_type=jt) 
                         '''!!! check what v_r must be for det demand JC'''
-                        indp_results = indp(InterdepNet,v_r=len(resource_allocation[P])+1,
+                        indp_results = indp(InterdepNet,v_r=v+1,
                                     T=1,layers=layers,controlled_layers=[P],functionality=functionality)
                         totalCostBounds.append(indp_results[1][0]['costs']['Total'])
-                    newTotalCost[P] = np.random.uniform(min(totalCostBounds),
+                    newTotalCost = np.random.uniform(min(totalCostBounds),
                                                     max(totalCostBounds),1)[0]
                     if indp_results[1][0]['actions']!=[]:
-                        valuation[P] = currentTotalCost[P]-newTotalCost[P]
+                        valuation[P].append(currentTotalCost[P]-newTotalCost)
                     else:
-                        valuation[P] = 0.0
-            elif valuation_type=='DTC':
-                for P in layers:
-                    negP=[x for x in layers if x != P]
-                    functionality = create_judgment_matrix(InterdepNet,T,negP,v_r,
-                                            actions=None,judgment_type=judgment_type) 
-                    '''!!! check what v_r must be for det demand JC'''
-                    indp_results = indp(InterdepNet,v_r=len(resource_allocation[P])+1,
-                                T=1,layers=layers,controlled_layers=[P],functionality=functionality)
-                    newTotalCost[P] = indp_results[1][0]['costs']['Total']
-                    if indp_results[1][0]['actions']!=[]:
-                        valuation[P] = currentTotalCost[P]-newTotalCost[P]
-                    else:
-                        valuation[P] = 0.0                       
+                        valuation[P].append(0.0)
+                        
+            elif valuation_type=='MDDN':
+                G_prime_nodes = [n[0] for n in InterdepNet.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id==P]
+                G_prime = InterdepNet.G.subgraph(G_prime_nodes)
+                dem_damaged_nodes = [abs(n[1]['data']['inf_data'].demand) for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].repaired==0.0]
+                dem_damaged_nodes_reverse_sorted = np.sort(dem_damaged_nodes)[::-1]
+                if len(dem_damaged_nodes)>v_r:
+                    valuation[P] = dem_damaged_nodes_reverse_sorted[0:v_r]
+                if len(dem_damaged_nodes)<v_r:
+                    valuation[P] = dem_damaged_nodes_reverse_sorted[:]
+                    for vv in range(v_r-len(dem_damaged_nodes)):
+                        valuation[P].append(0.0)
             else:
                 import sys
                 sys.exit( "Wrong valuation type!!!")
-            
-            winner = max(valuation.iteritems(), key=operator.itemgetter(1))[0]
-            PoA['winner'].append(valuation[winner])
-            if valuation[winner]!=0:
-                if print_cmd:
-                    print "Player %d wins!" % winner
-                sum_valuation += valuation[winner]
-                resource_allocation[winner].append(v+1)            
-                currentTotalCost[winner] = newTotalCost[winner]  
-            else:
-                if print_cmd:
-                    print "No auction winner!"
-        if sum_valuation!=0:
-            PoA['poa'] = optimal_valuation/sum_valuation
-        else:
-            PoA['poa'] = -10
-    else:
-        print 'hahahaha'
-        
-    return resource_allocation,PoA
-
-def write_auction_csv(outdir,res_allocate,PoA,sample_num=1,suffix=""):
+    return valuation, optimal_valuation
+                
+def write_auction_csv(outdir,res_allocate,PoA,valuations,sample_num=1,suffix=""):
     if not os.path.exists(outdir):
         os.makedirs(outdir)        
     auction_file=outdir+"/auctions_"+`sample_num`+"_"+suffix+".csv"
     header = "t,"
     for key,value in res_allocate[0].items():
         header += "P"+`key`+","
-    header += "PoA,optimal_val,winner_val"    
+    header += "PoA,optimal_val,winner_val"
+    for p,value in valuations[0].items(): 
+        header +=  ",bidder_"+`p`+"_valuation"
     with open(auction_file,'w') as f:
         f.write(header+"\n")
         for t,value in res_allocate.items():
             row = `t+1`+","
-            for p,value2 in value.items():
-                row += `len(value2)`+','
-            row += `PoA[t]['poa']`+','+`PoA[t]['optimal']`+','+`PoA[t]['winner']`
+            for p,pvalue in value.items():
+                row += `len(pvalue)`+','
+            row += `PoA[t]['poa']`+','+`PoA[t]['optimal']`+','
+            for pitem in PoA[t]['winner']:
+                row += `pitem`+"|"            
+            for p,pvalue in valuations[t].items():
+                row += ','
+                for pitem in pvalue:
+                    row += `pitem`+"|"
             f.write(row+"\n")
             
-def resourcec_allocation(df,sample_range,T=1,L=3,layers=[1,3],suffix="",ci=None,listHDadd=None):
+def read_resourcec_allocation(df,sample_range,T=1,L=3,layers=[1,3],suffix="",ci=None,listHDadd=None):
     no_resources = df.no_resources.unique().tolist()
     sce_range= df.Magnitude.unique().tolist()
     method_name = df.method.unique().tolist()
