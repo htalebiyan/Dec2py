@@ -114,7 +114,7 @@ def run_indp_sample():
     params["MAGNITUDE"]=0
     params["SIM_NUMBER"]=0
     run_indp(params,layers=[1,2],T=params["T"],suffix="",saveModel=True,print_cmd_line=True)
-    plot_indp_sample(params)
+#    plot_indp_sample(params)
     
     for jc in ["PESSIMISTIC","OPTIMISTIC"]:
         InterdepNet=initialize_sample_network()
@@ -125,7 +125,7 @@ def run_indp_sample():
         params["OUTPUT_DIR"]='../results/sample_judgeCall_10Node_'+jc+'_results_L2'
         params["V"]=[1,1]
         params["T"]=1
-        params["AUCTION_TYPE"]="MDA"
+        params["AUCTION_TYPE"]="EC"
         params["VALUATION_TYPE"]="DTC"
         run_judgment_call(params,layers=[1,2],T=params["T"],saveJCModel=True,print_cmd=True)
         plot_indp_sample(params,
@@ -143,197 +143,113 @@ def run_indp_sample():
     
     resource_allocation=read_resourcec_allocation(df,sample_range=[0],L=2,T=5,layers=[1,2])
     plot_auction_allocation(resource_allocation,ci=None)
-
     
-def run_inrg_sample():
-    InterdepNet=load_sample()
-    params={"NUM_ITERATIONS":4,"OUTPUT_DIR":'../results/sample_inrg_1-2_samp2',"V":1,"T":1,"ALGORITHM":"INRG"}
-    #params={"NUM_ITERATIONS":7,"OUTPUT_DIR":'../results/sample',"V":1,"T":3,"WINDOW_LENGTH":3,"ALGORITHM":"INFO_SHARE"}
-    params["N"]=InterdepNet
-    params["MAGNITUDE"]=0
-    params["SIM_NUMBER"]=0
-    run_inrg(params,layers=[1,2],player_ordering=[1,2],suffix="")
+def run_indp_L3(failSce_param,v_r):
+    """
+    This function runs iterativ indp for different numbers of resources
     
-def run_indp_L3_V3(failSce_param):
-    params={"NUM_ITERATIONS":10,"OUTPUT_DIR":'../results/indp_results_L3',"V":3,"T":1,"ALGORITHM":"INDP"}
-    batch_run(params,failSce_param,layers=[1,2,3])
-
-def run_indp_L3_V6(failSce_param):
-    params={"NUM_ITERATIONS":10,"OUTPUT_DIR":'../results/indp_results_L3',"V":6,"T":1,"ALGORITHM":"INDP"}
-    batch_run(params,failSce_param,layers=[1,2,3])
+    Args:
+        failSce_param (dict): informaton of damage scenrios
+        v_r (list, float or list of float): number of resources, 
+        if this is a list of floats, each float is interpreted as a different total number of resources, and indp is run given the total number of resources. 
+        If this is a list of lists of floats, each list is interpreted as fixed upper bounds on the number of resources each layer can use (same for all time step).
         
-def run_indp_L3_V3_Layer_Res_Cap(failSce_param):
-    params={"NUM_ITERATIONS":20,"OUTPUT_DIR":'../results/indp_results_L3',"V":[1,1,1],"T":1,"ALGORITHM":"INDP"}
-    batch_run(params,failSce_param,layers=[1,2,3])
-
-def run_indp_L2_V2(failSce_param):
-    params={"NUM_ITERATIONS":50,"OUTPUT_DIR":'../results/indp_results_L2',"V":2,"T":1,"ALGORITHM":"INDP"}
-    batch_run(params,failSce_param,layers=[1,3])
-
-def run_indp_L1_V1(failSce_param):
-    params={"NUM_ITERATIONS":50,"OUTPUT_DIR":'../results/indp_results_L1',"V":1,"T":1,"ALGORITHM":"INDP"}
-    batch_run(params,failSce_param,layers=[3])
-
-def run_indp_L2_V2_inf(failSce_param):
-    params={"SIM_NUMBER":"INF","NUM_ITERATIONS":212,"OUTPUT_DIR":'../results/indp_results_L1_inf',"MAGNITUDE":0,"V":2,"T":1,"ALGORITHM":"INDP"}
-    single_scenario_run(params,failSce_param,layers=[1,3])
-
-def run_tdindp_L2_V2(failSce_param):
-    params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L2',"V":2,"T":50,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
-    batch_run(params,failSce_param,layers=[1,3])
-
-def run_tdindp_L2_V2_inf(failSce_param):
-    params={"SIM_NUMBER":"INF","NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L2_inf',"MAGNITUDE":0,"V":2,"T":212,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
-    single_scenario_run(params,failSce_param,layers=[1,3])
-
-def run_tdindp_L3_V3(failSce_param):
-    params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L3',"V":3,"T":10,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
-    batch_run(params,failSce_param,layers=[1,2,3])  
-
-def run_tdindp_L3_V6(failSce_param):
-    params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L3',"V":6,"T":10,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
-    batch_run(params,failSce_param,layers=[1,2,3]) 
+    Returns:
+    """
+    for v in v_r:
+        params={"NUM_ITERATIONS":10,"OUTPUT_DIR":'../results/indp_results_L3',"V":v,"T":1,"ALGORITHM":"INDP"}
+        batch_run(params,failSce_param,layers=[1,2,3])
         
-def run_tdindp_L3_V3_Layer_Res_Cap(failSce_param):
-    params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L3',"V":[1,1,1],"T":20,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
-    batch_run(params,failSce_param,layers=[1,2,3])
-
-def run_dindp_L3_V3(failSce_param,judgment_type=None,auction_type=None,valuation_type=None):
-    params={"NUM_ITERATIONS":10,"OUTPUT_DIR":'../results/judgeCall_'+judgment_type+'_results_L3',
-            "V":[1,1,1],"T":1,"ALGORITHM":"JUDGMENT_CALL",
-            "JUDGMENT_TYPE":judgment_type,"AUCTION_TYPE":auction_type,
-            "VALUATION_TYPE":valuation_type}
-    batch_run(params,failSce_param,layers=[1,2,3])
-
-def run_dindp_L3_V6(failSce_param,judgment_type=None,auction_type=None,valuation_type=None):
-    params={"NUM_ITERATIONS":10,"OUTPUT_DIR":'../results/judgeCall_'+judgment_type+'_results_L3',
-            "V":[2,2,2],"T":1,"ALGORITHM":"JUDGMENT_CALL",
-            "JUDGMENT_TYPE":judgment_type,"AUCTION_TYPE":auction_type,
-            "VALUATION_TYPE":valuation_type}
+def run_tdindp_L3(failSce_param,v_r):
+    """
+    This function runs time-dependent indp for different numbers of resources
+    Args:
+        failSce_param (dict): informaton of damage scenrios
+        v_r (list, float or list of float): number of resources, 
+        if this is a list of floats, each float is interpreted as a different total number of resources, and indp is run given the total number of resources. 
+        If this is a list of lists of floats, each list is interpreted as fixed upper bounds on the number of resources each layer can use (same for all time step).
+        
+    Returns:
+    """
+    for v in v_r:
+        params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L3',"V":v,"T":10,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
+        batch_run(params,failSce_param,layers=[1,2,3])  
+        
+def run_dindp_L3(failSce_param,v_r,judgment_type="OPTIMISTIC",auction_type=None,valuation_type='DTC'):
+    """
+    This function runs Judfment Call Method for different numbers of resources, and a given judge, auction, and valuation type
+    Args:
+        failSce_param (dict): informaton of damage scenrios
+        v_r (list, float or list of float): number of resources, 
+        if this is a list of floats, each float is interpreted as a different total number of resources, and indp is run given the total number of resources. It only works when auction_type!=None.
+        If this is a list of lists of floats, each list is interpreted as fixed upper bounds on the number of resources each layer can use (same for all time step). 
+        judgment_type (str): Type of Judgments in Judfment Call Method. 
+        auction_type (str): Type of auction for resource allocation. If None, fixed number of resources is allocated based on v_r, which MUST be a list of float when auction_type==None.
+        valuation_type (str): Type of valuation in auction.
+    Returns:
+    """
+    for v in v_r:
+        params={"NUM_ITERATIONS":10,"OUTPUT_DIR":'../results/judgeCall_'+judgment_type+'_results_L3',
+                "V":[v],"T":1,"ALGORITHM":"JUDGMENT_CALL",
+                "JUDGMENT_TYPE":judgment_type,"AUCTION_TYPE":auction_type,
+                "VALUATION_TYPE":valuation_type}
+        batch_run(params,failSce_param,layers=[1,2,3])
     
-    batch_run(params,failSce_param,layers=[1,2,3])
                 
-def run_inrg_L2_V2(failSce_param):
-    params={"NUM_ITERATIONS":50,"OUTPUT_DIR":'../results/inrg_results_L2_3-1',"V":1,"T":1,"ALGORITHM":"INRG"}
-    batch_run(params,failSce_param,layers=[1,3],player_ordering=[3,1])
-
-def run_inrg_L2_V2_inf(failSce_param):
-    params={"SIM_NUMBER":"INF","NUM_ITERATIONS":212,"OUTPUT_DIR":'../results/inrg_results_L2_random_inf',"MAGNITUDE":0,"V":1,"T":1,"ALGORITHM":"INRG"}
-    single_scenario_run(params,layers=[1,3],player_ordering="RANDOM",num_samples=100)
-
-def main():
-    """ Run as: python Run_INDP.py <algorithm=indp|tdindp|infoshare> <num_layers=1|2|3> <num_resources=1|2|3> <magnitude=6|8|9> """
-    args=sys.argv
-    algorithm=args[1]
-    num_layers=args[2]
-    num_resources=args[3]
-    magnitude=int(args[4])
-    flip=""
-    if len(args) > 5:
-        flip=args[5]
-    fun_name="run_"+algorithm+"_L"+num_layers+"_V"+num_resources
-    if flip != "":
-        if flip == "random":
-            fun_name+="_random_flip"
-        elif flip == "1":
-            fun_name+="_random_flip1"
-        elif flip == "random-order":
-            fun_name+="_random_ordering"
-        elif flip == "seeded-flip":
-            fun_name+="_seeded_flip"
-        elif flip == "random-order-seeded-flip":
-            fun_name+="_random_ordering_seeded_flip"
-        elif flip == "inf":
-            fun_name+="_inf"
-    mags=[magnitude]
-    if fun_name in globals():
-        globals()[fun_name](mags)
-
 if __name__ == "__main__":  
     plt.close('all')
-    run_indp_sample()
+    
+    ''' Run a toy example for different methods '''
+#    run_indp_sample()
 
-##    ''' Decide the failure scenario'''
-#    listFilteredSce = 'damagedElements_sliceQuantile_0.95.csv'
-#    failSce_param = {"type":"WU","set_range":range(5,6),"sce_range":range(46,47),
-#                     'filtered_List':listFilteredSce}
-#    failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(0,96),
-#                     'filtered_List':listFilteredSce}
-###    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
-###    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
-##
-##     
-#    run_indp_L3_V3(failSce_param)
-#    run_indp_L3_V6(failSce_param)
-###    run_indp_L3_V3_Layer_Res_Cap(failSce_param)
-##    run_tdindp_L3_V3(failSce_param)
-##    run_tdindp_L3_V6(failSce_param)
-#####    run_tdindp_L3_V3_Layer_Res_Cap(failSce_param)
-#####    run_inrg_sample()
-#####    run_inrg_L2_V2(failSce_param)
-####        
-###    for jc in ["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]:
-##    for jc in ["PESSIMISTIC","OPTIMISTIC"]:
-##        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type="MDD",valuation_type='DTC')
-##        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type="MDD",valuation_type='DTC')
-##        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type="MDD",valuation_type='DTC_uniform')
-##        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type="MDD",valuation_type='DTC_uniform')
-##        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type="MDD",valuation_type='MDDN')
-##        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type="MDD",valuation_type='MDDN')
+    ''' Decide the failure scenario'''
+    listFilteredSce = 'damagedElements_sliceQuantile_0.95.csv'
+    failSce_param = {"type":"WU","set_range":range(5,6),"sce_range":range(46,47),
+                     'filtered_List':listFilteredSce}
+    failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(0,96),
+                     'filtered_List':listFilteredSce}
+#    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
+#    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
+
+    ''' Run different methods'''
+    v_r=[3,6,8,12]  # No restriction on nuber of resources for each layer
+#    v_r=[[1,1,1],[2,2,2],[3,3,3]] # Prescribed number of resources for each layer
+    judge_types = ["PESSIMISTIC","OPTIMISTIC"] #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
+    auction_types = ["MDD","MDA","EC"] #["MDD","MDA","EC"]
+    valuation_types = ['DTC','MDDN'] #['DTC','DTC_uniform','MDDN']
+    
+#    run_indp_L3(failSce_param,v_r)
+#    run_tdindp_L3(failSce_param, v_r)
+#    for jc in judge_types:
 ##        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type=None)
-##        run_dindp_L3_V6(failSce_param,judgment_type=jc,auction_type=None)
-##        
-##
-#####    
-####    """ Print Results """ 
-####    method_name = ['judgeCall_PESSIMISTIC_results','judgeCall_RANDOM_results',
-####                   'judgeCall_DEMAND_results','judgeCall_DET-DEMAND_results',
-####                   'judgeCall_OPTIMISTIC_results',                   
-####                   'judgeCall_PESSIMISTIC_results','judgeCall_RANDO M_results',
-####                   'judgeCall_DEMAND_results','judgeCall_DET-DEMAND_results',
-####                   'judgeCall_OPTIMISTIC_results', 
-####                   'indp_results','indp_results',
-####                   'tdindp_results','tdindp_results']
-####    resource_cap = ['_fixed_layer_cap','_fixed_layer_cap','_fixed_layer_cap',
-####                    '_fixed_layer_cap','_fixed_layer_cap',
-####                    '_auction_layer_cap','_auction_layer_cap','_auction_layer_cap',
-####                    '_auction_layer_cap','_auction_layer_cap',
-####                    '','_fixed_layer_cap','','_fixed_layer_cap']
-####    suffixes = ['Real_sum','Real_sum','Real_sum','Real_sum','Real_sum',
-####                'Real_sum','Real_sum','Real_sum','Real_sum','Real_sum','','','','']
-#########   
-#    method_name = [
-#                   'judgeCall_OPTIMISTIC_results',
-#                   
-#                   'judgeCall_OPTIMISTIC_results',
-#                   
-#                   'judgeCall_OPTIMISTIC_results',
-#                   'indp_results']
-#    resource_cap = ['_auction_DTC',
-#                    '_auction_DTC_uniform',
-#                    '_auction_MDDN','']
-#    suffixes = ['Real_sum','Real_sum','Real_sum','']
-############
-############
-#    sample_range=failSce_param["set_range"]
-#    mags=failSce_param['sce_range']
-#    df = read_and_aggregate_results(mags,method_name,resource_cap,suffixes,L=3,
-#                                    sample_range=sample_range,no_resources=[3,6],
-#                                    listHDadd=failSce_param['filtered_List'])
-##    df = correct_tdindp_results(df,mags,method_name,sample_range)
-#    
-#    
-##        
-##    df['resource_cap'] = df['resource_cap'].replace('', 'Network Cap')
-##    df['resource_cap'] = df['resource_cap'].replace('_fixed_layer_cap', 'Layer Cap')
-##    df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap', 'Auction') 
-##    df['resource_cap'] = df['resource_cap'].replace('_auction_layer_cap_uniform', 'Auction Uniform') 
-#    plot_performance_curves(df,cost_type='Total',method_name=method_name,ci=None)
-#    lambda_df = relative_performance(df,sample_range=sample_range,listHDadd=failSce_param['filtered_List'])
-#    plot_relative_performance(lambda_df)
-##    
-#    """ Comparing the resource allocation by octioan and optimal"""    
-#    resource_allocation=read_resourcec_allocation(df,sample_range=sample_range,
-#                            T=10,layers=[1,2,3],ci=None,
-#                            listHDadd=failSce_param['filtered_List'])
-#    plot_auction_allocation(resource_allocation,ci=None)
+#        for at in auction_types:
+#            for vt in valuation_types:
+#                run_dindp_L3(failSce_param,v_r=v_r, judgment_type=jc,
+#                                auction_type=at,valuation_type=vt)
+
+
+
+  
+    """ Plot Results """ 
+    method_name = ['judgeCall_OPTIMISTIC','judgeCall_PESSIMISTIC','indp']
+    auction_types.append('')
+    valuation_types.append('')
+    suffixes = ['Real_sum','']
+    sample_range=failSce_param["set_range"]
+    mags=failSce_param['sce_range']
+    
+    df = read_and_aggregate_results(mags,method_name,auction_types,valuation_types,suffixes,L=3,
+                                    sample_range=sample_range,no_resources=v_r,
+                                    listHDadd=failSce_param['filtered_List'])
+#    df = correct_tdindp_results(df,mags,method_name,sample_range)
+   
+    plot_performance_curves(df,cost_type='Total',decision_names=method_name,ci=None)
+    lambda_df = relative_performance(df,sample_range=sample_range,ref_method='indp',
+                                     listHDadd=failSce_param['filtered_List'])
+    plot_relative_performance(lambda_df)
+    
+    """ Comparing the resource allocation by octioan and optimal"""    
+    resource_allocation=read_resourcec_allocation(df,sample_range=sample_range,
+                            T=10,layers=[1,2,3],ci=None,
+                            listHDadd=failSce_param['filtered_List'])
+    plot_auction_allocation(resource_allocation,ci=None)

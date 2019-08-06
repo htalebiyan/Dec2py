@@ -9,6 +9,8 @@ import networkx as nx
 from infrastructure import *
 from indputils import *
 import copy
+from gurobipy import *
+import itertools 
 
 def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJCModel=False,validate=False):
     """ Solves an INDP problem with specified parameters using a decentralized hueristic called Judgment Call . Outputs to directory specified in params['OUTPUT_DIR'].
@@ -46,7 +48,10 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
     Dindp_results_Real={P:INDPResults() for P in layers} 
     currentTotalCost = {}
     if T == 1: 
-        print "Running Judgment Call with type "+judgment_type #+" and "+auction_type #!!!
+        if auction_type:
+            print "Running Judgment Call with type "+judgment_type +" with auction "+auction_type+ ' & valuation '+ valuation_type
+        else:
+            print "Running Judgment Call with type "+judgment_type 
         if print_cmd:
             print "Num iters=",params["NUM_ITERATIONS"]
         # Initial calculations.
@@ -91,7 +96,8 @@ def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJ
                 
                 # Make decision based on judgments before communication
                 indp_results = indp(InterdepNet,v_r_applied[P-1],1,layers=layers,
-                                controlled_layers=[P],functionality= functionality[P])
+                                controlled_layers=[P],functionality= functionality[P],
+                                print_cmd=print_cmd)
                         
                 # Save models for re-evaluation after communication
                 uncorrectedResults[P] = indp_results[1]
@@ -214,7 +220,9 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
                 if print_cmd:
                     print 'Correcting '+`v`+' to 0 (dep. on '+`value`+')'     
                      
-    indp_results_Real = indp(N,0,1,layers=layers,controlled_layers=controlled_layers,functionality=functionality_realized)  
+    indp_results_Real = indp(N,0,1,layers=layers,controlled_layers=controlled_layers,
+                             functionality=functionality_realized,
+                                print_cmd=print_cmd)  
     for t in range(T):
         costs = indp_results.results[t]['costs']    
         nodeCost=costs["Node"]
@@ -350,7 +358,7 @@ def demand_based_priority_List(N,layers):
 
 def auction_resources(v_r,params,layers=[1,2,3],T=1,print_cmd=True,judgment_type="OPTIMISTIC",auction_type="MDD",valuation_type='DTC_uniform'):
     """ allocate resources based on different types of auction and valuatoin.
-    :param auction_type: Type of the auction: MDD(Multiunit Dynamic Descending (First-price, Dutch) auction), MDA(Multiunit Dynamic Ascending (Second-price, English) auction).
+    :param auction_type: Type of the auction: MDD(Multiunit Dynamic Descending (First-price, Dutch) auction), MDA(Multiunit Dynamic Ascending (Second-price, English) auction), EC(Exact Combinatorial auction).
     :param valuation_type: Type of the valuation: DTC (Differential Total Cost), DTC_unifrom (DTC with uniform distribution), MDDN (Max Demand Damaged Nodes).
     """
     # Initialize failure scenario.
@@ -367,7 +375,7 @@ def auction_resources(v_r,params,layers=[1,2,3],T=1,print_cmd=True,judgment_type
     if print_cmd:
         print "Compute Valuations (" + valuation_type + ")"
     valuation, optimal_valuation = compute_valuations(v_r,InterdepNet,layers=layers,
-                                T=1,print_cmd=True,judgment_type=judgment_type,
+                                T=1,print_cmd=print_cmd,judgment_type=judgment_type,
                                 valuation_type=valuation_type)
     
     #Auctioning
@@ -411,7 +419,7 @@ def auction_resources(v_r,params,layers=[1,2,3],T=1,print_cmd=True,judgment_type
             for P in layers:
                 q[P][t] = 0
                 for i in range(len(valuation[P])):
-                    if valuation[P][i] >= p[t]:
+                    if valuation[P][i] > p[t]:
                         q[P][t] += 1
                     else:
                         break
@@ -426,7 +434,38 @@ def auction_resources(v_r,params,layers=[1,2,3],T=1,print_cmd=True,judgment_type
                     print "No auction winner for resource %d!" %(Q[t]+v+1)                
         for P in layers:
             resource_allocation[P] = range(1,q[P][t]+1)
-
+            
+    if auction_type=="EC":
+        m=Model('auction')
+        m.setParam('OutputFlag',False)    
+        
+        # Add allocation variables and populate objective function.
+        for P in layers:
+            for v in range(v_r):
+                m.addVar(name='y_'+`v+1`+","+`P`,vtype=GRB.BINARY,
+                         obj=sum([-valuation[P][vv] for vv in range(v+1)]))
+        m.update()
+        # Add constraints
+        numAllocatedResources=LinExpr()
+        for P in layers:
+            eachBidderAllocation=LinExpr()
+            for v in range(v_r):
+                numAllocatedResources+=m.getVarByName('y_'+`v+1`+","+`P`)*(v+1)
+                eachBidderAllocation+=m.getVarByName('y_'+`v+1`+","+`P`)
+            m.addConstr(eachBidderAllocation,GRB.LESS_EQUAL,1.0,"Bidder "+`P`+" allocation")   
+        m.addConstr(numAllocatedResources,GRB.LESS_EQUAL,v_r,"Total number of resources")  
+        #    print "Solving..."
+        m.update()
+        m.optimize()   
+        for P in layers:
+            for v in range(v_r):
+                if m.getVarByName('y_'+`v+1`+","+`P`).x==1:
+                    resource_allocation[P] = range(1,v+2)
+                    for vv in range(v+1):
+                        PoA['winner'].append(valuation[P][vv])
+        sum_valuation = sum(PoA['winner'])  
+#        m.write('model.lp')
+#        m.write('model.sol')
     if sum_valuation!=0:
         PoA['poa'] = optimal_valuation/sum_valuation
     else:
@@ -460,7 +499,7 @@ def compute_valuations(v_r,InterdepNet,layers=[1,2,3],T=1,print_cmd=True,judgmen
     if T == 1: # For iterative INDP formulation
         for P in layers:
             if print_cmd:
-                print "Bidder-%d"%(P),
+                print "Bidder-%d"%(P)
             if valuation_type=='DTC':
                 for v in range(v_r):  
                     indp_results={}
@@ -469,7 +508,9 @@ def compute_valuations(v_r,InterdepNet,layers=[1,2,3],T=1,print_cmd=True,judgmen
                                             actions=None,judgment_type=judgment_type) 
                     '''!!! check what v_r must be for det demand JC'''
                     indp_results = indp(InterdepNet,v_r=v+1,
-                                T=1,layers=layers,controlled_layers=[P],functionality=functionality)
+                                T=1,layers=layers,controlled_layers=[P],
+                                functionality=functionality,
+                                print_cmd=print_cmd)
                     newTotalCost = indp_results[1][0]['costs']['Total']
                     if indp_results[1][0]['actions']!=[]:
                         valuation[P].append(currentTotalCost[P]-newTotalCost)
@@ -487,7 +528,9 @@ def compute_valuations(v_r,InterdepNet,layers=[1,2,3],T=1,print_cmd=True,judgmen
                                                 actions=None,judgment_type=jt) 
                         '''!!! check what v_r must be for det demand JC'''
                         indp_results = indp(InterdepNet,v_r=v+1,
-                                    T=1,layers=layers,controlled_layers=[P],functionality=functionality)
+                                    T=1,layers=layers,controlled_layers=[P],
+                                    functionality=functionality,
+                                    print_cmd=print_cmd)
                         totalCostBounds.append(indp_results[1][0]['costs']['Total'])
                     newTotalCost = np.random.uniform(min(totalCostBounds),
                                                     max(totalCostBounds),1)[0]
@@ -501,10 +544,10 @@ def compute_valuations(v_r,InterdepNet,layers=[1,2,3],T=1,print_cmd=True,judgmen
                 G_prime = InterdepNet.G.subgraph(G_prime_nodes)
                 dem_damaged_nodes = [abs(n[1]['data']['inf_data'].demand) for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].repaired==0.0]
                 dem_damaged_nodes_reverse_sorted = np.sort(dem_damaged_nodes)[::-1]
-                if len(dem_damaged_nodes)>v_r:
-                    valuation[P] = dem_damaged_nodes_reverse_sorted[0:v_r]
+                if len(dem_damaged_nodes)>=v_r:
+                    valuation[P] = dem_damaged_nodes_reverse_sorted[0:v_r].tolist()
                 if len(dem_damaged_nodes)<v_r:
-                    valuation[P] = dem_damaged_nodes_reverse_sorted[:]
+                    valuation[P] = dem_damaged_nodes_reverse_sorted[:].tolist()
                     for vv in range(v_r-len(dem_damaged_nodes)):
                         valuation[P].append(0.0)
             else:
@@ -537,73 +580,56 @@ def write_auction_csv(outdir,res_allocate,PoA,valuations,sample_num=1,suffix="")
                     row += `pitem`+"|"
             f.write(row+"\n")
             
-def read_resourcec_allocation(df,sample_range,T=1,L=3,layers=[1,3],suffix="",ci=None,listHDadd=None):
+def read_resourcec_allocation(df,sample_range,T=1,L=3,layers=[1,3],suffix="",ci=None,listHDadd=None):  
     no_resources = df.no_resources.unique().tolist()
-    sce_range= df.Magnitude.unique().tolist()
-    method_name = df.method.unique().tolist()
-    auction_types = df.resource_cap.unique().tolist()
+    mags= df.Magnitude.unique().tolist()
+    decision_type = df.decision_type.unique().tolist()
+    auction_type = df.auction_type.unique().tolist()
+    valuation_type = df.valuation_type.unique().tolist()
     if listHDadd:
         listHD = pd.read_csv(listHDadd)   
     
-    cols=['t','resource','method','sample','sce','layer','no_res','PoA']
+    cols=['t','resource','decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','PoA']
     df_res = pd.DataFrame(columns=cols)
-    optimal_method = ['tdindp_results','indp_results','sample_indp_10Node']
-    for nr in no_resources:
-        for mn in method_name:
-            for sce in sce_range:
-                for i in sample_range:
-                    if listHDadd==None or len(listHD.loc[(listHD.set == i) & (listHD.sce == sce)].index):                        
-                        if mn in optimal_method:
-                            compare_to_dir= '../results/'+mn+'_L'+`L`+'_m'+str(sce)+'_v'+str(nr)
-                            for t in range(T):
-                                for P in range(len(layers)):
-                                    df_res=df_res.append({'t':t+1,'resource':0.0,'method':mn,'sample':i,'sce':sce,'layer':`P+1`,'no_res':nr,'PoA':1}, ignore_index=True)
-                            action_file=compare_to_dir+"/actions_"+str(i)+"_"+suffix+".csv"                
-                            if os.path.isfile(action_file):
-                                with open(action_file) as f:
-                                    lines=f.readlines()[1:]
-                                    for line in lines:
-                                        data=string.split(str.strip(line),",")
-                                        t=int(data[0])
-                                        action=str.strip(data[1])
-                                        P = int(action[-1])
-                                        if '/' in action:
-                                            addition = 0.5
-                                        else:
-                                            addition = 1.0
-                                        df_res.loc[(df_res['t']==t)&(df_res['method']==mn)&(df_res['sample']==i)&(df_res['sce']==sce)&(df_res['layer']==`P`)&(df_res['no_res']==nr),'resource']+=addition        
-                        else:   
-                            for at in auction_types:
-                                outdir= '../results/'+mn+'_L'+`L`+'_m'+str(sce)+'_v'+str(nr)+at+'/auctions'
-                                auction_file=outdir+"/auctions_"+str(i)+"_"+suffix+".csv"
-                                if os.path.isfile(auction_file):
-                                    with open(auction_file) as f:
-                                        lines=f.readlines()[1:]
-                                        for line in lines:
-                                            data=string.split(str.strip(line),",")
-                                            t=int(data[0])
-                                            for P in range(len(layers)):
-                                                poa = float(data[len(layers)+1])
-                                                df_res=df_res.append({'t':t,'resource':float(data[P+1]),'method':mn+'_'+at,'sample':i,'sce':sce,'layer':`P+1`,'no_res':nr,'PoA':poa}, ignore_index=True)
-            print 'Resource allocation|%s|no_res:%d' %(mn,nr)
+    optimal_method = ['tdindp','indp','sample_indp_10Node']
+    print '\nResource allocation|',
+    for m in mags:
+        for dt,nr,sr in itertools.product(decision_type,no_resources,sample_range):
+            if listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):                        
+                if dt in optimal_method:
+                    compare_to_dir= '../results/'+dt+'_results_L'+`L`+'_m'+str(m)+'_v'+str(nr)
+                    for t in range(T):
+                        for P in range(len(layers)):
+                            df_res=df_res.append({'t':t+1,'resource':0.0,'decision_type':dt,'auction_type':'','valuation_type':'','sample':sr,'Magnitude':m,'layer':`P+1`,'no_resources':nr,'PoA':1}, ignore_index=True)
+                    action_file=compare_to_dir+"/actions_"+str(sr)+"_"+suffix+".csv"                
+                    if os.path.isfile(action_file):
+                        with open(action_file) as f:
+                            lines=f.readlines()[1:]
+                            for line in lines:
+                                data=string.split(str.strip(line),",")
+                                t=int(data[0])
+                                action=str.strip(data[1])
+                                P = int(action[-1])
+                                if '/' in action:
+                                    addition = 0.5
+                                else:
+                                    addition = 1.0
+                                df_res.loc[(df_res['t']==t)&(df_res['decision_type']==dt)&(df_res['sample']==sr)&(df_res['Magnitude']==m)&(df_res['layer']==`P`)&(df_res['no_resources']==nr),'resource']+=addition        
+                else:   
+                    for at,vt in itertools.product(auction_type,valuation_type):
+                        outdir= '../results/'+dt+'_results_L'+`L`+'_m'+str(m)+'_v'+str(nr)+'_auction_'+at+'_'+vt+'/auctions'
+                        auction_file=outdir+"/auctions_"+str(sr)+"_"+suffix+".csv"
+                        if os.path.isfile(auction_file):
+                            with open(auction_file) as f:
+                                lines=f.readlines()[1:]
+                                for line in lines:
+                                    data=string.split(str.strip(line),",")
+                                    t=int(data[0])
+                                    for P in range(len(layers)):
+                                        poa = float(data[len(layers)+1])
+                                        df_res=df_res.append({'t':t,'resource':float(data[P+1]),'decision_type':dt,'auction_type':at,'valuation_type':vt,'sample':sr,'Magnitude':m,'layer':`P+1`,'no_resources':nr,'PoA':poa}, ignore_index=True)
+        print 'm%d'%(m),
     return df_res
-
-def plot_auction_allocation(df_res,ci=None):
-    no_resources = df_res.no_res.unique().tolist()
-    no_methods = len(df_res.method.unique().tolist())
-    T = len(df_res.t.unique().tolist())
-    for nr in no_resources:        
-        plt.figure()           
-        ax = sns.lineplot(x='t',y='resource',style='layer',hue='method',
-                          data=df_res[(df_res['no_res']==nr)],
-                          ci=ci, palette=sns.color_palette("muted",no_methods))                        
-        ax.set(xticks=np.arange(0,T+1,1))
-        ax.set_title(r'Total resources = %d'%(nr))
-        
-        plt.figure()         
-        ax = sns.barplot(x="t", y="PoA", hue='method', data=df_res[(df_res['no_res']==nr)&(df_res['PoA']!=0.0)&(df_res['PoA']!=-10)])
-        ax.set_title(r'Total resources = %d'%(nr))
-        ax.set_ylim(0,min(10,ax.get_ylim()[1]))
 
 def write_judgments_csv(N,outdir,functionality,realizations,sample_num=1,agent=1,time=0,suffix=""):
     if not os.path.exists(outdir):
@@ -634,46 +660,56 @@ def write_judgments_csv(N,outdir,functionality,realizations,sample_num=1,agent=1
     else:
         print 'No judgment by agent '+`agent`+'.'
 
-def read_and_aggregate_results(mags,method_name,resource_cap,suffixes,L,sample_range,no_resources=[3],listHDadd=None):
-    columns = ['t','Magnitude','cost_type','method','resource_cap','no_resources','sample','cost']
+def read_and_aggregate_results(mags,method_name,auction_type,valuation_type,suffixes,L,sample_range,no_resources=[3],listHDadd=None):
+    columns = ['t','Magnitude','cost_type','decision_type','auction_type','valuation_type','no_resources','sample','cost']
+    optimal_method = ['tdindp','indp','sample_indp_10Node']
     agg_results = pd.DataFrame(columns=columns)
     if listHDadd:
         listHD = pd.read_csv(listHDadd)        
     for m in mags:
-        for i in range(len(method_name)):
-            for rc in no_resources:
-                full_suffix = '_L'+`L`+'_m'+`m`+'_v'+`rc`+resource_cap[i]
-                result_dir = '../results/'+method_name[i]+full_suffix
-                
-#                # Save average values to file #!!!!!!!!!!!
-#                results_average = INDPResults()
-#                results_average = results_average.from_results_dir(outdir=result_dir,
-#                                    sample_range=sample_range,suffix=suffixes[i])
-#                
-#                outdir = '../results/average_cost_all/'
-#                if not os.path.exists(outdir):
-#                    os.makedirs(outdir) 
-#                costs_file =outdir+method_name[i]+full_suffix+"_average_costs.csv"
-#                with open(costs_file,'w') as f:
-#                    f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total\n")
-#                    for t in results_average.results:
-#                        costs=results_average.results[t]['costs']
-#                        f.write(`t`+","+`costs["Space Prep"]`+","+`costs["Arc"]`+","
-#                                +`costs["Node"]`+","+`costs["Over Supply"]`+","+
-#                                `costs["Under Supply"]`+","+`costs["Flow"]`+","+
-#                                `costs["Total"]`+"\n")            
-                        
-                # Save all results to Pandas dataframe
-                sample_result = INDPResults()
-                for s in sample_range:
-                    if listHDadd==None or len(listHD.loc[(listHD.set == s) & (listHD.sce == m)].index):
-                        sample_result=sample_result.from_csv(result_dir,s,suffix=suffixes[i])
-                        for t in sample_result.results:
-                            for c in sample_result.cost_types:
-                                values = [t,m,c,method_name[i],resource_cap[i],rc,s,
-                                        float(sample_result[t]['costs'][c])]
-                                agg_results = agg_results.append(dict(zip(columns,values)), ignore_index=True)
-            print 'm %d|%s|Aggregated' %(m,method_name[i])  
+        for rc in no_resources:
+            print 'm %d|v=%d|' %(m,rc),  
+            for dt,at,vt in itertools.product(method_name,auction_type,valuation_type):
+                # Constructing the directory
+                if dt in optimal_method:
+                    full_suffix = '_L'+`L`+'_m'+`m`+'_v'+`rc`+at+vt
+                else:
+                    full_suffix = '_L'+`L`+'_m'+`m`+'_v'+`rc`+'_auction_'+at+'_'+vt
+                result_dir = '../results/'+dt+'_results'+full_suffix
+                if os.path.exists(result_dir):
+                    print '.',
+#                    # Save average values to file #!!!!!!!!!!!
+#                    results_average = INDPResults()
+#                    results_average = results_average.from_results_dir(outdir=result_dir,
+#                                        sample_range=sample_range,suffix=suffixes[i])
+#                    
+#                    outdir = '../results/average_cost_all/'
+#                    if not os.path.exists(outdir):
+#                        os.makedirs(outdir) 
+#                    costs_file =outdir+method_name[i]+full_suffix+"_average_costs.csv"
+#                    with open(costs_file,'w') as f:
+#                        f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total\n")
+#                        for t in results_average.results:
+#                            costs=results_average.results[t]['costs']
+#                            f.write(`t`+","+`costs["Space Prep"]`+","+`costs["Arc"]`+","
+#                                    +`costs["Node"]`+","+`costs["Over Supply"]`+","+
+#                                    `costs["Under Supply"]`+","+`costs["Flow"]`+","+
+#                                    `costs["Total"]`+"\n")            
+                            
+                    # Save all results to Pandas dataframe
+                    sample_result = INDPResults()
+                    for s in sample_range:
+                        if listHDadd==None or len(listHD.loc[(listHD.set == s) & (listHD.sce == m)].index):
+                            for suf in suffixes:
+                                if os.path.exists(result_dir+"/costs_"  +`s`+"_"+suf+".csv"):
+                                    sample_result=sample_result.from_csv(result_dir,s,suffix=suf)
+                            for t in sample_result.results:
+                                for c in sample_result.cost_types:
+                                    values = [t,m,c,dt,at,vt,rc,s,
+                                            float(sample_result[t]['costs'][c])]
+                                    agg_results = agg_results.append(dict(zip(columns,values)), ignore_index=True)
+            print 'Aggregated'
+            
     return agg_results
 
 def correct_tdindp_results(df,mags,method_name,sample_range):    
@@ -706,123 +742,285 @@ def correct_tdindp_results(df,mags,method_name,sample_range):
                             (df['resource_cap']==rc)&(df['sample']==sr)&
                             (df['cost_type']=='Total'),'cost'] = totalCost
     return df
-    
-def plot_performance_curves(df,x='t',y='cost',cost_type='Total',method_name=['tdindp_results'],ci=None):
+               
+def relative_performance(df,sample_range,cost_type='Total',listHDadd=None,ref_method='indp'):    
     sns.set()
-    no_resources = df.no_resources.unique().tolist()
-    T = len(df[x].unique().tolist())
-    for nr in no_resources:
-        plt.figure()
-        with sns.color_palette("muted"):
-            ax = sns.lineplot(x=x, y=y, hue="method", style='resource_cap',
-                markers=False, ci=ci,
-                data=df[(df['cost_type']==cost_type)&
-                        (df['method'].isin(method_name))&
-                        (df['no_resources']==nr)])              
-            ax.set_title(r'Total resources = %d'%(nr))
-            ax.set(xticks=np.arange(0,T+1,1))
-            
-def relative_performance(df,sample_range,cost_type='Total',listHDadd=None,ref_method='indp_results',ref_rc=''):    
-    sns.set()
-    resource_cap = df.resource_cap.unique().tolist()
+    auction_type = df.auction_type.unique().tolist()
+    valuation_type = df.valuation_type.unique().tolist()
     no_resources = df.no_resources.unique().tolist()
     mags=df.Magnitude.unique().tolist()
-    method_name = df.method.unique().tolist()
-    columns = ['Magnitude','cost_type','method','resource_cap','no_resources','sample','Area','lambda_TC']
+    decision_type = df.decision_type.unique().tolist()
+    columns = ['Magnitude','cost_type','decision_type','auction_type','valuation_type','no_resources','sample','Area','lambda_TC']
     lambda_df = pd.DataFrame(columns=columns)
     if listHDadd:
         listHD = pd.read_csv(listHDadd)    
-    
+
+    # Computing reference area for lambda
+    ref_at=''
+    ref_vt=''
+    print 'Ref area calculation|',
     for m in mags:
-        for jc in method_name:
-            for rc in resource_cap:
-                for sr in sample_range:
-                    for nr in no_resources:
-                        if listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):
-                            rows = df[(df['Magnitude']==m)&(df['method']==jc)&
-                                     (df['sample']==sr)&(df['cost_type']==cost_type)&
-                                     (df['resource_cap']==rc)&(df['no_resources']==nr)]
-                              
-                            if not rows.empty:
-                                area = np.trapz(rows.cost[:20],dx=1)
-                            else:
-                                area = 'nan'
-                            
-                            tempdf = pd.Series()
-                            tempdf['Magnitude'] = m
-                            tempdf['cost_type'] = cost_type
-                            tempdf['method'] = jc
-                            tempdf['resource_cap'] = rc   
-                            tempdf['no_resources'] = nr 
-                            tempdf['sample'] = sr  
-                            tempdf['Area'] = area  
-                            lambda_df=lambda_df.append(tempdf,ignore_index=True)
-        print 'm %d|lambda_TC calculated' %(m)  
-        
+        for dt,at,vt,nr,sr in itertools.product([ref_method],[ref_at],[ref_vt],no_resources,sample_range):
+            if listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):
+                rows = df[(df['Magnitude']==m)&(df['decision_type']==dt)&
+                         (df['sample']==sr)&(df['cost_type']==cost_type)&
+                         (df['auction_type']==at)&(df['valuation_type']==vt)&
+                         (df['no_resources']==nr)]
+                                  
+                if not rows.empty:
+                    area = np.trapz(rows.cost[:20],dx=1)
+                        
+                    tempdf = pd.Series()
+                    tempdf['Magnitude'] = m
+                    tempdf['cost_type'] = cost_type
+                    tempdf['decision_type'] = dt
+                    tempdf['auction_type'] = at  
+                    tempdf['valuation_type'] = vt   
+                    tempdf['no_resources'] = nr 
+                    tempdf['sample'] = sr  
+                    tempdf['Area'] = area  
+                    lambda_df=lambda_df.append(tempdf,ignore_index=True)
+        print 'm'+`int(m)`,
+    # Computing areaa and lambda
+    print '\nLambda calculation|',
     for m in mags:
-        for nr in no_resources:
-            cond = ((lambda_df['Magnitude']==m)&(lambda_df['method']==ref_method)&
-                            (lambda_df['resource_cap']==ref_rc)&
-                            (lambda_df['cost_type']==cost_type)&
-                            (lambda_df['no_resources']==nr)).any()
-            if not cond:
-                print 'Reference type is not here! for m %d|resource %d' %(m,nr)
-                break
-            for sr in sample_range: 
-                if listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):
-                    ref_area=float(lambda_df.loc[(lambda_df['Magnitude']==m)&
-                                    (lambda_df['method']==ref_method)&
-                                    (lambda_df['resource_cap']==ref_rc)&
-                                    (lambda_df['sample']==sr)&
-                                    (lambda_df['cost_type']==cost_type)&
-                                    (lambda_df['no_resources']==nr),'Area'].values)
-                    for jc in method_name:
-                        for rc in resource_cap:
-                            area = lambda_df.loc[(lambda_df['Magnitude']==m)&
-                                    (lambda_df['method']==jc)&
-                                    (lambda_df['resource_cap']==rc)&
-                                    (lambda_df['sample']==sr)&
-                                    (lambda_df['cost_type']==cost_type)&
-                                    (lambda_df['no_resources']==nr),'Area'].values
-                                
+        for nr,sr in itertools.product(no_resources,sample_range):        
+            if (listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index)):
+                # Check if reference area exists
+                cond = ((lambda_df['Magnitude']==m)&(lambda_df['decision_type']==ref_method)&
+                    (lambda_df['auction_type']==ref_at)&
+                    (lambda_df['valuation_type']==ref_vt)&
+                    (lambda_df['cost_type']==cost_type)&
+                    (lambda_df['sample']==sr)&
+                    (lambda_df['no_resources']==nr))
+                if not cond.any():
+                    import sys
+                    sys.exit('Reference type is not here! for m %d|resource %d' %(m,nr))
+                    
+                ref_area=float(lambda_df.loc[cond==True,'Area'])
+                for dt,at,vt,nr in itertools.product(decision_type,auction_type,valuation_type,no_resources):
+                     if dt!=ref_method:
+                        rows = df[(df['Magnitude']==m)&(df['decision_type']==dt)&
+                                 (df['sample']==sr)&(df['cost_type']==cost_type)&
+                                 (df['auction_type']==at)&(df['valuation_type']==vt)&
+                                 (df['no_resources']==nr)]
+                                          
+                        if not rows.empty:
+                            area = np.trapz(rows.cost[:20],dx=1)
                             lambda_TC = 'nan'
                             if ref_area != 0.0 and area != 'nan':
                                 lambda_TC = (ref_area-float(area))/ref_area
                             elif area == 0.0:
                                 lambda_TC = 0.0
                             else:
-                                pass
-                            
-                            lambda_df.loc[(lambda_df['Magnitude']==m)&
-                                    (lambda_df['method']==jc)&
-                                    (lambda_df['resource_cap']==rc)&
-                                    (lambda_df['sample']==sr)&
-                                    (lambda_df['cost_type']==cost_type)&
-                                    (lambda_df['no_resources']==nr),'lambda_TC']=lambda_TC
+                                pass  
+                              
+                            tempdf = pd.Series()
+                            tempdf['Magnitude'] = m
+                            tempdf['cost_type'] = cost_type
+                            tempdf['decision_type'] = dt
+                            tempdf['auction_type'] = at  
+                            tempdf['valuation_type'] = vt   
+                            tempdf['no_resources'] = nr 
+                            tempdf['sample'] = sr  
+                            tempdf['Area'] = area  
+                            tempdf['lambda_TC'] = lambda_TC
+                            lambda_df=lambda_df.append(tempdf,ignore_index=True)
+        print 'm'+`int(m)`, 
     return lambda_df
 
-def plot_relative_performance(lambda_df,cost_type='Total'):    
+def relative_resource_allocation(df_res,sample_range,cost_type='Total',listHDadd=None,ref_method='indp'):    
     sns.set()
-    no_resources = lambda_df.no_resources.unique().tolist()    
+    auction_type = df.auction_type.unique().tolist()
+    valuation_type = df.valuation_type.unique().tolist()
+    no_resources = df.no_resources.unique().tolist()
+    mags=df.Magnitude.unique().tolist()
+    decision_type = df.decision_type.unique().tolist()
+    columns = ['Magnitude','cost_type','decision_type','auction_type','valuation_type','no_resources','sample','Area','lambda_TC']
+    lambda_df = pd.DataFrame(columns=columns)
+    if listHDadd:
+        listHD = pd.read_csv(listHDadd)    
 
-    for nr in no_resources:                                                  
-        plt.figure()
-#            plt.rc('text', usetex=True)
-#            plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-        color = sns.color_palette("RdYlGn", 7) #sns.color_palette("YlOrRd", 7)
-        ax = sns.barplot(x='resource_cap',y='lambda_TC',hue="method",
-                         data=lambda_df[(lambda_df['cost_type']==cost_type)&
-                                        (lambda_df['lambda_TC']!='nan')&
-                                        (lambda_df['no_resources']==nr)], 
-                         palette=color, linewidth=0.5,edgecolor=[.25,.25,.25],
-                        capsize=.05,errcolor=[.25,.25,.25],errwidth=1)  
-             
-        ax.grid(which='major', axis='y', color=[.75,.75,.75], linewidth=.75)
-        ax.set_xlabel(r'Resource Distribution Method')
-        ax.set_ylabel(r'Mean Relative Measure, E[$\lambda_{%s}$]'%('TC'))
-        ax.xaxis.set_label_position('bottom')  
-        ax.set_title(r'Total resources = %d'%(nr))
-#        ax.xaxis.tick_top()
-        ax.set_facecolor('w')   
-        plt.legend(handles=ax.get_legend_handles_labels()[0][:7],loc=0,frameon =True,
-                   framealpha=0.0, ncol=1,bbox_to_anchor=(1.1, 0.1))   
+    # Computing reference area for lambda
+    ref_at=''
+    ref_vt=''
+    print 'Ref area calculation|',
+    for m in mags:
+        for dt,at,vt,nr,sr in itertools.product([ref_method],[ref_at],[ref_vt],no_resources,sample_range):
+            if listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):
+                rows = df[(df['Magnitude']==m)&(df['decision_type']==dt)&
+                         (df['sample']==sr)&(df['cost_type']==cost_type)&
+                         (df['auction_type']==at)&(df['valuation_type']==vt)&
+                         (df['no_resources']==nr)]
+                                  
+                if not rows.empty:
+                    area = np.trapz(rows.cost[:20],dx=1)
+                        
+                    tempdf = pd.Series()
+                    tempdf['Magnitude'] = m
+                    tempdf['cost_type'] = cost_type
+                    tempdf['decision_type'] = dt
+                    tempdf['auction_type'] = at  
+                    tempdf['valuation_type'] = vt   
+                    tempdf['no_resources'] = nr 
+                    tempdf['sample'] = sr  
+                    tempdf['Area'] = area  
+                    lambda_df=lambda_df.append(tempdf,ignore_index=True)
+        print 'm'+`int(m)`,
+    # Computing areaa and lambda
+    print '\nLambda calculation|',
+    for m in mags:
+        for nr,sr in itertools.product(no_resources,sample_range):        
+            if (listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index)):
+                # Check if reference area exists
+                cond = ((lambda_df['Magnitude']==m)&(lambda_df['decision_type']==ref_method)&
+                    (lambda_df['auction_type']==ref_at)&
+                    (lambda_df['valuation_type']==ref_vt)&
+                    (lambda_df['cost_type']==cost_type)&
+                    (lambda_df['sample']==sr)&
+                    (lambda_df['no_resources']==nr))
+                if not cond.any():
+                    import sys
+                    sys.exit('Reference type is not here! for m %d|resource %d' %(m,nr))
+                    
+                ref_area=float(lambda_df.loc[cond==True,'Area'])
+                for dt,at,vt,nr in itertools.product(decision_type,auction_type,valuation_type,no_resources):
+                     if dt!=ref_method:
+                        rows = df[(df['Magnitude']==m)&(df['decision_type']==dt)&
+                                 (df['sample']==sr)&(df['cost_type']==cost_type)&
+                                 (df['auction_type']==at)&(df['valuation_type']==vt)&
+                                 (df['no_resources']==nr)]
+                                          
+                        if not rows.empty:
+                            area = np.trapz(rows.cost[:20],dx=1)
+                            lambda_TC = 'nan'
+                            if ref_area != 0.0 and area != 'nan':
+                                lambda_TC = (ref_area-float(area))/ref_area
+                            elif area == 0.0:
+                                lambda_TC = 0.0
+                            else:
+                                pass  
+                              
+                            tempdf = pd.Series()
+                            tempdf['Magnitude'] = m
+                            tempdf['cost_type'] = cost_type
+                            tempdf['decision_type'] = dt
+                            tempdf['auction_type'] = at  
+                            tempdf['valuation_type'] = vt   
+                            tempdf['no_resources'] = nr 
+                            tempdf['sample'] = sr  
+                            tempdf['Area'] = area  
+                            tempdf['lambda_TC'] = lambda_TC
+                            lambda_df=lambda_df.append(tempdf,ignore_index=True)
+        print 'm'+`int(m)`, 
+    return lambda_df
+
+def plot_performance_curves(df,x='t',y='cost',cost_type='Total',decision_names=['tdindp_results'],ci=None):
+#    plt.rc('text', usetex=True)
+#    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    sns.set()
+    no_resources = df.no_resources.unique().tolist()
+    auction_type = df.auction_type.unique().tolist()
+    auction_type.remove('')
+    valuation_type = df.valuation_type.unique().tolist()
+    valuation_type.remove('')
+    T = len(df[x].unique().tolist())
+    
+    fig, axs = plt.subplots(len(auction_type), len(no_resources), sharex=True, sharey=True, tight_layout=False)
+    for idxnr,nr in enumerate(no_resources):
+        for idxvt,vt in enumerate(auction_type):
+            ax = axs[idxvt,idxnr]
+            with sns.color_palette("muted"):
+                ax = sns.lineplot(x=x, y=y, hue="valuation_type", style='decision_type',
+                    markers=False, ci=ci, ax=ax,legend='full',
+                    data=df[(df['cost_type']==cost_type)&
+                            (df['decision_type'].isin(decision_names))&
+                            (df['no_resources']==nr)&
+                            ((df['auction_type']==vt)|(df['auction_type']==''))]) 
+                ax.get_legend().set_visible(False)
+                            
+    handles, labels = axs[0,0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper right', ncol=1)
+    for idx, ax in enumerate(axs[0,:]):
+        ax.set_title(r'Total resources = %d'%(no_resources[idx]))
+    for idx, ax in enumerate(axs[:,0]):
+        ax.annotate('Auction:'+auction_type[idx], xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - 5, 0),
+            xycoords=ax.yaxis.label, textcoords='offset points',
+            size='small', ha='right', va='center', rotation=90)   
+        
+def plot_relative_performance(lambda_df,cost_type='Total'):   
+#    plt.rc('text', usetex=True)
+#    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    sns.set()
+    no_resources = lambda_df.no_resources.unique().tolist()
+    auction_type = lambda_df.auction_type.unique().tolist()
+    auction_type.remove('')
+    valuation_type = lambda_df.valuation_type.unique().tolist()
+    valuation_type.remove('')
+    
+    fig, axs = plt.subplots(len(valuation_type), len(auction_type),sharex=True, sharey=True,tight_layout=False)
+    for idxnr,nr in enumerate(auction_type):   
+        for idxvt,vt in enumerate(valuation_type): 
+            ax = axs[idxvt,idxnr]                                              
+            with sns.color_palette("RdYlGn", 8):  #sns.color_palette("YlOrRd", 7)
+                ax=sns.barplot(x='no_resources',y='lambda_TC',hue="decision_type",
+                            data=lambda_df[(lambda_df['cost_type']==cost_type)&
+                                                (lambda_df['lambda_TC']!='nan')&
+                                                ((lambda_df['auction_type']==nr)|(lambda_df['auction_type']==''))&
+                                                ((lambda_df['valuation_type']==vt)|(lambda_df['valuation_type']==''))], 
+                                linewidth=0.5,edgecolor=[.25,.25,.25],
+                                capsize=.05,errcolor=[.25,.25,.25],errwidth=1,ax=ax) 
+                ax.get_legend().set_visible(False)
+                ax.grid(which='major', axis='y', color=[.75,.75,.75], linewidth=.75)
+                ax.set_xlabel(r'No. Resources')
+                if idxvt!=len(valuation_type)-1:
+                    ax.set_xlabel('')
+                ax.set_ylabel(r'Mean Relative Measure, E[$\lambda_{%s}$]'%('TC'))
+                if idxnr!=0:
+                    ax.set_ylabel('')
+                ax.xaxis.set_label_position('bottom')  
+#                ax.xaxis.tick_top()
+                ax.set_facecolor('w')
+    handles, labels = axs[0,0].get_legend_handles_labels()        
+    fig.legend(handles, labels,loc='upper right',frameon =True,framealpha=0.0, ncol=1)         
+    for idx, ax in enumerate(axs[0,:]):
+        ax.set_title(r'Auction_type = %s'%(auction_type[idx]))
+    for idx, ax in enumerate(axs[:,0]):
+        ax.annotate('Valuation:'+valuation_type[idx], xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - 5, 0),
+            xycoords=ax.yaxis.label, textcoords='offset points',
+            size='small', ha='right', va='center', rotation=90) 
+        
+def plot_auction_allocation(df_res,ci=None):  
+#    plt.rc('text', usetex=True)
+#    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    sns.set()
+    no_resources = df_res.no_resources.unique().tolist()
+    layer = df_res.layer.unique().tolist()
+    auction_type = df_res.auction_type.unique().tolist()
+    auction_type.remove('')
+    valuation_type = df_res.valuation_type.unique().tolist()
+    valuation_type.remove('')
+    T = len(df_res.t.unique().tolist())
+
+    for idxat,at in enumerate(auction_type):
+        fig, axs = plt.subplots(len(layer), len(no_resources), sharex=True, sharey='col', tight_layout=False)
+        for idxnr,nr in enumerate(no_resources):
+            for idxvt,vt in enumerate(layer):
+                ax = axs[idxvt,idxnr]
+                with sns.xkcd_palette(['blue','green','red']):
+                    ax = sns.lineplot(x='t', y='resource', hue="valuation_type", style='decision_type',
+                        markers=False, ci=ci, ax=ax,legend='full',
+                        data=df_res[(df_res['layer']==vt)&
+                                (df_res['no_resources']==nr)&
+                                ((df_res['auction_type']==at)|(df_res['auction_type']==''))]) 
+                    ax.get_legend().set_visible(False)
+                                
+        handles, labels = axs[0,0].get_legend_handles_labels()
+        fig.legend(handles, labels, loc='upper right', ncol=1)
+        fig.suptitle('Auction Type = '+auction_type[idxat])
+        for idx, ax in enumerate(axs[0,:]):
+            ax.set_title(r'Total resources = %d'%(no_resources[idx]))
+        for idx, ax in enumerate(axs[:,0]):
+            ax.annotate('Layer '+layer[idx], xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - 5, 0),
+                xycoords=ax.yaxis.label, textcoords='offset points',
+                size='small', ha='right', va='center', rotation=90)   

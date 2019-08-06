@@ -13,7 +13,7 @@ import sys
 #if platform.system() == "Linux":
 #    HOME_DIR="/home/andrew/"
 
-def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_actions=False):
+def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_actions=False, print_cmd=True):
     """INDP optimization problem. Also solves td-INDP if T > 1.
     :param N: An InfrastructureNetwork instance (created in infrastructure.py)
     :param v_r: Vector of number of resources given to each layer in each timestep. If the size of the vector is 1, it shows the total number of resources for all layers.
@@ -244,7 +244,8 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                         src=interdep[0]
                         gamma=interdep[1]
                         if not N_hat.has_node(src):
-                            print "Forcing",`n`,"to be 0 (dep. on",`src`,")"
+                            if print_cmd:
+                                print "Forcing",`n`,"to be 0 (dep. on",`src`,")"
                             infeasible_actions.append(n)
                             interdepLConstr+=0
                         else:
