@@ -204,8 +204,8 @@ if __name__ == "__main__":
 
     ''' Decide the failure scenario'''
     listFilteredSce = 'damagedElements_sliceQuantile_0.95.csv'
-    failSce_param = {"type":"WU","set_range":range(5,6),"sce_range":range(46,47),
-                     'filtered_List':listFilteredSce}
+#    failSce_param = {"type":"WU","set_range":range(5,7),"sce_range":range(36,47),
+#                     'filtered_List':listFilteredSce}
     failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(0,96),
                      'filtered_List':listFilteredSce}
 #    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
@@ -230,26 +230,28 @@ if __name__ == "__main__":
 
 
   
-    """ Plot Results """ 
-    method_name = ['judgeCall_OPTIMISTIC','judgeCall_PESSIMISTIC','indp']
-    auction_types.append('')
-    valuation_types.append('')
-    suffixes = ['Real_sum','']
-    sample_range=failSce_param["set_range"]
-    mags=failSce_param['sce_range']
+    """ Compute metrics """ 
+#    method_name = ['judgeCall_OPTIMISTIC','judgeCall_PESSIMISTIC','indp']
+#    auction_types.append('')
+#    valuation_types.append('')
+#    suffixes = ['Real_sum','']
+#    sample_range=failSce_param["set_range"]
+#    mags=failSce_param['sce_range']
+#    
+#    df = read_and_aggregate_results(mags,method_name,auction_types,valuation_types,suffixes,L=3,
+#                                    sample_range=sample_range,no_resources=v_r,
+#                                    listHDadd=failSce_param['filtered_List'])
+##    df = correct_tdindp_results(df,mags,method_name,sample_range)
+#   
+#    lambda_df = relative_performance(df,sample_range=sample_range,ref_method='indp',
+#                                     listHDadd=failSce_param['filtered_List'])
+#    resource_allocation=read_resourcec_allocation(df,sample_range=sample_range,
+#                            T=10,layers=[1,2,3],ci=None,
+#                            listHDadd=failSce_param['filtered_List'])    
+
     
-    df = read_and_aggregate_results(mags,method_name,auction_types,valuation_types,suffixes,L=3,
-                                    sample_range=sample_range,no_resources=v_r,
-                                    listHDadd=failSce_param['filtered_List'])
-#    df = correct_tdindp_results(df,mags,method_name,sample_range)
-   
+    """ Plot results """    
     plot_performance_curves(df,cost_type='Total',decision_names=method_name,ci=None)
-    lambda_df = relative_performance(df,sample_range=sample_range,ref_method='indp',
-                                     listHDadd=failSce_param['filtered_List'])
     plot_relative_performance(lambda_df)
-    
-    """ Comparing the resource allocation by octioan and optimal"""    
-    resource_allocation=read_resourcec_allocation(df,sample_range=sample_range,
-                            T=10,layers=[1,2,3],ci=None,
-                            listHDadd=failSce_param['filtered_List'])
     plot_auction_allocation(resource_allocation,ci=None)
+    plot_relative_allocation(resource_allocation)
