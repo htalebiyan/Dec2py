@@ -109,40 +109,45 @@ def run_indp_sample():
     import warnings
     warnings.filterwarnings("ignore")
     InterdepNet=initialize_sample_network()
-    params={"NUM_ITERATIONS":7, "OUTPUT_DIR":'../results/sample_indp_10Node_L2',"V":2,"T":1,"WINDOW_LENGTH":1,"ALGORITHM":"INDP"}
+    params={"NUM_ITERATIONS":7, "OUTPUT_DIR":'../results/sample_indp_12Node_results_L2',"V":2,"T":1,"WINDOW_LENGTH":1,"ALGORITHM":"INDP"}
     params["N"]=InterdepNet
     params["MAGNITUDE"]=0
     params["SIM_NUMBER"]=0
-    run_indp(params,layers=[1,2],T=params["T"],suffix="",saveModel=True,print_cmd_line=True)
-#    plot_indp_sample(params)
+#    run_indp(params,layers=[1,2],T=params["T"],suffix="",saveModel=True,print_cmd_line=True)
+##    plot_indp_sample(params)
+    auction_type = ["MCA","MDAA","MDDA"]
+    valuation_type = ["DTC","MDDN"]
+#    for at,vt in itertools.product(auction_type,valuation_type):
+#        for jc in ["PESSIMISTIC","OPTIMISTIC"]:
+#            InterdepNet=initialize_sample_network()
+#            params["N"]=InterdepNet
+#            params["NUM_ITERATIONS"]=7
+#            params["ALGORITHM"]="JUDGMENT_CALL"
+#            params["JUDGMENT_TYPE"]=jc
+#            params["OUTPUT_DIR"]='../results/sample_judgeCall_12Node_'+jc+'_results_L2'
+#            params["V"]=[1,1]
+#            params["T"]=1
+#            params["AUCTION_TYPE"]= at
+#            params["VALUATION_TYPE"]= vt
+#            run_judgment_call(params,layers=[1,2],T=params["T"],saveJCModel=True,print_cmd=True)
+##            plot_indp_sample(params,
+##                folderSuffix='_auction_'+params["AUCTION_TYPE"]+'_'+params["VALUATION_TYPE"],suffix="sum")
     
-    for jc in ["PESSIMISTIC","OPTIMISTIC"]:
-        InterdepNet=initialize_sample_network()
-        params["N"]=InterdepNet
-        params["NUM_ITERATIONS"]=7
-        params["ALGORITHM"]="JUDGMENT_CALL"
-        params["JUDGMENT_TYPE"]=jc
-        params["OUTPUT_DIR"]='../results/sample_judgeCall_10Node_'+jc+'_results_L2'
-        params["V"]=[1,1]
-        params["T"]=1
-        params["AUCTION_TYPE"]="EC"
-        params["VALUATION_TYPE"]="DTC"
-        run_judgment_call(params,layers=[1,2],T=params["T"],saveJCModel=True,print_cmd=True)
-        plot_indp_sample(params,
-            folderSuffix='_auction_'+params["AUCTION_TYPE"]+'_'+params["VALUATION_TYPE"],suffix="sum")
+    method_name=['sample_indp_12Node','sample_judgeCall_12Node_PESSIMISTIC']
+    suffixes=['','Real_sum']
     
-    method_name=['sample_indp_10Node','sample_judgeCall_10Node_OPTIMISTIC_results','sample_judgeCall_10Node_PESSIMISTIC_results']
-    resource_cap=['','_auction_'+params["AUCTION_TYPE"]+'_'+params["VALUATION_TYPE"],
-                  '_auction_'+params["AUCTION_TYPE"]+'_'+params["VALUATION_TYPE"]]
-    suffixes=['','Real_sum','Real_sum']
     df = read_and_aggregate_results(mags=[0],method_name=method_name,
-        resource_cap=resource_cap,suffixes=suffixes,L=2,sample_range=[0],no_resources=[2])  
-    plot_performance_curves(df,cost_type='Total',method_name=method_name,ci=None)
-    lambda_df = relative_performance(df,sample_range=[0],ref_method='sample_indp_10Node')
+                    auction_type=auction_type, valuation_type=valuation_type,
+                    suffixes=suffixes,L=2,sample_range=[0],no_resources=[2]) 
+    lambda_df = relative_performance(df,sample_range=[0],ref_method='sample_indp_12Node')
+    resource_allocation=read_resourcec_allocation(df,sample_range=[0],L=2,T=5,
+                                    layers=[1,2],ref_method='sample_indp_12Node')
+
+    plot_performance_curves(df,cost_type='Total',decision_names=method_name,
+                            auction_type=auction_type, valuation_type=valuation_type,ci=None)
     plot_relative_performance(lambda_df)   
-    
-    resource_allocation=read_resourcec_allocation(df,sample_range=[0],L=2,T=5,layers=[1,2])
     plot_auction_allocation(resource_allocation,ci=None)
+    plot_relative_allocation(resource_allocation)
     
 def run_indp_L3(failSce_param,v_r):
     """
@@ -200,23 +205,23 @@ if __name__ == "__main__":
     plt.close('all')
     
     ''' Run a toy example for different methods '''
-#    run_indp_sample()
+    run_indp_sample()
 
     ''' Decide the failure scenario'''
-    listFilteredSce = 'damagedElements_sliceQuantile_0.95.csv'
-#    failSce_param = {"type":"WU","set_range":range(5,7),"sce_range":range(36,47),
+#    listFilteredSce = 'damagedElements_sliceQuantile_0.95.csv'
+##    failSce_param = {"type":"WU","set_range":range(5,7),"sce_range":range(36,47),
+##                     'filtered_List':listFilteredSce}
+#    failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(0,96),
 #                     'filtered_List':listFilteredSce}
-    failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(0,96),
-                     'filtered_List':listFilteredSce}
-#    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
-#    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
+##    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
+##    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
 
     ''' Run different methods'''
-    v_r=[3,6,8,12]  # No restriction on nuber of resources for each layer
-#    v_r=[[1,1,1],[2,2,2],[3,3,3]] # Prescribed number of resources for each layer
-    judge_types = ["PESSIMISTIC","OPTIMISTIC"] #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
-    auction_types = ["MDD","MDA","EC"] #["MDD","MDA","EC"]
-    valuation_types = ['DTC','MDDN'] #['DTC','DTC_uniform','MDDN']
+#    v_r=[3,6,8,12]  # No restriction on nuber of resources for each layer
+##    v_r=[[1,1,1],[2,2,2],[3,3,3]] # Prescribed number of resources for each layer
+#    judge_types = ["PESSIMISTIC","OPTIMISTIC"] #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
+#    auction_types = ["MDDA","MDAA","MCA"] #["MDDA","MDAA","MCA"]
+#    valuation_types = ['DTC','MDDN'] #['DTC','DTC_uniform','MDDN']
     
 #    run_indp_L3(failSce_param,v_r)
 #    run_tdindp_L3(failSce_param, v_r)
@@ -232,8 +237,6 @@ if __name__ == "__main__":
   
     """ Compute metrics """ 
 #    method_name = ['judgeCall_OPTIMISTIC','judgeCall_PESSIMISTIC','indp']
-#    auction_types.append('')
-#    valuation_types.append('')
 #    suffixes = ['Real_sum','']
 #    sample_range=failSce_param["set_range"]
 #    mags=failSce_param['sce_range']
@@ -250,8 +253,8 @@ if __name__ == "__main__":
 #                            listHDadd=failSce_param['filtered_List'])    
 
     
-    """ Plot results """    
-    plot_performance_curves(df,cost_type='Total',decision_names=method_name,ci=None)
-    plot_relative_performance(lambda_df)
-    plot_auction_allocation(resource_allocation,ci=None)
-    plot_relative_allocation(resource_allocation)
+#    """ Plot results """    
+#    plot_performance_curves(df,cost_type='Total',decision_names=method_name,ci=None)
+#    plot_relative_performance(lambda_df)
+#    plot_auction_allocation(resource_allocation,ci=None)
+#    plot_relative_allocation(resource_allocation)

@@ -775,8 +775,15 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
                2:[(7,2),(8,2),(9,2),(10,2),(11,2),(12,2)], 21:[(10,2)], 22:[(7,2),(8,2),(9,2),(11,2),(12,2)]}
     arc_dict= {1: [((1,1),(2,1)),((1,1),(3,1)),((1,1),(4,1)),((6,1),(4,1)),((6,1),(5,1))], 
                    2: [((8,2),(7,2)),((8,2),(10,2)),((9,2),(7,2)),((9,2),(10,2)),((9,2),(12,2)),((11,2),(12,2))]} 
-    labels=dict((n,(n[0],d['data']['inf_data'].demand)) for n,d in InterdepNet.G.nodes(data=True))  
-
+    labels = {}
+    for n,d in InterdepNet.G.nodes(data=True):
+        labels[n]= "%d[%d]" % (n[0],d['data']['inf_data'].demand)
+    pos_moved={}
+    for key,value in pos.iteritems():
+        pos_moved[key] = [0,0]
+        pos_moved[key][0] = pos[key][0]-0.2
+        pos_moved[key][1] = pos[key][1]+0.2
+        
     v_r = params["V"]
     if isinstance(v_r, (int, long)):
         totalResource = v_r
@@ -808,12 +815,14 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
             data=string.split(str.strip(a),".")
             node_dict[int(data[1])*10+1].append((int(data[0]),int(data[1])))
             node_dict[int(data[1])*10+2].remove((int(data[0]),int(data[1])))
-        nx.draw(InterdepNet.G, pos,labels=labels,node_color='w')
-        nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[1],node_color='r',node_size=900,alpha=0.6)
-        nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[2],node_color='b',node_size=900,alpha=0.6)
-        nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[12],node_color='w',node_shape="x",node_size=300)
-        nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[22],node_color='w',node_shape="x",node_size=300)
+        nx.draw(InterdepNet.G, pos,node_color='w')
+        nx.draw_networkx_labels(InterdepNet.G,labels=labels,pos=pos,
+                                font_color='w',font_family='CMU Serif',font_weight='bold')
+        nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[1],node_color='#b51717',node_size=1100,alpha=0.7)
+        nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[2],node_color='#005f98',node_size=1100,alpha=0.7)
+        nx.draw_networkx_nodes(InterdepNet.G,pos_moved,nodelist=node_dict[12],node_color='k',node_shape="X",node_size=150)
+        nx.draw_networkx_nodes(InterdepNet.G,pos_moved,nodelist=node_dict[22],node_color='k',node_shape="X",node_size=150)
         nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[1],width=1,alpha=0.9,edge_color='r')
         nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[2],width=1,alpha=0.9,edge_color='b')
     plt.tight_layout()   
-    plt.savefig(output_dir+'/plot_net'+folderSuffix+'.png',dpi=300)
+    plt.savefig(output_dir+'/plot_net'+folderSuffix+'.png',dpi=600)
