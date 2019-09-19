@@ -11,7 +11,7 @@ from indputils import *
 import copy
 from gurobipy import *
 import itertools 
-
+import scipy
 def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJCModel=False,validate=False):
     """ Solves an INDP problem with specified parameters using a decentralized hueristic called Judgment Call . Outputs to directory specified in params['OUTPUT_DIR'].
     :param params: Global parameters.
@@ -662,7 +662,9 @@ def read_resourcec_allocation(df,sample_range,T=1,L=3,layers=[1,3],suffix="",ref
                             for t in range(T):
                                 vector_res[P][t] = df_res.loc[(df_res['t']==t+1)&row,'resource']
                             distance = np.linalg.norm(vector_res[P]-vector_res_ref[P]) #L2 norm
-                            df_res.loc[row,'distance_to_optimal']=distance
+#                            distance = sum(abs(vector_res[P]-vector_res_ref[P])) #L1 norm
+#                            distance = 1-scipy.stats.pearsonr(vector_res[P],vector_res_ref[P])[0] # correlation distance
+                            df_res.loc[row,'distance_to_optimal']=distance/float(vector_res[P].shape[0])
         print 'm%d'%(m),
         
     return df_res
@@ -710,6 +712,8 @@ def read_and_aggregate_results(mags,method_name,auction_type,valuation_type,suff
         for rc in no_resources:
             print 'm %d|v=%d|' %(m,rc),  
             for dt,at,vt in itertools.product(method_name,auction_type,valuation_type):
+                if (dt in optimal_method) and ((at!='') or (vt!='')):
+                    continue
                 # Constructing the directory
                 if dt in optimal_method:
                     full_suffix = '_L'+`L`+'_m'+`m`+'_v'+`rc`
@@ -909,7 +913,7 @@ def plot_performance_curves(df,x='t',y='cost',cost_type='Total',
                             ((df['valuation_type']==vt)|(df['valuation_type']==''))]) 
                 ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
                 ax.get_legend().set_visible(False)
-                            
+                ax.xaxis.set_ticks(np.arange(0,11 , 1.0))   #ax.get_xlim()                          
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_legend_labels(labels)
     fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5)
@@ -918,20 +922,22 @@ def plot_performance_curves(df,x='t',y='cost',cost_type='Total',
         axx=[axs]
         axy=[axs]
     elif len(valuation_type)==1:
-        axx = [axs[0]]
-        axy = axs
-    elif len(no_resources)==1:
-        axx = axs
         axy = [axs[0]]
+        axx = axs
+    elif len(no_resources)==1:
+        axy = axs
+        axx = [axs[0]]
     else:
         axx = axs[0,:]
         axy = axs[:,0]  
-    for idx, ax in enumerate(axy):
-        ax.set_title(r'Total resources = %d'%(no_resources[idx]))
     for idx, ax in enumerate(axx):
+        ax.set_title(r'Total resources=%d'%(no_resources[idx]))
+    for idx, ax in enumerate(axy):
         ax.annotate('Valuation = '+valuation_type[idx], xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - 5, 0),
-            xycoords=ax.yaxis.label, textcoords='offset points', ha='right', va='center', rotation=90)   
+            xycoords=ax.yaxis.label, textcoords='offset points', ha='right', va='center', rotation=90) 
         
+    plt.savefig('Performance_curves.pdf',dpi=600)  
+    
 def plot_relative_performance(lambda_df,cost_type='Total'):   
     sns.set(context='notebook',style='darkgrid')
     plt.rc('text', usetex=True)
@@ -965,10 +971,10 @@ def plot_relative_performance(lambda_df,cost_type='Total'):
                                 capsize=.05,errcolor=[.25,.25,.25],errwidth=1,ax=ax) 
                 ax.get_legend().set_visible(False)
                 ax.grid(which='major', axis='y', color=[.75,.75,.75], linewidth=.75)
-                ax.set_xlabel(r'No. Resources')
+                ax.set_xlabel(r'No. resources')
                 if idxvt!=len(valuation_type)-1:
                     ax.set_xlabel('')
-                ax.set_ylabel(r'Mean Relative Measure, E[$\lambda_{%s}$]'%('TC'))
+                ax.set_ylabel(r'E[$\lambda_{%s}$]'%('TC'))
                 if idxnr!=0:
                     ax.set_ylabel('')
                 ax.xaxis.set_label_position('bottom')  
@@ -994,15 +1000,17 @@ def plot_relative_performance(lambda_df,cost_type='Total'):
     for idx, ax in enumerate(axx):
         ax.set_title(r'Auction Type = %s'%(auction_type[idx]))
     for idx, ax in enumerate(axy):
-        ax.annotate('Valuation:'+valuation_type[idx],xy=(0, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
+        ax.annotate('Valuation:'+valuation_type[idx],xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
             xycoords=ax.yaxis.label,textcoords='offset points',ha='right',va='center',rotation=90) 
-        
+
+    plt.savefig('Relative_perforamnce.pdf',dpi=600)
+    
 def plot_auction_allocation(df_res,ci=None):  
     sns.set(context='notebook',style='darkgrid')
     plt.rc('text', usetex=True)
     plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     
-    no_resources = df_res.no_resources.unique().tolist()
+    no_resources = [3,12]#df_res.no_resources.unique().tolist()
     layer = df_res.layer.unique().tolist()
     auction_type = df_res.auction_type.unique().tolist()
     auction_type.remove('')
@@ -1030,8 +1038,13 @@ def plot_auction_allocation(df_res,ci=None):
                                 (df_res['no_resources']==nr)&
                                 ((df_res['valuation_type']==at)|(df_res['valuation_type']==''))]) 
                     ax.get_legend().set_visible(False)
-                    ax.set(xlabel=r'time step $t$', ylabel='Resource')
-                                
+                    ax.set(xlabel=r'time step $t$', ylabel='No. resources')
+                    ax.xaxis.set_ticks(np.arange(1, 11, 1.0))   #ax.get_xlim()       
+#                    ax.yaxis.set_ticks(np.arange(0, ax.get_ylim()[1], 1.0), minor=True)
+                    ax.yaxis.set_ticks(np.arange(0, ax.get_ylim()[1], 1.0))  
+                    ax.grid(b=True, which='major', color='w', linewidth=1.0)
+#                    ax.grid(b=True, which='minor', color='w', linewidth=0.5)    
+                       
         handles, labels = ax.get_legend_handles_labels()
         labels = correct_legend_labels(labels)
         fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5, labelspacing=0.2) #(0.75,0.6)
@@ -1055,7 +1068,7 @@ def plot_auction_allocation(df_res,ci=None):
             ax.annotate('Layer '+layer[idx],xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
                 xycoords=ax.yaxis.label, textcoords='offset points',ha='right',va='center',rotation=90)  
   
-        plt.savefig('RA_'+at+'.pdf',dpi=600)
+        plt.savefig('Allocations_'+at+'.pdf',dpi=600)
 
 def plot_relative_allocation(df_res):   
     sns.set(context='notebook',style='darkgrid')
@@ -1070,37 +1083,42 @@ def plot_relative_allocation(df_res):
     valuation_type = df_res.valuation_type.unique().tolist()
     valuation_type.remove('')
     
-    pals = [sns.color_palette("Blues"),sns.color_palette("Reds"),sns.color_palette("Greens")]
-    fig, axs = plt.subplots(len(valuation_type), len(auction_type),sharex=True, sharey=True,tight_layout=False)
-    for idxnr,nr in enumerate(auction_type):   
+#    pals = [sns.color_palette("Blues"),sns.color_palette("Reds"),sns.color_palette("Greens")]
+    clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green']]
+    fig, axs = plt.subplots(len(valuation_type), len(auction_type),sharex=True,
+                            sharey=True,tight_layout=False)
+    for idxat,at in enumerate(auction_type):   
         for idxvt,vt in enumerate(valuation_type): 
             if len(auction_type)==1 and len(valuation_type)==1:
                 ax=axs
             elif len(valuation_type)==1:
-                ax = axs[idxnr]
+                ax = axs[idxat]
             elif len(auction_type)==1:
                 ax = axs[idxvt]
             else:
-                ax = axs[idxvt,idxnr]
-            data_ftp = df_res[(df_res['auction_type']==nr)&(df_res['valuation_type']==vt)]
-            bottom = 0
-            for P in layer:
-                data_ftp.loc[(data_ftp['layer']==P),'distance_to_optimal']=data_ftp.loc[(data_ftp['layer']==P),'distance_to_optimal']+bottom
-                bottom += data_ftp[(data_ftp['layer']==P)]['distance_to_optimal'].mean()
-            for P in  reversed(layer):    
-                with pals[int(P)-1]:
+                ax = axs[idxvt,idxat]
+            data_ftp = df_res[(df_res['auction_type']==at)&(df_res['valuation_type']==vt)]
+            
+            for dt in decision_type:
+                for nr in no_resources:
+                    bottom = 0
+                    for P in layer:
+                        data_ftp.loc[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['no_resources']==nr),'distance_to_optimal']+=bottom
+                        bottom=data_ftp[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['no_resources']==nr)]['distance_to_optimal'].mean()
+            for P in reversed(layer):    
+                with sns.xkcd_palette(clrs[int(P)-1]): #pals[int(P)-1]:
                     ax=sns.barplot(x='no_resources',y='distance_to_optimal',hue="decision_type",
                                 data=data_ftp[(data_ftp['layer']==P)], 
                                 linewidth=0.5,edgecolor=[.25,.25,.25],
-                                capsize=.05,errcolor=[.25,.25,.25],errwidth=1,ax=ax)
-                
+                                capsize=.05,errcolor=[.25,.25,.25],errwidth=.75,ax=ax)
+               
             ax.get_legend().set_visible(False)
             ax.grid(which='major', axis='y', color=[.75,.75,.75], linewidth=.75)
             ax.set_xlabel(r'No. Resources')
             if idxvt!=len(valuation_type)-1:
                 ax.set_xlabel('')
-            ax.set_ylabel(r'Mean Relative allocation')
-            if idxnr!=0:
+            ax.set_ylabel(r'$E[\omega^k(r^k_d,r^k_c)]$')
+            if idxat!=0:
                 ax.set_ylabel('')
             ax.xaxis.set_label_position('bottom')  
             ax.set_facecolor('w')
@@ -1110,8 +1128,8 @@ def plot_relative_allocation(df_res):
     for idx,lab in enumerate(labels):
         layer_num = len(layer) - idx//(len(decision_type)-1)
         labels[idx] = lab + ' (Layer ' + `layer_num` + ')'
-    fig.legend(handles, labels,loc='upper right',frameon =True,framealpha=0.5, ncol=1)   
-  
+    lgd = fig.legend(handles, labels,loc='lower center', bbox_to_anchor=(0.5, 0.95),
+               frameon =True,framealpha=0.5, ncol=3, fontsize='small')     
     if len(auction_type)==1 and len(valuation_type)==1:
         axx=[axs]
         axy=[axs]
@@ -1125,15 +1143,22 @@ def plot_relative_allocation(df_res):
         axx = axs[0,:]
         axy = axs[:,0]
     for idx, ax in enumerate(axx):
-        ax.set_title(r'Auction Type = %s'%(auction_type[idx]))
+        ax.set_title(r'Auction Type: %s'%(auction_type[idx]))
     for idx, ax in enumerate(axy):
-        ax.annotate('Valuation = '+valuation_type[idx],xy=(0, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
+        ax.annotate('Valuation: '+valuation_type[idx],xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
             xycoords=ax.yaxis.label,textcoords='offset points',ha='right',va='center',rotation=90)
-            
+    plt.savefig('Allocation_Difference.pdf', bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=600)    
+    
 def correct_legend_labels(labels):
     labels = ['iINDP' if x=='sample_indp_12Node' else x for x in labels]
     labels = ['JC Optimistic' if x=='sample_judgeCall_12Node_OPTIMISTIC' else x for x in labels]
     labels = ['JC Pessimistic' if x=='sample_judgeCall_12Node_PESSIMISTIC' else x for x in labels]
     labels = ['Auction Type' if x=='auction_type' else x for x in labels]
     labels = ['Decision Type' if x=='decision_type' else x for x in labels]
+    labels = ['iINDP' if x=='indp' else x for x in labels]
+    labels = ['JC Optimistic' if x=='judgeCall_OPTIMISTIC' else x for x in labels]
+    labels = ['JC Pessimistic' if x=='judgeCall_PESSIMISTIC' else x for x in labels]
+    labels = ['Auction Type' if x=='auction_type' else x for x in labels]
+    labels = ['Decision Type' if x=='decision_type' else x for x in labels]
+    labels = ['MCA' if x=='EC' else x for x in labels]
     return labels

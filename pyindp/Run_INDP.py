@@ -42,7 +42,7 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1]):
                 print '\n---Running Magnitude '+`m`+' sample '+`i`+'...'
                 
                 print("Initializing network...")
-                InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependency_dir="../data/INDP_4-12-2016",sim_number=0,magnitude=6,v=params["V"])  # #!!!
+                InterdepNet=initialize_network(BASE_DIR="../data/Extended_Shelby_County/",external_interdependency_dir=None,sim_number=0,magnitude=6,v=params["V"])  # #"../data/INDP_7-20-2015/" "../data/INDP_4-12-2016"
                     
                 params["N"]=InterdepNet
                 params["SIM_NUMBER"]=i
@@ -205,25 +205,25 @@ if __name__ == "__main__":
     plt.close('all')
     
     ''' Run a toy example for different methods '''
-    run_indp_sample()
+#    run_indp_sample()
 
     ''' Decide the failure scenario'''
-#    listFilteredSce = 'damagedElements_sliceQuantile_0.95.csv'
-##    failSce_param = {"type":"WU","set_range":range(5,7),"sce_range":range(36,47),
-##                     'filtered_List':listFilteredSce}
+    listFilteredSce = 'damagedElements_sliceQuantile_0.95.csv'
+    failSce_param = {"type":"WU","set_range":range(24,25),"sce_range":range(5,6),
+                     'filtered_List':listFilteredSce}
 #    failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(0,96),
 #                     'filtered_List':listFilteredSce}
-##    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
-##    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
+#    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
+#    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
 
     ''' Run different methods'''
-#    v_r=[3,6,8,12]  # No restriction on nuber of resources for each layer
-##    v_r=[[1,1,1],[2,2,2],[3,3,3]] # Prescribed number of resources for each layer
-#    judge_types = ["PESSIMISTIC","OPTIMISTIC"] #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
-#    auction_types = ["MDDA","MDAA","MCA"] #["MDDA","MDAA","MCA"]
-#    valuation_types = ['DTC','MDDN'] #['DTC','DTC_uniform','MDDN']
+    v_r=[12] #[3,6,8,12]  # No restriction on nuber of resources for each layer
+#    v_r=[[1,1,1],[2,2,2],[3,3,3]] # Prescribed number of resources for each layer
+    judge_types = ["OPTIMISTIC"] #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
+    auction_types =  ["MDD","MDA","MCA"] #["MDDA","MDAA","MCA"] #!!!
+    valuation_types = ['DTC'] #['DTC','DTC_uniform','MDDN']    
     
-#    run_indp_L3(failSce_param,v_r)
+    run_indp_L3(failSce_param,v_r)
 #    run_tdindp_L3(failSce_param, v_r)
 #    for jc in judge_types:
 ##        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type=None)
@@ -233,18 +233,20 @@ if __name__ == "__main__":
 #                                auction_type=at,valuation_type=vt)
 
 
-
+ 
   
     """ Compute metrics """ 
-#    method_name = ['judgeCall_OPTIMISTIC','judgeCall_PESSIMISTIC','indp']
-#    suffixes = ['Real_sum','']
-#    sample_range=failSce_param["set_range"]
-#    mags=failSce_param['sce_range']
-#    
+    method_name = ['indp']
+    for jc in judge_types:
+        method_name.append('judgeCall_'+jc)
+    suffixes = ['Real_sum','']
+    sample_range=failSce_param["set_range"]
+    mags=failSce_param['sce_range']
+    
 #    df = read_and_aggregate_results(mags,method_name,auction_types,valuation_types,suffixes,L=3,
 #                                    sample_range=sample_range,no_resources=v_r,
 #                                    listHDadd=failSce_param['filtered_List'])
-##    df = correct_tdindp_results(df,mags,method_name,sample_range)
+###    df = correct_tdindp_results(df,mags,method_name,sample_range)
 #   
 #    lambda_df = relative_performance(df,sample_range=sample_range,ref_method='indp',
 #                                     listHDadd=failSce_param['filtered_List'])
@@ -253,7 +255,7 @@ if __name__ == "__main__":
 #                            listHDadd=failSce_param['filtered_List'])    
 
     
-#    """ Plot results """    
+    """ Plot results """    
 #    plot_performance_curves(df,cost_type='Total',decision_names=method_name,ci=None)
 #    plot_relative_performance(lambda_df)
 #    plot_auction_allocation(resource_allocation,ci=None)
