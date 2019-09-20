@@ -1,0 +1,739 @@
+Arc ID,Start Node,End Node,Network,Subspace,Arc Type
+0,4,26,Telecommunication,292,Fiber Optic Cable
+0,4,26,Telecommunication,293,Fiber Optic Cable
+0,4,26,Telecommunication,294,Fiber Optic Cable
+0,4,26,Telecommunication,295,Fiber Optic Cable
+0,4,26,Telecommunication,296,Fiber Optic Cable
+0,4,26,Telecommunication,297,Fiber Optic Cable
+1,23,1,Telecommunication,228,Fiber Optic Cable
+1,23,1,Telecommunication,229,Fiber Optic Cable
+1,23,1,Telecommunication,252,Fiber Optic Cable
+1,23,1,Telecommunication,253,Fiber Optic Cable
+2,1,6,Telecommunication,153,Fiber Optic Cable
+2,1,6,Telecommunication,154,Fiber Optic Cable
+2,1,6,Telecommunication,177,Fiber Optic Cable
+2,1,6,Telecommunication,178,Fiber Optic Cable
+2,1,6,Telecommunication,179,Fiber Optic Cable
+2,1,6,Telecommunication,202,Fiber Optic Cable
+2,1,6,Telecommunication,203,Fiber Optic Cable
+2,1,6,Telecommunication,204,Fiber Optic Cable
+2,1,6,Telecommunication,228,Fiber Optic Cable
+3,6,9,Telecommunication,81,Fiber Optic Cable
+3,6,9,Telecommunication,104,Fiber Optic Cable
+3,6,9,Telecommunication,105,Fiber Optic Cable
+3,6,9,Telecommunication,106,Fiber Optic Cable
+3,6,9,Telecommunication,129,Fiber Optic Cable
+3,6,9,Telecommunication,130,Fiber Optic Cable
+3,6,9,Telecommunication,131,Fiber Optic Cable
+3,6,9,Telecommunication,153,Fiber Optic Cable
+4,9,17,Telecommunication,12,Fiber Optic Cable
+4,9,17,Telecommunication,13,Fiber Optic Cable
+4,9,17,Telecommunication,25,Fiber Optic Cable
+4,9,17,Telecommunication,38,Fiber Optic Cable
+4,9,17,Telecommunication,39,Fiber Optic Cable
+4,9,17,Telecommunication,58,Fiber Optic Cable
+4,9,17,Telecommunication,80,Fiber Optic Cable
+4,9,17,Telecommunication,81,Fiber Optic Cable
+5,17,16,Telecommunication,12,Fiber Optic Cable
+5,17,16,Telecommunication,24,Fiber Optic Cable
+5,17,16,Telecommunication,36,Fiber Optic Cable
+5,17,16,Telecommunication,37,Fiber Optic Cable
+5,17,16,Telecommunication,55,Fiber Optic Cable
+6,15,16,Telecommunication,54,Fiber Optic Cable
+6,15,16,Telecommunication,55,Fiber Optic Cable
+6,15,16,Telecommunication,75,Fiber Optic Cable
+6,15,16,Telecommunication,76,Fiber Optic Cable
+6,15,16,Telecommunication,97,Fiber Optic Cable
+6,15,16,Telecommunication,98,Fiber Optic Cable
+7,10,15,Telecommunication,97,Fiber Optic Cable
+7,10,15,Telecommunication,120,Fiber Optic Cable
+7,10,15,Telecommunication,121,Fiber Optic Cable
+7,10,15,Telecommunication,122,Fiber Optic Cable
+7,10,15,Telecommunication,123,Fiber Optic Cable
+7,10,15,Telecommunication,145,Fiber Optic Cable
+7,10,15,Telecommunication,146,Fiber Optic Cable
+7,10,15,Telecommunication,169,Fiber Optic Cable
+8,14,15,Telecommunication,97,Fiber Optic Cable
+8,14,15,Telecommunication,120,Fiber Optic Cable
+8,14,15,Telecommunication,165,Fiber Optic Cable
+8,14,15,Telecommunication,166,Fiber Optic Cable
+8,14,15,Telecommunication,188,Fiber Optic Cable
+8,14,15,Telecommunication,189,Fiber Optic Cable
+8,14,15,Telecommunication,213,Fiber Optic Cable
+8,14,15,Telecommunication,236,Fiber Optic Cable
+9,14,13,Telecommunication,236,Fiber Optic Cable
+9,14,13,Telecommunication,237,Fiber Optic Cable
+9,14,13,Telecommunication,260,Fiber Optic Cable
+9,14,13,Telecommunication,283,Fiber Optic Cable
+9,14,13,Telecommunication,284,Fiber Optic Cable
+9,14,13,Telecommunication,310,Fiber Optic Cable
+10,13,12,Telecommunication,310,Fiber Optic Cable
+10,13,12,Telecommunication,333,Fiber Optic Cable
+10,13,12,Telecommunication,356,Fiber Optic Cable
+10,13,12,Telecommunication,378,Fiber Optic Cable
+11,12,11,Telecommunication,378,Fiber Optic Cable
+11,12,11,Telecommunication,402,Fiber Optic Cable
+11,12,11,Telecommunication,426,Fiber Optic Cable
+11,12,11,Telecommunication,449,Fiber Optic Cable
+12,11,2,Telecommunication,449,Fiber Optic Cable
+12,11,2,Telecommunication,450,Fiber Optic Cable
+12,11,2,Telecommunication,451,Fiber Optic Cable
+12,11,2,Telecommunication,452,Fiber Optic Cable
+12,11,2,Telecommunication,453,Fiber Optic Cable
+12,11,2,Telecommunication,454,Fiber Optic Cable
+12,11,2,Telecommunication,455,Fiber Optic Cable
+12,11,2,Telecommunication,456,Fiber Optic Cable
+12,11,2,Telecommunication,457,Fiber Optic Cable
+13,8,7,Telecommunication,312,Fiber Optic Cable
+13,8,7,Telecommunication,335,Fiber Optic Cable
+13,8,7,Telecommunication,336,Fiber Optic Cable
+13,8,7,Telecommunication,359,Fiber Optic Cable
+13,8,7,Telecommunication,360,Fiber Optic Cable
+13,8,7,Telecommunication,382,Fiber Optic Cable
+13,8,7,Telecommunication,383,Fiber Optic Cable
+13,8,7,Telecommunication,407,Fiber Optic Cable
+13,8,7,Telecommunication,408,Fiber Optic Cable
+14,13,8,Telecommunication,310,Fiber Optic Cable
+14,13,8,Telecommunication,311,Fiber Optic Cable
+14,13,8,Telecommunication,312,Fiber Optic Cable
+15,9,20,Telecommunication,81,Fiber Optic Cable
+15,9,20,Telecommunication,104,Fiber Optic Cable
+15,9,20,Telecommunication,126,Fiber Optic Cable
+15,9,20,Telecommunication,127,Fiber Optic Cable
+15,9,20,Telecommunication,148,Fiber Optic Cable
+15,9,20,Telecommunication,171,Fiber Optic Cable
+16,5,4,Telecommunication,223,Fiber Optic Cable
+16,5,4,Telecommunication,246,Fiber Optic Cable
+16,5,4,Telecommunication,269,Fiber Optic Cable
+16,5,4,Telecommunication,270,Fiber Optic Cable
+16,5,4,Telecommunication,292,Fiber Optic Cable
+17,4,3,Telecommunication,291,Fiber Optic Cable
+17,4,3,Telecommunication,292,Fiber Optic Cable
+17,4,3,Telecommunication,318,Fiber Optic Cable
+17,4,3,Telecommunication,341,Fiber Optic Cable
+18,4,8,Telecommunication,286,Fiber Optic Cable
+18,4,8,Telecommunication,287,Fiber Optic Cable
+18,4,8,Telecommunication,288,Fiber Optic Cable
+18,4,8,Telecommunication,289,Fiber Optic Cable
+18,4,8,Telecommunication,290,Fiber Optic Cable
+18,4,8,Telecommunication,291,Fiber Optic Cable
+18,4,8,Telecommunication,292,Fiber Optic Cable
+18,4,8,Telecommunication,312,Fiber Optic Cable
+19,21,25,Telecommunication,419,Fiber Optic Cable
+19,21,25,Telecommunication,443,Fiber Optic Cable
+19,21,25,Telecommunication,466,Fiber Optic Cable
+19,21,25,Telecommunication,490,Fiber Optic Cable
+19,21,25,Telecommunication,513,Fiber Optic Cable
+19,21,25,Telecommunication,536,Fiber Optic Cable
+19,21,25,Telecommunication,559,Fiber Optic Cable
+19,21,25,Telecommunication,560,Fiber Optic Cable
+19,21,25,Telecommunication,581,Fiber Optic Cable
+20,3,21,Telecommunication,341,Fiber Optic Cable
+20,3,21,Telecommunication,342,Fiber Optic Cable
+20,3,21,Telecommunication,365,Fiber Optic Cable
+20,3,21,Telecommunication,366,Fiber Optic Cable
+20,3,21,Telecommunication,388,Fiber Optic Cable
+20,3,21,Telecommunication,412,Fiber Optic Cable
+20,3,21,Telecommunication,413,Fiber Optic Cable
+20,3,21,Telecommunication,414,Fiber Optic Cable
+20,3,21,Telecommunication,438,Fiber Optic Cable
+20,3,21,Telecommunication,439,Fiber Optic Cable
+20,3,21,Telecommunication,462,Fiber Optic Cable
+20,3,21,Telecommunication,463,Fiber Optic Cable
+20,3,21,Telecommunication,487,Fiber Optic Cable
+20,3,21,Telecommunication,488,Fiber Optic Cable
+20,3,21,Telecommunication,511,Fiber Optic Cable
+20,3,21,Telecommunication,534,Fiber Optic Cable
+20,3,21,Telecommunication,535,Fiber Optic Cable
+20,3,21,Telecommunication,558,Fiber Optic Cable
+20,3,21,Telecommunication,559,Fiber Optic Cable
+20,3,21,Telecommunication,580,Fiber Optic Cable
+20,3,21,Telecommunication,581,Fiber Optic Cable
+21,2,21,Telecommunication,457,Fiber Optic Cable
+21,2,21,Telecommunication,458,Fiber Optic Cable
+21,2,21,Telecommunication,482,Fiber Optic Cable
+21,2,21,Telecommunication,483,Fiber Optic Cable
+21,2,21,Telecommunication,484,Fiber Optic Cable
+21,2,21,Telecommunication,507,Fiber Optic Cable
+21,2,21,Telecommunication,508,Fiber Optic Cable
+21,2,21,Telecommunication,509,Fiber Optic Cable
+21,2,21,Telecommunication,532,Fiber Optic Cable
+21,2,21,Telecommunication,533,Fiber Optic Cable
+21,2,21,Telecommunication,534,Fiber Optic Cable
+21,2,21,Telecommunication,557,Fiber Optic Cable
+21,2,21,Telecommunication,558,Fiber Optic Cable
+21,2,21,Telecommunication,559,Fiber Optic Cable
+21,2,21,Telecommunication,580,Fiber Optic Cable
+21,2,21,Telecommunication,581,Fiber Optic Cable
+22,0,21,Telecommunication,505,Fiber Optic Cable
+22,0,21,Telecommunication,506,Fiber Optic Cable
+22,0,21,Telecommunication,507,Fiber Optic Cable
+22,0,21,Telecommunication,530,Fiber Optic Cable
+22,0,21,Telecommunication,531,Fiber Optic Cable
+22,0,21,Telecommunication,532,Fiber Optic Cable
+22,0,21,Telecommunication,533,Fiber Optic Cable
+22,0,21,Telecommunication,556,Fiber Optic Cable
+22,0,21,Telecommunication,557,Fiber Optic Cable
+22,0,21,Telecommunication,558,Fiber Optic Cable
+22,0,21,Telecommunication,559,Fiber Optic Cable
+22,0,21,Telecommunication,580,Fiber Optic Cable
+22,0,21,Telecommunication,581,Fiber Optic Cable
+23,22,26,Telecommunication,271,Fiber Optic Cable
+23,22,26,Telecommunication,272,Fiber Optic Cable
+23,22,26,Telecommunication,294,Fiber Optic Cable
+23,22,26,Telecommunication,295,Fiber Optic Cable
+23,22,26,Telecommunication,296,Fiber Optic Cable
+23,22,26,Telecommunication,297,Fiber Optic Cable
+24,22,25,Telecommunication,271,Fiber Optic Cable
+24,22,25,Telecommunication,293,Fiber Optic Cable
+24,22,25,Telecommunication,294,Fiber Optic Cable
+24,22,25,Telecommunication,295,Fiber Optic Cable
+24,22,25,Telecommunication,304,Fiber Optic Cable
+24,22,25,Telecommunication,305,Fiber Optic Cable
+24,22,25,Telecommunication,322,Fiber Optic Cable
+24,22,25,Telecommunication,323,Fiber Optic Cable
+24,22,25,Telecommunication,346,Fiber Optic Cable
+24,22,25,Telecommunication,347,Fiber Optic Cable
+24,22,25,Telecommunication,370,Fiber Optic Cable
+24,22,25,Telecommunication,371,Fiber Optic Cable
+24,22,25,Telecommunication,372,Fiber Optic Cable
+24,22,25,Telecommunication,394,Fiber Optic Cable
+24,22,25,Telecommunication,395,Fiber Optic Cable
+24,22,25,Telecommunication,419,Fiber Optic Cable
+25,24,5,Telecommunication,176,Fiber Optic Cable
+25,24,5,Telecommunication,199,Fiber Optic Cable
+25,24,5,Telecommunication,223,Fiber Optic Cable
+26,6,24,Telecommunication,153,Fiber Optic Cable
+26,6,24,Telecommunication,176,Fiber Optic Cable
+27,24,23,Telecommunication,176,Fiber Optic Cable
+27,24,23,Telecommunication,199,Fiber Optic Cable
+27,24,23,Telecommunication,200,Fiber Optic Cable
+27,24,23,Telecommunication,201,Fiber Optic Cable
+27,24,23,Telecommunication,202,Fiber Optic Cable
+27,24,23,Telecommunication,226,Fiber Optic Cable
+27,24,23,Telecommunication,227,Fiber Optic Cable
+27,24,23,Telecommunication,228,Fiber Optic Cable
+27,24,23,Telecommunication,251,Fiber Optic Cable
+27,24,23,Telecommunication,252,Fiber Optic Cable
+27,24,23,Telecommunication,253,Fiber Optic Cable
+28,26,19,Telecommunication,297,Fiber Optic Cable
+28,26,19,Telecommunication,298,Fiber Optic Cable
+28,26,19,Telecommunication,299,Fiber Optic Cable
+28,26,19,Telecommunication,300,Fiber Optic Cable
+29,23,19,Telecommunication,253,Fiber Optic Cable
+29,23,19,Telecommunication,276,Fiber Optic Cable
+29,23,19,Telecommunication,277,Fiber Optic Cable
+29,23,19,Telecommunication,299,Fiber Optic Cable
+29,23,19,Telecommunication,300,Fiber Optic Cable
+30,25,19,Telecommunication,300,Fiber Optic Cable
+30,25,19,Telecommunication,327,Fiber Optic Cable
+30,25,19,Telecommunication,350,Fiber Optic Cable
+30,25,19,Telecommunication,373,Fiber Optic Cable
+30,25,19,Telecommunication,395,Fiber Optic Cable
+30,25,19,Telecommunication,419,Fiber Optic Cable
+0,0,16,Water,439,Water Pipe
+0,0,16,Water,473,Water Pipe
+0,0,16,Water,496,Water Pipe
+0,0,16,Water,519,Water Pipe
+0,0,16,Water,544,Water Pipe
+0,0,16,Water,566,Water Pipe
+1,15,0,Water,299,Water Pipe
+1,15,0,Water,319,Water Pipe
+1,15,0,Water,342,Water Pipe
+1,15,0,Water,343,Water Pipe
+1,15,0,Water,377,Water Pipe
+1,15,0,Water,378,Water Pipe
+1,15,0,Water,397,Water Pipe
+1,15,0,Water,415,Water Pipe
+1,15,0,Water,416,Water Pipe
+1,15,0,Water,439,Water Pipe
+2,3,0,Water,397,Water Pipe
+2,3,0,Water,397,Water Pipe
+2,3,0,Water,397,Water Pipe
+2,3,0,Water,415,Water Pipe
+2,3,0,Water,416,Water Pipe
+2,3,0,Water,439,Water Pipe
+3,2,1,Water,87,Water Pipe
+3,2,1,Water,112,Water Pipe
+3,2,1,Water,136,Water Pipe
+3,2,1,Water,159,Water Pipe
+3,2,1,Water,160,Water Pipe
+3,2,1,Water,182,Water Pipe
+3,2,1,Water,226,Water Pipe
+4,1,15,Water,226,Water Pipe
+4,1,15,Water,229,Water Pipe
+4,1,15,Water,251,Water Pipe
+4,1,15,Water,254,Water Pipe
+4,1,15,Water,255,Water Pipe
+4,1,15,Water,280,Water Pipe
+4,1,15,Water,299,Water Pipe
+5,20,2,Water,28,Water Pipe
+5,20,2,Water,29,Water Pipe
+5,20,2,Water,65,Water Pipe
+5,20,2,Water,87,Water Pipe
+5,20,2,Water,88,Water Pipe
+5,20,2,Water,89,Water Pipe
+5,20,2,Water,90,Water Pipe
+6,19,20,Water,29,Water Pipe
+6,19,20,Water,66,Water Pipe
+6,19,20,Water,90,Water Pipe
+6,19,20,Water,91,Water Pipe
+6,19,20,Water,115,Water Pipe
+6,19,20,Water,139,Water Pipe
+6,19,20,Water,163,Water Pipe
+6,19,20,Water,186,Water Pipe
+7,15,17,Water,299,Water Pipe
+7,15,17,Water,300,Water Pipe
+7,15,17,Water,301,Water Pipe
+8,18,17,Water,257,Water Pipe
+8,18,17,Water,282,Water Pipe
+8,18,17,Water,301,Water Pipe
+9,17,3,Water,301,Water Pipe
+9,17,3,Water,320,Water Pipe
+9,17,3,Water,321,Water Pipe
+9,17,3,Water,344,Water Pipe
+9,17,3,Water,345,Water Pipe
+9,17,3,Water,379,Water Pipe
+9,17,3,Water,397,Water Pipe
+10,25,3,Water,397,Water Pipe
+10,25,3,Water,397,Water Pipe
+10,25,3,Water,417,Water Pipe
+10,25,3,Water,442,Water Pipe
+10,25,3,Water,443,Water Pipe
+10,25,3,Water,475,Water Pipe
+10,25,3,Water,476,Water Pipe
+10,25,3,Water,498,Water Pipe
+10,25,3,Water,521,Water Pipe
+10,25,3,Water,522,Water Pipe
+10,25,3,Water,523,Water Pipe
+10,25,3,Water,524,Water Pipe
+10,25,3,Water,525,Water Pipe
+10,25,3,Water,526,Water Pipe
+11,19,18,Water,186,Water Pipe
+11,19,18,Water,208,Water Pipe
+11,19,18,Water,232,Water Pipe
+11,19,18,Water,257,Water Pipe
+12,22,18,Water,257,Water Pipe
+12,22,18,Water,257,Water Pipe
+12,22,18,Water,258,Water Pipe
+13,1,19,Water,185,Water Pipe
+13,1,19,Water,186,Water Pipe
+13,1,19,Water,205,Water Pipe
+13,1,19,Water,206,Water Pipe
+13,1,19,Water,207,Water Pipe
+13,1,19,Water,226,Water Pipe
+14,3,24,Water,379,Water Pipe
+14,3,24,Water,380,Water Pipe
+14,3,24,Water,381,Water Pipe
+14,3,24,Water,397,Water Pipe
+14,3,24,Water,397,Water Pipe
+14,3,24,Water,398,Water Pipe
+15,19,4,Water,186,Water Pipe
+15,19,4,Water,187,Water Pipe
+15,19,4,Water,187,Water Pipe
+16,4,22,Water,187,Water Pipe
+16,4,22,Water,210,Water Pipe
+16,4,22,Water,234,Water Pipe
+16,4,22,Water,258,Water Pipe
+17,5,22,Water,258,Water Pipe
+17,5,22,Water,284,Water Pipe
+17,5,22,Water,285,Water Pipe
+17,5,22,Water,302,Water Pipe
+18,17,5,Water,301,Water Pipe
+18,17,5,Water,302,Water Pipe
+18,17,5,Water,302,Water Pipe
+18,17,5,Water,302,Water Pipe
+19,24,5,Water,302,Water Pipe
+19,24,5,Water,323,Water Pipe
+19,24,5,Water,324,Water Pipe
+19,24,5,Water,347,Water Pipe
+19,24,5,Water,381,Water Pipe
+20,26,5,Water,211,Water Pipe
+20,26,5,Water,235,Water Pipe
+20,26,5,Water,259,Water Pipe
+20,26,5,Water,260,Water Pipe
+20,26,5,Water,285,Water Pipe
+20,26,5,Water,302,Water Pipe
+21,27,25,Water,480,Water Pipe
+21,27,25,Water,503,Water Pipe
+21,27,25,Water,526,Water Pipe
+22,29,25,Water,504,Water Pipe
+22,29,25,Water,505,Water Pipe
+22,29,25,Water,526,Water Pipe
+22,29,25,Water,527,Water Pipe
+23,9,27,Water,480,Water Pipe
+23,9,27,Water,481,Water Pipe
+23,9,27,Water,482,Water Pipe
+23,9,27,Water,483,Water Pipe
+23,9,27,Water,484,Water Pipe
+24,4,26,Water,187,Water Pipe
+24,4,26,Water,210,Water Pipe
+24,4,26,Water,210,Water Pipe
+24,4,26,Water,211,Water Pipe
+25,7,26,Water,211,Water Pipe
+25,7,26,Water,211,Water Pipe
+26,5,30,Water,286,Water Pipe
+26,5,30,Water,287,Water Pipe
+26,5,30,Water,302,Water Pipe
+26,5,30,Water,303,Water Pipe
+27,8,30,Water,287,Water Pipe
+27,8,30,Water,303,Water Pipe
+27,8,30,Water,304,Water Pipe
+27,8,30,Water,327,Water Pipe
+27,8,30,Water,352,Water Pipe
+27,8,30,Water,353,Water Pipe
+27,8,30,Water,385,Water Pipe
+28,10,30,Water,287,Water Pipe
+28,10,30,Water,288,Water Pipe
+28,10,30,Water,289,Water Pipe
+28,10,30,Water,289,Water Pipe
+28,10,30,Water,290,Water Pipe
+28,10,30,Water,290,Water Pipe
+29,30,7,Water,211,Water Pipe
+29,30,7,Water,236,Water Pipe
+29,30,7,Water,261,Water Pipe
+29,30,7,Water,287,Water Pipe
+30,33,7,Water,211,Water Pipe
+30,33,7,Water,212,Water Pipe
+30,33,7,Water,237,Water Pipe
+30,33,7,Water,238,Water Pipe
+30,33,7,Water,239,Water Pipe
+30,33,7,Water,240,Water Pipe
+30,33,7,Water,265,Water Pipe
+30,33,7,Water,266,Water Pipe
+31,21,28,Water,142,Water Pipe
+31,21,28,Water,165,Water Pipe
+31,21,28,Water,165,Water Pipe
+31,21,28,Water,166,Water Pipe
+31,21,28,Water,189,Water Pipe
+31,21,28,Water,190,Water Pipe
+32,4,21,Water,141,Water Pipe
+32,4,21,Water,142,Water Pipe
+32,4,21,Water,164,Water Pipe
+32,4,21,Water,187,Water Pipe
+33,7,28,Water,190,Water Pipe
+33,7,28,Water,211,Water Pipe
+33,7,28,Water,212,Water Pipe
+34,32,28,Water,190,Water Pipe
+34,32,28,Water,191,Water Pipe
+34,32,28,Water,192,Water Pipe
+34,32,28,Water,193,Water Pipe
+34,32,28,Water,215,Water Pipe
+34,32,28,Water,216,Water Pipe
+35,23,6,Water,588,Water Pipe
+35,23,6,Water,588,Water Pipe
+35,23,6,Water,588,Water Pipe
+35,23,6,Water,588,Water Pipe
+35,23,6,Water,588,Water Pipe
+36,25,23,Water,526,Water Pipe
+36,25,23,Water,550,Water Pipe
+36,25,23,Water,550,Water Pipe
+36,25,23,Water,571,Water Pipe
+36,25,23,Water,587,Water Pipe
+36,25,23,Water,588,Water Pipe
+36,25,23,Water,588,Water Pipe
+36,25,23,Water,588,Water Pipe
+36,25,23,Water,588,Water Pipe
+37,29,6,Water,505,Water Pipe
+37,29,6,Water,528,Water Pipe
+37,29,6,Water,552,Water Pipe
+37,29,6,Water,572,Water Pipe
+37,29,6,Water,588,Water Pipe
+37,29,6,Water,588,Water Pipe
+37,29,6,Water,588,Water Pipe
+37,29,6,Water,588,Water Pipe
+37,29,6,Water,588,Water Pipe
+38,31,6,Water,588,Water Pipe
+38,31,6,Water,588,Water Pipe
+38,31,6,Water,588,Water Pipe
+39,24,8,Water,348,Water Pipe
+39,24,8,Water,349,Water Pipe
+39,24,8,Water,350,Water Pipe
+39,24,8,Water,351,Water Pipe
+39,24,8,Water,352,Water Pipe
+39,24,8,Water,372,Water Pipe
+39,24,8,Water,381,Water Pipe
+39,24,8,Water,382,Water Pipe
+39,24,8,Water,385,Water Pipe
+39,24,8,Water,385,Water Pipe
+40,27,8,Water,385,Water Pipe
+40,27,8,Water,400,Water Pipe
+40,27,8,Water,401,Water Pipe
+40,27,8,Water,422,Water Pipe
+40,27,8,Water,423,Water Pipe
+40,27,8,Water,445,Water Pipe
+40,27,8,Water,446,Water Pipe
+40,27,8,Water,480,Water Pipe
+41,9,8,Water,385,Water Pipe
+41,9,8,Water,401,Water Pipe
+41,9,8,Water,424,Water Pipe
+41,9,8,Water,425,Water Pipe
+41,9,8,Water,451,Water Pipe
+41,9,8,Water,484,Water Pipe
+42,34,8,Water,385,Water Pipe
+42,34,8,Water,401,Water Pipe
+42,34,8,Water,401,Water Pipe
+42,34,8,Water,402,Water Pipe
+42,34,8,Water,403,Water Pipe
+43,10,34,Water,290,Water Pipe
+43,10,34,Water,306,Water Pipe
+43,10,34,Water,306,Water Pipe
+43,10,34,Water,329,Water Pipe
+43,10,34,Water,355,Water Pipe
+43,10,34,Water,386,Water Pipe
+43,10,34,Water,402,Water Pipe
+43,10,34,Water,403,Water Pipe
+44,9,31,Water,484,Water Pipe
+44,9,31,Water,507,Water Pipe
+44,9,31,Water,530,Water Pipe
+44,9,31,Water,554,Water Pipe
+44,9,31,Water,574,Water Pipe
+44,9,31,Water,588,Water Pipe
+44,9,31,Water,588,Water Pipe
+44,9,31,Water,588,Water Pipe
+45,35,31,Water,534,Water Pipe
+45,35,31,Water,558,Water Pipe
+45,35,31,Water,575,Water Pipe
+45,35,31,Water,576,Water Pipe
+45,35,31,Water,588,Water Pipe
+45,35,31,Water,588,Water Pipe
+45,35,31,Water,588,Water Pipe
+45,35,31,Water,588,Water Pipe
+45,35,31,Water,588,Water Pipe
+45,35,31,Water,588,Water Pipe
+45,35,31,Water,588,Water Pipe
+46,29,9,Water,484,Water Pipe
+46,29,9,Water,505,Water Pipe
+46,29,9,Water,506,Water Pipe
+46,29,9,Water,507,Water Pipe
+47,10,33,Water,266,Water Pipe
+47,10,33,Water,290,Water Pipe
+48,33,32,Water,216,Water Pipe
+48,33,32,Water,241,Water Pipe
+48,33,32,Water,266,Water Pipe
+49,36,32,Water,216,Water Pipe
+49,36,32,Water,217,Water Pipe
+50,38,10,Water,290,Water Pipe
+50,38,10,Water,290,Water Pipe
+50,38,10,Water,307,Water Pipe
+50,38,10,Water,308,Water Pipe
+51,38,36,Water,217,Water Pipe
+51,38,36,Water,218,Water Pipe
+51,38,36,Water,243,Water Pipe
+51,38,36,Water,268,Water Pipe
+51,38,36,Water,291,Water Pipe
+51,38,36,Water,308,Water Pipe
+52,12,36,Water,152,Water Pipe
+52,12,36,Water,153,Water Pipe
+52,12,36,Water,175,Water Pipe
+52,12,36,Water,176,Water Pipe
+52,12,36,Water,196,Water Pipe
+52,12,36,Water,197,Water Pipe
+52,12,36,Water,198,Water Pipe
+52,12,36,Water,217,Water Pipe
+52,12,36,Water,218,Water Pipe
+53,44,12,Water,176,Water Pipe
+53,44,12,Water,199,Water Pipe
+53,44,12,Water,221,Water Pipe
+53,44,12,Water,222,Water Pipe
+53,44,12,Water,247,Water Pipe
+53,44,12,Water,248,Water Pipe
+53,44,12,Water,273,Water Pipe
+53,44,12,Water,295,Water Pipe
+54,39,38,Water,308,Water Pipe
+54,39,38,Water,309,Water Pipe
+54,39,38,Water,333,Water Pipe
+54,39,38,Water,334,Water Pipe
+54,39,38,Water,363,Water Pipe
+54,39,38,Water,390,Water Pipe
+54,39,38,Water,406,Water Pipe
+54,39,38,Water,407,Water Pipe
+54,39,38,Water,430,Water Pipe
+54,39,38,Water,459,Water Pipe
+55,40,11,Water,514,Water Pipe
+55,40,11,Water,515,Water Pipe
+55,40,11,Water,537,Water Pipe
+55,40,11,Water,561,Water Pipe
+55,40,11,Water,576,Water Pipe
+55,40,11,Water,588,Water Pipe
+56,48,11,Water,588,Water Pipe
+56,48,11,Water,588,Water Pipe
+56,48,11,Water,588,Water Pipe
+56,48,11,Water,588,Water Pipe
+56,48,11,Water,588,Water Pipe
+57,13,48,Water,540,Water Pipe
+57,13,48,Water,564,Water Pipe
+57,13,48,Water,577,Water Pipe
+57,13,48,Water,588,Water Pipe
+57,13,48,Water,588,Water Pipe
+58,37,40,Water,513,Water Pipe
+58,37,40,Water,514,Water Pipe
+58,37,40,Water,515,Water Pipe
+59,11,37,Water,513,Water Pipe
+59,11,37,Water,514,Water Pipe
+59,11,37,Water,537,Water Pipe
+59,11,37,Water,561,Water Pipe
+59,11,37,Water,576,Water Pipe
+59,11,37,Water,588,Water Pipe
+60,13,40,Water,515,Water Pipe
+60,13,40,Water,515,Water Pipe
+60,13,40,Water,539,Water Pipe
+60,13,40,Water,540,Water Pipe
+61,43,45,Water,336,Water Pipe
+61,43,45,Water,337,Water Pipe
+62,44,42,Water,295,Water Pipe
+63,42,43,Water,295,Water Pipe
+63,42,43,Water,312,Water Pipe
+63,42,43,Water,313,Water Pipe
+63,42,43,Water,336,Water Pipe
+64,14,45,Water,337,Water Pipe
+64,14,45,Water,366,Water Pipe
+64,14,45,Water,392,Water Pipe
+64,14,45,Water,392,Water Pipe
+64,14,45,Water,411,Water Pipe
+64,14,45,Water,435,Water Pipe
+65,45,44,Water,295,Water Pipe
+65,45,44,Water,313,Water Pipe
+65,45,44,Water,337,Water Pipe
+66,46,44,Water,295,Water Pipe
+66,46,44,Water,296,Water Pipe
+67,47,46,Water,296,Water Pipe
+67,47,46,Water,314,Water Pipe
+67,47,46,Water,338,Water Pipe
+68,45,47,Water,337,Water Pipe
+68,45,47,Water,338,Water Pipe
+69,41,14,Water,433,Water Pipe
+69,41,14,Water,434,Water Pipe
+69,41,14,Water,435,Water Pipe
+70,13,14,Water,435,Water Pipe
+70,13,14,Water,464,Water Pipe
+70,13,14,Water,465,Water Pipe
+70,13,14,Water,492,Water Pipe
+70,13,14,Water,515,Water Pipe
+70,13,14,Water,540,Water Pipe
+0,9,0,Gas,11,Gas pipe
+0,9,0,Gas,12,Gas pipe
+0,9,0,Gas,13,Gas pipe
+0,9,0,Gas,21,Gas pipe
+0,9,0,Gas,22,Gas pipe
+0,9,0,Gas,23,Gas pipe
+0,9,0,Gas,33,Gas pipe
+0,9,0,Gas,34,Gas pipe
+1,0,3,Gas,33,Gas pipe
+1,0,3,Gas,52,Gas pipe
+1,0,3,Gas,74,Gas pipe
+1,0,3,Gas,97,Gas pipe
+1,0,3,Gas,120,Gas pipe
+1,0,3,Gas,165,Gas pipe
+2,0,5,Gas,33,Gas pipe
+2,0,5,Gas,52,Gas pipe
+2,0,5,Gas,53,Gas pipe
+2,0,5,Gas,75,Gas pipe
+2,0,5,Gas,76,Gas pipe
+2,0,5,Gas,77,Gas pipe
+2,0,5,Gas,78,Gas pipe
+2,0,5,Gas,101,Gas pipe
+2,0,5,Gas,124,Gas pipe
+2,0,5,Gas,146,Gas pipe
+2,0,5,Gas,169,Gas pipe
+2,0,5,Gas,192,Gas pipe
+2,0,5,Gas,216,Gas pipe
+2,0,5,Gas,239,Gas pipe
+2,0,5,Gas,262,Gas pipe
+2,0,5,Gas,285,Gas pipe
+2,0,5,Gas,286,Gas pipe
+2,0,5,Gas,287,Gas pipe
+2,0,5,Gas,313,Gas pipe
+2,0,5,Gas,314,Gas pipe
+2,0,5,Gas,315,Gas pipe
+2,0,5,Gas,338,Gas pipe
+2,0,5,Gas,339,Gas pipe
+2,0,5,Gas,340,Gas pipe
+2,0,5,Gas,363,Gas pipe
+2,0,5,Gas,364,Gas pipe
+3,5,1,Gas,364,Gas pipe
+3,5,1,Gas,386,Gas pipe
+3,5,1,Gas,410,Gas pipe
+4,1,13,Gas,410,Gas pipe
+4,1,13,Gas,434,Gas pipe
+4,1,13,Gas,457,Gas pipe
+5,13,7,Gas,454,Gas pipe
+5,13,7,Gas,455,Gas pipe
+5,13,7,Gas,456,Gas pipe
+5,13,7,Gas,457,Gas pipe
+6,7,8,Gas,451,Gas pipe
+6,7,8,Gas,452,Gas pipe
+6,7,8,Gas,453,Gas pipe
+6,7,8,Gas,454,Gas pipe
+7,8,15,Gas,426,Gas pipe
+7,8,15,Gas,427,Gas pipe
+7,8,15,Gas,428,Gas pipe
+7,8,15,Gas,451,Gas pipe
+8,5,4,Gas,204,Gas pipe
+8,5,4,Gas,205,Gas pipe
+8,5,4,Gas,228,Gas pipe
+8,5,4,Gas,250,Gas pipe
+8,5,4,Gas,251,Gas pipe
+8,5,4,Gas,272,Gas pipe
+8,5,4,Gas,273,Gas pipe
+8,5,4,Gas,291,Gas pipe
+8,5,4,Gas,292,Gas pipe
+8,5,4,Gas,293,Gas pipe
+8,5,4,Gas,294,Gas pipe
+8,5,4,Gas,318,Gas pipe
+8,5,4,Gas,341,Gas pipe
+8,5,4,Gas,364,Gas pipe
+9,4,10,Gas,205,Gas pipe
+9,4,10,Gas,229,Gas pipe
+9,4,10,Gas,230,Gas pipe
+9,4,10,Gas,253,Gas pipe
+9,4,10,Gas,254,Gas pipe
+9,4,10,Gas,277,Gas pipe
+9,4,10,Gas,278,Gas pipe
+9,4,10,Gas,300,Gas pipe
+9,4,10,Gas,327,Gas pipe
+9,4,10,Gas,350,Gas pipe
+9,4,10,Gas,373,Gas pipe
+9,4,10,Gas,395,Gas pipe
+9,4,10,Gas,419,Gas pipe
+10,10,5,Gas,364,Gas pipe
+10,10,5,Gas,365,Gas pipe
+10,10,5,Gas,366,Gas pipe
+10,10,5,Gas,388,Gas pipe
+10,10,5,Gas,389,Gas pipe
+10,10,5,Gas,390,Gas pipe
+10,10,5,Gas,398,Gas pipe
+10,10,5,Gas,399,Gas pipe
+10,10,5,Gas,416,Gas pipe
+10,10,5,Gas,417,Gas pipe
+10,10,5,Gas,418,Gas pipe
+10,10,5,Gas,419,Gas pipe
+11,10,2,Gas,419,Gas pipe
+11,10,2,Gas,443,Gas pipe
+11,10,2,Gas,465,Gas pipe
+11,10,2,Gas,466,Gas pipe
+11,10,2,Gas,489,Gas pipe
+11,10,2,Gas,512,Gas pipe
+12,2,11,Gas,511,Gas pipe
+12,2,11,Gas,512,Gas pipe
+13,11,12,Gas,511,Gas pipe
+13,11,12,Gas,533,Gas pipe
+13,11,12,Gas,534,Gas pipe
+14,11,6,Gas,482,Gas pipe
+14,11,6,Gas,483,Gas pipe
+14,11,6,Gas,506,Gas pipe
+14,11,6,Gas,507,Gas pipe
+14,11,6,Gas,508,Gas pipe
+14,11,6,Gas,509,Gas pipe
+14,11,6,Gas,510,Gas pipe
+14,11,6,Gas,511,Gas pipe
+15,6,13,Gas,457,Gas pipe
+15,6,13,Gas,481,Gas pipe
+15,6,13,Gas,482,Gas pipe
+16,13,14,Gas,457,Gas pipe
+16,13,14,Gas,481,Gas pipe
+16,13,14,Gas,504,Gas pipe
+16,13,14,Gas,527,Gas pipe
+16,13,14,Gas,550,Gas pipe
+16,13,14,Gas,574,Gas pipe
+16,13,14,Gas,583,Gas pipe

@@ -208,8 +208,8 @@ if __name__ == "__main__":
 #    run_indp_sample()
 
     ''' Decide the failure scenario'''
-    listFilteredSce = 'damagedElements_sliceQuantile_0.95.csv'
-    failSce_param = {"type":"WU","set_range":range(24,25),"sce_range":range(5,6),
+    listFilteredSce = '../data/Wu_Scenarios/damagedElements_sliceQuantile_0.95.csv'
+    failSce_param = {"type":"WU","set_range":range(48,49),"sce_range":range(53,54),
                      'filtered_List':listFilteredSce}
 #    failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(0,96),
 #                     'filtered_List':listFilteredSce}

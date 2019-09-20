@@ -4,6 +4,7 @@ import re
 import string
 import numpy as np
 import os
+import pandas as pd
 
 class InfrastructureNode(object):
     def __init__(self,id,net_id,local_id=""):
@@ -203,6 +204,11 @@ def load_infrastructure_data(BASE_DIR="../data/INDP_7-20-2015/",external_interde
         G = load_infrastructure_array_format(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,magnitude=magnitude,v=v,sim_number=sim_number,cost_scale=cost_scale)
 #        print G #!!!
         return G
+    if "../data/Extended_Shelby_County/" in BASE_DIR:
+#        print "Loading a network.." #!!!
+        G = load_infrastructure_array_format_extended(BASE_DIR=BASE_DIR,v=v,sim_number=sim_number,cost_scale=cost_scale)
+#        print G #!!!
+        return G        
         
     #elif BASE_DIR == "../data/INDP_4-12-2016":
     #    load_infrastructure_csv_format(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,magnitude=magnitude,v=v,sim_number=sim_number,cost_scale=cost_scale)
@@ -410,37 +416,100 @@ def add_failure_scenario(G,BASE_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,si
                 #if float(func[1]) == 0.0:
                 #    print "Arc ((",`func[0][1]`+","+`func[0][3]`+"),("+`func[0][2]`+","+`func[0][3]`+")) broken."
 
+def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_County/",v=3,sim_number=1,cost_scale=1.0):
+    files = [f for f in os.listdir(BASE_DIR) if os.path.isfile(os.path.join(BASE_DIR, f))]
+    netNames = {'Water':1,'Gas':2,'Power':3,'Telecommunication':4}
+    G=InfrastructureNetwork("Test")
+    global_index=0
+    for file in files:
+        fname = file[0:-4] 
+        if fname[-5:]=='Nodes':
+            with open(BASE_DIR+file) as f:
+#                print "Opened",file,"."
+                data = pd.read_csv(f, delimiter=',')
+                net = netNames[fname[:-5]]
+                for v in data.iterrows():               
+                    n=InfrastructureNode(global_index,net,int(v[1]['ID']))
+                    #print "Adding node",node[0][0],"in layer",node[0][1],"."
+                    G.G.add_node((n.local_id,n.net_id),data={'inf_data':n})
+                    global_index+=1                    
+                    G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].reconstruction_cost=float(v[1]['q (complete DS)'])*cost_scale
+                    G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].oversupply_penalty=float(v[1]['Mp'])*cost_scale
+                    G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].undersupply_penalty=float(v[1]['Mm'])*cost_scale
+                    # Assume only one kind of resource for now and one resource for each repaired element.
+                    G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].resource_usage=1
+                    G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].demand=float(v[1]['Demand'])
+    for file in files:
+        fname = file[0:-4] 
+        if fname[-4:]=='Arcs':
+            with open(BASE_DIR+file) as f:
+#                print "Opened",file,"."
+                data = pd.read_csv(f, delimiter=',')
+                net = netNames[fname[:-4]]
+                for v in data.iterrows():   
+                    a=InfrastructureArc(int(v[1]['Start Node']),int(v[1]['End Node']),net) 
+                    G.G.add_edge((a.source,a.layer),(a.dest,a.layer),data={'inf_data':a})
+                    G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].flow_cost=float(v[1]['c'])*cost_scale
+                    G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].reconstruction_cost=float(v[1]['f'])*cost_scale
+                    G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].capacity=float(v[1]['u'])
+                    # Assume only one kind of resource for now and one resource for each repaired element.
+                    G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].resource_usage=1   
+
+    for file in files:
+        fname = file[0:-4]
+        with open(BASE_DIR+file) as f:
+#            print "Opened",file,"."
+            data = pd.read_csv(f, delimiter=',')
+            for v in data.iterrows():
+                if fname=='beta':
+                    net = netNames[v[1]['Network']]
+                    G.G[(int(v[1]['Start Node']),net)][(int(v[1]['End Node']),net)]['data']['inf_data'].space=int(int(v[1]['Subspace']))
+                if fname=='alpha':
+                    net = netNames[v[1]['Network']]
+                    G.G.node[(int(v[1]['ID']),net)]['data']['inf_data'].space=int(int(v[1]['Subspace']))
+                if fname=='g':
+                    G.S.append(InfrastructureSpace(int(v[1]['Subspace_ID']),float(v[1]['g'])))       
+                if fname=='Interdep' and v[1]['Type']=='Physical':
+                    i = int(v[1]['Dependee Node'])
+                    net_i = netNames[v[1]['Dependee Network']]
+                    j = int(v[1]['Depender Node'])
+                    net_j = netNames[v[1]['Depender Network']]
+                    a=InfrastructureInterdepArc(i,j,net_i,net_j,gamma=1.0)
+                    G.G.add_edge((a.source,a.source_layer),(a.dest,a.dest_layer),data={'inf_data':a})
+    return G
+
 def add_Wu_failure_scenario(G,BASE_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1,noNet=3):
     dam_nodes = {}
     dam_arcs = {}
     folderDir = BASE_DIR+'Set%d/Sce%d/' % (noSet,noSce)
-    
+    netNames = {1:'Water',2:'Gas',3:'Power',4:'Telecommunication'}
+    ofst = 0 # set to 1 if node IDs start from 1
     # Load failure scenarios.
     if os.path.exists(folderDir):  
         for k in range(1,noNet+1):
             dam_nodes[k] = np.loadtxt(folderDir+
-                                    'N%d_Damaged_Nodes.txt' % k).astype('int')
+                                    'Net_%s_Damaged_Nodes.txt' % netNames[k]).astype('int')
             dam_arcs[k] = np.loadtxt(folderDir+
-                                    'N%d_Damaged_Arcs.txt' % k).astype('int')        
+                                    'Net_%s_Damaged_Arcs.txt' % netNames[k]).astype('int')        
         for k in range(1,noNet+1):
             if dam_nodes[k].size!=0:
                 if dam_nodes[k].size==1:
                     dam_nodes[k] = [dam_nodes[k]]
                 for v in dam_nodes[k]:
-                    G.G.node[(v+1,k)]['data']['inf_data'].functionality=0.0
-                    G.G.node[(v+1,k)]['data']['inf_data'].repaired=0.0
-#                    print "Node (",`v+1`+","+`k`+") broken."
+                    G.G.node[(v+ofst,k)]['data']['inf_data'].functionality=0.0
+                    G.G.node[(v+ofst,k)]['data']['inf_data'].repaired=0.0
+#                    print "Node (",`v+ofst`+","+`k`+") broken."
             if dam_arcs[k].size!=0:
                 if dam_arcs[k].size==2:
                     dam_arcs[k] = [dam_arcs[k]]
                 for a in dam_arcs[k]:
-                    G.G[(a[0]+1,k)][(a[1]+1,k)]['data']['inf_data'].functionality=0.0
-                    G.G[(a[0]+1,k)][(a[1]+1,k)]['data']['inf_data'].repaired=0.0
-#                    print "Arc ((",`a[0]+1`+","+`k`+"),("+`a[1]+1`+","+`k`+")) broken."
+                    G.G[(a[0]+ofst,k)][(a[1]+ofst,k)]['data']['inf_data'].functionality=0.0
+                    G.G[(a[0]+ofst,k)][(a[1]+ofst,k)]['data']['inf_data'].repaired=0.0
+#                    print "Arc ((",`a[0]+ofst`+","+`k`+"),("+`a[1]+ofst`+","+`k`+")) broken."
                     
-                    G.G[(a[1]+1,k)][(a[0]+1,k)]['data']['inf_data'].functionality=0.0
-                    G.G[(a[1]+1,k)][(a[0]+1,k)]['data']['inf_data'].repaired=0.0
-#                    print "Arc ((",`a[1]+1`+","+`k`+"),("+`a[0]+1`+","+`k`+")) broken."
+                    G.G[(a[1]+ofst,k)][(a[0]+ofst,k)]['data']['inf_data'].functionality=0.0
+                    G.G[(a[1]+ofst,k)][(a[0]+ofst,k)]['data']['inf_data'].repaired=0.0
+#                    print "Arc ((",`a[1]+ofst`+","+`k`+"),("+`a[0]+ofst`+","+`k`+")) broken."
 #                    
 #        for u,v,a in G.G.edges_iter(data=True):
 #            if a['data']['inf_data'].is_interdep:
