@@ -12,7 +12,7 @@ import copy
 from gurobipy import *
 import itertools 
 import scipy
-def run_judgment_call(params,layers=[1,2,3],T=1,saveJC=True,print_cmd=True,saveJCModel=False,validate=False):
+def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=False,validate=False):
     """ Solves an INDP problem with specified parameters using a decentralized hueristic called Judgment Call . Outputs to directory specified in params['OUTPUT_DIR'].
     :param params: Global parameters.
     :param layers: Layers to consider in the infrastructure network.
@@ -183,7 +183,7 @@ actually decides (as opposed to according to the guess)
 For output items, look at the description of Decentralized_INDP()
 '''
 def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionality,
-                                            T=1,layers=[1,2,3],controlled_layers=[1],
+                                            layers,T=1,controlled_layers=[1],
                                             print_cmd=False,saveJCModel=False):
     
     G_prime_nodes = [n[0] for n in N.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in layers]
@@ -356,9 +356,9 @@ def demand_based_priority_List(N,layers):
                     prob[n[0]] = [max(p),np.random.choice([0, 1], p=[1-max(p), max(p)])]                
     return prob
 
-def auction_resources(v_r,params,layers=[1,2,3],T=1,print_cmd=True,judgment_type="OPTIMISTIC",auction_type="MDDA",valuation_type='DTC_uniform'):
+def auction_resources(v_r,params,layers,T=1,print_cmd=True,judgment_type="OPTIMISTIC",auction_type="MDA",valuation_type='DTC_uniform'):
     """ allocate resources based on different types of auction and valuatoin.
-    :param auction_type: Type of the auction: MDDA(Multiunit Dynamic Descending (First-price, Dutch) auction), MDAA(Multiunit Dynamic Ascending (Second-price, English) auction), MCA(Exact Combinatorial auction).
+    :param auction_type: Type of the auction: MDA(Multiunit Descending (First-price, Dutch) auction), MAA(Multiunit Ascending (Second-price, English) auction), MCA(Multiunit Combinatorial auction).
     :param valuation_type: Type of the valuation: DTC (Differential Total Cost), DTC_unifrom (DTC with uniform distribution), MDDN (Max Demand Damaged Nodes).
     """
     # Initialize failure scenario.
@@ -386,7 +386,7 @@ def auction_resources(v_r,params,layers=[1,2,3],T=1,print_cmd=True,judgment_type
     PoA['optimal'] = optimal_valuation  
     PoA['winner'] = [] 
     sum_valuation = 0
-    if auction_type=="MDDA":
+    if auction_type=="MDA":
         cur_valuation = {v+1:{} for v in range(v_r)}
         for v in range(v_r):
             if print_cmd:
@@ -403,7 +403,7 @@ def auction_resources(v_r,params,layers=[1,2,3],T=1,print_cmd=True,judgment_type
             else:
                 if print_cmd:
                     print "No auction winner!"
-    if auction_type=="MDAA":
+    if auction_type=="MAA":
         all_valuations = []
         for p,value in valuation.items():
             all_valuations.extend(value)
@@ -473,7 +473,7 @@ def auction_resources(v_r,params,layers=[1,2,3],T=1,print_cmd=True,judgment_type
     
     return resource_allocation,PoA,valuation
 
-def compute_valuations(v_r,InterdepNet,layers=[1,2,3],T=1,print_cmd=True,judgment_type="OPTIMISTIC",valuation_type='DTC_uniform'):
+def compute_valuations(v_r,InterdepNet,layers,T=1,print_cmd=True,judgment_type="OPTIMISTIC",valuation_type='DTC_uniform'):
     """ computes bidders' valuations for different number of resources
     :param valuation_type: Type of the valuation: DTC (Differential Total Cost), DTC_unifrom (DTC with uniform distribution), MDDN (Max Demand Damaged Nodes).
     """
@@ -580,7 +580,7 @@ def write_auction_csv(outdir,res_allocate,PoA,valuations,sample_num=1,suffix="")
                     row += `pitem`+"|"
             f.write(row+"\n")
             
-def read_resourcec_allocation(df,sample_range,T=1,L=3,layers=[1,3],suffix="",ref_method='indp',ci=None,listHDadd=None):  
+def read_resourcec_allocation(df,sample_range,layers,T=1,L=3,suffix="",ref_method='indp',ci=None,listHDadd=None):  
     no_resources = df.no_resources.unique().tolist()
     mags= df.Magnitude.unique().tolist()
     decision_type = df.decision_type.unique().tolist()
@@ -880,8 +880,8 @@ def plot_performance_curves(df,x='t',y='cost',cost_type='Total',
                             auction_type=None,valuation_type=None,
                             ci=None):
     sns.set(context='notebook',style='darkgrid')
-    plt.rc('text', usetex=True)
-    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+#    plt.rc('text', usetex=True)
+#    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
     no_resources = df.no_resources.unique().tolist()
     if not auction_type:
@@ -904,7 +904,7 @@ def plot_performance_curves(df,x='t',y='cost',cost_type='Total',
             else:
                 ax = axs[idxvt,idxnr]
                 
-            with sns.color_palette("muted"):
+            with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
                 ax = sns.lineplot(x=x, y=y, hue="auction_type", style='decision_type',
                     markers=False, ci=ci, ax=ax,legend='full',
                     data=df[(df['cost_type']==cost_type)&
@@ -939,9 +939,9 @@ def plot_performance_curves(df,x='t',y='cost',cost_type='Total',
     plt.savefig('Performance_curves.pdf',dpi=600)  
     
 def plot_relative_performance(lambda_df,cost_type='Total'):   
-    sns.set(context='notebook',style='darkgrid')
-    plt.rc('text', usetex=True)
-    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+#    sns.set(context='notebook',style='darkgrid')
+#    plt.rc('text', usetex=True)
+#    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     
     no_resources = lambda_df.no_resources.unique().tolist()
     auction_type = lambda_df.auction_type.unique().tolist()
@@ -1006,11 +1006,11 @@ def plot_relative_performance(lambda_df,cost_type='Total'):
     plt.savefig('Relative_perforamnce.pdf',dpi=600)
     
 def plot_auction_allocation(df_res,ci=None):  
-    sns.set(context='notebook',style='darkgrid')
-    plt.rc('text', usetex=True)
-    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+#    sns.set(context='notebook',style='darkgrid')
+#    plt.rc('text', usetex=True)
+#    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     
-    no_resources = [3,12]#df_res.no_resources.unique().tolist()
+    no_resources = df_res.no_resources.unique().tolist()
     layer = df_res.layer.unique().tolist()
     auction_type = df_res.auction_type.unique().tolist()
     auction_type.remove('')
@@ -1084,9 +1084,9 @@ def plot_relative_allocation(df_res):
     valuation_type.remove('')
     
 #    pals = [sns.color_palette("Blues"),sns.color_palette("Reds"),sns.color_palette("Greens")]
-    clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green']]
+    clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green'],['purple','orchid']]
     fig, axs = plt.subplots(len(valuation_type), len(auction_type),sharex=True,
-                            sharey=True,tight_layout=False)
+                            sharey=True,tight_layout=False, figsize=(10,7))
     for idxat,at in enumerate(auction_type):   
         for idxvt,vt in enumerate(valuation_type): 
             if len(auction_type)==1 and len(valuation_type)==1:
@@ -1127,9 +1127,9 @@ def plot_relative_allocation(df_res):
     labels = correct_legend_labels(labels)
     for idx,lab in enumerate(labels):
         layer_num = len(layer) - idx//(len(decision_type)-1)
-        labels[idx] = lab + ' (Layer ' + `layer_num` + ')'
-    lgd = fig.legend(handles, labels,loc='lower center', bbox_to_anchor=(0.5, 0.95),
-               frameon =True,framealpha=0.5, ncol=3, fontsize='small')     
+        labels[idx] = lab[:7] + '. (Layer ' + `layer_num` + ')'
+    lgd = fig.legend(handles, labels,loc='center', bbox_to_anchor=(0.5, 0.95),
+               frameon =True,framealpha=0.5, ncol=4)     #, fontsize='small'
     if len(auction_type)==1 and len(valuation_type)==1:
         axx=[axs]
         axy=[axs]
@@ -1145,9 +1145,9 @@ def plot_relative_allocation(df_res):
     for idx, ax in enumerate(axx):
         ax.set_title(r'Auction Type: %s'%(auction_type[idx]))
     for idx, ax in enumerate(axy):
-        ax.annotate('Valuation: '+valuation_type[idx],xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
+        rowtitle = ax.annotate('Valuation: '+valuation_type[idx],xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
             xycoords=ax.yaxis.label,textcoords='offset points',ha='right',va='center',rotation=90)
-    plt.savefig('Allocation_Difference.pdf', bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=600)    
+    plt.savefig('Allocation_Difference.pdf', bbox_extra_artists=(rowtitle,lgd,), dpi=600)    #, bbox_inches='tight'
     
 def correct_legend_labels(labels):
     labels = ['iINDP' if x=='sample_indp_12Node' else x for x in labels]

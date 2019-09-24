@@ -446,14 +446,18 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
 #                print "Opened",file,"."
                 data = pd.read_csv(f, delimiter=',')
                 net = netNames[fname[:-4]]
-                for v in data.iterrows():   
-                    a=InfrastructureArc(int(v[1]['Start Node']),int(v[1]['End Node']),net) 
-                    G.G.add_edge((a.source,a.layer),(a.dest,a.layer),data={'inf_data':a})
-                    G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].flow_cost=float(v[1]['c'])*cost_scale
-                    G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].reconstruction_cost=float(v[1]['f'])*cost_scale
-                    G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].capacity=float(v[1]['u'])
-                    # Assume only one kind of resource for now and one resource for each repaired element.
-                    G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].resource_usage=1   
+                for v in data.iterrows():  
+                    for duplicate in range(2):
+                        if duplicate==0:
+                            a=InfrastructureArc(int(v[1]['Start Node']),int(v[1]['End Node']),net) 
+                        elif duplicate==1:
+                            a=InfrastructureArc(int(v[1]['End Node']),int(v[1]['Start Node']),net) 
+                        G.G.add_edge((a.source,a.layer),(a.dest,a.layer),data={'inf_data':a})
+                        G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].flow_cost=float(v[1]['c'])*cost_scale
+                        G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].reconstruction_cost=float(v[1]['f'])*cost_scale
+                        G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].capacity=float(v[1]['u'])
+                        # Assume only one kind of resource for now and one resource for each repaired element.
+                        G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].resource_usage=1   
 
     for file in files:
         fname = file[0:-4]
@@ -464,6 +468,7 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
                 if fname=='beta':
                     net = netNames[v[1]['Network']]
                     G.G[(int(v[1]['Start Node']),net)][(int(v[1]['End Node']),net)]['data']['inf_data'].space=int(int(v[1]['Subspace']))
+                    G.G[(int(v[1]['End Node']),net)][(int(v[1]['Start Node']),net)]['data']['inf_data'].space=int(int(v[1]['Subspace']))
                 if fname=='alpha':
                     net = netNames[v[1]['Network']]
                     G.G.node[(int(v[1]['ID']),net)]['data']['inf_data'].space=int(int(v[1]['Subspace']))
@@ -478,7 +483,7 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
                     G.G.add_edge((a.source,a.source_layer),(a.dest,a.dest_layer),data={'inf_data':a})
     return G
 
-def add_Wu_failure_scenario(G,BASE_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1,noNet=3):
+def add_Wu_failure_scenario(G,BASE_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
     dam_nodes = {}
     dam_arcs = {}
     folderDir = BASE_DIR+'Set%d/Sce%d/' % (noSet,noSce)
@@ -486,12 +491,12 @@ def add_Wu_failure_scenario(G,BASE_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1,n
     ofst = 0 # set to 1 if node IDs start from 1
     # Load failure scenarios.
     if os.path.exists(folderDir):  
-        for k in range(1,noNet+1):
+        for k in range(1,len(netNames.keys())+1):
             dam_nodes[k] = np.loadtxt(folderDir+
                                     'Net_%s_Damaged_Nodes.txt' % netNames[k]).astype('int')
             dam_arcs[k] = np.loadtxt(folderDir+
                                     'Net_%s_Damaged_Arcs.txt' % netNames[k]).astype('int')        
-        for k in range(1,noNet+1):
+        for k in range(1,len(netNames.keys())+1):
             if dam_nodes[k].size!=0:
                 if dam_nodes[k].size==1:
                     dam_nodes[k] = [dam_nodes[k]]
