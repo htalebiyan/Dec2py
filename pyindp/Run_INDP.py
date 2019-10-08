@@ -264,3 +264,12 @@ if __name__ == "__main__":
 #    plot_relative_performance(lambda_df)
 #    plot_auction_allocation(resource_allocation,ci=None)
     plot_relative_allocation(resource_allocation)
+#    for nr,pltt in zip(v_r,['YlGn','PuBu','OrRd','BuPu']):        
+#        ax = sns.violinplot(x="layer", y="distance_to_optimal", 
+#            data=resource_allocation[(resource_allocation['auction_type']!='')&
+#                                     (resource_allocation['auction_type']!='MAA')&
+#                                     (resource_allocation['no_resources']==nr)&
+#                                     (resource_allocation['valuation_type']=='DTC')&
+#                                     (resource_allocation['t']==1)],
+#            hue="auction_type", split=True, palette=pltt,scale='count',inner=None,cut=0)
+#    plt.setp(ax.collections, alpha=.5)
