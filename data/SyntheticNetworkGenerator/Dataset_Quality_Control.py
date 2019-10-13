@@ -10,62 +10,166 @@ Hesam Talebiyan - Last updated: 03/04/2018
 import numpy as np
 import seaborn as sns
 from gurobipy import *
-#import Plot
 import Network_Data_Generator
 import networkx as nx
 import matplotlib.pyplot as plt
+import os
+import networkx as nx
 import os 
+import pandas as pd
+
+def load_array_format_extended(BASE_DIR="C:\\Users\\ht20\Documents\\Files\Generated_Network_Dataset_v3\\RandomNetworks\\",
+                               topo='RN',config=0,sample=0,cost_scale=1.0):
+    file_dir = BASE_DIR+topo+'Config_'+str(config)+'\\Sample_'+str(sample)+'\\'
+    with open(BASE_DIR+'List_of_Configurations.txt') as f:
+            data = pd.read_csv(f, delimiter='\t')    
+    config_param = data.iloc[config]
+    noLayers = int(config_param.loc[' No. Layers'])
+    G=nx.DiGraph()
+    
+    files = [f for f in os.listdir(file_dir) if os.path.isfile(os.path.join(file_dir, f))]
+    pos = {}
+    dam_nodes = []
+    dam_arcs = []
+    z_offsetx = 0.25
+    z_offsety = 3
+    for k in range(noLayers):
+        for file in files: 
+            if file=='N'+str(k)+'_Nodes.txt':
+                with open(file_dir+file) as f:
+    #                print "Opened",file,"."
+                    data = pd.read_csv(f, delimiter='\t',header=None)
+                    for v in data.iterrows():  
+                        node_data = {'b': v[1][4],'Mp': v[1][5],'Mm': v[1][6],'q': v[1][7]}
+                        node_name = (int(v[1][0]),k)
+                        G.add_node(node_name)
+                        G.node[node_name]['data'] = node_data
+                        pos[node_name] = (v[1][1]+v[1][3]*z_offsetx,v[1][2]+v[1][3]*z_offsety)
+        for file in files:
+            if file=='N'+str(k)+'_Arcs.txt':
+                with open(file_dir+file) as f:
+    #                print "Opened",file,"."
+                    data = pd.read_csv(f, delimiter='\t',header=None)
+                    for v in data.iterrows(): 
+                        arc_data = {'u': v[1][2],'c': v[1][3],'f': v[1][4]}
+                        G.add_edge((int(v[1][0]),k),(int(v[1][1]),k))
+                        G[(int(v[1][0]),k)][(int(v[1][1]),k)]['data'] = arc_data
+                        G.add_edge((int(v[1][1]),k),(int(v[1][0]),k))
+                        G[(int(v[1][1]),k)][(int(v[1][0]),k)]['data'] = arc_data
+        for kt in range(noLayers):
+            if k!=kt:
+                for file in files:
+                    if file=='Interdependent_Arcs_'+str(k)+'_'+str(kt)+'.txt':
+                        with open(file_dir+file) as f:
+                #                print "Opened",file,"."
+                            try:
+                                data = pd.read_csv(f, delimiter='\t',header=None)
+                                for v in data.iterrows():   
+                                    G.add_edge((int(v[1][0]),k),(int(v[1][1]),kt)) 
+                            except:
+                                print('Empty file: '+ file)
+        for file in files: 
+            if file=='N'+str(k)+'_Damaged_Nodes.txt':
+                with open(file_dir+file) as f:
+                    try:
+                        data = pd.read_csv(f, delimiter='\t',header=None)
+                        for v in data.iterrows():               
+                            dam_nodes.append((int(v[1][0]),k))
+                    except:
+                        print('Empty file: '+ file)
+                                
+        for file in files:
+            if file=='N'+str(k)+'_Damaged_Arcs.txt':
+                with open(file_dir+file) as f:
+                    try:
+                        data = pd.read_csv(f, delimiter='\t',header=None)
+                        for v in data.iterrows():   
+                            dam_arcs.append(((int(v[1][0]),k),(int(v[1][1]),k)))
+                    except:
+                        print('Empty file: '+ file)
+#    pos=nx.spring_layout(G)   
+##    for key,value in pos.items():                     
+##        pos[key][0] += key[1]*z_offsetx
+##        pos[key][1] += key[1]*z_offsety   
+    return G,pos,noLayers,dam_nodes,dam_arcs
+
+def plot_network(BASE_DIR="C:\\Users\\ht20\Documents\\Files\Generated_Network_Dataset_v3\\RandomNetworks\\",
+                 topo='RN',config=0,sample=0,cost_scale=1.0):
+    plt.close('all')
+    plt.figure(figsize=(10,8))  
+    
+    G,pos,noLayers,dam_nodes,dam_arcs = load_array_format_extended(BASE_DIR,topo,config,sample,cost_scale)  
+    labels = {}
+    for n,d in G.nodes(data=True):
+        labels[n]= "%d" % (n[0])
+    pos_moved={}
+    for key,value in pos.items():
+        pos_moved[key] = [0,0]
+        pos_moved[key][0] = pos[key][0]-0.2
+        pos_moved[key][1] = pos[key][1]+0.2
+    #nx.draw(G, pos,node_color='w')
+    #nx.draw_networkx_labels(G,labels=labels,pos=pos,
+    #                        font_color='w',font_family='CMU Serif',font_weight='bold')
+    
+    clr=['r','b','g','m']
+    for k in range(noLayers):
+        node_list = [x for x in G.nodes() if x[1]==k]
+        nx.draw_networkx_nodes(G,pos,nodelist=node_list,node_color=clr[k],node_size=70,alpha=0.9)
+    for k in range(noLayers):
+        arc_dict = [x for x in G.edges() if x[0][1]==k and x[1][1]==k]
+        nx.draw_networkx_edges(G,pos,edgelist=arc_dict,width=1,alpha=0.25,edge_color=clr[k])
+        interarc_dict = [x for x in G.edges() if x[0][1]==k and x[1][1]!=k]
+        nx.draw_networkx_edges(G,pos,edgelist=interarc_dict,width=1,alpha=0.25,edge_color='k')
+    #nx.draw_networkx_nodes(G,pos,nodelist=dam_nodes,node_color='w',node_shape="x",node_size=35)
+    #nx.draw_networkx_edges(G,pos,edgelist=dam_arcs,width=1,alpha=1,edge_color='w',style='dashed')
+    plt.tight_layout()   
+    plt.axis('off')
+    #plt.savefig(output_dir+'/plot_net'+folderSuffix+'.png',dpi=600)
 
 '''
 This function solve INDP for two undamaged networks to find the total value of 
 unmet demand in the undamaged networks
 '''  
-def initialPerformanceUndamagedNetwork(nP,nG,aP,aG,Pos,Nodes,Arcs,intArcs,bVec,MpVec,MmVec,uVec,cVec,doPlot=0):
-
-    '''	INITIALIZATIONS
+def initialPerformanceUndamagedNetwork(G, noLayers):
     '''
-    # location of nodes for both networks
-    coo = Pos
+	INITIALIZATIONS
+    '''
     # Sets
-    noP = nP
-    noG = nG
-    nodes = Nodes	# All network nodes
-    arcs = Arcs
-    nets = ['P','G']
-    commodities = {'power':'power', 'gas':'gas'}
-    com = {'P':['power'], 'G':['gas']}
+    nodes = list(G.nodes(data=False))	# All network nodes
+    arcs = list(G.edges(data=False))
+
+    nets = [x for x in range(noLayers)]
+    commodities = {x:x for x in nets}
+    com = {x:[x] for x in nets}
     dam_arcs = []
     dam_nodes = []
     # Subsets
-    subnodes = {'P':[str(i) for i in range(noP)], 'G':[str(i) for i in range(noP,noP+noG)]} 	# Subset of nodes that belong to each network
-    subarcs = {k:[] for k in nets} 									# Subset of arcs that belong to each network
-    for k in nets:
-    	for (i,j) in arcs:
-    		if i in subnodes[k] and j in subnodes[k]:
-    			subarcs[k].append((i,j))
+    subnodes = {x:[i[0] for i in nodes if i[1]==x] for x in nets} 	# Subset of nodes that belong to each network
+    noNodes = {x:len(lst) for x,lst in subnodes.items()}
+    subarcs = {x:[(a[0][0],a[1][0]) for a in arcs if a[0][1]==x and a[1][1]==x] for x in nets}								# Subset of arcs that belong to each network
     
     # Obj. Costs				# Cost of fixing node i.j of network k
-    M_p = {(i,k,l):MpVec[i,k,l] for i in nodes for k in nets for l in commodities if i in subnodes[k] and l in com[k]} 			# Penalty for excess
-    M_m = {(i,k,l):MmVec[i,k,l] for i in nodes for k in nets for l in commodities if i in subnodes[k] and l in com[k]} 			# Penalty for shortage
-    c = {(i,j,k,l):cVec[i,j,k,l] for (i,j) in arcs for k in nets for l in commodities if (i,j) in subarcs[k] and l in com[k]} 		# Flow cost
+    M_p = {(i,k,l):G.nodes(data=True)[(i,k)]['data']['Mp'] for k in nets for l in commodities for i in subnodes[k] if l in com[k]} 			# Penalty for excess
+    M_m = {(i,k,l):G.nodes(data=True)[(i,k)]['data']['Mm'] for k in nets for l in commodities for i in subnodes[k] if l in com[k]} 			# Penalty for shortage
+    c = {(i,j,k,l):G[(i,k)][(j,k)]['data']['c'] for k in nets for l in commodities for (i,j) in subarcs[k] if l in com[k]} 		# Flow cost
     
     # Coefs & Right-hand Sid
     # Demands at nodes (fictional)
-    b = {(i,k,l):bVec[i,k,l] for i in nodes for k in nets for l in commodities if i in subnodes[k] and l in com[k]}
+    b = {(i,k,l):G.nodes(data=True)[(i,k)]['data']['b'] for k in nets for l in commodities for i in subnodes[k] if l in com[k]} 
     # arc capacities
-    u = {(i,j,k,l):uVec[i,j,k,l] for (i,j) in arcs for k in nets for l in commodities if (i,j) in subarcs[k] and l in com[k]} 					# Capacity of arc i,j in network k    
+    u = {(i,j,k,l):G[(i,k)][(j,k)]['data']['u'] for k in nets for l in commodities for (i,j) in subarcs[k] if l in com[k]} 					# Capacity of arc i,j in network k    
     
     # gamma: is it necessary that node i (net k) k is functional for node j (net ka) to work?
     gamma = {(i,j,k,ka):0 for k in nets for ka in nets for i in nodes for j in nodes if i in subnodes[k] if j in subnodes[ka] if i!=j if k!=ka}
 
-    for i in range(len(intArcs)):
-        gamma[str(intArcs[i][0]),str(intArcs[i][1]),'P','G'] = 1  
+    for a in list(arcs) :
+        if a[0][1] != a[1][1]:
+            gamma[a[0][0],a[1][0],a[0][1],a[1][1]] = 1  
         
     #    pprint(dam_nodes)
     #    pprint(dam_arcs)
     
-    m = Model("INDP1")
-    
+    m = Model("INDP1")  
     '''
     	VARIABLES
     '''
@@ -82,8 +186,6 @@ def initialPerformanceUndamagedNetwork(nP,nG,aP,aG,Pos,Nodes,Arcs,intArcs,bVec,M
     		for l in com[k]:
     			x[i,j,k,l] = m.addVar(vtype=GRB.CONTINUOUS, name="x_"+str((i,j,k,l)), obj=c[i,j,k,l])
     m.update()
-    
-    
     '''
     	CONSTRAINTS
     '''
@@ -91,8 +193,8 @@ def initialPerformanceUndamagedNetwork(nP,nG,aP,aG,Pos,Nodes,Arcs,intArcs,bVec,M
     for k in nets:
     	for i in subnodes[k]:
     		for l in com[k]:
-    			outflow = quicksum(x[i,j,k,l] for j in nodes if (i,j) in subarcs[k])
-    			inflow = quicksum(x[j,i,k,l] for j in nodes if (j,i) in subarcs[k])
+    			outflow = quicksum(x[i,j,k,l] for j in subnodes[k] if (i,j) in subarcs[k])
+    			inflow = quicksum(x[j,i,k,l] for j in subnodes[k] if (j,i) in subarcs[k])
     			m.addConstr(outflow-inflow == b[i,k,l] - d_p[i,k,l] + d_m[i,k,l], name="flow_"+str((i,k,l)))
     
     # Flow due to component availability
@@ -105,24 +207,19 @@ def initialPerformanceUndamagedNetwork(nP,nG,aP,aG,Pos,Nodes,Arcs,intArcs,bVec,M
                 else:
                     m.addConstr(arcflow <= u[i,j,k,l], name="avaTail_"+str((i,j,k,l)))
     
-    # No need for Interdependence constraints since all nodes in other network work
-   
-    
-    
-    
+    # No need for Interdependence constraints since all nodes in other network work 
     '''
     	OBJ & OUTPUT
     '''
     m.update()
     m.setParam('OutputFlag',0)
     m.optimize()
-    lname = "Model.lp" 
-    m.write(lname)         
-    
-    
-    if doPlot:     
-         Plot.plotGraph(100, '1-Initial', coo, arcs, intArcs, nP, nG, aP, aG)
-    
+#    lname = "Model.lp" 
+#    m.write(lname)         
+#    sname = "Solution.txt"
+#    fileID = open(sname, 'w')
+#    for vv in m.getVars():
+#        fileID.write('%s %g\n' % (vv.varName, vv.x))    
 #    soltFOa = sum([x[i,j,k,l].x*c[i,j,k,l] for (i,j) in arcs for k in nets for l in commodities if (i,j) in subarcs[k] and l in com[k]])		# Flow cost
 #    soltFOT = (m.getObjective()).getValue()
 #    soltFO2 = sum([d_p[i,k,l].x*M_p[i,k,l]+d_m[i,k,l].x*M_m[i,k,l] for i in nodes for k in nets for l in commodities if i in subnodes[k] and l in com[k]]) 			# Penalty for excess
@@ -139,11 +236,11 @@ def initialPerformanceUndamagedNetwork(nP,nG,aP,aG,Pos,Nodes,Arcs,intArcs,bVec,M
 This function plots which show the connectedness, average connectivity,
 and percentage of met demand in the overall interdependent network
 '''
-def plot_Evaluation_Results(noConfig, dmRatioSum, aveConnP, allPairsConnP, aveConnG, allPairsConnG, folder):
+def plot_Evaluation_Results(noConfig, dmRatioSum, aveConn, allPairsConn,folder):
 
     if not os.path.exists(folder):
         os.makedirs(folder) 
-    plt.figure(figsize=(10, 6), dpi=100)     
+    plt.figure(figsize=(8, 6), dpi=100)     
     H, bins = np.histogram(dmRatioSum)
     width = 0.5 * (bins[1] - bins[0])
     center = (bins[:-1] + bins[1:]) / 2
@@ -153,60 +250,28 @@ def plot_Evaluation_Results(noConfig, dmRatioSum, aveConnP, allPairsConnP, aveCo
     plt.ylabel('Frequency')
     plt.savefig(folder+'HistdmRatio.png')    
     plt.clf()
-    plt.bar(range(noConfig),np.mean(dmRatioSum, axis=(1,2)))
+    plt.bar(range(noConfig),np.mean(dmRatioSum, axis=(1)))
     plt.title("Average of % of met demand for each configuration")
     plt.xlabel('Configuration Number')
     plt.ylabel('% met demand')
     plt.savefig(folder+'AveragedmRatio.png')
     plt.clf()  
-#    H, bins = np.histogram(aveConnP)
-#    width = 0.7 * (bins[1] - bins[0])
-#    center = (bins[:-1] + bins[1:]) / 2
-#    plt.bar(center, H, align='center', width=width)
-#    plt.title("Histogram of average connectivity for all power networks")
-#    plt.xlabel('average connectivity in network 1')
-#    plt.ylabel('Frequency')
-#    plt.savefig(folder+'HistAveConnPower.png')        
-#    plt.clf()
-#    H, bins = np.histogram(aveConnG)
-#    width = 0.7 * (bins[1] - bins[0])
-#    center = (bins[:-1] + bins[1:]) / 2
-#    plt.bar(center, H, align='center', width=width)
-#    plt.title("Histogram of average connectivity for all gas networks")
-#    plt.xlabel('average connectivity in network 2')
-#    plt.ylabel('Frequency')
-#    plt.savefig(folder+'HistAveConnGas.png')      
-    H, bins = np.histogram(aveConnP)
+ 
+    H, bins = np.histogram(aveConn)
     width = 0.1 * (bins[1] - bins[0])
-    center = (bins[:-1] + bins[1:]) / 2 + 0.005
+    center = (bins[:-1] + bins[1:]) / 2
     f1 = H
     plt.bar(center,f1,color='b',align='center',label='Network 1',width=width)
-    H, bins = np.histogram(aveConnG)
-    center = (bins[:-1] + bins[1:]) / 2 - 0.005
-    f2 = H
-    plt.bar(center,f2,color='r',align='center',label='Network 2',width=width)
     plt.title("Histogram of average connectivity for all networks")
     plt.xlabel('Average connectivity')
     plt.ylabel('Frequency')
     plt.legend(loc='best')
     plt.savefig(folder+'HistAveConn.png') 
     plt.clf()
-#    plt.bar(range(noConfig),np.mean(aveConnP, axis=(1,2)))
-#    plt.title("Average of average connectivity of power net for each configuration")
-#    plt.xlabel('Configuration Number')
-#    plt.ylabel('Average of average connectivity')
-#    plt.savefig(folder+'AverageAveConnPower.png')
-#    plt.clf()
-#    plt.bar(range(noConfig),np.mean(aveConnG, axis=(1,2)))
-#    plt.title("Average of average connectivity of gas net for each configuration")
-#    plt.xlabel('Configuration Number')
-#    plt.ylabel('Average of average connectivity')
-#    plt.savefig(folder+'AverageAveConnGas.png')   
-    plt.figure(figsize=(20, 6), dpi=100)   
-    plt.bar(np.array(range(noConfig))+.1,np.mean(aveConnP,axis=(1,2)),width=0.25,
+
+    plt.figure(figsize=(10, 6), dpi=100)   
+    plt.bar(np.array(range(noConfig))+.1,np.mean(aveConn,axis=(1)),width=0.25,
             color='b',align='center',label='Network 1')
-    plt.bar(np.array(range(noConfig))-.1,np.mean(aveConnP, axis=(1,2)),width=0.25,
-            color='r',align='center',label='Network 2')
     plt.title("Average of average connectivity of networks for each configuration")
     plt.xlabel('Configuration Number')
     plt.ylabel('Average of average connectivity')
@@ -214,101 +279,81 @@ def plot_Evaluation_Results(noConfig, dmRatioSum, aveConnP, allPairsConnP, aveCo
     plt.legend(loc='best')
     plt.savefig(folder+'AverageAveConn.png') 
     plt.clf()
-#    plt.bar(range(noConfig),np.mean(allPairsConnP, axis=(1,2)))
-#    plt.title("Average of connectedness of power net for each configuration")
-#    plt.xlabel('Configuration Number')
-#    plt.ylabel('Average of connectedness')
-#    plt.savefig(folder+'AverageConnectednessPower.png') 
-#    plt.clf()
-#    plt.bar(range(noConfig),np.mean(allPairsConnG, axis=(1,2)))
-#    plt.title("Average of connectedness of gas net for each configuration")
-#    plt.xlabel('Configuration Number')
-#    plt.ylabel('Average of connectedness')
-#    plt.savefig(folder+'AverageConnectednessGas.png') 
-    plt.bar(np.array(range(noConfig))+0.1,np.mean(allPairsConnP,axis=(1,2)),
+
+    plt.bar(np.array(range(noConfig))+0.1,np.mean(allPairsConn,axis=(1)),
             width=0.25,color='b',align='center',label='Network 1')
-    plt.bar(np.array(range(noConfig))-0.1,np.mean(allPairsConnG, axis=(1,2)),
-            width=0.25,color='r',align='center',label='Network 2')
     plt.title("Average of connectedness of networks for each configuration")
     plt.xlabel('Configuration Number')
     plt.ylabel('Average of connectedness')
     plt.xticks(range(0,noConfig,5))
     plt.legend(loc='best')
-    plt.savefig(folder+'AverageConnectedness.png') 
+    plt.savefig(folder+'AverageConnectedness.png')
+    plt.clf()
 
     
     
 # Input values
-noSampleSets = 10
-noIterations = 30
-rootfolder = 'C:\Users\ht20\Documents\Files\Generated_Network_Dataset\\' # Root folder where the database is
-rootfolder += 'GridNetworks\\' # choose relevant dataset folder
-#options: 'RandomNetworks\\'|'ScaleFreeNetworks\\'|'GridNetworks\\'
-NetworkTypeInitial = 'GN' #Options: RN|SFN|GN
+noSamples = 30
+rootfolder = "C:\\Users\ht20\Documents\\Files\\Generated_Network_Dataset_v3\\" # Root folder where the database is
+rootfolder += 'RandomNetworks\\' # choose relevant dataset folder #options: 'RandomNetworks\\'|'ScaleFreeNetworks\\'|'GridNetworks\\'
+NetworkTypeInitial = 'RN' #Options: RN|SFN|GN
 
 # Read configuration data
 fileNameList = rootfolder + 'List_of_Configurations.txt' 
-configList = np.loadtxt(fileNameList)
+configList = np.loadtxt(fileNameList,skiprows=1)
 
 # 3D arrays to store evaluation results
-dmRatioSum = np.zeros((len(configList),noSampleSets,noIterations))
-aveConnP = np.zeros((len(configList),noSampleSets,noIterations))
-allPairsConnP = np.zeros((len(configList),noSampleSets,noIterations)) 
-aveConnG = np.zeros((len(configList),noSampleSets,noIterations))
-allPairsConnG = np.zeros((len(configList),noSampleSets,noIterations))
+dmRatioSum = np.zeros((len(configList),noSamples))
+aveConn = np.zeros((len(configList),noSamples))
+allPairsConn = np.zeros((len(configList),noSamples)) 
 noInterconnections = np.zeros(len(configList))
  
 for i in configList: 
     # Reading configuration data from file 
     cnfg = int(i[0])
-    noNodes = i[1]
-    arcProb = i[2] # exp for scale free net; gridsizex for Grid net
-    intConProb = i[3]
-    damProb = i[4]
-    resCap = i[5]
-    foldername = NetworkTypeInitial+'Config%d_%d_%1.2f_%1.3f_%1.2f_%d/' % (cnfg,noNodes,arcProb,intConProb,damProb,resCap)
-#    for s in range(noSampleSets):
-#        for j in range(noIterations):
-#            # Reading network data from file 
-#            subfolder = rootfolder+foldername+'SampleSet_%d/IN_%d/' % (s,j)
-#            PNodes = np.loadtxt(subfolder+'N1_Nodes.txt')
-#            PArcs = np.loadtxt(subfolder+'N1_Arcs.txt').astype('int')
-#            GNodes = np.loadtxt(subfolder+'N2_Nodes.txt')
-#            GArcs = np.loadtxt(subfolder+'N2_Arcs.txt') .astype('int')
-#            IntArcs = np.loadtxt(subfolder+'Interdependent_Arcs_1_2.txt', usecols = (0,1)).astype('int')
-#            g = np.loadtxt(subfolder+'Zone_prep.txt').astype('int')
-#    
-#            # Computoing the connectedness and average connectivity for each
-#            # network
-#            G = nx.Graph()
-#            G.add_nodes_from(PNodes[:,0])
-#            G.add_edges_from(PArcs[:,0:2])
-#            aveConnP[cnfg,s,j] = nx.average_node_connectivity(G)
-#            allPairsConnP[cnfg,s,j] = int(nx.is_connected(G))
-#            G = nx.Graph()
-#            G.add_nodes_from(GNodes[:,0])
-#            G.add_edges_from(GArcs[:,0:2])
-#            aveConnG[cnfg,s,j] = nx.average_node_connectivity(G)
-#            allPairsConnG[cnfg,s,j] = int(nx.is_connected(G))
-#            # Computoing the the percentage of demand which is met
-#            # for each network            
-#            nP,nG,aP,aG,convPos,convNodes,convArcs,convintdpnPairs,convb,convMp,convMm,convq,convu,convc,convf,convg,zones = Network_Data_Generator.conv_Data(PNodes,PArcs,GNodes,GArcs,IntArcs,g)
-#            dmSum = initialPerformanceUndamagedNetwork(nP,nG,aP,aG,convPos,convNodes,convArcs,convintdpnPairs,convb,convMp,convMm,convu,convc)
-#            alldemand = sum([convb[y] for y in convb.keys() if convb[y]<0])
-#            dmRatioSum[cnfg,s,j] = 1.0+dmSum/alldemand
-#            
-#            print 'Config %d | SampleSet_%d | IN_%d was processed' % (cnfg,s,j)
+    noLayers = int(i[1])
+    noNodes = int(i[2])
+    arcProb = i[3] # exp for scale free net; gridsizex for Grid net
+    intConProb = i[4]
+    damProb = i[5]
+    resCap = i[6]
+#    foldername = NetworkTypeInitial+'Config_%d\\' % (cnfg)
+    for s in range(noSamples):
+        G,pos,noLayers,dam_nodes,dam_arcs = load_array_format_extended(rootfolder,NetworkTypeInitial,cnfg,s,cost_scale=1.0)
+    
+        # Computoing the connectedness and average connectivity for each
+        # network
+        aveConnect = 0.0
+        isConnected = 1.0
+        for k in range(noLayers):
+            node_list = [x for x in G.nodes() if x[1]==k]
+            H = G.subgraph(node_list)
+            aveConnect += nx.average_node_connectivity(H)
+            isConnected *= int(nx.is_connected(H.to_undirected()))
+        aveConn[cnfg,s] = aveConnect/noLayers
+        allPairsConn[cnfg,s] = isConnected
+
+        # Computoing the the percentage of demand which is met
+        # for all layers            
+        dmSum = initialPerformanceUndamagedNetwork(G,noLayers)
+        b = [G.nodes()[x]['data']['b'] for x in list(G.nodes())] 
+        alldemand = sum([y for y in b if y<0])
+        dmRatioSum[cnfg,s] = 1.0+dmSum/alldemand
             
-    # Number of Interconnections
+        print('Config %d | Sample_%d' % (cnfg,s))
+    #Number of Interconnections
     noInterconnections[cnfg] = round(noNodes*noNodes*intConProb)
+#            
+#            
             
-            
-            
-#    # Plot QUality  Control results            
-#    qcFolder = rootfolder+'Evaluations/'
-#    plot_Evaluation_Results(len(configList),dmRatioSum, aveConnP, allPairsConnP, aveConnG, allPairsConnG,qcFolder)           
-            
+# Plot QUality  Control results  
+plt.close('all')          
+qcFolder = rootfolder+'Evaluations/'
+plot_Evaluation_Results(len(configList),dmRatioSum,aveConn, allPairsConn,qcFolder)                      
 sns.set()     
 ax = sns.distplot(noInterconnections,rug=True,kde=False)
 ax.set(xlabel='Number of Interconnections', ylabel='Probability (%)')
-plt.savefig('noInterconnections_'+NetworkTypeInitial+'.png',dpi=600,bbox_inches="tight")
+#plt.savefig('noInterconnections_'+NetworkTypeInitial+'.png',dpi=600,bbox_inches="tight")
+
+''' Plot one network '''
+plot_network(BASE_DIR=rootfolder,topo=NetworkTypeInitial,config=70,sample=1)  

@@ -82,7 +82,7 @@ plt.close('all')
 plt.figure(figsize=(10,8))  
 
 G,pos,noLayers,dam_nodes,dam_arcs = load_array_format_extended(BASE_DIR="C:\\Users\ht20\Documents\\Files\\Generated_Network_Dataset_v3\\RandomNetworks\\",
-                               topo='RN',config=2,sample=0)  
+                               topo='RN',config=8,sample=0)  
 labels = {}
 for n,d in G.nodes(data=True):
     labels[n]= "%d" % (n[0])
@@ -91,7 +91,6 @@ for key,value in pos.items():
     pos_moved[key] = [0,0]
     pos_moved[key][0] = pos[key][0]-0.2
     pos_moved[key][1] = pos[key][1]+0.2
-                  
 #nx.draw(G, pos,node_color='w')
 #nx.draw_networkx_labels(G,labels=labels,pos=pos,
 #                        font_color='w',font_family='CMU Serif',font_weight='bold')

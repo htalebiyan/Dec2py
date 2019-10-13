@@ -9,8 +9,8 @@ import numpy as np
 import os
 
 # Input values
-noSamples = 1 # Number of sample sets of network
-noConfiguration = 10 # Number of configurations
+noSamples = 30 # Number of sample sets of network
+noConfiguration = 100 # Number of configurations
 noZones = 4 # noZones by noZones tile of zones
 paramError = 0.1
 rootfolder = 'C:\\Users\\ht20\Documents\\Files\\Generated_Network_Dataset_v3\\' # Root folder where the database is
