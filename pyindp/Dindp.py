@@ -12,6 +12,7 @@ import copy
 from gurobipy import *
 import itertools 
 import scipy
+import sys
 def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=False,validate=False):
     """ Solves an INDP problem with specified parameters using a decentralized hueristic called Judgment Call . Outputs to directory specified in params['OUTPUT_DIR'].
     :param params: Global parameters.
@@ -37,12 +38,14 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
     if "NUM_ITERATIONS" not in params:
         params["NUM_ITERATIONS"]=1
  
-    v_r = params["V"]
     num_iterations = params["NUM_ITERATIONS"]
+    v_r=params["V"]
+    if isinstance(v_r, (int, long)):
+        v_r = [v_r]
     if auction_type:
-        output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_auction_'+auction_type+'_'+valuation_type
+        output_dir = params["OUTPUT_DIR"]+'_L'+`len(layers)`+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_auction_'+auction_type+'_'+valuation_type
     else:
-        output_dir = params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_fixed_layer_cap'
+        output_dir = params["OUTPUT_DIR"]+'_L'+`len(layers)`+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_fixed_layer_cap'
     
     Dindp_results={P:INDPResults() for P in layers}   
     Dindp_results_Real={P:INDPResults() for P in layers} 
@@ -395,7 +398,16 @@ def auction_resources(v_r,params,layers,T=1,print_cmd=True,judgment_type="OPTIMI
                 cur_valuation[v+1][P]= valuation[P][len(resource_allocation[P])]
             winner = max(cur_valuation[v+1].iteritems(), key=operator.itemgetter(1))[0]
             PoA['winner'].append(cur_valuation[v+1][winner])
-            if cur_valuation[v+1][winner]!=0:
+#            if cur_valuation[v+1][winner]==0:
+#                for x in layers:
+#                    if len(resource_allocation[x])==0:
+#                        winner = x
+#                        break
+##                if print_cmd:
+#                print "Player %d wins (generously)!" % winner
+#                sum_valuation += cur_valuation[v+1][winner]
+#                resource_allocation[winner].append(v+1)             
+            if cur_valuation[v+1][winner]>0:
                 if print_cmd:
                     print "Player %d wins!" % winner
                 sum_valuation += cur_valuation[v+1][winner]
@@ -551,7 +563,6 @@ def compute_valuations(v_r,InterdepNet,layers,T=1,print_cmd=True,judgment_type="
                     for vv in range(v_r-len(dem_damaged_nodes)):
                         valuation[P].append(0.0)
             else:
-                import sys
                 sys.exit( "Wrong valuation type!!!")
     return valuation, optimal_valuation
                 
@@ -580,94 +591,79 @@ def write_auction_csv(outdir,res_allocate,PoA,valuations,sample_num=1,suffix="")
                     row += `pitem`+"|"
             f.write(row+"\n")
             
-def read_resourcec_allocation(df,sample_range,layers,T=1,L=3,suffix="",ref_method='indp',ci=None,listHDadd=None):  
-    no_resources = df.no_resources.unique().tolist()
-    mags= df.Magnitude.unique().tolist()
-    decision_type = df.decision_type.unique().tolist()
-    auction_type = df.auction_type.unique().tolist()
-    valuation_type = df.valuation_type.unique().tolist()
-    if listHDadd:
-        listHD = pd.read_csv(listHDadd)   
-    
-    cols=['t','resource','decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','PoA','distance_to_optimal']
+def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='indp',suffix=""):  
+    cols=['t','resource','decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','PoA']
+    T = max(df.t.unique().tolist())
     df_res = pd.DataFrame(columns=cols)
-    optimal_method = ['tdindp','indp','sample_indp_12Node']
-    print '\nResource allocation|',
-    for m in mags:
-        for dt,nr,sr in itertools.product(decision_type,no_resources,sample_range):
-            if listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):                        
-                if dt in optimal_method:
-                    compare_to_dir= '../results/'+dt+'_results_L'+`L`+'_m'+str(m)+'_v'+str(nr)
-                    for t in range(T):
-                        for P in range(len(layers)):
-                            df_res=df_res.append({'t':t+1,'resource':0.0,'decision_type':dt,
-                                'auction_type':'','valuation_type':'','sample':sr,
-                                'Magnitude':m,'layer':`P+1`,'no_resources':nr,
-                                'PoA':1,'distance_to_optimal':0.0}, ignore_index=True)
-                    # Read optimal resource allocation based on the actions
-                    action_file=compare_to_dir+"/actions_"+str(sr)+"_"+suffix+".csv" 
-                    if os.path.isfile(action_file):
-                        with open(action_file) as f:
-                            lines=f.readlines()[1:]
-                            for line in lines:
-                                data=string.split(str.strip(line),",")
-                                t=int(data[0])
-                                action=str.strip(data[1])
-                                P = int(action[-1])
-                                if '/' in action:
-                                    addition = 0.5
-                                else:
-                                    addition = 1.0
-                                df_res.loc[(df_res['t']==t)&(df_res['decision_type']==dt)&
-                                           (df_res['sample']==sr)&(df_res['Magnitude']==m)&
-                                           (df_res['layer']==`P`)&(df_res['no_resources']==nr),'resource']+=addition
-                else: 
-                    # Read  resource allocation based on auction results
-                    for at,vt in itertools.product(auction_type,valuation_type):
-                        outdir= '../results/'+dt+'_results_L'+`L`+'_m'+str(m)+'_v'+str(nr)+'_auction_'+at+'_'+vt+'/auctions'
-                        auction_file=outdir+"/auctions_"+str(sr)+"_"+suffix+".csv"
-                        if os.path.isfile(auction_file):
-                            with open(auction_file) as f:
-                                lines=f.readlines()[1:]
-                                for line in lines:
-                                    data=string.split(str.strip(line),",")
-                                    t=int(data[0])
-                                    for P in range(len(layers)):
-                                        poa = float(data[len(layers)+1])
-                                        df_res=df_res.append({'t':t,'resource':float(data[P+1]),
-                                            'decision_type':dt,'auction_type':at,
-                                            'valuation_type':vt,'sample':sr,
-                                            'Magnitude':m,'layer':`P+1`,'no_resources':nr,
-                                            'PoA':poa}, ignore_index=True)
-        print 'm%d'%(m),
+    print '\nResource allocation\n',
+    for idx,x in enumerate(optimal_combinations):                       
+        compare_to_dir= '../results/'+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`
+        for t in range(T):
+            for P in range(1,x[2]+1):
+                df_res=df_res.append({'t':t+1,'resource':0.0,'decision_type':ref_method,
+                    'auction_type':'','valuation_type':'','sample':x[1],
+                    'Magnitude':x[0],'layer':P,'no_resources':x[3],'PoA':1}, ignore_index=True)
+        # Read optimal resource allocation based on the actions
+        action_file=compare_to_dir+"/actions_"+`x[1]`+"_"+suffix+".csv" 
+        if os.path.isfile(action_file):
+            with open(action_file) as f:
+                lines=f.readlines()[1:]
+                for line in lines:
+                    data=string.split(str.strip(line),",")
+                    t=int(data[0])
+                    action=str.strip(data[1])
+                    P = int(action[-1])
+                    if '/' in action:
+                        addition = 0.5
+                    else:
+                        addition = 1.0
+                    df_res.loc[(df_res['t']==t)&(df_res['decision_type']==ref_method)&(df_res['sample']==x[1])&(df_res['Magnitude']==x[0])&(df_res['layer']==P)&(df_res['no_resources']==x[3]),'resource']+=addition
+        update_progress(idx+1,len(optimal_combinations)+len(combinations))
 
-    print '\nRelative allocation|',
-    for m in mags:
-        for nr,sr in itertools.product(no_resources,sample_range):
-            if listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index): 
-                # Construct vector of resource allocation of reference method                       
-                vector_res_ref = {P:np.zeros(T) for P in layers}
-                for P in layers:
-                    for t in range(T):
-                        vector_res_ref[P][t]= df_res.loc[(df_res['t']==t+1)&
-                                (df_res['decision_type']==ref_method)&
-                                (df_res['sample']==sr)&(df_res['Magnitude']==m)&
-                                (df_res['layer']==`P`)&(df_res['no_resources']==nr),'resource']
-                # Compute distance of resource allocation vectors
-                for dt,at,vt in itertools.product(decision_type,auction_type,valuation_type):
-                    if dt!=ref_method and vt!=''and at!='':
-                        vector_res = {P:np.zeros(T) for P in layers}
-                        for P in layers:
-                            row = (df_res['decision_type']==dt)&(df_res['sample']==sr)&(df_res['Magnitude']==m)&(df_res['layer']==`P`)&(df_res['no_resources']==nr)&(df_res['auction_type']==at)&(df_res['valuation_type']==vt)
-                            for t in range(T):
-                                vector_res[P][t] = df_res.loc[(df_res['t']==t+1)&row,'resource']
-                            distance = np.linalg.norm(vector_res[P]-vector_res_ref[P]) #L2 norm
-#                            distance = sum(abs(vector_res[P]-vector_res_ref[P])) #L1 norm
-#                            distance = 1-scipy.stats.pearsonr(vector_res[P],vector_res_ref[P])[0] # correlation distance
-                            df_res.loc[row,'distance_to_optimal']=distance/float(vector_res[P].shape[0])
-        print 'm%d'%(m),
+    # Read  resource allocation based on auction results
+    for idx,x in enumerate(combinations): 
+        outdir= '../results/'+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6]+'/auctions'#!!!
+        auction_file=outdir+"/auctions_"+`x[1]`+"_"+suffix+".csv"
+        if os.path.isfile(auction_file):
+            with open(auction_file) as f:
+                lines=f.readlines()[1:]
+                for line in lines:
+                    data=string.split(str.strip(line),",")
+                    t=int(data[0])
+                    for P in range(1,x[2]+1):
+                        poa = float(data[x[2]+1])
+                        df_res=df_res.append({'t':t,'resource':float(data[P]),
+                            'decision_type':x[4],'auction_type':x[5],'valuation_type':x[6],'sample':x[1],
+                            'Magnitude':x[0],'layer':P,'no_resources':x[3],'PoA':poa}, ignore_index=True)
+        update_progress(len(optimal_combinations)+idx+1,len(optimal_combinations)+len(combinations))
         
-    return df_res
+    cols=['decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','distance_to_optimal']
+    T = max(df.t.unique().tolist())
+    df_res_rel = pd.DataFrame(columns=cols)
+    print '\nRelative allocation\n',
+    for idx,x in enumerate(combinations): 
+        # Construct vector of resource allocation of reference method                       
+        vector_res_ref = {P:np.zeros(T) for P in range(1,x[2]+1)}
+        for P in range(1,x[2]+1):
+            for t in range(T):
+                vector_res_ref[P][t]= df_res.loc[(df_res['t']==t+1)&
+                        (df_res['decision_type']==ref_method)&
+                        (df_res['sample']==x[1])&(df_res['Magnitude']==x[0])&
+                        (df_res['layer']==P)&(df_res['no_resources']==x[3]),'resource']
+        # Compute distance of resource allocation vectors
+        vector_res = {P:np.zeros(T) for P in range(1,x[2]+1)}
+        for P in range(1,x[2]+1):
+            row = (df_res['decision_type']==x[4])&(df_res['sample']==x[1])&(df_res['Magnitude']==x[0])&(df_res['layer']==P)&(df_res['no_resources']==x[3])&(df_res['auction_type']==x[5])&(df_res['valuation_type']==x[6])
+            for t in range(T):
+                vector_res[P][t] = df_res.loc[(df_res['t']==t+1)&row,'resource']
+            distance = np.linalg.norm(vector_res[P]-vector_res_ref[P]) #L2 norm
+#            distance = sum(abs(vector_res[P]-vector_res_ref[P])) #L1 norm
+#            distance = 1-scipy.stats.pearsonr(vector_res[P],vector_res_ref[P])[0] # correlation distance
+            df_res_rel=df_res_rel.append({'decision_type':x[4],'auction_type':x[5],
+                'valuation_type':x[6],'sample':x[1],'Magnitude':x[0],'layer':P,'no_resources':x[3],
+                'distance_to_optimal':distance/float(vector_res[P].shape[0])}, ignore_index=True)
+        update_progress(idx+1,len(combinations))       
+    return df_res,df_res_rel
 
 def write_judgments_csv(N,outdir,functionality,realizations,sample_num=1,agent=1,time=0,suffix=""):
     if not os.path.exists(outdir):
@@ -698,64 +694,33 @@ def write_judgments_csv(N,outdir,functionality,realizations,sample_num=1,agent=1
     else:
         print 'No judgment by agent '+`agent`+'.'
 
-def read_and_aggregate_results(mags,method_name,auction_type,valuation_type,suffixes,L,sample_range,no_resources=[3],listHDadd=None):
+def read_and_aggregate_results(combinations,optimal_combinations,suffixes):
     columns = ['t','Magnitude','cost_type','decision_type','auction_type','valuation_type','no_resources','sample','cost']
     optimal_method = ['tdindp','indp','sample_indp_12Node']
     agg_results = pd.DataFrame(columns=columns)
-    if listHDadd:
-        listHD = pd.read_csv(listHDadd) 
 
-    auction_type.append('')
-    valuation_type.append('')        
     print "\nAggregating Results"
-    for m in mags:
-        for rc in no_resources:
-            print 'm %d|v=%d|' %(m,rc),  
-            for dt,at,vt in itertools.product(method_name,auction_type,valuation_type):
-                if (dt in optimal_method) and ((at!='') or (vt!='')):
-                    continue
-                # Constructing the directory
-                if dt in optimal_method:
-                    full_suffix = '_L'+`L`+'_m'+`m`+'_v'+`rc`
-                else:
-                    full_suffix = '_L'+`L`+'_m'+`m`+'_v'+`rc`+'_auction_'+at+'_'+vt
-                result_dir = '../results/'+dt+'_results'+full_suffix
-                if os.path.exists(result_dir):
-                    print '.',
-#                    # Save average values to file #!!!!!!!!!!!
-#                    results_average = INDPResults()
-#                    results_average = results_average.from_results_dir(outdir=result_dir,
-#                                        sample_range=sample_range,suffix=suffixes[i])
-#                    
-#                    outdir = '../results/average_cost_all/'
-#                    if not os.path.exists(outdir):
-#                        os.makedirs(outdir) 
-#                    costs_file =outdir+method_name[i]+full_suffix+"_average_costs.csv"
-#                    with open(costs_file,'w') as f:
-#                        f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total\n")
-#                        for t in results_average.results:
-#                            costs=results_average.results[t]['costs']
-#                            f.write(`t`+","+`costs["Space Prep"]`+","+`costs["Arc"]`+","
-#                                    +`costs["Node"]`+","+`costs["Over Supply"]`+","+
-#                                    `costs["Under Supply"]`+","+`costs["Flow"]`+","+
-#                                    `costs["Total"]`+"\n")            
-                            
-                    # Save all results to Pandas dataframe
-                    sample_result = INDPResults()
-                    for s in sample_range:
-                        if listHDadd==None or len(listHD.loc[(listHD.set == s) & (listHD.sce == m)].index):
-                            for suf in suffixes:
-                                if os.path.exists(result_dir+"/costs_"  +`s`+"_"+suf+".csv"):
-                                    sample_result=sample_result.from_csv(result_dir,s,suffix=suf)
-                            for t in sample_result.results:
-                                for c in sample_result.cost_types:
-                                    values = [t,m,c,dt,at,vt,rc,s,
-                                            float(sample_result[t]['costs'][c])]
-                                    agg_results = agg_results.append(dict(zip(columns,values)), ignore_index=True)
-#                else:
-#                    print "\nWARNING: Unable to find folder " + result_dir
-            print 'Aggregated'
-            
+    joinedlist = combinations + optimal_combinations
+    for idx,x in enumerate(joinedlist):
+        if x[4] in optimal_method:
+            full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`
+        else:
+            full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6] 
+        result_dir = '../results/'+x[4]+'_results'+full_suffix
+        if os.path.exists(result_dir):    
+            # Save all results to Pandas dataframe
+            sample_result = INDPResults()
+            for suf in suffixes:
+                if os.path.exists(result_dir+"/costs_"  +`x[1]`+"_"+suf+".csv"):
+                    sample_result=sample_result.from_csv(result_dir,x[1],suffix=suf)
+            for t in sample_result.results:
+                for c in sample_result.cost_types:
+                    values = [t,x[0],c,x[4],x[5],x[6],x[3],x[1],
+                            float(sample_result[t]['costs'][c])]
+                    agg_results = agg_results.append(dict(zip(columns,values)), ignore_index=True)
+            update_progress(idx+1,len(joinedlist))
+        else:
+            sys.exit('Error: The combination does not exist')            
     return agg_results
 
 def correct_tdindp_results(df,mags,method_name,sample_range):    
@@ -789,90 +754,72 @@ def correct_tdindp_results(df,mags,method_name,sample_range):
                             (df['cost_type']=='Total'),'cost'] = totalCost
     return df
                
-def relative_performance(df,sample_range,cost_type='Total',listHDadd=None,ref_method='indp'):    
-    sns.set()
-    auction_type = df.auction_type.unique().tolist()
-    valuation_type = df.valuation_type.unique().tolist()
-    no_resources = df.no_resources.unique().tolist()
-    mags=df.Magnitude.unique().tolist()
-    decision_type = df.decision_type.unique().tolist()
+def relative_performance(df,combinations,optimal_combinations,ref_method='indp',cost_type='Total'):    
     columns = ['Magnitude','cost_type','decision_type','auction_type','valuation_type','no_resources','sample','Area','lambda_TC']
     lambda_df = pd.DataFrame(columns=columns)
-    if listHDadd:
-        listHD = pd.read_csv(listHDadd)    
-
     # Computing reference area for lambda
+    # Check if the method in optimal combination is the reference method #!!!
     ref_at=''
     ref_vt=''
-    print 'Ref area calculation|',
-    for m in mags:
-        for dt,at,vt,nr,sr in itertools.product([ref_method],[ref_at],[ref_vt],no_resources,sample_range):
-            if listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index):
-                rows = df[(df['Magnitude']==m)&(df['decision_type']==dt)&
-                         (df['sample']==sr)&(df['cost_type']==cost_type)&
-                         (df['auction_type']==at)&(df['valuation_type']==vt)&
-                         (df['no_resources']==nr)]
-                                  
-                if not rows.empty:
-                    area = np.trapz(rows.cost[:20],dx=1)
-                        
-                    tempdf = pd.Series()
-                    tempdf['Magnitude'] = m
-                    tempdf['cost_type'] = cost_type
-                    tempdf['decision_type'] = dt
-                    tempdf['auction_type'] = at  
-                    tempdf['valuation_type'] = vt   
-                    tempdf['no_resources'] = nr 
-                    tempdf['sample'] = sr  
-                    tempdf['Area'] = area  
-                    lambda_df=lambda_df.append(tempdf,ignore_index=True)
-        print 'm'+`int(m)`,
+    print '\nRef area calculation\n',
+    for idx,x in enumerate(optimal_combinations):
+        rows = df[(df['Magnitude']==x[0])&(df['decision_type']==ref_method)&
+                 (df['sample']==x[1])&(df['cost_type']==cost_type)&
+                 (df['auction_type']==ref_at)&(df['valuation_type']==ref_vt)&
+                 (df['no_resources']==x[3])]
+                          
+        if not rows.empty:
+            area = np.trapz(rows.cost[:20],dx=1)
+            tempdf = pd.Series()
+            tempdf['Magnitude'] = x[0]
+            tempdf['cost_type'] = cost_type
+            tempdf['decision_type'] = x[4]
+            tempdf['auction_type'] = ref_at  
+            tempdf['valuation_type'] = ref_vt 
+            tempdf['no_resources'] = x[3] 
+            tempdf['sample'] = x[1]  
+            tempdf['Area'] = area  
+            lambda_df=lambda_df.append(tempdf,ignore_index=True)
+        update_progress(idx+1,len(optimal_combinations))
     # Computing areaa and lambda
-    print '\nLambda calculation|',
-    for m in mags:
-        for nr,sr in itertools.product(no_resources,sample_range):        
-            if (listHDadd==None or len(listHD.loc[(listHD.set == sr) & (listHD.sce == m)].index)):
-                # Check if reference area exists
-                cond = ((lambda_df['Magnitude']==m)&(lambda_df['decision_type']==ref_method)&
-                    (lambda_df['auction_type']==ref_at)&
-                    (lambda_df['valuation_type']==ref_vt)&
-                    (lambda_df['cost_type']==cost_type)&
-                    (lambda_df['sample']==sr)&
-                    (lambda_df['no_resources']==nr))
-                if not cond.any():
-                    import sys
-                    sys.exit('Reference type is not here! for m %d|resource %d' %(m,nr))
-                    
-                ref_area=float(lambda_df.loc[cond==True,'Area'])
-                for dt,at,vt in itertools.product(decision_type,auction_type,valuation_type):
-                     if dt!=ref_method:
-                        rows = df[(df['Magnitude']==m)&(df['decision_type']==dt)&
-                                 (df['sample']==sr)&(df['cost_type']==cost_type)&
-                                 (df['auction_type']==at)&(df['valuation_type']==vt)&
-                                 (df['no_resources']==nr)]
-                                          
-                        if not rows.empty:
-                            area = np.trapz(rows.cost[:20],dx=1)
-                            lambda_TC = 'nan'
-                            if ref_area != 0.0 and area != 'nan':
-                                lambda_TC = (ref_area-float(area))/ref_area
-                            elif area == 0.0:
-                                lambda_TC = 0.0
-                            else:
-                                pass  
-                              
-                            tempdf = pd.Series()
-                            tempdf['Magnitude'] = m
-                            tempdf['cost_type'] = cost_type
-                            tempdf['decision_type'] = dt
-                            tempdf['auction_type'] = at  
-                            tempdf['valuation_type'] = vt   
-                            tempdf['no_resources'] = nr 
-                            tempdf['sample'] = sr  
-                            tempdf['Area'] = area  
-                            tempdf['lambda_TC'] = lambda_TC
-                            lambda_df=lambda_df.append(tempdf,ignore_index=True)
-        print 'm'+`int(m)`, 
+    print '\nLambda calculation\n',
+    for idx,x in enumerate(combinations):
+        # Check if reference area exists
+        cond = ((lambda_df['Magnitude']==x[0])&(lambda_df['decision_type']==ref_method)&
+            (lambda_df['auction_type']==ref_at)&(lambda_df['valuation_type']==ref_vt)&
+            (lambda_df['cost_type']==cost_type)&(lambda_df['sample']==x[1])&
+            (lambda_df['no_resources']==x[3]))
+        if not cond.any():
+            sys.exit('Error:Reference type is not here! for m %d|resource %d' %(x[0],x[3]))    
+        ref_area=float(lambda_df.loc[cond==True,'Area'])
+        rows = df[(df['Magnitude']==x[0])&(df['decision_type']==x[4])&
+                 (df['sample']==x[1])&(df['cost_type']==cost_type)&
+                 (df['auction_type']==x[5])&(df['valuation_type']==x[6])&
+                 (df['no_resources']==x[3])]
+        if not rows.empty:
+            area = np.trapz(rows.cost[:20],dx=1)
+            lambda_TC = 'nan'
+            if ref_area != 0.0 and area != 'nan':
+                lambda_TC = (ref_area-float(area))/ref_area
+            elif area == 0.0:
+                lambda_TC = 0.0
+            else:
+                pass  
+            
+            tempdf = pd.Series()
+            tempdf['Magnitude'] = x[0]
+            tempdf['cost_type'] = cost_type
+            tempdf['decision_type'] = x[4]
+            tempdf['auction_type'] = x[5]  
+            tempdf['valuation_type'] = x[6]   
+            tempdf['no_resources'] = x[3] 
+            tempdf['sample'] = x[1]  
+            tempdf['Area'] = area  
+            tempdf['lambda_TC'] = lambda_TC
+            lambda_df=lambda_df.append(tempdf,ignore_index=True)
+        else:
+            sys.exit('Error: No decentralized entry for m %d|resource %d,...' %(x[0],x[3]))   
+        update_progress(idx+1,len(combinations))
     return lambda_df
 
 def plot_performance_curves(df,x='t',y='cost',cost_type='Total',
@@ -1065,23 +1012,21 @@ def plot_auction_allocation(df_res,ci=None):
         for idx, ax in enumerate(axx):
             ax.set_title(r'Total resources = %d'%(no_resources[idx]))
         for idx, ax in enumerate(axy):
-            ax.annotate('Layer '+layer[idx],xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
+            ax.annotate('Layer '+`layer[idx]`,xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
                 xycoords=ax.yaxis.label, textcoords='offset points',ha='right',va='center',rotation=90)  
   
         plt.savefig('Allocations_'+at+'.pdf',dpi=600)
 
 def plot_relative_allocation(df_res):   
-    sns.set(context='notebook',style='darkgrid')
-    plt.rc('text', usetex=True)
-    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+#    sns.set(context='notebook',style='darkgrid')
+#    plt.rc('text', usetex=True)
+#    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     
     no_resources = df_res.no_resources.unique().tolist()
     layer = df_res.layer.unique().tolist()
     decision_type = df_res.decision_type.unique().tolist()
     auction_type = df_res.auction_type.unique().tolist()
-    auction_type.remove('')
     valuation_type = df_res.valuation_type.unique().tolist()
-    valuation_type.remove('')
     
 #    pals = [sns.color_palette("Blues"),sns.color_palette("Reds"),sns.color_palette("Greens")]
     clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green'],['purple','orchid']]
@@ -1126,7 +1071,7 @@ def plot_relative_allocation(df_res):
     handles, labels = ax.get_legend_handles_labels()   
     labels = correct_legend_labels(labels)
     for idx,lab in enumerate(labels):
-        layer_num = len(layer) - idx//(len(decision_type)-1)
+        layer_num = len(layer) - idx//(len(decision_type))
         labels[idx] = lab[:7] + '. (Layer ' + `layer_num` + ')'
     lgd = fig.legend(handles, labels,loc='center', bbox_to_anchor=(0.5, 0.95),
                frameon =True,framealpha=0.5, ncol=4)     #, fontsize='small'
@@ -1162,3 +1107,46 @@ def correct_legend_labels(labels):
     labels = ['Decision Type' if x=='decision_type' else x for x in labels]
     labels = ['MCA' if x=='EC' else x for x in labels]
     return labels
+
+def generate_combinations(database,mags,sample,noLayers,no_resources,decision_type,auction_type,valuation_type,listHDadd=None,synthetic_dir=None):
+    combinations = []
+    optimal_combinations = []
+    optimal_method = ['tdindp','indp','sample_indp_12Node']
+    if database=='shelby':
+        if listHDadd:
+            listHD = pd.read_csv(listHDadd)     
+        L = noLayers
+        for m,s in itertools.product(mags,sample):
+            for rc in no_resources:
+                for dt,at,vt in itertools.product(decision_type,auction_type,valuation_type):
+                    if (dt in optimal_method) and not [m,s,L,rc,dt,'',''] in optimal_combinations:
+                        optimal_combinations.append([m,s,L,rc,dt,'',''])
+                    else:
+                        combinations.append([m,s,L,rc,dt,at,vt])
+    elif database=='synthetic':
+        # Read net configurations
+        if synthetic_dir==None:
+            sys.exit('Error: Provide the address of synthetic databse')
+        with open(synthetic_dir+'List_of_Configurations.txt') as f:
+            config_data = pd.read_csv(f, delimiter='\t')         
+        for m,s in itertools.product(mags,sample):
+            config_param = config_data.iloc[m]
+            L = int(config_param.loc[' No. Layers'])    
+            no_resources = [int(config_param.loc[' Resource Cap'])]              
+            for rc in no_resources:
+                for dt,at,vt in itertools.product(decision_type,auction_type,valuation_type):
+                    if (dt in optimal_method) and (at!='' or vt!=''):
+                        continue
+                    if (dt in optimal_method) and not [m,s,L,rc,dt,'',''] in optimal_combinations:
+                        optimal_combinations.append([m,s,L,rc,dt,'',''])
+                    else:
+                        combinations.append([m,s,L,rc,dt,at,vt])        
+    else:
+        sys.exit('Error: Wrong database type')
+    
+    return combinations,optimal_combinations
+
+def update_progress(progress,total):
+    print '\r[%s] %1.1f%%' % ('#'*int(progress/float(total)*20), (progress/float(total)*100)),
+    sys.stdout.flush()
+              

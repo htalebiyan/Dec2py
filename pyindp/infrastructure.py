@@ -738,3 +738,121 @@ def read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim
                             vars[v]=[]
                         vars[v].append((tuple_string,val_string))
         return vars
+
+def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3",topology='Random',config=6,sample=0,cost_scale=1.0):
+    net_dir = BASE_DIR+'\\'+topology+'Networks\\'
+    topo_initial = {'Random':'RN','ScaleFree':'SFN','Grid':'GN'}
+    with open(net_dir+'List_of_Configurations.txt') as f:
+        config_data = pd.read_csv(f, delimiter='\t')  
+    config_param = config_data.iloc[config]
+    noLayers = int(config_param.loc[' No. Layers'])    
+    noResource = int(config_param.loc[' Resource Cap'])  
+    
+    file_dir = net_dir+topo_initial[topology]+'Config_'+str(config)+'\\Sample_'+str(sample)+'\\'
+    G=InfrastructureNetwork("Test")
+    global_index=0
+    files = [f for f in os.listdir(file_dir) if os.path.isfile(os.path.join(file_dir, f))]
+    for k in range(1,noLayers+1):
+        for file in files: 
+            if file=='N'+str(k)+'_Nodes.txt':
+                with open(file_dir+file) as f:
+    #                print "Opened",file,"."
+                    data = pd.read_csv(f, delimiter='\t',header=None)
+                    for v in data.iterrows():                        
+                        n=InfrastructureNode(global_index,k,int(v[1][0]))
+                        #print "Adding node",node[0][0],"in layer",node[0][1],"."
+                        G.G.add_node((n.local_id,n.net_id),data={'inf_data':n})
+                        global_index+=1                    
+                        G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].reconstruction_cost=float(v[1][7])*cost_scale
+                        G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].oversupply_penalty=float(v[1][5])*cost_scale
+                        G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].undersupply_penalty=float(v[1][6])*cost_scale
+                        # Assume only one kind of resource for now and one resource for each repaired element.
+                        G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].resource_usage=1
+                        G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].demand=float(v[1][4])
+        for file in files:
+            if file=='N'+str(k)+'_Arcs.txt':
+                with open(file_dir+file) as f:
+    #                print "Opened",file,"."
+                    data = pd.read_csv(f, delimiter='\t',header=None)
+                    for v in data.iterrows(): 
+                        for duplicate in range(2):
+                            if duplicate==0:
+                                a=InfrastructureArc(int(v[1][0]),int(v[1][1]),k) 
+                            elif duplicate==1:
+                                a=InfrastructureArc(int(v[1][1]),int(v[1][0]),k) 
+                            G.G.add_edge((a.source,a.layer),(a.dest,a.layer),data={'inf_data':a})
+                            G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].flow_cost=float(v[1][2])*cost_scale
+                            G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].reconstruction_cost=float(v[1][4])*cost_scale
+                            G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].capacity=float(v[1][2])
+                            # Assume only one kind of resource for now and one resource for each repaired element.
+                            G.G[(a.source,a.layer)][(a.dest,a.layer)]['data']['inf_data'].resource_usage=1   
+    for k in range(1,noLayers+1):
+        for kt in range(1,noLayers+1):
+            if k!=kt:
+                for file in files:
+                    if file=='Interdependent_Arcs_'+str(k)+'_'+str(kt)+'.txt':
+                        with open(file_dir+file) as f:
+                #                print "Opened",file,"."
+                            try:
+                                data = pd.read_csv(f, delimiter='\t',header=None)
+                                for v in data.iterrows():                                      
+                                    i = int(v[1][0])
+                                    net_i = k
+                                    j = int(v[1][1])
+                                    net_j = kt
+                                    a=InfrastructureInterdepArc(i,j,net_i,net_j,gamma=1.0)
+                                    G.G.add_edge((a.source,a.source_layer),(a.dest,a.dest_layer),data={'inf_data':a})
+                            except:
+                                print('Empty file: '+ file)
+# add subspace data #!!!
+#for v in data.iterrows():
+#    if fname=='beta':
+#        net = netNames[v[1]['Network']]
+#        G.G[(int(v[1]['Start Node']),net)][(int(v[1]['End Node']),net)]['data']['inf_data'].space=int(int(v[1]['Subspace']))
+#        G.G[(int(v[1]['End Node']),net)][(int(v[1]['Start Node']),net)]['data']['inf_data'].space=int(int(v[1]['Subspace']))
+#    if fname=='alpha':
+#        net = netNames[v[1]['Network']]
+#        G.G.node[(int(v[1]['ID']),net)]['data']['inf_data'].space=int(int(v[1]['Subspace']))
+#    if fname=='g':
+#        G.S.append(InfrastructureSpace(int(v[1]['Subspace_ID']),float(v[1]['g'])))  
+
+    return G,noResource,range(1,noLayers+1)
+
+def add_synthetic_failure_scenario(G,BASE_DIR="../data/Generated_Network_Dataset_v3",topology='Random',config=0,sample=0):
+    net_dir = BASE_DIR+'\\'+topology+'Networks\\'
+    topo_initial = {'Random':'RN','ScaleFree':'SFN','Grid':'GN'}
+    with open(net_dir+'List_of_Configurations.txt') as f:
+        config_data = pd.read_csv(f, delimiter='\t')  
+    config_param = config_data.iloc[config]
+    noLayers = int(config_param.loc[' No. Layers'])    
+    
+    file_dir = net_dir+topo_initial[topology]+'Config_'+str(config)+'\\Sample_'+str(sample)+'\\'
+    files = [f for f in os.listdir(file_dir) if os.path.isfile(os.path.join(file_dir, f))]
+    for k in range(1,noLayers+1):
+        for file in files: 
+            if file=='N'+str(k)+'_Damaged_Nodes.txt':
+                with open(file_dir+file) as f:
+                    try:
+                        data = pd.read_csv(f, delimiter='\t',header=None)
+                        for v in data.iterrows():    
+                            G.G.node[(v[1][0],k)]['data']['inf_data'].functionality=0.0
+                            G.G.node[(v[1][0],k)]['data']['inf_data'].repaired=0.0
+#                            print "Node (",`int(v[1][0])`+","+`k`+") broken."
+                    except:
+                        print('Empty file: '+ file)
+                                
+        for file in files:
+            if file=='N'+str(k)+'_Damaged_Arcs.txt':
+                with open(file_dir+file) as f:
+                    try:
+                        data = pd.read_csv(f, delimiter='\t',header=None)
+                        for a in data.iterrows():   
+                            G.G[(a[1][0],k)][(a[1][1],k)]['data']['inf_data'].functionality=0.0
+                            G.G[(a[1][0],k)][(a[1][1],k)]['data']['inf_data'].repaired=0.0
+#                            print "Arc ((",`int(a[1][0])`+","+`k`+"),("+`int(a[1][1])`+","+`k`+")) broken."
+                            
+                            G.G[(a[1][1],k)][(a[1][0],k)]['data']['inf_data'].functionality=0.0
+                            G.G[(a[1][1],k)][(a[1][0],k)]['data']['inf_data'].repaired=0.0
+#                            print "Arc ((",`int(a[1][1])`+","+`k`+"),("+`int(a[1][0])`+","+`k`+")) broken."
+                    except:
+                        print('Empty file: '+ file)    

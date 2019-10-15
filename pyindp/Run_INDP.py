@@ -19,31 +19,37 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1]):
     "WINDOW_LENGTH" : Slding time window length for td-INDP (for efficiency).
     "N"             : InfrastructureNetwork to use in indp.
     "SIM_NUMBER"    : What failure scenario simulation to use. Used to look up failure scenarios."""
-
-                
-#    if "N" not in params:
-#        print("Initializing network...")
-#        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependency_dir=None,sim_number=0,magnitude=6,v=params["V"]) #"../data/INDP_4-12-2016"
-#        print(InterdepNet)
-#    else:
-#        InterdepNet=params["N"] 
-                            
-    # Use fake paramter name for the case of Wu's scenarios to fit to Andres's scenarios' nomenclature
-    if failSce_param['type']=='WU':
-        failSce_param['sample_range']=failSce_param['set_range']
-        failSce_param['mags']=failSce_param['sce_range']
+    
+    # Set root directories
+    if failSce_param['type']=='Andres':
+        base_dir = "../data/INDP_7-20-2015/"
+        ext_interdependency = "../data/INDP_4-12-2016"
+        topology = None
+        shelby_data = True
+    elif failSce_param['type']=='WU':
         if failSce_param['filtered_List']!=None:
             listHD = pd.read_csv(failSce_param['filtered_List'])
-            
+        base_dir = "../data/Extended_Shelby_County/"
+        ext_interdependency = None
+        topology = None
+        shelby_data = True
+    elif failSce_param['type']=='synthetic':  
+        base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3'
+        ext_interdependency = None
+        shelby_data = False  
+        topology = failSce_param['topology']
+        
     for m in failSce_param['mags']:    
         for i in failSce_param['sample_range']:
             if failSce_param['filtered_List']==None or len(listHD.loc[(listHD.set == i) & (listHD.sce == m)].index):
-            
                 print '\n---Running Magnitude '+`m`+' sample '+`i`+'...'
-                
+            
                 print("Initializing network...")
-                InterdepNet=initialize_network(BASE_DIR="../data/Extended_Shelby_County/",external_interdependency_dir=None,sim_number=0,magnitude=6,v=params["V"])  # #"../data/INDP_7-20-2015/" "../data/INDP_4-12-2016"
-                    
+                if not shelby_data:  
+                    InterdepNet,noResource,layers=initialize_network(BASE_DIR=base_dir,external_interdependency_dir=ext_interdependency,magnitude=m,sample=i,shelby_data=shelby_data,topology=topology) 
+                    params["V"]=noResource
+                else:  
+                    InterdepNet,_,_=initialize_network(BASE_DIR=base_dir,external_interdependency_dir=ext_interdependency,sim_number=0,magnitude=6,sample=0,v=params["V"],shelby_data=shelby_data)                    
                 params["N"]=InterdepNet
                 params["SIM_NUMBER"]=i
                 params["MAGNITUDE"]=m
@@ -52,7 +58,9 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1]):
                     add_Wu_failure_scenario(InterdepNet,BASE_DIR="../data/Wu_Damage_scenarios/",noSet=i,noSce=m)
                 elif failSce_param['type']=='ANDRES':
                     add_failure_scenario(InterdepNet,BASE_DIR="../data/INDP_7-20-2015/",magnitude=m,v=params["V"],sim_number=i)
-                
+                elif failSce_param['type']=='synthetic':
+                    add_synthetic_failure_scenario(InterdepNet,BASE_DIR=base_dir,topology=topology,config=m,sample=i)                
+                    
                 if params["ALGORITHM"]=="INDP":
                     run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers,saveModel=False,print_cmd_line=False)
                 elif params["ALGORITHM"]=="INFO_SHARE":
@@ -149,7 +157,7 @@ def run_indp_sample():
     plot_auction_allocation(resource_allocation,ci=None)
     plot_relative_allocation(resource_allocation)
     
-def run_indp_L3(failSce_param,v_r,layers):
+def run_indp_batch(failSce_param,v_r,layers):
     """
     This function runs iterativ indp for different numbers of resources
     
@@ -162,11 +170,11 @@ def run_indp_L3(failSce_param,v_r,layers):
     Returns:
     """
     for v in v_r:
-        params={"NUM_ITERATIONS":10,"OUTPUT_DIR":'../results/indp_results_L'+`len(layers)`
-                ,"V":v,"T":1,"ALGORITHM":"INDP"}
+        params={"NUM_ITERATIONS":10,"OUTPUT_DIR":'../results/indp_results',
+                "V":v,"T":1,"ALGORITHM":"INDP"}
         batch_run(params,failSce_param,layers=layers)
         
-def run_tdindp_L3(failSce_param,v_r,layers):
+def run_tdindp_batch(failSce_param,v_r,layers):
     """
     This function runs time-dependent indp for different numbers of resources
     Args:
@@ -178,11 +186,11 @@ def run_tdindp_L3(failSce_param,v_r,layers):
     Returns:
     """
     for v in v_r:
-        params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results_L'+`len(layers)`,
+        params={"NUM_ITERATIONS":1,"OUTPUT_DIR":'../results/tdindp_results',
                 "V":v,"T":10,"WINDOW_LENGTH":3,"ALGORITHM":"INDP"}
         batch_run(params,failSce_param,layers=layers)  
         
-def run_dindp_L3(failSce_param,v_r,layers,judgment_type="OPTIMISTIC",auction_type=None,valuation_type='DTC'):
+def run_dindp_batch(failSce_param,v_r,layers,judgment_type="OPTIMISTIC",auction_type=None,valuation_type='DTC'):
     """
     This function runs Judfment Call Method for different numbers of resources, and a given judge, auction, and valuation type
     Args:
@@ -197,8 +205,8 @@ def run_dindp_L3(failSce_param,v_r,layers,judgment_type="OPTIMISTIC",auction_typ
     """
     for v in v_r:
         params={"NUM_ITERATIONS":10,
-                "OUTPUT_DIR":'../results/judgeCall_'+judgment_type+'_results_L'+`len(layers)`,
-                "V":[v],"T":1,"ALGORITHM":"JUDGMENT_CALL",
+                "OUTPUT_DIR":'../results/judgeCall_'+judgment_type+'_results',
+                "V":v,"T":1,"ALGORITHM":"JUDGMENT_CALL",
                 "JUDGMENT_TYPE":judgment_type,"AUCTION_TYPE":auction_type,
                 "VALUATION_TYPE":valuation_type}
         batch_run(params,failSce_param,layers=layers)
@@ -210,66 +218,67 @@ if __name__ == "__main__":
     ''' Run a toy example for different methods '''
 #    run_indp_sample()
 
-    ''' Decide the failure scenario'''
+    ''' Decide the failure scenario (Andres or Wu) and network dataset (shelby or synthetic)
+    Help:
+    For Andres scenario: sample range: failSce_param["sample_range"], magnitudes: failSce_param['mags']
+    For Wu scenario: set range: failSce_param["sample_range"], sce range: failSce_param['mags']
+    For Synthetic nets: sample range: failSce_param["sample_range"], configurations: failSce_param['mags']  
+    '''
     listFilteredSce = '../data/damagedElements_sliceQuantile_0.95.csv'
-#    failSce_param = {"type":"WU","set_range":range(48,49),"sce_range":range(53,54),
-#                     'filtered_List':listFilteredSce}
-    failSce_param = {"type":"WU","set_range":range(1,51),"sce_range":range(0,96),
-                     'filtered_List':listFilteredSce}
 #    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
 #    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
+#    failSce_param = {"type":"WU","sample_range":range(48,49),"mags":range(53,54),
+#                     'filtered_List':listFilteredSce}
+#    failSce_param = {"type":"WU","sample_range":range(1,51),"mags":range(0,96),
+#                     'filtered_List':listFilteredSce}
+    failSce_param = {"type":"synthetic","sample_range":range(0,1),"mags":range(0,100),
+                     'filtered_List':None,'topology':'Grid'}
+
 
     ''' Run different methods'''
-    v_r=[3,6,8,12]                              #[3,6,8,12] # No restriction on number of resources for each layer
+    # No restriction on number of resources for each layer # Not necessary for synthetic nets
+    v_r=[0]                  #[3,6,8,12] 
 #    v_r=[[1,1,1,1],[2,2,2,2],[3,3,3,3]]              # Prescribed number of resources for each layer
-    judge_types = ["PESSIMISTIC","OPTIMISTIC"]  #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
-    auction_types =  ["MDA","MAA","MCA"]        #["MDA","MAA","MCA"] 
-    valuation_types = ['DTC','MDDN']            #['DTC','DTC_uniform','MDDN']    
+    judge_types = ["OPTIMISTIC","PESSIMISTIC"]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
+    auction_types =  ["MDA","MAA","MCA"]       #["MDA","MAA","MCA"] 
+    valuation_types = ['DTC']       #['DTC','DTC_uniform','MDDN']    
+    # List of layers of the net # Not necessary for synthetic nets
+    layers=[]
     
-    layers=[1,2,3,4]
-#    run_indp_L3(failSce_param,v_r,layers)
-#    run_tdindp_L3(failSce_param, v_r,layers)
+#    run_indp_batch(failSce_param,v_r,layers)
+##    run_tdindp_batch(failSce_param, v_r,layers)
 #    for jc in judge_types:
-##        run_dindp_L3_V3(failSce_param,judgment_type=jc,auction_type=None)
+##        run_dindp_batch(failSce_param,judgment_type=jc,auction_type=None)
 #        for at in auction_types:
 #            for vt in valuation_types:
-#                run_dindp_L3(failSce_param,v_r,layers,
+#                run_dindp_batch(failSce_param,v_r,layers,
 #                             judgment_type=jc,auction_type=at,valuation_type=vt)
-
-
- 
-  
-    """ Compute metrics """ 
-    method_name = ['indp']
-    for jc in judge_types:
-        method_name.append('judgeCall_'+jc)
-    suffixes = ['Real_sum','']
-    sample_range=failSce_param["set_range"]
-    mags=failSce_param['sce_range']
-    
-#    df = read_and_aggregate_results(mags,method_name,auction_types,valuation_types,
-#                                    suffixes,L=len(layers),sample_range=sample_range,
-#                                    no_resources=v_r,listHDadd=failSce_param['filtered_List'])
-####    df = correct_tdindp_results(df,mags,method_name,sample_range)
-#   
-#    lambda_df = relative_performance(df,sample_range=sample_range,ref_method='indp',
-#                                     listHDadd=failSce_param['filtered_List'])
-#    resource_allocation=read_resourcec_allocation(df,sample_range=sample_range,
-#                            T=10,ci=None,layers=layers,L=len(layers),
-#                            listHDadd=failSce_param['filtered_List'])    
+### 
+#    ''' Compute metrics ''' 
+#    method_name = ['indp']
+#    for jc in judge_types:
+#        method_name.append('judgeCall_'+jc)
+#    suffixes = ['Real_sum','']
+#    sample_range=failSce_param["sample_range"]
+#    mags=failSce_param['mags']
+    synthetic_dir='C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3/'+failSce_param['topology']+'Networks/'
+    combinations,optimal_combinations=generate_combinations('synthetic',
+                    mags,sample_range,layers,v_r,method_name,auction_types,
+                    valuation_types,listHDadd=None,synthetic_dir=synthetic_dir)
+#    df = read_and_aggregate_results(combinations,optimal_combinations,suffixes)
+#####    df = correct_tdindp_results(df,mags,method_name,sample_range)
+###   
+#    lambda_df = relative_performance(df,combinations,optimal_combinations,ref_method='indp')
+    resource_allocation,res_alloc_rel=read_resourcec_allocation(df,combinations,optimal_combinations)    
 
     
     """ Plot results """    
-#    plot_performance_curves(df,cost_type='Total',decision_names=method_name,ci=None)
-#    plot_relative_performance(lambda_df)
-#    plot_auction_allocation(resource_allocation,ci=None)
-    plot_relative_allocation(resource_allocation)
+    plot_performance_curves(df,cost_type='Total',decision_names=method_name,ci=None)
+    plot_relative_performance(lambda_df)
+    plot_auction_allocation(resource_allocation,ci=None)
+#    plot_relative_allocation(res_alloc_rel)
 #    for nr,pltt in zip(v_r,['YlGn','PuBu','OrRd','BuPu']):        
 #        ax = sns.violinplot(x="layer", y="distance_to_optimal", 
-#            data=resource_allocation[(resource_allocation['auction_type']!='')&
-#                                     (resource_allocation['auction_type']!='MAA')&
-#                                     (resource_allocation['no_resources']==nr)&
-#                                     (resource_allocation['valuation_type']=='DTC')&
-#                                     (resource_allocation['t']==1)],
-#            hue="auction_type", split=True, palette=pltt,scale='count',inner=None,cut=0)
+#            data=res_alloc_rel[(res_alloc_rel['auction_type']=='MCA')&(res_alloc_rel['valuation_type']=='DTC')],
+#            hue="auction_type", split=False, palette=pltt,scale='count',inner=None,cut=0)
 #    plt.setp(ax.collections, alpha=.5)

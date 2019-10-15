@@ -30,14 +30,14 @@ for cnfg in range(0,noConfiguration):
     noLayers = np.random.randint(low=2, high=5) 
     # Number of nodes of the random network (same for both networks)
     noNodes = np.random.randint(low=10, high=50) 
-    noNodesDict={x:int(round(noNodes*(1+np.random.normal(0, paramError)))) for x in range(noLayers)}
+    noNodesDict={x:int(round(noNodes*(1+np.random.normal(0, paramError)))) for x in range(1,noLayers+1)}
     # Exponent of the powerlaw of node degee distribution 
     # whose bounds correspond to Ultra-Small World regime.
     expLB = 2.001
     expUB = 2.999
     exp = np.random.uniform(low=expLB, high=expUB)
     expDict={}
-    for x in range(noLayers):
+    for x in range(1,noLayers+1):
         expPert = exp*(1+np.random.normal(0, paramError))
         while expPert<expLB or expPert>expUB:
             expPert = exp*(1+np.random.normal(0, paramError))
@@ -46,16 +46,16 @@ for cnfg in range(0,noConfiguration):
     # in the interdependent random networks 
     intConProb = np.random.uniform(low=0.001, high=0.05/2)
     intConProbDict={}
-    for k in range(noLayers): 
-        for kt in range(noLayers): 
+    for k in range(1,noLayers+1): 
+        for kt in range(1,noLayers+1): 
             if k!=kt:
                 intConProbDict[(kt,k)]=intConProb*(1+np.random.normal(0, paramError))
     # Probability of damage ofeach node in the random networks 
     # (same for both networks)
     # Bounds are chosen based on INDP data for Shelby county associated with 
-    # M6 - M9 scenarios
-    damProb = np.random.uniform(low=0.05, high=0.5) 
-    damProbDict={x:damProb*(1+np.random.normal(0, paramError)) for x in range(noLayers)}
+    # M6 (0.05) - M9 (0.5) scenarios
+    damProb = np.random.uniform(low=0.05, high=0.5/2) 
+    damProbDict={x:damProb*(1+np.random.normal(0, paramError)) for x in range(1,noLayers+1)}
     # Restoration Resource Cap for each network 
     # based on the sum of mean number of damaged nodes and mean number of 
     # damaged arcs
@@ -87,7 +87,7 @@ for cnfg in range(0,noConfiguration):
         if not os.path.exists(folder):
             os.makedirs(folder)
             
-        for k in range(noLayers):                
+        for k in range(1,noLayers+1):                
             # Generating random networks
             nodes[k],arcs[k],pos[k]=Network_Data_Generator.Scale_Free_network(expDict[k],noNodesDict[k],k)       
     
@@ -146,8 +146,8 @@ for cnfg in range(0,noConfiguration):
             f.close() 
         
         noSelPairsDict={}
-        for k in range(noLayers):
-            for kt in range(noLayers):
+        for k in range(1,noLayers+1):
+            for kt in range(1,noLayers+1):
                 if kt!=k:
                     selPairs = Network_Data_Generator.generate_interconnctions(nodes[kt],nodes[k],intConProbDict[(kt,k)])
                     noSelPairsDict[(kt,k)] = len(selPairs)
@@ -161,15 +161,15 @@ for cnfg in range(0,noConfiguration):
         f = open(fileName,"w")
         f.write('Number of networks = %d\n' % (noLayers))
         text = 'Number of nodes: '
-        for k in range(noLayers):
+        for k in range(1,noLayers+1):
             text += 'N%d = %d,' %(k,noNodesDict[k])
         f.write(text+'\n')
         text = 'Exponent of powerlaw distribution of node degree: '
-        for k in range(noLayers):
+        for k in range(1,noLayers+1):
             text += 'N%d = %1.4f,' %(k,expDict[k])
         f.write(text+'\n')
         text = 'Number of arcs: '
-        for k in range(noLayers):
+        for k in range(1,noLayers+1):
             text += 'N%d = %d,' %(k,arcs[k].shape[0])
         f.write(text+'\n')
         text = 'Existence probability of interdependent arcs: '
@@ -181,15 +181,15 @@ for cnfg in range(0,noConfiguration):
             text += '%s = %d,' %(key,value)
         f.write(text+'\n') 
         text = 'Damage probability of nodes: '
-        for k in range(noLayers):
+        for k in range(1,noLayers+1):
             text += 'N%d = %1.4f,' %(k,damProbDict[k])
         f.write(text+'\n')
         text = 'Number of damaged nodes: '
-        for k in range(noLayers):
+        for k in range(1,noLayers+1):
             text += 'N%d = %d,' %(k,damNodes[k].shape[0])
         f.write(text+'\n')
         text = 'Number of damaged arcs: '
-        for k in range(noLayers):
+        for k in range(1,noLayers+1):
             text += 'N%d = %d,' %(k,len(damArcs[k]))
         f.write(text+'\n')
         f.write('Available resources for restoration in each time step = %d\n' % (resCap))

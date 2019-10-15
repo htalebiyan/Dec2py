@@ -356,4 +356,4 @@ ax.set(xlabel='Number of Interconnections', ylabel='Probability (%)')
 #plt.savefig('noInterconnections_'+NetworkTypeInitial+'.png',dpi=600,bbox_inches="tight")
 
 ''' Plot one network '''
-plot_network(BASE_DIR=rootfolder,topo=NetworkTypeInitial,config=70,sample=1)  
+plot_network(BASE_DIR=rootfolder,topo=NetworkTypeInitial,config=0,sample=0)  

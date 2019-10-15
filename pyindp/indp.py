@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 #import copy
 import random
 import sys
-
 #HOME_DIR="/Users/Andrew/"
 #if platform.system() == "Linux":
 #    HOME_DIR="/home/andrew/"
@@ -374,12 +373,12 @@ def apply_recovery(N,indp_results,t):
             N.G.node[node]['data']['inf_data'].repaired=1.0
             N.G.node[node]['data']['inf_data'].functionality=1.0
             
-    for u,v,a in N.G.edges_iter(data=True):
-        if a['data']['inf_data'].is_interdep:
-            if N.G.node[u]['data']['inf_data'].functionality == 0.0 and N.G.node[v]['data']['inf_data'].functionality==1.0:
-                N.G.node[v]['data']['inf_data'].functionality = 0.0
-            if N.G.node[u]['data']['inf_data'].functionality == 1.0 and N.G.node[v]['data']['inf_data'].repaired==1.0 and N.G.node[v]['data']['inf_data'].functionality==0.0:
-                N.G.node[v]['data']['inf_data'].functionality = 1.0
+#    for u,v,a in N.G.edges_iter(data=True):
+#        if a['data']['inf_data'].is_interdep:
+#            if N.G.node[u]['data']['inf_data'].functionality == 0.0 and N.G.node[v]['data']['inf_data'].functionality==1.0:
+#                N.G.node[v]['data']['inf_data'].functionality = 0.0
+#            if N.G.node[u]['data']['inf_data'].functionality == 1.0 and N.G.node[v]['data']['inf_data'].repaired==1.0 and N.G.node[v]['data']['inf_data'].functionality==0.0:
+#                N.G.node[v]['data']['inf_data'].functionality = 1.0
                         
 def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
     """Creates a functionality map for input into the functionality parameter in the indp function.
@@ -428,7 +427,7 @@ def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
     return functionality
             
 
-def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependency_dir=None,sim_number=1,cost_scale=0.1,magnitude=6,v=3):
+def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependency_dir=None,sim_number=1,cost_scale=1,magnitude=6,sample=0,v=3,shelby_data=True,topology='Random'):
     """ Initializes an InfrastructureNetwork from Shelby County data.
     :param BASE_DIR: Base directory of Shelby County data.
     :param sim_number: Which simulation number to use as input.
@@ -437,10 +436,15 @@ def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependen
     :param v: v parameter
     :returns: An interdependent InfrastructureNetwork.
     """
-#    print "Loading Shelby County data..." #!!!
-    InterdepNet=load_infrastructure_data(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,sim_number=sim_number,cost_scale=1.0,magnitude=magnitude,v=v)
-#    print "Data loaded." #!!!
-    return InterdepNet
+    layers_temp=[]
+    v_temp = 0
+    if shelby_data:
+    #    print "Loading Shelby County data..." #!!!
+        InterdepNet=load_infrastructure_data(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,sim_number=sim_number,cost_scale=cost_scale,magnitude=magnitude,v=v)
+    #    print "Data loaded." #!!!
+    else:
+        InterdepNet,v_temp,layers_temp=load_synthetic_network(BASE_DIR=BASE_DIR,topology=topology,config=magnitude,sample=sample,cost_scale=cost_scale)
+    return InterdepNet,v_temp,layers_temp
 
 
 def initialize_sample_network(params={},layers=[1,2]):
@@ -528,7 +532,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
             print "Num iters=",params["NUM_ITERATIONS"]
             
         # Run INDP for 1 time step (original INDP).
-        output_dir=params["OUTPUT_DIR"]+'_m'+`params["MAGNITUDE"]`+"_v"+outDirSuffixRes
+        output_dir=params["OUTPUT_DIR"]+'_L'+`len(layers)`+'_m'+`params["MAGNITUDE"]`+"_v"+outDirSuffixRes
         # Initial calculations.
         results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers)
         indp_results=results[1]
@@ -826,3 +830,4 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
         nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[2],width=1,alpha=0.9,edge_color='b')
     plt.tight_layout()   
     plt.savefig(output_dir+'/plot_net'+folderSuffix+'.png',dpi=600)
+    
