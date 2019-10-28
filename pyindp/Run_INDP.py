@@ -1,7 +1,6 @@
-import sys
-import random
 from indp import *
 from Dindp import *
+from plots import *
 import gametree
 import os.path
 import networkx as nx
@@ -229,21 +228,21 @@ if __name__ == "__main__":
 #    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
 #    failSce_param = {"type":"WU","sample_range":range(48,49),"mags":range(53,54),
 #                     'filtered_List':listFilteredSce}
-#    failSce_param = {"type":"WU","sample_range":range(1,51),"mags":range(0,96),
-#                     'filtered_List':listFilteredSce}
-    failSce_param = {"type":"synthetic","sample_range":range(0,1),"mags":range(0,100),
-                     'filtered_List':None,'topology':'Grid'}
+    failSce_param = {"type":"WU","sample_range":range(1,51),"mags":range(0,96),
+                     'filtered_List':listFilteredSce}
+#    failSce_param = {"type":"synthetic","sample_range":range(0,30),"mags":range(0,100),
+#                     'filtered_List':None,'topology':'Grid'}
 
 
     ''' Run different methods'''
     # No restriction on number of resources for each layer # Not necessary for synthetic nets
-    v_r=[0]                  #[3,6,8,12] 
+    v_r=[3,6,8,12]                  #[3,6,8,12] 
 #    v_r=[[1,1,1,1],[2,2,2,2],[3,3,3,3]]              # Prescribed number of resources for each layer
-    judge_types = ["OPTIMISTIC","PESSIMISTIC"]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
+    judge_types = ["OPTIMISTIC"]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
     auction_types =  ["MDA","MAA","MCA"]       #["MDA","MAA","MCA"] 
-    valuation_types = ['DTC']       #['DTC','DTC_uniform','MDDN']    
+    valuation_types = ['DTC','MDDN']       #['DTC','DTC_uniform','MDDN']    
     # List of layers of the net # Not necessary for synthetic nets
-    layers=[]
+    layers=[1,2,3,4]
     
 #    run_indp_batch(failSce_param,v_r,layers)
 ##    run_tdindp_batch(failSce_param, v_r,layers)
@@ -255,30 +254,30 @@ if __name__ == "__main__":
 #                             judgment_type=jc,auction_type=at,valuation_type=vt)
 ### 
 #    ''' Compute metrics ''' 
-#    method_name = ['indp']
-#    for jc in judge_types:
-#        method_name.append('judgeCall_'+jc)
-#    suffixes = ['Real_sum','']
-#    sample_range=failSce_param["sample_range"]
-#    mags=failSce_param['mags']
-    synthetic_dir='C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3/'+failSce_param['topology']+'Networks/'
-    combinations,optimal_combinations=generate_combinations('synthetic',
+    method_name = ['indp']
+    for jc in judge_types:
+        method_name.append('judgeCall_'+jc)
+    suffixes = ['Real_sum','']
+    sample_range=failSce_param["sample_range"]
+    mags=failSce_param['mags']
+#    synthetic_dir='C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3/'+failSce_param['topology']+'Networks/'
+    combinations,optimal_combinations=generate_combinations('shelby',
                     mags,sample_range,layers,v_r,method_name,auction_types,
-                    valuation_types,listHDadd=None,synthetic_dir=synthetic_dir)
-#    df = read_and_aggregate_results(combinations,optimal_combinations,suffixes)
-#####    df = correct_tdindp_results(df,mags,method_name,sample_range)
-###   
-#    lambda_df = relative_performance(df,combinations,optimal_combinations,ref_method='indp')
-    resource_allocation,res_alloc_rel=read_resourcec_allocation(df,combinations,optimal_combinations)    
-
+                    valuation_types,listHDadd=listFilteredSce,synthetic_dir=None)
+    root='C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/'
+    df = read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir=root)
+###    df = correct_tdindp_results(df,mags,method_name,sample_range)
+#   
+    lambda_df = relative_performance(df,combinations,optimal_combinations,ref_method='indp')
+    resource_allocation,res_alloc_rel=read_resourcec_allocation(df,combinations,optimal_combinations,root_result_dir=root)    
     
     """ Plot results """    
-    plot_performance_curves(df,cost_type='Total',decision_names=method_name,ci=None)
-    plot_relative_performance(lambda_df)
-    plot_auction_allocation(resource_allocation,ci=None)
-#    plot_relative_allocation(res_alloc_rel)
-#    for nr,pltt in zip(v_r,['YlGn','PuBu','OrRd','BuPu']):        
-#        ax = sns.violinplot(x="layer", y="distance_to_optimal", 
-#            data=res_alloc_rel[(res_alloc_rel['auction_type']=='MCA')&(res_alloc_rel['valuation_type']=='DTC')],
-#            hue="auction_type", split=False, palette=pltt,scale='count',inner=None,cut=0)
-#    plt.setp(ax.collections, alpha=.5)
+    plot_performance_curves_shelby(df,cost_type='Total',decision_names=method_name,ci=None,normalize=True)
+    plot_relative_performance_shelby(lambda_df)
+    plot_auction_allocation_shelby(resource_allocation,ci=None)
+    plot_relative_allocation_shelby(res_alloc_rel)
+    
+#    plot_performance_curves_synthetic(df,ci=0,x='t',y='normalized_cost')    
+#    plot_relative_performance_synthetic(lambda_df)  
+#    plot_auction_allocation_synthetic(resource_allocation,ci=50,resource_type='normalized_resource')
+#    plot_relative_allocation_synthetic(res_alloc_rel)

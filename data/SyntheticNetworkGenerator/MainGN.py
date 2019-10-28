@@ -9,7 +9,7 @@ import numpy as np
 import os
 
 # Input values
-noSamples = 1 # Number of sample sets of network
+noSamples = 30 # Number of sample sets of network
 noConfiguration = 100 # Number of configurations
 noZones = 4 # noZones by noZones tile of zones
 paramError = 0.1

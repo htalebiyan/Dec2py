@@ -1,7 +1,6 @@
 import pandas as pd
 import seaborn as sns
 import numpy as np
-import matplotlib.pyplot as plt
 from indp import *
 import os.path
 import operator
@@ -591,17 +590,17 @@ def write_auction_csv(outdir,res_allocate,PoA,valuations,sample_num=1,suffix="")
                     row += `pitem`+"|"
             f.write(row+"\n")
             
-def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='indp',suffix=""):  
-    cols=['t','resource','decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','PoA']
+def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='indp',suffix="",root_result_dir='../results/'):  
+    cols=['t','resource','decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','normalized_no_resources','PoA']
     T = max(df.t.unique().tolist())
     df_res = pd.DataFrame(columns=cols)
     print '\nResource allocation\n',
     for idx,x in enumerate(optimal_combinations):                       
-        compare_to_dir= '../results/'+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`
+        compare_to_dir= root_result_dir+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`
         for t in range(T):
             for P in range(1,x[2]+1):
-                df_res=df_res.append({'t':t+1,'resource':0.0,'decision_type':ref_method,
-                    'auction_type':'','valuation_type':'','sample':x[1],
+                df_res=df_res.append({'t':t+1,'resource':0.0,'normalized_resource':0.0,
+                    'decision_type':ref_method,'auction_type':'','valuation_type':'','sample':x[1],
                     'Magnitude':x[0],'layer':P,'no_resources':x[3],'PoA':1}, ignore_index=True)
         # Read optimal resource allocation based on the actions
         action_file=compare_to_dir+"/actions_"+`x[1]`+"_"+suffix+".csv" 
@@ -617,12 +616,14 @@ def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='i
                         addition = 0.5
                     else:
                         addition = 1.0
-                    df_res.loc[(df_res['t']==t)&(df_res['decision_type']==ref_method)&(df_res['sample']==x[1])&(df_res['Magnitude']==x[0])&(df_res['layer']==P)&(df_res['no_resources']==x[3]),'resource']+=addition
+                    row = (df_res['t']==t)&(df_res['decision_type']==ref_method)&(df_res['sample']==x[1])&(df_res['Magnitude']==x[0])&(df_res['layer']==P)&(df_res['no_resources']==x[3])
+                    df_res.loc[row,'resource']+=addition
+                    df_res.loc[row,'normalized_resource']+=addition/float(x[3])
         update_progress(idx+1,len(optimal_combinations)+len(combinations))
 
     # Read  resource allocation based on auction results
     for idx,x in enumerate(combinations): 
-        outdir= '../results/'+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6]+'/auctions'#!!!
+        outdir= root_result_dir+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6]+'/auctions'#!!!
         auction_file=outdir+"/auctions_"+`x[1]`+"_"+suffix+".csv"
         if os.path.isfile(auction_file):
             with open(auction_file) as f:
@@ -633,11 +634,12 @@ def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='i
                     for P in range(1,x[2]+1):
                         poa = float(data[x[2]+1])
                         df_res=df_res.append({'t':t,'resource':float(data[P]),
+                            'normalized_resource':float(data[P])/float(x[3]),
                             'decision_type':x[4],'auction_type':x[5],'valuation_type':x[6],'sample':x[1],
                             'Magnitude':x[0],'layer':P,'no_resources':x[3],'PoA':poa}, ignore_index=True)
         update_progress(len(optimal_combinations)+idx+1,len(optimal_combinations)+len(combinations))
         
-    cols=['decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','distance_to_optimal']
+    cols=['decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','distance_to_optimal','norm_distance_to_optimal']
     T = max(df.t.unique().tolist())
     df_res_rel = pd.DataFrame(columns=cols)
     print '\nRelative allocation\n',
@@ -657,11 +659,13 @@ def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='i
             for t in range(T):
                 vector_res[P][t] = df_res.loc[(df_res['t']==t+1)&row,'resource']
             distance = np.linalg.norm(vector_res[P]-vector_res_ref[P]) #L2 norm
+            norm_distance = np.linalg.norm(vector_res[P]/float(x[3])-vector_res_ref[P]/float(x[3]))
 #            distance = sum(abs(vector_res[P]-vector_res_ref[P])) #L1 norm
 #            distance = 1-scipy.stats.pearsonr(vector_res[P],vector_res_ref[P])[0] # correlation distance
             df_res_rel=df_res_rel.append({'decision_type':x[4],'auction_type':x[5],
                 'valuation_type':x[6],'sample':x[1],'Magnitude':x[0],'layer':P,'no_resources':x[3],
-                'distance_to_optimal':distance/float(vector_res[P].shape[0])}, ignore_index=True)
+                'distance_to_optimal':distance/float(vector_res[P].shape[0]),
+                'norm_distance_to_optimal':norm_distance/float(vector_res[P].shape[0])}, ignore_index=True)
         update_progress(idx+1,len(combinations))       
     return df_res,df_res_rel
 
@@ -694,8 +698,8 @@ def write_judgments_csv(N,outdir,functionality,realizations,sample_num=1,agent=1
     else:
         print 'No judgment by agent '+`agent`+'.'
 
-def read_and_aggregate_results(combinations,optimal_combinations,suffixes):
-    columns = ['t','Magnitude','cost_type','decision_type','auction_type','valuation_type','no_resources','sample','cost']
+def read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir='../results/'):
+    columns = ['t','Magnitude','cost_type','decision_type','auction_type','valuation_type','no_resources','sample','cost','normalized_cost']
     optimal_method = ['tdindp','indp','sample_indp_12Node']
     agg_results = pd.DataFrame(columns=columns)
 
@@ -706,21 +710,31 @@ def read_and_aggregate_results(combinations,optimal_combinations,suffixes):
             full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`
         else:
             full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6] 
-        result_dir = '../results/'+x[4]+'_results'+full_suffix
+        
+        result_dir = root_result_dir+x[4]+'_results'+full_suffix
         if os.path.exists(result_dir):    
             # Save all results to Pandas dataframe
             sample_result = INDPResults()
             for suf in suffixes:
                 if os.path.exists(result_dir+"/costs_"  +`x[1]`+"_"+suf+".csv"):
                     sample_result=sample_result.from_csv(result_dir,x[1],suffix=suf)
+            intitial_cost = {}
+            norm_cost = 0
             for t in sample_result.results:
                 for c in sample_result.cost_types:
+                    if t==0:
+                        norm_cost = 1.0
+                        intitial_cost[c] = sample_result[t]['costs'][c]
+                    elif intitial_cost[c]!=0.0:
+                        norm_cost = sample_result[t]['costs'][c]/intitial_cost[c]
+                    else:
+                        norm_cost = -1.0
                     values = [t,x[0],c,x[4],x[5],x[6],x[3],x[1],
-                            float(sample_result[t]['costs'][c])]
+                            float(sample_result[t]['costs'][c]),norm_cost]
                     agg_results = agg_results.append(dict(zip(columns,values)), ignore_index=True)
             update_progress(idx+1,len(joinedlist))
         else:
-            sys.exit('Error: The combination does not exist')            
+            sys.exit('Error: The combination or folder does not exist')            
     return agg_results
 
 def correct_tdindp_results(df,mags,method_name,sample_range):    
@@ -770,16 +784,8 @@ def relative_performance(df,combinations,optimal_combinations,ref_method='indp',
                           
         if not rows.empty:
             area = np.trapz(rows.cost[:20],dx=1)
-            tempdf = pd.Series()
-            tempdf['Magnitude'] = x[0]
-            tempdf['cost_type'] = cost_type
-            tempdf['decision_type'] = x[4]
-            tempdf['auction_type'] = ref_at  
-            tempdf['valuation_type'] = ref_vt 
-            tempdf['no_resources'] = x[3] 
-            tempdf['sample'] = x[1]  
-            tempdf['Area'] = area  
-            lambda_df=lambda_df.append(tempdf,ignore_index=True)
+            values = [x[0],cost_type,x[4],ref_at,ref_vt,x[3],x[1],area,'nan']
+            lambda_df = lambda_df.append(dict(zip(columns,values)), ignore_index=True)
         update_progress(idx+1,len(optimal_combinations))
     # Computing areaa and lambda
     print '\nLambda calculation\n',
@@ -805,342 +811,53 @@ def relative_performance(df,combinations,optimal_combinations,ref_method='indp',
                 lambda_TC = 0.0
             else:
                 pass  
-            
-            tempdf = pd.Series()
-            tempdf['Magnitude'] = x[0]
-            tempdf['cost_type'] = cost_type
-            tempdf['decision_type'] = x[4]
-            tempdf['auction_type'] = x[5]  
-            tempdf['valuation_type'] = x[6]   
-            tempdf['no_resources'] = x[3] 
-            tempdf['sample'] = x[1]  
-            tempdf['Area'] = area  
-            tempdf['lambda_TC'] = lambda_TC
-            lambda_df=lambda_df.append(tempdf,ignore_index=True)
+            values = [x[0],cost_type,x[4],x[5],x[6],x[3],x[1],area,lambda_TC]
+            lambda_df = lambda_df.append(dict(zip(columns,values)), ignore_index=True)
         else:
             sys.exit('Error: No decentralized entry for m %d|resource %d,...' %(x[0],x[3]))   
         update_progress(idx+1,len(combinations))
     return lambda_df
 
-def plot_performance_curves(df,x='t',y='cost',cost_type='Total',
-                            decision_names=['tdindp_results'],
-                            auction_type=None,valuation_type=None,
-                            ci=None):
-    sns.set(context='notebook',style='darkgrid')
-#    plt.rc('text', usetex=True)
-#    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-
-    no_resources = df.no_resources.unique().tolist()
-    if not auction_type:
-        auction_type = df.auction_type.unique().tolist()
-    auction_type.remove('')
-    if not valuation_type:
-        valuation_type = df.valuation_type.unique().tolist()
-    valuation_type.remove('')
-    T = len(df[x].unique().tolist())
-    
-    fig, axs = plt.subplots(len(valuation_type), len(no_resources), sharex=True, sharey=True, tight_layout=False)
-    for idxnr,nr in enumerate(no_resources):
-        for idxvt,vt in enumerate(valuation_type):
-            if len(valuation_type)==1 and len(no_resources)==1:
-                ax=axs
-            elif len(valuation_type)==1:
-                ax = axs[idxnr]
-            elif len(no_resources)==1:
-                ax = axs[idxvt]
-            else:
-                ax = axs[idxvt,idxnr]
-                
-            with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
-                ax = sns.lineplot(x=x, y=y, hue="auction_type", style='decision_type',
-                    markers=False, ci=ci, ax=ax,legend='full',
-                    data=df[(df['cost_type']==cost_type)&
-                            (df['decision_type'].isin(decision_names))&
-                            (df['no_resources']==nr)&
-                            ((df['valuation_type']==vt)|(df['valuation_type']==''))]) 
-                ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
-                ax.get_legend().set_visible(False)
-                ax.xaxis.set_ticks(np.arange(0,11 , 1.0))   #ax.get_xlim()                          
-    handles, labels = ax.get_legend_handles_labels()
-    labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5)
-    
-    if len(valuation_type)==1 and len(no_resources)==1:
-        axx=[axs]
-        axy=[axs]
-    elif len(valuation_type)==1:
-        axy = [axs[0]]
-        axx = axs
-    elif len(no_resources)==1:
-        axy = axs
-        axx = [axs[0]]
-    else:
-        axx = axs[0,:]
-        axy = axs[:,0]  
-    for idx, ax in enumerate(axx):
-        ax.set_title(r'Total resources=%d'%(no_resources[idx]))
-    for idx, ax in enumerate(axy):
-        ax.annotate('Valuation = '+valuation_type[idx], xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - 5, 0),
-            xycoords=ax.yaxis.label, textcoords='offset points', ha='right', va='center', rotation=90) 
-        
-    plt.savefig('Performance_curves.pdf',dpi=600)  
-    
-def plot_relative_performance(lambda_df,cost_type='Total'):   
-#    sns.set(context='notebook',style='darkgrid')
-#    plt.rc('text', usetex=True)
-#    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-    
-    no_resources = lambda_df.no_resources.unique().tolist()
-    auction_type = lambda_df.auction_type.unique().tolist()
-    auction_type.remove('')
-    valuation_type = lambda_df.valuation_type.unique().tolist()
-    valuation_type.remove('')
-    
-    fig, axs = plt.subplots(len(valuation_type), len(auction_type),sharex=True, sharey='row',tight_layout=False)
-    for idxnr,nr in enumerate(auction_type):   
-        for idxvt,vt in enumerate(valuation_type): 
-            if len(valuation_type)==1 and len(auction_type)==1:
-                ax=axs
-            elif len(valuation_type)==1:
-                ax = axs[idxnr]
-            elif len(auction_type)==1:
-                ax = axs[idxvt]
-            else:
-                ax = axs[idxvt,idxnr]
-                                           
-            with sns.color_palette("RdYlGn", 8):  #sns.color_palette("YlOrRd", 7)
-                ax=sns.barplot(x='no_resources',y='lambda_TC',hue="decision_type",
-                            data=lambda_df[(lambda_df['cost_type']==cost_type)&
-                                                (lambda_df['lambda_TC']!='nan')&
-                                                ((lambda_df['auction_type']==nr)|(lambda_df['auction_type']==''))&
-                                                ((lambda_df['valuation_type']==vt)|(lambda_df['valuation_type']==''))], 
-                                linewidth=0.5,edgecolor=[.25,.25,.25],
-                                capsize=.05,errcolor=[.25,.25,.25],errwidth=1,ax=ax) 
-                ax.get_legend().set_visible(False)
-                ax.grid(which='major', axis='y', color=[.75,.75,.75], linewidth=.75)
-                ax.set_xlabel(r'No. resources')
-                if idxvt!=len(valuation_type)-1:
-                    ax.set_xlabel('')
-                ax.set_ylabel(r'E[$\lambda_{%s}$]'%('TC'))
-                if idxnr!=0:
-                    ax.set_ylabel('')
-                ax.xaxis.set_label_position('bottom')  
-#                ax.xaxis.tick_top()
-                ax.set_facecolor('w')
-                
-    handles, labels = ax.get_legend_handles_labels()   
-    labels = correct_legend_labels(labels)
-    fig.legend(handles, labels,loc='upper right',frameon =True,framealpha=0.5, ncol=1) 
-     
-    if len(auction_type)==1 and len(valuation_type)==1:
-        axx=[axs]
-        axy=[axs]
-    elif len(auction_type)==1:
-        axx = [axs[0]]
-        axy = axs
-    elif len(valuation_type)==1:
-        axx = axs
-        axy = [axs[0]]
-    else:
-        axx = axs[0,:]
-        axy = axs[:,0]  
-    for idx, ax in enumerate(axx):
-        ax.set_title(r'Auction Type = %s'%(auction_type[idx]))
-    for idx, ax in enumerate(axy):
-        ax.annotate('Valuation:'+valuation_type[idx],xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
-            xycoords=ax.yaxis.label,textcoords='offset points',ha='right',va='center',rotation=90) 
-
-    plt.savefig('Relative_perforamnce.pdf',dpi=600)
-    
-def plot_auction_allocation(df_res,ci=None):  
-#    sns.set(context='notebook',style='darkgrid')
-#    plt.rc('text', usetex=True)
-#    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-    
-    no_resources = df_res.no_resources.unique().tolist()
-    layer = df_res.layer.unique().tolist()
-    auction_type = df_res.auction_type.unique().tolist()
-    auction_type.remove('')
-    valuation_type = df_res.valuation_type.unique().tolist()
-    valuation_type.remove('')
-    T = len(df_res.t.unique().tolist())
-
-    for idxat,at in enumerate(valuation_type):
-        fig, axs = plt.subplots(len(layer), len(no_resources), sharex=True, sharey='col', tight_layout=False)
-        for idxnr,nr in enumerate(no_resources):
-            for idxvt,vt in enumerate(layer):
-                if len(layer)==1 and len(no_resources)==1:
-                    ax=axs
-                elif len(layer)==1:
-                    ax = axs[idxnr]
-                elif len(no_resources)==1:
-                    ax = axs[idxvt]
-                else:
-                    ax = axs[idxvt,idxnr]
-                    
-                with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
-                    ax = sns.lineplot(x='t', y='resource', hue="auction_type", style='decision_type',
-                        markers=True, ci=ci, ax=ax,legend='full', 
-                        data=df_res[(df_res['layer']==vt)&
-                                (df_res['no_resources']==nr)&
-                                ((df_res['valuation_type']==at)|(df_res['valuation_type']==''))]) 
-                    ax.get_legend().set_visible(False)
-                    ax.set(xlabel=r'time step $t$', ylabel='No. resources')
-                    ax.xaxis.set_ticks(np.arange(1, 11, 1.0))   #ax.get_xlim()       
-#                    ax.yaxis.set_ticks(np.arange(0, ax.get_ylim()[1], 1.0), minor=True)
-                    ax.yaxis.set_ticks(np.arange(0, ax.get_ylim()[1], 1.0))  
-                    ax.grid(b=True, which='major', color='w', linewidth=1.0)
-#                    ax.grid(b=True, which='minor', color='w', linewidth=0.5)    
-                       
-        handles, labels = ax.get_legend_handles_labels()
-        labels = correct_legend_labels(labels)
-        fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5, labelspacing=0.2) #(0.75,0.6)
-        
-        if len(no_resources)==1 and len(layer)==1:
-            axx=[axs]
-            axy=[axs]
-        elif len(no_resources)==1:
-            axx = [axs[0]]
-            axy = axs
-        elif len(layer)==1:
-            axx = axs
-            axy = [axs[0]]
-        else:
-            axx = axs[0,:]
-            axy = axs[:,0]  
-        fig.suptitle('Valuation Type = '+valuation_type[idxat])
-        for idx, ax in enumerate(axx):
-            ax.set_title(r'Total resources = %d'%(no_resources[idx]))
-        for idx, ax in enumerate(axy):
-            ax.annotate('Layer '+`layer[idx]`,xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
-                xycoords=ax.yaxis.label, textcoords='offset points',ha='right',va='center',rotation=90)  
-  
-        plt.savefig('Allocations_'+at+'.pdf',dpi=600)
-
-def plot_relative_allocation(df_res):   
-#    sns.set(context='notebook',style='darkgrid')
-#    plt.rc('text', usetex=True)
-#    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-    
-    no_resources = df_res.no_resources.unique().tolist()
-    layer = df_res.layer.unique().tolist()
-    decision_type = df_res.decision_type.unique().tolist()
-    auction_type = df_res.auction_type.unique().tolist()
-    valuation_type = df_res.valuation_type.unique().tolist()
-    
-#    pals = [sns.color_palette("Blues"),sns.color_palette("Reds"),sns.color_palette("Greens")]
-    clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green'],['purple','orchid']]
-    fig, axs = plt.subplots(len(valuation_type), len(auction_type),sharex=True,
-                            sharey=True,tight_layout=False, figsize=(10,7))
-    for idxat,at in enumerate(auction_type):   
-        for idxvt,vt in enumerate(valuation_type): 
-            if len(auction_type)==1 and len(valuation_type)==1:
-                ax=axs
-            elif len(valuation_type)==1:
-                ax = axs[idxat]
-            elif len(auction_type)==1:
-                ax = axs[idxvt]
-            else:
-                ax = axs[idxvt,idxat]
-            data_ftp = df_res[(df_res['auction_type']==at)&(df_res['valuation_type']==vt)]
-            
-            for dt in decision_type:
-                for nr in no_resources:
-                    bottom = 0
-                    for P in layer:
-                        data_ftp.loc[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['no_resources']==nr),'distance_to_optimal']+=bottom
-                        bottom=data_ftp[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['no_resources']==nr)]['distance_to_optimal'].mean()
-            for P in reversed(layer):    
-                with sns.xkcd_palette(clrs[int(P)-1]): #pals[int(P)-1]:
-                    ax=sns.barplot(x='no_resources',y='distance_to_optimal',hue="decision_type",
-                                data=data_ftp[(data_ftp['layer']==P)], 
-                                linewidth=0.5,edgecolor=[.25,.25,.25],
-                                capsize=.05,errcolor=[.25,.25,.25],errwidth=.75,ax=ax)
-               
-            ax.get_legend().set_visible(False)
-            ax.grid(which='major', axis='y', color=[.75,.75,.75], linewidth=.75)
-            ax.set_xlabel(r'No. Resources')
-            if idxvt!=len(valuation_type)-1:
-                ax.set_xlabel('')
-            ax.set_ylabel(r'$E[\omega^k(r^k_d,r^k_c)]$')
-            if idxat!=0:
-                ax.set_ylabel('')
-            ax.xaxis.set_label_position('bottom')  
-            ax.set_facecolor('w')
-                
-    handles, labels = ax.get_legend_handles_labels()   
-    labels = correct_legend_labels(labels)
-    for idx,lab in enumerate(labels):
-        layer_num = len(layer) - idx//(len(decision_type))
-        labels[idx] = lab[:7] + '. (Layer ' + `layer_num` + ')'
-    lgd = fig.legend(handles, labels,loc='center', bbox_to_anchor=(0.5, 0.95),
-               frameon =True,framealpha=0.5, ncol=4)     #, fontsize='small'
-    if len(auction_type)==1 and len(valuation_type)==1:
-        axx=[axs]
-        axy=[axs]
-    elif len(auction_type)==1:
-        axx = [axs[0]]
-        axy = axs
-    elif len(valuation_type)==1:
-        axx = axs
-        axy = [axs[0]]
-    else:
-        axx = axs[0,:]
-        axy = axs[:,0]
-    for idx, ax in enumerate(axx):
-        ax.set_title(r'Auction Type: %s'%(auction_type[idx]))
-    for idx, ax in enumerate(axy):
-        rowtitle = ax.annotate('Valuation: '+valuation_type[idx],xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
-            xycoords=ax.yaxis.label,textcoords='offset points',ha='right',va='center',rotation=90)
-    plt.savefig('Allocation_Difference.pdf', bbox_extra_artists=(rowtitle,lgd,), dpi=600)    #, bbox_inches='tight'
-    
-def correct_legend_labels(labels):
-    labels = ['iINDP' if x=='sample_indp_12Node' else x for x in labels]
-    labels = ['JC Optimistic' if x=='sample_judgeCall_12Node_OPTIMISTIC' else x for x in labels]
-    labels = ['JC Pessimistic' if x=='sample_judgeCall_12Node_PESSIMISTIC' else x for x in labels]
-    labels = ['Auction Type' if x=='auction_type' else x for x in labels]
-    labels = ['Decision Type' if x=='decision_type' else x for x in labels]
-    labels = ['iINDP' if x=='indp' else x for x in labels]
-    labels = ['JC Optimistic' if x=='judgeCall_OPTIMISTIC' else x for x in labels]
-    labels = ['JC Pessimistic' if x=='judgeCall_PESSIMISTIC' else x for x in labels]
-    labels = ['Auction Type' if x=='auction_type' else x for x in labels]
-    labels = ['Decision Type' if x=='decision_type' else x for x in labels]
-    labels = ['MCA' if x=='EC' else x for x in labels]
-    return labels
-
-def generate_combinations(database,mags,sample,noLayers,no_resources,decision_type,auction_type,valuation_type,listHDadd=None,synthetic_dir=None):
+def generate_combinations(database,mags,sample,layers,no_resources,decision_type,auction_type,valuation_type,listHDadd=None,synthetic_dir=None):
     combinations = []
     optimal_combinations = []
     optimal_method = ['tdindp','indp','sample_indp_12Node']
+    print '\nCombination Generation\n',
+    idx=0
+    no_total = len(mags)*len(sample)  
     if database=='shelby':
         if listHDadd:
             listHD = pd.read_csv(listHDadd)     
-        L = noLayers
+        L = len(layers)
+              
         for m,s in itertools.product(mags,sample):
-            for rc in no_resources:
-                for dt,at,vt in itertools.product(decision_type,auction_type,valuation_type):
-                    if (dt in optimal_method) and not [m,s,L,rc,dt,'',''] in optimal_combinations:
-                        optimal_combinations.append([m,s,L,rc,dt,'',''])
-                    else:
-                        combinations.append([m,s,L,rc,dt,at,vt])
+            if listHDadd==None or len(listHD.loc[(listHD.set == s) & (listHD.sce == m)].index):
+                for rc in no_resources:
+                    for dt,at,vt in itertools.product(decision_type,auction_type,valuation_type):
+                        if (dt in optimal_method) and not [m,s,L,rc,dt,'',''] in optimal_combinations:
+                            optimal_combinations.append([m,s,L,rc,dt,'',''])
+                        elif (dt not in optimal_method):
+                            combinations.append([m,s,L,rc,dt,at,vt])
+            idx+=1
+            update_progress(idx,no_total)
     elif database=='synthetic':
         # Read net configurations
         if synthetic_dir==None:
             sys.exit('Error: Provide the address of synthetic databse')
         with open(synthetic_dir+'List_of_Configurations.txt') as f:
-            config_data = pd.read_csv(f, delimiter='\t')         
+            config_data = pd.read_csv(f, delimiter='\t')  
         for m,s in itertools.product(mags,sample):
             config_param = config_data.iloc[m]
             L = int(config_param.loc[' No. Layers'])    
             no_resources = [int(config_param.loc[' Resource Cap'])]              
             for rc in no_resources:
                 for dt,at,vt in itertools.product(decision_type,auction_type,valuation_type):
-                    if (dt in optimal_method) and (at!='' or vt!=''):
-                        continue
                     if (dt in optimal_method) and not [m,s,L,rc,dt,'',''] in optimal_combinations:
                         optimal_combinations.append([m,s,L,rc,dt,'',''])
-                    else:
-                        combinations.append([m,s,L,rc,dt,at,vt])        
+                    elif (dt not in optimal_method):
+                        combinations.append([m,s,L,rc,dt,at,vt]) 
+            idx+=1
+            update_progress(idx,no_total)
     else:
         sys.exit('Error: Wrong database type')
     
