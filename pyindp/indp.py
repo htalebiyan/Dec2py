@@ -558,7 +558,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         if "WINDOW_LENGTH" in params:
             time_window_length=params["WINDOW_LENGTH"]
             num_time_windows=T
-        output_dir=params["OUTPUT_DIR"]+"_m"+`params["MAGNITUDE"]`+"_v"+outDirSuffixRes
+        output_dir=params["OUTPUT_DIR"]+'_L'+`len(layers)`+"_m"+`params["MAGNITUDE"]`+"_v"+outDirSuffixRes
         
         print "Running td-INDP (T="+`T`+", Window size="+`time_window_length`+")"
         # Initial percolation calculations.

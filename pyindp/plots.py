@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sns.set(context='notebook',style='darkgrid')
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+#plt.rc('text', usetex=True)
+#plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     
 def plot_performance_curves_shelby(df,x='t',y='cost',cost_type='Total',
                             decision_names=['tdindp_results'],
@@ -186,16 +186,15 @@ def plot_relative_performance_shelby(lambda_df,cost_type='Total'):
     plt.savefig('Relative_perforamnce.pdf',dpi=600)
 
 def plot_relative_performance_synthetic(lambda_df,cost_type='Total'):     
-    no_resources = lambda_df.no_resources.unique().tolist()
-    auction_type = lambda_df.auction_type.unique().tolist()
-    auction_type.remove('')
+#    auction_type = lambda_df.auction_type.unique().tolist()
+#    auction_type.remove('')
     valuation_type = lambda_df.valuation_type.unique().tolist()
     valuation_type.remove('')
     
     fig, axs = plt.subplots(len(valuation_type),1,sharex=True, sharey='row',tight_layout=False)  
     for idxvt,vt in enumerate(valuation_type): 
         selected_data=lambda_df[(lambda_df['cost_type']==cost_type)&(lambda_df['lambda_TC']!='nan')&
-                                            (lambda_df['valuation_type']==vt)]                                      
+                    ((lambda_df['valuation_type']==vt)|(lambda_df['valuation_type']==''))]                                      
         with sns.color_palette("RdYlGn", 8):  #sns.color_palette("YlOrRd", 7)
             ax=sns.barplot(x='auction_type',y='lambda_TC',hue="decision_type",
                         data=selected_data,linewidth=0.5,edgecolor=[.25,.25,.25],
@@ -411,16 +410,18 @@ def plot_relative_allocation_shelby(df_res):
     plt.savefig('Allocation_Difference.pdf', bbox_extra_artists=(lgd,), dpi=600)    #, bbox_inches='tight'
 
 def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal'):       
-    no_resources = df_res.no_resources.unique().tolist()
+#    no_resources = df_res.no_resources.unique().tolist()
     layer = df_res.layer.unique().tolist()
     decision_type = df_res.decision_type.unique().tolist()
 #    decision_type=['judgeCall_OPTIMISTIC']
-    auction_type = df_res.auction_type.unique().tolist()
+#    auction_type = df_res.auction_type.unique().tolist()
     valuation_type = df_res.valuation_type.unique().tolist()
+    valuation_type.remove('')
     
     hor_grid = [0]
     ver_grid = valuation_type
-    clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green'],['purple','orchid']]
+    pals = [sns.color_palette("Blues"),sns.color_palette("Reds"),sns.color_palette("Greens"),sns.cubehelix_palette(8)]
+#    clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green'],['purple','orchid']]
     fig, axs = plt.subplots(len(ver_grid), len(hor_grid),sharex=True,sharey=True,tight_layout=False, figsize=(10,7))
     for idxat,at in enumerate(hor_grid):   
         for idxvt,vt in enumerate(ver_grid): 
@@ -432,7 +433,7 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
                 ax = axs[idxvt]
             else:
                 ax = axs[idxvt,idxat]
-            data_ftp = df_res[(df_res['valuation_type']==vt)]
+            data_ftp = df_res[(df_res['valuation_type']==vt)|(df_res['valuation_type']=='')]
             
             for dt in decision_type:
                     bottom = 0
@@ -440,7 +441,7 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
                         data_ftp.loc[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt),distance_type]+=bottom
                         bottom=data_ftp[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)][distance_type].mean()
             for P in reversed(layer):    
-                with sns.xkcd_palette(clrs[int(P)-1]): #pals[int(P)-1]:
+                with pals[int(P)-1]: #sns.xkcd_palette(clrs[int(P)-1]): #pals[int(P)-1]:
                     ax=sns.barplot(x='auction_type',y=distance_type,hue="decision_type",
                                 data=data_ftp[(data_ftp['layer']==P)], 
                                 linewidth=0.5,edgecolor=[.25,.25,.25],
@@ -475,6 +476,7 @@ def correct_legend_labels(labels):
     labels = ['Auction Type' if x=='auction_type' else x for x in labels]
     labels = ['Decision Type' if x=='decision_type' else x for x in labels]
     labels = ['iINDP' if x=='indp' else x for x in labels]
+    labels = ['td-INDP' if x=='tdindp' else x for x in labels]
     labels = ['JC Optimistic' if x=='judgeCall_OPTIMISTIC' else x for x in labels]
     labels = ['JC Pessimistic' if x=='judgeCall_PESSIMISTIC' else x for x in labels]
     labels = ['Auction Type' if x=='auction_type' else x for x in labels]

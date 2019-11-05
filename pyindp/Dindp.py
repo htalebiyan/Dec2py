@@ -222,7 +222,7 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
                 if print_cmd:
                     print 'Correcting '+`v`+' to 0 (dep. on '+`value`+')'     
                      
-    indp_results_Real = indp(N,0,1,layers=layers,controlled_layers=controlled_layers,
+    indp_results_Real = indp(N,v_r=0,T=1,layers=layers,controlled_layers=controlled_layers,
                              functionality=functionality_realized,
                                 print_cmd=print_cmd)  
     for t in range(T):
@@ -591,16 +591,16 @@ def write_auction_csv(outdir,res_allocate,PoA,valuations,sample_num=1,suffix="")
             f.write(row+"\n")
             
 def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='indp',suffix="",root_result_dir='../results/'):  
-    cols=['t','resource','decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','normalized_no_resources','PoA']
+    cols=['t','resource','decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','normalized_resources','PoA']
     T = max(df.t.unique().tolist())
-    df_res = pd.DataFrame(columns=cols)
+    df_res = pd.DataFrame(columns=cols, dtype=int)
     print '\nResource allocation\n',
     for idx,x in enumerate(optimal_combinations):                       
         compare_to_dir= root_result_dir+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`
         for t in range(T):
             for P in range(1,x[2]+1):
                 df_res=df_res.append({'t':t+1,'resource':0.0,'normalized_resource':0.0,
-                    'decision_type':ref_method,'auction_type':'','valuation_type':'','sample':x[1],
+                    'decision_type':x[4],'auction_type':'','valuation_type':'','sample':x[1],
                     'Magnitude':x[0],'layer':P,'no_resources':x[3],'PoA':1}, ignore_index=True)
         # Read optimal resource allocation based on the actions
         action_file=compare_to_dir+"/actions_"+`x[1]`+"_"+suffix+".csv" 
@@ -616,14 +616,15 @@ def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='i
                         addition = 0.5
                     else:
                         addition = 1.0
-                    row = (df_res['t']==t)&(df_res['decision_type']==ref_method)&(df_res['sample']==x[1])&(df_res['Magnitude']==x[0])&(df_res['layer']==P)&(df_res['no_resources']==x[3])
+                    row = (df_res['t']==t)&(df_res['decision_type']==x[4])&(df_res['sample']==x[1])&(df_res['Magnitude']==x[0])&(df_res['layer']==P)&(df_res['no_resources']==x[3])
                     df_res.loc[row,'resource']+=addition
                     df_res.loc[row,'normalized_resource']+=addition/float(x[3])
-        update_progress(idx+1,len(optimal_combinations)+len(combinations))
-
+                    
+        if idx%(len(combinations+optimal_combinations)/100+1)==0:           
+            update_progress(idx+1,len(optimal_combinations)+len(combinations))
     # Read  resource allocation based on auction results
     for idx,x in enumerate(combinations): 
-        outdir= root_result_dir+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6]+'/auctions'#!!!
+        outdir= root_result_dir+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6]+'/auctions'
         auction_file=outdir+"/auctions_"+`x[1]`+"_"+suffix+".csv"
         if os.path.isfile(auction_file):
             with open(auction_file) as f:
@@ -637,36 +638,44 @@ def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='i
                             'normalized_resource':float(data[P])/float(x[3]),
                             'decision_type':x[4],'auction_type':x[5],'valuation_type':x[6],'sample':x[1],
                             'Magnitude':x[0],'layer':P,'no_resources':x[3],'PoA':poa}, ignore_index=True)
-        update_progress(len(optimal_combinations)+idx+1,len(optimal_combinations)+len(combinations))
-        
+                
+        if idx%(len(combinations+optimal_combinations)/100+1)==0:   
+            update_progress(len(optimal_combinations)+idx+1,len(optimal_combinations)+len(combinations))
+    update_progress(len(optimal_combinations)+idx+1,len(optimal_combinations)+len(combinations)) 
+    
     cols=['decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','distance_to_optimal','norm_distance_to_optimal']
     T = max(df.t.unique().tolist())
-    df_res_rel = pd.DataFrame(columns=cols)
+    df_res_rel = pd.DataFrame(columns=cols, dtype=int)
     print '\nRelative allocation\n',
-    for idx,x in enumerate(combinations): 
-        # Construct vector of resource allocation of reference method                       
-        vector_res_ref = {P:np.zeros(T) for P in range(1,x[2]+1)}
-        for P in range(1,x[2]+1):
-            for t in range(T):
-                vector_res_ref[P][t]= df_res.loc[(df_res['t']==t+1)&
-                        (df_res['decision_type']==ref_method)&
-                        (df_res['sample']==x[1])&(df_res['Magnitude']==x[0])&
-                        (df_res['layer']==P)&(df_res['no_resources']==x[3]),'resource']
-        # Compute distance of resource allocation vectors
-        vector_res = {P:np.zeros(T) for P in range(1,x[2]+1)}
-        for P in range(1,x[2]+1):
-            row = (df_res['decision_type']==x[4])&(df_res['sample']==x[1])&(df_res['Magnitude']==x[0])&(df_res['layer']==P)&(df_res['no_resources']==x[3])&(df_res['auction_type']==x[5])&(df_res['valuation_type']==x[6])
-            for t in range(T):
-                vector_res[P][t] = df_res.loc[(df_res['t']==t+1)&row,'resource']
-            distance = np.linalg.norm(vector_res[P]-vector_res_ref[P]) #L2 norm
-            norm_distance = np.linalg.norm(vector_res[P]/float(x[3])-vector_res_ref[P]/float(x[3]))
-#            distance = sum(abs(vector_res[P]-vector_res_ref[P])) #L1 norm
-#            distance = 1-scipy.stats.pearsonr(vector_res[P],vector_res_ref[P])[0] # correlation distance
-            df_res_rel=df_res_rel.append({'decision_type':x[4],'auction_type':x[5],
-                'valuation_type':x[6],'sample':x[1],'Magnitude':x[0],'layer':P,'no_resources':x[3],
-                'distance_to_optimal':distance/float(vector_res[P].shape[0]),
-                'norm_distance_to_optimal':norm_distance/float(vector_res[P].shape[0])}, ignore_index=True)
-        update_progress(idx+1,len(combinations))       
+    for idx,x in enumerate(combinations+optimal_combinations): 
+        # Construct vector of resource allocation of reference method 
+        if x[4]!=ref_method:                      
+            vector_res_ref = {P:np.zeros(T) for P in range(1,x[2]+1)}
+            for P in range(1,x[2]+1):
+                for t in range(T):
+                    vector_res_ref[P][t]= df_res.loc[(df_res['t']==t+1)&
+                            (df_res['decision_type']==ref_method)&
+                            (df_res['sample']==x[1])&(df_res['Magnitude']==x[0])&
+                            (df_res['layer']==P)&(df_res['no_resources']==x[3]),'resource']
+            # Compute distance of resource allocation vectors
+            vector_res = {P:np.zeros(T) for P in range(1,x[2]+1)}
+            for P in range(1,x[2]+1):
+                row = (df_res['decision_type']==x[4])&(df_res['sample']==x[1])&(df_res['Magnitude']==x[0])&(df_res['layer']==P)&(df_res['no_resources']==x[3])&(df_res['auction_type']==x[5])&(df_res['valuation_type']==x[6])
+                for t in range(T):
+                    vector_res[P][t] = df_res.loc[(df_res['t']==t+1)&row,'resource']
+                distance = np.linalg.norm(vector_res[P]-vector_res_ref[P]) #L2 norm
+                norm_distance = np.linalg.norm(vector_res[P]/float(x[3])-vector_res_ref[P]/float(x[3]))
+    #            distance = sum(abs(vector_res[P]-vector_res_ref[P])) #L1 norm
+    #            distance = 1-scipy.stats.pearsonr(vector_res[P],vector_res_ref[P])[0] # correlation distance
+                df_res_rel=df_res_rel.append({'decision_type':x[4],'auction_type':x[5],
+                    'valuation_type':x[6],'sample':x[1],'Magnitude':x[0],'layer':P,'no_resources':x[3],
+                    'distance_to_optimal':distance/float(vector_res[P].shape[0]),
+                    'norm_distance_to_optimal':norm_distance/float(vector_res[P].shape[0])}, ignore_index=True)
+                
+            if idx%(len(combinations+optimal_combinations)/100+1)==0:
+                update_progress(idx+1,len(combinations+optimal_combinations))   
+    update_progress(idx+1,len(combinations+optimal_combinations))
+    
     return df_res,df_res_rel
 
 def write_judgments_csv(N,outdir,functionality,realizations,sample_num=1,agent=1,time=0,suffix=""):
@@ -701,7 +710,7 @@ def write_judgments_csv(N,outdir,functionality,realizations,sample_num=1,agent=1
 def read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir='../results/'):
     columns = ['t','Magnitude','cost_type','decision_type','auction_type','valuation_type','no_resources','sample','cost','normalized_cost']
     optimal_method = ['tdindp','indp','sample_indp_12Node']
-    agg_results = pd.DataFrame(columns=columns)
+    agg_results = pd.DataFrame(columns=columns, dtype=int)
 
     print "\nAggregating Results"
     joinedlist = combinations + optimal_combinations
@@ -732,90 +741,107 @@ def read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_r
                     values = [t,x[0],c,x[4],x[5],x[6],x[3],x[1],
                             float(sample_result[t]['costs'][c]),norm_cost]
                     agg_results = agg_results.append(dict(zip(columns,values)), ignore_index=True)
-            update_progress(idx+1,len(joinedlist))
+            if idx%(len(joinedlist)/100+1)==0:
+                update_progress(idx+1,len(joinedlist))
         else:
-            sys.exit('Error: The combination or folder does not exist')            
+            sys.exit('Error: The combination or folder does not exist') 
+    update_progress(idx+1,len(joinedlist))
     return agg_results
 
-def correct_tdindp_results(df,mags,method_name,sample_range):    
+def correct_tdindp_results(df,optimal_combinations):    
     # correct total cost of td-indp
-    resource_cap = ['_fixed_layer_cap', '']
+    print '\nCorrecting td-INDP Results\n',
     tVector = df['t'].unique().tolist()
     for t in tVector:
-        for m in mags:
-            for rc in resource_cap:
-                for sr in sample_range:
-                    rows = df[(df['t']==t)&(df['Magnitude']==m)&
-                             (df['method']=='tdindp_results')&(df['resource_cap']==rc)&
-                             (df['sample']==sr)]
+        for idx,x in enumerate(optimal_combinations):
+            if x[4]=='tdindp':
+                rows = df[(df['t']==t)&(df['Magnitude']==x[0])&
+                         (df['decision_type']=='tdindp')&(df['no_resources']==x[3])&
+                         (df['sample']==x[1])]
+                
+                if t!=int(tVector[-1]) and t!=0:
+                    rowsNext = df[(df['t']==t+1)&(df['Magnitude']==x[0])&
+                     (df['decision_type']=='tdindp')&(df['no_resources']==x[3])&
+                     (df['sample']==x[1])]
                     
-                    if t!=int(tVector[-1]) and t!=0:
-                        rowsNext = df[(df['t']==t+1)&(df['Magnitude']==m)&
-                         (df['method']=='tdindp_results')&(df['resource_cap']==rc)&
-                         (df['sample']==sr)]
-                        
-                        nodeCost=rows[rows['cost_type']=='Node']['cost'].values
-                        arcCost=rows[rows['cost_type']=='Arc']['cost'].values
-                        flowCost=rowsNext[rowsNext['cost_type']=='Flow']['cost'].values
-                        overSuppCost=rowsNext[rowsNext['cost_type']=='Over Supply']['cost'].values
-                        underSuppCost=rowsNext[rowsNext['cost_type']=='Under Supply']['cost'].values
-                        spacePrepCost=rows[rows['cost_type']=='Space Prep']['cost'].values
-                        
-                        totalCost = flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost
-                        
-                        df.loc[(df['t']==t)&(df['Magnitude']==m)&(df['method']=='tdindp_results')&
-                            (df['resource_cap']==rc)&(df['sample']==sr)&
-                            (df['cost_type']=='Total'),'cost'] = totalCost
+                    nodeCost=rows[rows['cost_type']=='Node']['cost'].values
+                    arcCost=rows[rows['cost_type']=='Arc']['cost'].values
+                    flowCost=rowsNext[rowsNext['cost_type']=='Flow']['cost'].values
+                    overSuppCost=rowsNext[rowsNext['cost_type']=='Over Supply']['cost'].values
+                    underSuppCost=rowsNext[rowsNext['cost_type']=='Under Supply']['cost'].values
+                    spacePrepCost=rows[rows['cost_type']=='Space Prep']['cost'].values
+                    
+                    totalCost = flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost
+                    
+                    df.loc[(df['t']==t)&(df['Magnitude']==x[0])&(df['decision_type']=='tdindp')&
+                        (df['no_resources']==x[3])&(df['sample']==x[1])&
+                        (df['cost_type']=='Total'),'cost'] = totalCost
+                    
+                    initial_cost=df[(df['t']==0)&(df['Magnitude']==x[0])&(df['decision_type']=='tdindp')&
+                        (df['no_resources']==x[3])&(df['sample']==x[1])&
+                        (df['cost_type']=='Total')]['cost'].values
+                    df.loc[(df['t']==t)&(df['Magnitude']==x[0])&(df['decision_type']=='tdindp')&
+                        (df['no_resources']==x[3])&(df['sample']==x[1])&
+                        (df['cost_type']=='Total'),'normalized_cost'] = totalCost/initial_cost
+        update_progress(t+1,len(tVector))
     return df
                
-def relative_performance(df,combinations,optimal_combinations,ref_method='indp',cost_type='Total'):    
+def relative_performance(df,combinations,optimal_combinations,ref_method='indp',ref_at='',ref_vt='',cost_type='Total'):    
     columns = ['Magnitude','cost_type','decision_type','auction_type','valuation_type','no_resources','sample','Area','lambda_TC']
-    lambda_df = pd.DataFrame(columns=columns)
+    lambda_df = pd.DataFrame(columns=columns, dtype=int)
     # Computing reference area for lambda
     # Check if the method in optimal combination is the reference method #!!!
-    ref_at=''
-    ref_vt=''
     print '\nRef area calculation\n',
     for idx,x in enumerate(optimal_combinations):
-        rows = df[(df['Magnitude']==x[0])&(df['decision_type']==ref_method)&
-                 (df['sample']==x[1])&(df['cost_type']==cost_type)&
-                 (df['auction_type']==ref_at)&(df['valuation_type']==ref_vt)&
-                 (df['no_resources']==x[3])]
-                          
-        if not rows.empty:
-            area = np.trapz(rows.cost[:20],dx=1)
-            values = [x[0],cost_type,x[4],ref_at,ref_vt,x[3],x[1],area,'nan']
-            lambda_df = lambda_df.append(dict(zip(columns,values)), ignore_index=True)
-        update_progress(idx+1,len(optimal_combinations))
+        if x[4]==ref_method:
+            rows = df[(df['Magnitude']==x[0])&(df['decision_type']==ref_method)&
+                     (df['sample']==x[1])&(df['cost_type']==cost_type)&
+                     (df['auction_type']==ref_at)&(df['valuation_type']==ref_vt)&
+                     (df['no_resources']==x[3])]
+                              
+            if not rows.empty:
+                area = np.trapz(rows.cost[:20],dx=1)
+                values = [x[0],cost_type,x[4],ref_at,ref_vt,x[3],x[1],area,'nan']
+                lambda_df = lambda_df.append(dict(zip(columns,values)), ignore_index=True)
+                
+            if idx%(len(optimal_combinations)/100+1)==0:
+                update_progress(idx+1,len(optimal_combinations))
+    update_progress(idx+1,len(optimal_combinations))
+    
     # Computing areaa and lambda
     print '\nLambda calculation\n',
-    for idx,x in enumerate(combinations):
-        # Check if reference area exists
-        cond = ((lambda_df['Magnitude']==x[0])&(lambda_df['decision_type']==ref_method)&
-            (lambda_df['auction_type']==ref_at)&(lambda_df['valuation_type']==ref_vt)&
-            (lambda_df['cost_type']==cost_type)&(lambda_df['sample']==x[1])&
-            (lambda_df['no_resources']==x[3]))
-        if not cond.any():
-            sys.exit('Error:Reference type is not here! for m %d|resource %d' %(x[0],x[3]))    
-        ref_area=float(lambda_df.loc[cond==True,'Area'])
-        rows = df[(df['Magnitude']==x[0])&(df['decision_type']==x[4])&
-                 (df['sample']==x[1])&(df['cost_type']==cost_type)&
-                 (df['auction_type']==x[5])&(df['valuation_type']==x[6])&
-                 (df['no_resources']==x[3])]
-        if not rows.empty:
-            area = np.trapz(rows.cost[:20],dx=1)
-            lambda_TC = 'nan'
-            if ref_area != 0.0 and area != 'nan':
-                lambda_TC = (ref_area-float(area))/ref_area
-            elif area == 0.0:
-                lambda_TC = 0.0
+    for idx,x in enumerate(combinations+optimal_combinations):
+        if x[4]!=ref_method:
+            # Check if reference area exists
+            cond = ((lambda_df['Magnitude']==x[0])&(lambda_df['decision_type']==ref_method)&
+                (lambda_df['auction_type']==ref_at)&(lambda_df['valuation_type']==ref_vt)&
+                (lambda_df['cost_type']==cost_type)&(lambda_df['sample']==x[1])&
+                (lambda_df['no_resources']==x[3]))
+            if not cond.any():
+                sys.exit('Error:Reference type is not here! for %s m %d|resource %d' %(x[4],x[0],x[3]))    
+            ref_area=float(lambda_df.loc[cond==True,'Area'])
+            rows = df[(df['Magnitude']==x[0])&(df['decision_type']==x[4])&
+                     (df['sample']==x[1])&(df['cost_type']==cost_type)&
+                     (df['auction_type']==x[5])&(df['valuation_type']==x[6])&
+                     (df['no_resources']==x[3])]
+            if not rows.empty:
+                area = np.trapz(rows.cost[:20],dx=1)
+                lambda_TC = 'nan'
+                if ref_area != 0.0 and area != 'nan':
+                    lambda_TC = (ref_area-float(area))/ref_area
+                elif area == 0.0:
+                    lambda_TC = 0.0
+                else:
+                    pass  
+                values = [x[0],cost_type,x[4],x[5],x[6],x[3],x[1],area,lambda_TC]
+                lambda_df = lambda_df.append(dict(zip(columns,values)), ignore_index=True)
             else:
-                pass  
-            values = [x[0],cost_type,x[4],x[5],x[6],x[3],x[1],area,lambda_TC]
-            lambda_df = lambda_df.append(dict(zip(columns,values)), ignore_index=True)
-        else:
-            sys.exit('Error: No decentralized entry for m %d|resource %d,...' %(x[0],x[3]))   
-        update_progress(idx+1,len(combinations))
+                sys.exit('Error: No entry for %s m %d|resource %d,...' %(x[4],x[0],x[3]))  
+                
+        if idx%(len(combinations+optimal_combinations)/100+1)==0:
+            update_progress(idx+1,len(combinations+optimal_combinations))
+    update_progress(idx+1,len(combinations+optimal_combinations))
+    
     return lambda_df
 
 def generate_combinations(database,mags,sample,layers,no_resources,decision_type,auction_type,valuation_type,listHDadd=None,synthetic_dir=None):
