@@ -51,9 +51,9 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
     currentTotalCost = {}
     if T == 1: 
         if auction_type:
-            print "***\nRunning Judgment Call with type "+judgment_type +" with auction "+auction_type+ ' & valuation '+ valuation_type
+            print "\n--Running Judgment Call with type "+judgment_type +" with auction "+auction_type+ ' & valuation '+ valuation_type
         else:
-            print "***\nRunning Judgment Call with type "+judgment_type 
+            print "\n--Running Judgment Call with type "+judgment_type 
         if print_cmd:
             print "Num iters=",params["NUM_ITERATIONS"]
         # Initial calculations.
@@ -71,7 +71,7 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
         PoA = {}
         valuations={}
         for i in range(num_iterations):
-            print "\n--Iteration "+`i`+"/"+`num_iterations-1`
+            print "\n-Iteration "+`i`+"/"+`num_iterations-1`
             
             v_r_applied = []
             if auction_type:
@@ -836,7 +836,7 @@ def relative_performance(df,combinations,optimal_combinations,ref_method='indp',
                 values = [x[0],cost_type,x[4],x[5],x[6],x[3],x[1],area,lambda_TC]
                 lambda_df = lambda_df.append(dict(zip(columns,values)), ignore_index=True)
             else:
-                sys.exit('Error: No entry for %s m %d|resource %d,...' %(x[4],x[0],x[3]))  
+                sys.exit('Error: No entry for %s %s %s m %d|resource %d,...' %(x[4],x[5],x[6],x[0],x[3]))  
                 
         if idx%(len(combinations+optimal_combinations)/100+1)==0:
             update_progress(idx+1,len(combinations+optimal_combinations))

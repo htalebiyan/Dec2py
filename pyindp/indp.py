@@ -158,12 +158,16 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
             demandConstr+=d['data']['inf_data'].demand - m.getVarByName('delta+_'+`n`+","+`t`) + m.getVarByName('delta-_'+`n`+","+`t`)
             m.addConstr(outFlowConstr-inFlowConstr,GRB.EQUAL,demandConstr,"Flow conservation constraint "+`n`+","+`t`)
         # Flow functionality constraints.
+        if not functionality:
+            interdep_nodes_list = interdep_nodes.keys() #Interdepndent nodes with a damaged dependee node 
+        else:
+            interdep_nodes_list = interdep_nodes[t].keys() #Interdepndent nodes with a damaged dependee node 
         for u,v,a in N_hat.edges_iter(data=True):
-            if u in [n for (n,d) in N_hat_prime]:
+            if (u in [n for (n,d) in N_hat_prime]) | (u in interdep_nodes_list):
                 m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*m.getVarByName('w_'+`u`+","+`t`),"Flow in functionality constraint("+`u`+","+`v`+","+`t`+")")
             else:
                 m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G.node[u]['data']['inf_data'].functionality,"Flow in functionality constraint ("+`u`+","+`v`+","+`t`+")")
-            if v in [n for (n,d) in N_hat_prime]:
+            if (v in [n for (n,d) in N_hat_prime]) | (v in interdep_nodes_list):
                 m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*m.getVarByName('w_'+`v`+","+`t`),"Flow out functionality constraint("+`u`+","+`v`+","+`t`+")")
             else:
                 m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G.node[v]['data']['inf_data'].functionality,"Flow out functionality constraint ("+`u`+","+`v`+","+`t`+")")

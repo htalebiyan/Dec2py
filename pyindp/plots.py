@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sns.set(context='notebook',style='darkgrid')
-#plt.rc('text', usetex=True)
-#plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     
 def plot_performance_curves_shelby(df,x='t',y='cost',cost_type='Total',
                             decision_names=['tdindp_results'],
@@ -210,9 +210,7 @@ def plot_relative_performance_synthetic(lambda_df,cost_type='Total'):
                 
     handles, labels = ax.get_legend_handles_labels()   
     labels = correct_legend_labels(labels)
-    fig.legend(handles, labels,loc='upper right',frameon =True,framealpha=0.5, ncol=1) 
-     
-
+    fig.legend(handles, labels,loc='upper right',frameon =True,framealpha=0.5, ncol=1)
     plt.savefig('Relative_perforamnce.pdf',dpi=600)
     
 def plot_auction_allocation_shelby(df_res,ci=None):  
@@ -308,6 +306,8 @@ def plot_auction_allocation_synthetic(df_res,resource_type='resource',ci=None):
                                 ((df_res['valuation_type']==at)|(df_res['valuation_type']==''))]) 
                     ax.get_legend().set_visible(False)
                     ax.set(xlabel=r'time step $t$', ylabel=resource_type)
+                    if resource_type=="normalized_resource":
+                        ax.set(ylabel=r'\% resource')
                     ax.xaxis.set_ticks(np.arange(1, T+1, 1.0))   #ax.get_xlim()         
                     ax.grid(b=True, which='major', color='w', linewidth=1.0)    
                        
@@ -416,13 +416,14 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
 #    decision_type=['judgeCall_OPTIMISTIC']
 #    auction_type = df_res.auction_type.unique().tolist()
     valuation_type = df_res.valuation_type.unique().tolist()
-    valuation_type.remove('')
+    if '' in valuation_type:
+        valuation_type.remove('')
     
     hor_grid = [0]
     ver_grid = valuation_type
-    pals = [sns.color_palette("Blues"),sns.color_palette("Reds"),sns.color_palette("Greens"),sns.cubehelix_palette(8)]
-#    clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green'],['purple','orchid']]
-    fig, axs = plt.subplots(len(ver_grid), len(hor_grid),sharex=True,sharey=True,tight_layout=False, figsize=(10,7))
+#    pals = [sns.color_palette("Blues",3),sns.color_palette("Reds",3),sns.color_palette("Greens",3),sns.cubehelix_palette(3)]
+    clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green'],['bluish purple','orchid']]
+    fig, axs = plt.subplots(len(ver_grid), len(hor_grid),sharex=True,sharey=True,tight_layout=False, figsize=(8,6))
     for idxat,at in enumerate(hor_grid):   
         for idxvt,vt in enumerate(ver_grid): 
             if len(hor_grid)==1 and len(ver_grid)==1:
@@ -441,7 +442,7 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
                         data_ftp.loc[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt),distance_type]+=bottom
                         bottom=data_ftp[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)][distance_type].mean()
             for P in reversed(layer):    
-                with pals[int(P)-1]: #sns.xkcd_palette(clrs[int(P)-1]): #pals[int(P)-1]:
+                with sns.xkcd_palette(clrs[int(P)-1]): #pals[int(P)-1]:
                     ax=sns.barplot(x='auction_type',y=distance_type,hue="decision_type",
                                 data=data_ftp[(data_ftp['layer']==P)], 
                                 linewidth=0.5,edgecolor=[.25,.25,.25],
