@@ -53,7 +53,7 @@ for cnfg in range(0,noConfiguration):
     # based on the sum of mean number of damaged nodes and mean number of 
     # damaged arcs
     meanNoDamagedNodes = gridsizeX*gridsizeY*damProb
-    meanNoDamagedArcs = meanNoDamagedNodes*4
+    meanNoDamagedArcs = meanNoDamagedNodes*4 #roughly equal to the noArcs*damProb
     resCap = np.random.randint(low=2, high=max(4,meanNoDamagedNodes+meanNoDamagedArcs))
     
     # Saving network data in the text files

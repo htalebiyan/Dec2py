@@ -33,7 +33,7 @@ def load_array_format_extended(BASE_DIR="C:\\Users\\ht20\Documents\\Files\Genera
     dam_arcs = []
     z_offsetx = 0.25
     z_offsety = 3
-    for k in range(noLayers):
+    for k in range(1,noLayers+1):
         for file in files: 
             if file=='N'+str(k)+'_Nodes.txt':
                 with open(file_dir+file) as f:
@@ -295,8 +295,8 @@ def plot_Evaluation_Results(noConfig, dmRatioSum, aveConn, allPairsConn,folder):
 # Input values
 noSamples = 30
 rootfolder = "C:\\Users\ht20\Documents\\Files\\Generated_Network_Dataset_v3\\" # Root folder where the database is
-rootfolder += 'RandomNetworks\\' # choose relevant dataset folder #options: 'RandomNetworks\\'|'ScaleFreeNetworks\\'|'GridNetworks\\'
-NetworkTypeInitial = 'RN' #Options: RN|SFN|GN
+rootfolder += 'ScaleFreeNetworks\\' # choose relevant dataset folder #options: 'RandomNetworks\\'|'ScaleFreeNetworks\\'|'GridNetworks\\'
+NetworkTypeInitial = 'SFN' #Options: RN|SFN|GN
 
 # Read configuration data
 fileNameList = rootfolder + 'List_of_Configurations.txt' 
@@ -326,7 +326,7 @@ for i in configList:
         aveConnect = 0.0
         isConnected = 1.0
         for k in range(noLayers):
-            node_list = [x for x in G.nodes() if x[1]==k]
+            node_list = [x for x in G.nodes() if x[1]==k+1]
             H = G.subgraph(node_list)
             aveConnect += nx.average_node_connectivity(H)
             isConnected *= int(nx.is_connected(H.to_undirected()))
@@ -355,5 +355,5 @@ ax = sns.distplot(noInterconnections,rug=True,kde=False)
 ax.set(xlabel='Number of Interconnections', ylabel='Probability (%)')
 #plt.savefig('noInterconnections_'+NetworkTypeInitial+'.png',dpi=600,bbox_inches="tight")
 
-''' Plot one network '''
-plot_network(BASE_DIR=rootfolder,topo=NetworkTypeInitial,config=0,sample=0)  
+#''' Plot one network '''
+#plot_network(BASE_DIR=rootfolder,topo=NetworkTypeInitial,config=0,sample=0)  

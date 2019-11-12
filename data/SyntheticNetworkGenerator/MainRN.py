@@ -52,7 +52,7 @@ for cnfg in range(0,noConfiguration):
         for kt in range(1,noLayers+1): 
             if k!=kt:
                 intConProbDict[(kt,k)]=intConProb*(1+np.random.normal(0, paramError))
-    # Probability of damage ofeach node in the random networks 
+    # Probability of damage of each node in the random networks 
     # Bounds are chosen based on INDP data for Shelby county associated with 
     # M6 (0.05) - M9 (0.5) scenarios
     damProb = np.random.uniform(low=0.05, high=0.5/2) 
@@ -61,7 +61,7 @@ for cnfg in range(0,noConfiguration):
     # based on the sum of mean number of damaged nodes and mean number of 
     # damaged arcs
     meanNoDamagedNodes =noNodes*damProb
-    meanNoDamagedArcs = meanNoDamagedNodes*(meanNoDamagedNodes-1)/2*arcProb
+    meanNoDamagedArcs = noNodes*(noNodes-1)/2*arcProb*damProb
     resCap = np.random.randint(low=noLayers, high=max(2*noLayers,meanNoDamagedNodes+meanNoDamagedArcs))
     
     # Saving network data in the text files
@@ -100,11 +100,11 @@ for cnfg in range(0,noConfiguration):
             Mm[k] = np.random.randint(low=5e5, high=10e5, size=noNodesDict[k])
             # reconstruction cost for each node in the networks
             q[k] = np.random.randint(low=5e3, high=15e3, size=noNodesDict[k])
-            # Damaged nodes in each node in the networks
-            damNodes[k]= Network_Data_Generator.random_damage_Data(noNodesDict[k],damProbDict[k])    
-            # Damaged arcs in each node in the networks
-            # All arcs attached to a damaged node are attached
-            damArcs[k]= [(i,j) for (i,j) in arcs[k] if i in damNodes[k] or j in damNodes[k]]
+            # Damaged nodes and arcs in each networks # fix in the text #!!!
+            damNodes[k],damArcsIndex= Network_Data_Generator.random_damage_Data(noNodesDict[k],len(arcs[k]),damProbDict[k])															  
+            damArcs[k]=[]
+            for da in damArcsIndex:
+                damArcs[k].append(arcs[k][da])
             # Capacity of each arc in the networks           
             u[k] = np.random.randint(low=500, high=2000, size=len(arcs[k]))
             # Flow cost of each arc in the networks      
@@ -148,7 +148,7 @@ for cnfg in range(0,noConfiguration):
         for k in range(1,noLayers+1):
             for kt in range(1,noLayers+1):
                 if kt!=k:
-                    selPairs = Network_Data_Generator.generate_interconnctions(nodes[kt],nodes[k],intConProbDict[(k,kt)])
+                    selPairs = Network_Data_Generator.generate_interconnctions(nodes[kt],nodes[k],intConProbDict[(kt,k)])
                     noSelPairsDict[(kt,k)] = len(selPairs)
                     fileName = folder + '/Interdependent_Arcs_%d_%d.txt' % (kt,k)
                     f = open(fileName,"w")
@@ -193,8 +193,7 @@ for cnfg in range(0,noConfiguration):
         f.write(text+'\n')
         f.write('Available resources for restoration in each time step = %d\n' % (resCap))
         f.write('Interconnections are chosen randomly\n')
-        f.write('Damaged nodes are chosen randomly\n')
-        f.write('Damaged arcs are those corresponding to a damaged node\n')
+        f.write('Damaged nodes and arcs are chosen randomly\n') # fix in the text #!!! 
         f.close()
         # cost of preparation of geographical zones
         g = np.random.randint(low=2000, high=18e4, size=noZones*noZones)

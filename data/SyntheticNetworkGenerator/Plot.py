@@ -13,8 +13,7 @@ function look at Plot.py
 '''  
 
 
-def load_array_format_extended(BASE_DIR="C:\\Users\\ht20\Documents\\Files\Generated_Network_Dataset_v3\\RandomNetworks\\",
-                               topo='RN',config=0,sample=0,cost_scale=1.0):
+def load_array_format_extended(BASE_DIR,topo='RN',config=0,sample=0,cost_scale=1.0):
     file_dir = BASE_DIR+topo+'Config_'+str(config)+'\\Sample_'+str(sample)+'\\'
     with open(BASE_DIR+'List_of_Configurations.txt') as f:
             data = pd.read_csv(f, delimiter='\t')    
@@ -28,7 +27,7 @@ def load_array_format_extended(BASE_DIR="C:\\Users\\ht20\Documents\\Files\Genera
     dam_arcs = []
     z_offsetx = 0.25
     z_offsety = 3
-    for k in range(noLayers):
+    for k in range(1,noLayers+1):
         for file in files: 
             if file=='N'+str(k)+'_Nodes.txt':
                 with open(file_dir+file) as f:
@@ -80,9 +79,8 @@ def load_array_format_extended(BASE_DIR="C:\\Users\\ht20\Documents\\Files\Genera
 
 plt.close('all')
 plt.figure(figsize=(10,8))  
-
-G,pos,noLayers,dam_nodes,dam_arcs = load_array_format_extended(BASE_DIR="C:\\Users\ht20\Documents\\Files\\Generated_Network_Dataset_v3\\RandomNetworks\\",
-                               topo='RN',config=8,sample=0)  
+BASE_DIR="C:\\Users\ht20\Documents\\Files\\Generated_Network_Dataset_v3\\ScaleFreeNetworks\\"
+G,pos,noLayers,dam_nodes,dam_arcs = load_array_format_extended(BASE_DIR,topo='SFN',config=75,sample=0)  
 labels = {}
 for n,d in G.nodes(data=True):
     labels[n]= "%d" % (n[0])
@@ -97,12 +95,12 @@ for key,value in pos.items():
 
 clr=['r','b','g','m']
 for k in range(noLayers):
-    node_list = [x for x in G.nodes() if x[1]==k]
+    node_list = [x for x in G.nodes() if x[1]==k+1]
     nx.draw_networkx_nodes(G,pos,nodelist=node_list,node_color=clr[k],node_size=70,alpha=0.9)
 for k in range(noLayers):
-    arc_dict = [x for x in G.edges() if x[0][1]==k and x[1][1]==k]
+    arc_dict = [x for x in G.edges() if x[0][1]==k+1 and x[1][1]==k+1]
     nx.draw_networkx_edges(G,pos,edgelist=arc_dict,width=1,alpha=0.25,edge_color=clr[k])
-    interarc_dict = [x for x in G.edges() if x[0][1]==k and x[1][1]!=k]
+    interarc_dict = [x for x in G.edges() if x[0][1]==k+1 and x[1][1]!=k+1]
     nx.draw_networkx_edges(G,pos,edgelist=interarc_dict,width=1,alpha=0.25,edge_color='k')
 #nx.draw_networkx_nodes(G,pos,nodelist=dam_nodes,node_color='w',node_shape="x",node_size=35)
 #nx.draw_networkx_edges(G,pos,edgelist=dam_arcs,width=1,alpha=1,edge_color='w',style='dashed')

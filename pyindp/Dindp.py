@@ -44,7 +44,7 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
     if auction_type:
         output_dir = params["OUTPUT_DIR"]+'_L'+`len(layers)`+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_auction_'+auction_type+'_'+valuation_type
     else:
-        output_dir = params["OUTPUT_DIR"]+'_L'+`len(layers)`+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_fixed_layer_cap'
+        output_dir = params["OUTPUT_DIR"]+'_L'+`len(layers)`+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_uniform_alloc'
     
     Dindp_results={P:INDPResults() for P in layers}   
     Dindp_results_Real={P:INDPResults() for P in layers} 
@@ -53,7 +53,7 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
         if auction_type:
             print "\n--Running Judgment Call with type "+judgment_type +" with auction "+auction_type+ ' & valuation '+ valuation_type
         else:
-            print "\n--Running Judgment Call with type "+judgment_type 
+            print "\n--Running Judgment Call with type "+judgment_type +" with uniform allocation "
         if print_cmd:
             print "Num iters=",params["NUM_ITERATIONS"]
         # Initial calculations.
@@ -81,9 +81,19 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
                
                 for key, value in res_allocate[i].items():
                     v_r_applied.append(len(value))
+            elif len(v_r)!=len(layers):
+                v_r_applied =  [v_r[0]/len(layers) for x in layers]
+                for x in range(v_r[0]%len(layers)):
+                    v_r_applied[x]+=1
+                res_allocate[i] = {P:[] for P in layers}
+                for P in layers:
+                    res_allocate[i][P]=range(1,1+v_r_applied[P-1])
             else:
                 v_r_applied = v_r
-             
+                res_allocate[i] = {P:[] for P in layers}
+                for P in layers:
+                    res_allocate[i][P]=range(1,1+v_r_applied[P-1])
+                    
             functionality = {p:{} for p in layers}
             uncorrectedResults = {}  
             if print_cmd:
@@ -155,10 +165,12 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
             for P in layers:
                 for a in Dindp_results[P][i]['actions']:
                     Dindp_results_sum.add_action(i,a) 
-                
+                    
+        output_dir_auction = output_dir + '/auctions'        
         if auction_type:
-            output_dir_auction = output_dir + '/auctions'
-            write_auction_csv(output_dir_auction,res_allocate,PoA,valuations,sample_num=params["SIM_NUMBER"],suffix="")    
+            write_auction_csv(output_dir_auction,res_allocate,PoA,valuations,sample_num=params["SIM_NUMBER"],suffix="") 
+        else:
+            write_auction_csv(output_dir_auction,res_allocate,sample_num=params["SIM_NUMBER"],suffix="")
         # Save results of D-iINDP run to file.
         if saveJC:   
             output_dir_agents = output_dir + '/agents'
@@ -565,7 +577,7 @@ def compute_valuations(v_r,InterdepNet,layers,T=1,print_cmd=True,judgment_type="
                 sys.exit( "Wrong valuation type!!!")
     return valuation, optimal_valuation
                 
-def write_auction_csv(outdir,res_allocate,PoA,valuations,sample_num=1,suffix=""):
+def write_auction_csv(outdir,res_allocate,PoA=None,valuations=None,sample_num=1,suffix=""):
     if not os.path.exists(outdir):
         os.makedirs(outdir)        
     auction_file=outdir+"/auctions_"+`sample_num`+"_"+suffix+".csv"
@@ -573,21 +585,23 @@ def write_auction_csv(outdir,res_allocate,PoA,valuations,sample_num=1,suffix="")
     for key,value in res_allocate[0].items():
         header += "P"+`key`+","
     header += "PoA,optimal_val,winner_val"
-    for p,value in valuations[0].items(): 
-        header +=  ",bidder_"+`p`+"_valuation"
+    if valuations:
+        for p,value in valuations[0].items(): 
+            header +=  ",bidder_"+`p`+"_valuation"
     with open(auction_file,'w') as f:
         f.write(header+"\n")
         for t,value in res_allocate.items():
             row = `t+1`+","
             for p,pvalue in value.items():
                 row += `len(pvalue)`+','
-            row += `PoA[t]['poa']`+','+`PoA[t]['optimal']`+','
-            for pitem in PoA[t]['winner']:
-                row += `pitem`+"|"            
-            for p,pvalue in valuations[t].items():
-                row += ','
-                for pitem in pvalue:
-                    row += `pitem`+"|"
+            if valuations:
+                row += `PoA[t]['poa']`+','+`PoA[t]['optimal']`+','
+                for pitem in PoA[t]['winner']:
+                    row += `pitem`+"|"            
+                for p,pvalue in valuations[t].items():
+                    row += ','
+                    for pitem in pvalue:
+                        row += `pitem`+"|"
             f.write(row+"\n")
             
 def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='indp',suffix="",root_result_dir='../results/'):  
@@ -624,7 +638,10 @@ def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='i
             update_progress(idx+1,len(optimal_combinations)+len(combinations))
     # Read  resource allocation based on auction results
     for idx,x in enumerate(combinations): 
-        outdir= root_result_dir+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6]+'/auctions'
+        if x[5] in ['Uniform']:
+            outdir= root_result_dir+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_uniform_alloc/auctions'
+        else:
+            outdir= root_result_dir+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6]+'/auctions'
         auction_file=outdir+"/auctions_"+`x[1]`+"_"+suffix+".csv"
         if os.path.isfile(auction_file):
             with open(auction_file) as f:
@@ -633,7 +650,10 @@ def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='i
                     data=string.split(str.strip(line),",")
                     t=int(data[0])
                     for P in range(1,x[2]+1):
-                        poa = float(data[x[2]+1])
+                        if x[5] in ['Uniform']:
+                            poa = 0.0
+                        else:
+                            poa = float(data[x[2]+1])
                         df_res=df_res.append({'t':t,'resource':float(data[P]),
                             'normalized_resource':float(data[P])/float(x[3]),
                             'decision_type':x[4],'auction_type':x[5],'valuation_type':x[6],'sample':x[1],
@@ -717,6 +737,8 @@ def read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_r
     for idx,x in enumerate(joinedlist):
         if x[4] in optimal_method:
             full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`
+        elif x[5]=='Uniform':
+            full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_uniform_alloc'
         else:
             full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6] 
         
@@ -862,14 +884,16 @@ def generate_combinations(database,mags,sample,layers,no_resources,decision_type
                     for dt,at,vt in itertools.product(decision_type,auction_type,valuation_type):
                         if (dt in optimal_method) and not [m,s,L,rc,dt,'',''] in optimal_combinations:
                             optimal_combinations.append([m,s,L,rc,dt,'',''])
-                        elif (dt not in optimal_method):
+                        elif (dt not in optimal_method) and (at not in ['Uniform']):
                             combinations.append([m,s,L,rc,dt,at,vt])
+                        elif (dt not in optimal_method) and (at in ['Uniform']):
+                            combinations.append([m,s,L,rc,dt,at,''])
             idx+=1
             update_progress(idx,no_total)
     elif database=='synthetic':
         # Read net configurations
         if synthetic_dir==None:
-            sys.exit('Error: Provide the address of synthetic databse')
+            sys.exit('Error: Provide the address of the synthetic databse')
         with open(synthetic_dir+'List_of_Configurations.txt') as f:
             config_data = pd.read_csv(f, delimiter='\t')  
         for m,s in itertools.product(mags,sample):
@@ -880,8 +904,10 @@ def generate_combinations(database,mags,sample,layers,no_resources,decision_type
                 for dt,at,vt in itertools.product(decision_type,auction_type,valuation_type):
                     if (dt in optimal_method) and not [m,s,L,rc,dt,'',''] in optimal_combinations:
                         optimal_combinations.append([m,s,L,rc,dt,'',''])
-                    elif (dt not in optimal_method):
+                    elif (dt not in optimal_method) and (at not in ['Uniform']):
                         combinations.append([m,s,L,rc,dt,at,vt]) 
+                    elif (dt not in optimal_method) and (at in ['Uniform']):
+                        combinations.append([m,s,L,rc,dt,at,''])
             idx+=1
             update_progress(idx,no_total)
     else:

@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sns.set(context='notebook',style='darkgrid')
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+#plt.rc('text', usetex=True)
+#plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     
 def plot_performance_curves_shelby(df,x='t',y='cost',cost_type='Total',
                             decision_names=['tdindp_results'],
@@ -143,7 +143,6 @@ def plot_relative_performance_shelby(lambda_df,cost_type='Total'):
                 ax=sns.barplot(x='no_resources',y='lambda_TC',hue="decision_type",
                             data=lambda_df[(lambda_df['cost_type']==cost_type)&
                                                 (lambda_df['lambda_TC']!='nan')&
-                                                (lambda_df['decision_type']=='judgeCall_OPTIMISTIC')&
                                                 ((lambda_df['auction_type']==nr)|(lambda_df['auction_type']==''))&
                                                 ((lambda_df['valuation_type']==vt)|(lambda_df['valuation_type']==''))], 
                                 linewidth=0.5,edgecolor=[.25,.25,.25],
@@ -336,13 +335,15 @@ def plot_auction_allocation_synthetic(df_res,resource_type='resource',ci=None):
   
         plt.savefig('Allocations_'+at+'.pdf',dpi=600)
         
-def plot_relative_allocation_shelby(df_res):   
+def plot_relative_allocation_shelby(df_res,distance_type='distance_to_optimal'):   
     no_resources = df_res.no_resources.unique().tolist()
     layer = df_res.layer.unique().tolist()
     decision_type = df_res.decision_type.unique().tolist()
     auction_type = df_res.auction_type.unique().tolist()
     valuation_type = df_res.valuation_type.unique().tolist()
-    
+    if '' in valuation_type:
+        valuation_type.remove('')
+        
 #    pals = [sns.color_palette("Blues"),sns.color_palette("Reds"),sns.color_palette("Greens")]
     clrs = [['azure','light blue'],['gold','khaki'],['strawberry','salmon pink'],['green','light green']] #['purple','orchid']
     fig, axs = plt.subplots(len(valuation_type), len(auction_type),sharex=True,
@@ -357,14 +358,19 @@ def plot_relative_allocation_shelby(df_res):
                 ax = axs[idxvt]
             else:
                 ax = axs[idxvt,idxat]
-            data_ftp = df_res[(df_res['auction_type']==at)&(df_res['valuation_type']==vt)]
+            data_ftp = df_res[(df_res['auction_type']==at)&((df_res['valuation_type']==vt)|(df_res['valuation_type']==''))]
             
             for dt in decision_type:
                 for nr in no_resources:
                     bottom = 0
                     for P in layer:
-                        data_ftp.loc[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['no_resources']==nr),'distance_to_optimal']+=bottom
-                        bottom=data_ftp[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['no_resources']==nr)]['distance_to_optimal'].mean()
+                        data_ftp.loc[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['valuation_type']==vt)&(data_ftp['no_resources']==nr),distance_type]+=bottom
+                        bottom=data_ftp[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['valuation_type']==vt)&(data_ftp['no_resources']==nr)][distance_type].mean()
+                    bottom = 0
+                    for P in layer:
+                        data_ftp.loc[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['valuation_type']=='')&(data_ftp['no_resources']==nr),distance_type]+=bottom
+                        bottom=data_ftp[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['valuation_type']=='')&(data_ftp['no_resources']==nr)][distance_type].mean()
+
             for P in reversed(layer):    
                 with sns.xkcd_palette(clrs[int(P)-1]): #pals[int(P)-1]:
                     ax=sns.barplot(x='no_resources',y='distance_to_optimal',hue="decision_type",
@@ -437,10 +443,15 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
             data_ftp = df_res[(df_res['valuation_type']==vt)|(df_res['valuation_type']=='')]
             
             for dt in decision_type:
-                    bottom = 0
-                    for P in layer:
-                        data_ftp.loc[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt),distance_type]+=bottom
-                        bottom=data_ftp[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)][distance_type].mean()
+                bottom = 0
+                for P in layer:
+                    data_ftp.loc[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['valuation_type']==vt),distance_type]+=bottom
+                    bottom=data_ftp[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['valuation_type']==vt)][distance_type].mean()
+                bottom = 0
+                for P in layer:
+                    data_ftp.loc[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['valuation_type']==''),distance_type]+=bottom
+                    bottom=data_ftp[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['valuation_type']=='')][distance_type].mean()
+
             for P in reversed(layer):    
                 with sns.xkcd_palette(clrs[int(P)-1]): #pals[int(P)-1]:
                     ax=sns.barplot(x='auction_type',y=distance_type,hue="decision_type",
