@@ -141,7 +141,7 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
                 if saveJCModel:
                     save_INDP_model_to_file(indp_results_Real[0],output_dir+"/Model",i+1,P,suffix='Real')  
                     output_dir_judgments= output_dir + '/judgments'
-                    write_judgments_csv(InterdepNet,output_dir_judgments,functionality[P],realizations,
+                    write_judgments_csv(output_dir_judgments,realizations,
                                         sample_num=params["SIM_NUMBER"],
                                         agent=P,time=i+1,suffix="")       
         # Calculate sum of costs    
@@ -206,33 +206,27 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
     interdep_nodes={}
     for u,v,a in G_prime.edges_iter(data=True):
         if a['data']['inf_data'].is_interdep and G_prime.node[v]['data']['inf_data'].net_id in controlled_layers:
-            if v not in interdep_nodes:
-                interdep_nodes[v]=[]
-            interdep_nodes[v].append((u,G_prime.node[u]['data']['inf_data'].functionality))
+            if u not in interdep_nodes:
+                interdep_nodes[u]=[]
+            interdep_nodes[u].append(v)
+    list_interdep_nodes = interdep_nodes.keys()
     
-    functionality_realized = copy.deepcopy(functionality)       
+    functionality_realized = copy.deepcopy(functionality) 
+    realizations = {t:{} for t in range(T)}       
     for t in range(T):     
-        for u, value in functionality[t].iteritems():     
-            if functionality[t][u]==1.0 and G_prime.node[u]['data']['inf_data'].functionality==0.0:
-                functionality_realized[t][u] = 0.0
-             
-        realCount = 0  
-        realizations = {t:{}}         
-        for v, value in interdep_nodes.iteritems():
-            sum_u_functioanlity = 0.0
-            for u in value:
-                sum_u_functioanlity += u[1]
-            
-            realCount += 1 
-            realizations[t][realCount]={'uValue':u[1],
-                        'vValue':G_prime.node[v]['data']['inf_data'].functionality,
-                        'vRepaired':G_prime.node[v]['data']['inf_data'].repaired,
-                        'vName':v,'uName':u[0],
-                        'vCorrected':False}    
-            if sum_u_functioanlity == 0.0 and G_prime.node[v]['data']['inf_data'].functionality==1.0:
-                realizations[t][realCount]['vCorrected'] = True
-                if print_cmd:
-                    print 'Correcting '+`v`+' to 0 (dep. on '+`value`+')'     
+        realCount = 0 
+        for u, value in functionality[t].iteritems(): 
+            if u in list_interdep_nodes:
+                realCount += 1 
+                vValues = [G_prime.node[x]['data']['inf_data'].functionality for x in interdep_nodes[u]]
+                realizations[t][realCount]={'vNames':interdep_nodes[u],'uName':u,
+                            'uJudge':functionality[t][u],'uCorrected':False,'vValues':vValues} 
+                
+                if functionality[t][u]==1.0 and G_prime.node[u]['data']['inf_data'].functionality==0.0:
+                    functionality_realized[t][u] = 0.0
+                    realizations[t][realCount]['uCorrected'] = True
+                    if print_cmd:
+                        print 'Correct '+`u`+' to 0 (affect. '+`vValues`+')'  
                      
     indp_results_Real = indp(N,v_r=0,T=1,layers=layers,controlled_layers=controlled_layers,
                              functionality=functionality_realized,
@@ -251,7 +245,7 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
         # Calculate total costs.
         indp_results_Real[1][t]['costs']["Total"]=flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost
         indp_results_Real[1][t]["Total no disconnection"]=spacePrepCost+arcCost+flowCost+nodeCost
-            
+                
     return indp_results_Real,realizations    
 
 
@@ -698,34 +692,22 @@ def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='i
     
     return df_res,df_res_rel
 
-def write_judgments_csv(N,outdir,functionality,realizations,sample_num=1,agent=1,time=0,suffix=""):
+def write_judgments_csv(outdir,realizations,sample_num=1,agent=1,time=0,suffix=""):
     if not os.path.exists(outdir):
         os.makedirs(outdir)  
         
-    interdep_nodes_src={}
-    for u,v,a in N.G.edges_iter(data=True):
-        if a['data']['inf_data'].is_interdep and N.G.node[v]['data']['inf_data'].net_id==agent:
-            if u not in interdep_nodes_src:
-                interdep_nodes_src[u]=[]
-            interdep_nodes_src[u].append(v)
-            
-    if interdep_nodes_src:
-        judge_file=outdir+'/judge_'+`sample_num`+"_agent"+`agent`+'_time'+`time`+'_'+suffix+".csv"
-        
-        header = "no.,src node,src layer,src actual func,src judge func,dest Name,dest layer,dest uncorrected func, dest repair,if dest corrected"
-        with open(judge_file,'w') as f:
-            f.write(header+"\n")
-            for t,timeValue in realizations.items():
-                for c,Value in timeValue.items():
-                    row = `c`+','+`Value['uName']`+','\
-                        +`Value['uValue']`+','+`functionality[t][Value['uName']]`+','\
-                        +`Value['vName']`+','+`Value['vValue']`+','\
-                        +`Value['vRepaired']`+','\
-                        +`Value['vCorrected']`
-                        
+    judge_file=outdir+'/judge_'+`sample_num`+"_agent"+`agent`+'_time'+`time`+'_'+suffix+".csv"
+    header = "no.,src node,src layer,src judge,if src corr.,dest Names,dest init. funcs"
+    with open(judge_file,'w') as f:
+        f.write(header+"\n")
+        for t,timeValue in realizations.iteritems():
+            if timeValue:
+                for c,Value in timeValue.iteritems():
+                    row = `c`+','+`Value['uName']`+','+`Value['uJudge']`+','+`Value['uCorrected']`+','\
+                        +`Value['vNames']`+','+`Value['vValues']`
                     f.write(row+'\n')
-    else:
-        print 'No judgment by agent '+`agent`+'.'
+            else:
+                print '<><><> No judgment by agent '+`agent`+' t:'+`time`+' step:'+`t`
 
 def read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir='../results/'):
     columns = ['t','Magnitude','cost_type','decision_type','auction_type','valuation_type','no_resources','sample','cost','normalized_cost']

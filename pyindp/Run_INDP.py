@@ -33,7 +33,7 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1]):
         topology = None
         shelby_data = True
     elif failSce_param['type']=='synthetic':  
-        base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3'
+        base_dir = failSce_param['Base_dir']
         ext_interdependency = None
         shelby_data = False  
         topology = failSce_param['topology']
@@ -226,26 +226,27 @@ if __name__ == "__main__":
     listFilteredSce = '../data/damagedElements_sliceQuantile_0.95.csv'
 #    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
 #    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
-    failSce_param = {"type":"WU","sample_range":range(1,51),"mags":range(0,3),
-                     'filtered_List':listFilteredSce}
-#    failSce_param = {"type":"synthetic","sample_range":range(0,5),"mags":range(0,100),
-#                     'filtered_List':None,'topology':'ScaleFree'}
+#    failSce_param = {"type":"WU","sample_range":range(23,24),"mags":range(5,6),
+#                     'filtered_List':listFilteredSce}
+    base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v2_bilateral/'
+#    base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3'
+    failSce_param = {"type":"synthetic","sample_range":range(0,5),"mags":range(0,100),
+                     'filtered_List':None,'topology':'ScaleFree','Base_dir':base_dir}
 
 
     ''' Run different methods'''
     # No restriction on number of resources for each layer # Not necessary for synthetic nets
-    v_r=[3,6,8,12]                 #[3,6,8,12] 
+    v_r=[0]                 #[3,6,8,12] 
 #    v_r=[[1,1,1,1],[2,2,2,2],[3,3,3,3]]              # Prescribed number of resources for each layer
-    judge_types = ["OPTIMISTIC","PESSIMISTIC"]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
+    judge_types = ["PESSIMISTIC","OPTIMISTIC"]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
     auction_types =  ["MCA"]       #["MDA","MAA","MCA"] 
     valuation_types = ['DTC']       #['DTC','DTC_uniform','MDDN']    
-    # List of layers of the net # Not necessary for synthetic nets
-    layers=[1,2,3,4]
+    layers=[] # List of layers of the net # Not necessary for synthetic nets
     
-#    run_indp_batch(failSce_param,v_r,layers)
+    run_indp_batch(failSce_param,v_r,layers)
 #    run_tdindp_batch(failSce_param, v_r,layers)
     for jc in judge_types:
-#        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None)
+        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None)
         for at in auction_types:
             for vt in valuation_types:
                 run_dindp_batch(failSce_param,v_r,layers,
@@ -260,10 +261,11 @@ if __name__ == "__main__":
     suffixes = ['Real_sum','']
     sample_range=failSce_param["sample_range"]
     mags=failSce_param['mags']
-#    synthetic_dir='C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3/'+failSce_param['topology']+'Networks/'
-    combinations,optimal_combinations=generate_combinations('shelby',
-                    mags,sample_range,layers,v_r,method_name,auction_types,
-                    valuation_types,listHDadd=listFilteredSce,synthetic_dir=None)
+    
+    synthetic_dir=base_dir+failSce_param['topology']+'Networks/'
+    combinations,optimal_combinations=generate_combinations('synthetic',mags,sample_range,
+                layers,v_r,method_name,auction_types,valuation_types,listHDadd=None,synthetic_dir=synthetic_dir)
+    
     root='../results/' #C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/'
     df = read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir=root)
 ##    df = correct_tdindp_results(df,optimal_combinations)
@@ -273,12 +275,12 @@ if __name__ == "__main__":
                 optimal_combinations,root_result_dir=root,ref_method=ref_method)    
     
     """ Plot results """    
-    plot_performance_curves_shelby(df,cost_type='Total',decision_names=method_name,ci=None,normalize=True)
-    plot_relative_performance_shelby(lambda_df)
-    plot_auction_allocation_shelby(resource_allocation,ci=None)
-    plot_relative_allocation_shelby(res_alloc_rel)
+#    plot_performance_curves_shelby(df,cost_type='Total',decision_names=method_name,ci=None,normalize=True)
+#    plot_relative_performance_shelby(lambda_df)
+#    plot_auction_allocation_shelby(resource_allocation,ci=None)
+#    plot_relative_allocation_shelby(res_alloc_rel)
     
-#    plot_performance_curves_synthetic(df,ci=None,x='t',y='normalized_cost')    
-#    plot_relative_performance_synthetic(lambda_df)  
-#    plot_auction_allocation_synthetic(resource_allocation,ci=None,resource_type='normalized_resource')
-#    plot_relative_allocation_synthetic(res_alloc_rel)
+    plot_performance_curves_synthetic(df,ci=None,x='t',y='normalized_cost')    
+    plot_relative_performance_synthetic(lambda_df)  
+    plot_auction_allocation_synthetic(resource_allocation,ci=None,resource_type='normalized_resource')
+    plot_relative_allocation_synthetic(res_alloc_rel)
