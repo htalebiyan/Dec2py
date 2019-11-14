@@ -226,12 +226,12 @@ if __name__ == "__main__":
     listFilteredSce = '../data/damagedElements_sliceQuantile_0.95.csv'
 #    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
 #    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
-#    failSce_param = {"type":"WU","sample_range":range(23,24),"mags":range(5,6),
+#     = {"type":"WU","sample_range":range(23,24),"mags":range(5,6),
 #                     'filtered_List':listFilteredSce}
-    base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v2_bilateral/'
-#    base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3'
+    
+    base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3/'
     failSce_param = {"type":"synthetic","sample_range":range(0,5),"mags":range(0,100),
-                     'filtered_List':None,'topology':'ScaleFree','Base_dir':base_dir}
+                     'filtered_List':None,'topology':'Grid','Base_dir':base_dir}
 
 
     ''' Run different methods'''
@@ -239,18 +239,18 @@ if __name__ == "__main__":
     v_r=[0]                 #[3,6,8,12] 
 #    v_r=[[1,1,1,1],[2,2,2,2],[3,3,3,3]]              # Prescribed number of resources for each layer
     judge_types = ["PESSIMISTIC","OPTIMISTIC"]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
-    auction_types =  ["MCA"]       #["MDA","MAA","MCA"] 
+    auction_types =  ["MDA","MAA","MCA"]       #["MDA","MAA","MCA"] 
     valuation_types = ['DTC']       #['DTC','DTC_uniform','MDDN']    
     layers=[] # List of layers of the net # Not necessary for synthetic nets
     
-    run_indp_batch(failSce_param,v_r,layers)
-#    run_tdindp_batch(failSce_param, v_r,layers)
-    for jc in judge_types:
-        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None)
-        for at in auction_types:
-            for vt in valuation_types:
-                run_dindp_batch(failSce_param,v_r,layers,
-                             judgment_type=jc,auction_type=at,valuation_type=vt)
+#    run_indp_batch(failSce_param,v_r,layers)
+##    run_tdindp_batch(failSce_param, v_r,layers)
+#    for jc in judge_types:
+#        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None)
+#        for at in auction_types:
+#            for vt in valuation_types:
+#                run_dindp_batch(failSce_param,v_r,layers,
+#                             judgment_type=jc,auction_type=at,valuation_type=vt)
 
     ''' Compute metrics ''' 
     ref_method = 'indp'
@@ -261,12 +261,11 @@ if __name__ == "__main__":
     suffixes = ['Real_sum','']
     sample_range=failSce_param["sample_range"]
     mags=failSce_param['mags']
-    
-    synthetic_dir=base_dir+failSce_param['topology']+'Networks/'
+
     combinations,optimal_combinations=generate_combinations('synthetic',mags,sample_range,
-                layers,v_r,method_name,auction_types,valuation_types,listHDadd=None,synthetic_dir=synthetic_dir)
+                layers,v_r,method_name,auction_types,valuation_types,failSce_param)
     
-    root='../results/' #C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/'
+    root='C:/Users/ht20/Documents/Files/Auction_synthetic_networks_v3/Grid/results/' #'../results/' 
     df = read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir=root)
 ##    df = correct_tdindp_results(df,optimal_combinations)
    

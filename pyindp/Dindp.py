@@ -848,7 +848,7 @@ def relative_performance(df,combinations,optimal_combinations,ref_method='indp',
     
     return lambda_df
 
-def generate_combinations(database,mags,sample,layers,no_resources,decision_type,auction_type,valuation_type,listHDadd=None,synthetic_dir=None):
+def generate_combinations(database,mags,sample,layers,no_resources,decision_type,auction_type,valuation_type,failSce_param):
     combinations = []
     optimal_combinations = []
     optimal_method = ['tdindp','indp','sample_indp_12Node']
@@ -856,12 +856,11 @@ def generate_combinations(database,mags,sample,layers,no_resources,decision_type
     idx=0
     no_total = len(mags)*len(sample)  
     if database=='shelby':
-        if listHDadd:
-            listHD = pd.read_csv(listHDadd)     
-        L = len(layers)
-              
+        if failSce_param['filtered_List']:
+            listHD = pd.read_csv(failSce_param['filtered_List'])     
+        L = len(layers)  
         for m,s in itertools.product(mags,sample):
-            if listHDadd==None or len(listHD.loc[(listHD.set == s) & (listHD.sce == m)].index):
+            if failSce_param['filtered_List']==None or len(listHD.loc[(listHD.set == s) & (listHD.sce == m)].index):
                 for rc in no_resources:
                     for dt,at,vt in itertools.product(decision_type,auction_type,valuation_type):
                         if (dt in optimal_method) and not [m,s,L,rc,dt,'',''] in optimal_combinations:
@@ -874,8 +873,11 @@ def generate_combinations(database,mags,sample,layers,no_resources,decision_type
             update_progress(idx,no_total)
     elif database=='synthetic':
         # Read net configurations
-        if synthetic_dir==None:
+        if not failSce_param['Base_dir']:
             sys.exit('Error: Provide the address of the synthetic databse')
+        else:
+            synthetic_dir=failSce_param['Base_dir']+failSce_param['topology']+'Networks/'
+            
         with open(synthetic_dir+'List_of_Configurations.txt') as f:
             config_data = pd.read_csv(f, delimiter='\t')  
         for m,s in itertools.product(mags,sample):
