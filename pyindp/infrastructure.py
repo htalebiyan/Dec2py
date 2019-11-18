@@ -795,7 +795,9 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3",topol
                 #                print "Opened",file,"."
                             try:
                                 data = pd.read_csv(f, delimiter='\t',header=None)
-                                for v in data.iterrows():                                      
+                                for v in data.iterrows():              
+                                    if k in [2,4] and v[0]>(len(data.index)/4.0-1.0):
+                                        continue
                                     i = int(v[1][0])
                                     net_i = k
                                     j = int(v[1][1])

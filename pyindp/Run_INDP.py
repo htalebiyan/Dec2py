@@ -53,6 +53,12 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1]):
                 params["SIM_NUMBER"]=i
                 params["MAGNITUDE"]=m
                 
+#                interdep_nodes={}
+#                for u,v,a in InterdepNet.G.edges_iter(data=True):
+#                    if a['data']['inf_data'].is_interdep:
+#                        if (u[1],v[1]) not in interdep_nodes:
+#                            interdep_nodes[(u[1],v[1])]=[]
+#                        interdep_nodes[(u[1],v[1])].append((u,v))                   
                 if failSce_param['type']=='WU':
                     add_Wu_failure_scenario(InterdepNet,BASE_DIR="../data/Wu_Damage_scenarios/",noSet=i,noSce=m)
                 elif failSce_param['type']=='ANDRES':
@@ -230,7 +236,7 @@ if __name__ == "__main__":
 #                     'filtered_List':listFilteredSce}
     
     base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3/'
-    failSce_param = {"type":"synthetic","sample_range":range(0,5),"mags":range(0,100),
+    failSce_param = {"type":"synthetic","sample_range":range(0,1),"mags":range(0,100),
                      'filtered_List':None,'topology':'Grid','Base_dir':base_dir}
 
 
@@ -238,19 +244,19 @@ if __name__ == "__main__":
     # No restriction on number of resources for each layer # Not necessary for synthetic nets
     v_r=[0]                 #[3,6,8,12] 
 #    v_r=[[1,1,1,1],[2,2,2,2],[3,3,3,3]]              # Prescribed number of resources for each layer
-    judge_types = ["PESSIMISTIC","OPTIMISTIC"]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
+    judge_types = ["OPTIMISTIC","PESSIMISTIC"]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
     auction_types =  ["MDA","MAA","MCA"]       #["MDA","MAA","MCA"] 
     valuation_types = ['DTC']       #['DTC','DTC_uniform','MDDN']    
     layers=[] # List of layers of the net # Not necessary for synthetic nets
     
-#    run_indp_batch(failSce_param,v_r,layers)
-##    run_tdindp_batch(failSce_param, v_r,layers)
-#    for jc in judge_types:
-#        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None)
-#        for at in auction_types:
-#            for vt in valuation_types:
-#                run_dindp_batch(failSce_param,v_r,layers,
-#                             judgment_type=jc,auction_type=at,valuation_type=vt)
+    run_indp_batch(failSce_param,v_r,layers)
+#    run_tdindp_batch(failSce_param, v_r,layers)
+    for jc in judge_types:
+        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None)
+        for at in auction_types:
+            for vt in valuation_types:
+                run_dindp_batch(failSce_param,v_r,layers,
+                             judgment_type=jc,auction_type=at,valuation_type=vt)
 
     ''' Compute metrics ''' 
     ref_method = 'indp'
@@ -265,7 +271,7 @@ if __name__ == "__main__":
     combinations,optimal_combinations=generate_combinations('synthetic',mags,sample_range,
                 layers,v_r,method_name,auction_types,valuation_types,failSce_param)
     
-    root='C:/Users/ht20/Documents/Files/Auction_synthetic_networks_v3/Grid/results/' #'../results/' 
+    root='../results/'  #'C:/Users/ht20/Documents/Files/Auction_synthetic_networks_v3/Grid/results/' 
     df = read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir=root)
 ##    df = correct_tdindp_results(df,optimal_combinations)
    
