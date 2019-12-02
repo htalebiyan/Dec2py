@@ -35,8 +35,8 @@ for cnfg in range(0,noConfiguration):
     # The lower bound corresponds to the lower bound of the supercritical Regime
     # and np.log(noNodes)/noNodes in the upper bound corresponds to the 
     # lower bound of the connected regime
-    probLB = 1.0/noNodes*1.5
-    probUB = (np.log(noNodes)/noNodes)*1.5 #!!! change it in the text
+    probLB = 1.0/noNodes
+    probUB = (np.log(noNodes)/noNodes+1)*0.5 #!!! change it in the text
     arcProb = np.random.uniform(low=probLB, high=probUB) 
     arcProbDict={}
     for x in range(1,noLayers+1):

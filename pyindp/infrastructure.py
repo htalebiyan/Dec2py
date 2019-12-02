@@ -743,12 +743,15 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3",topol
     net_dir = BASE_DIR+'\\'+topology+'Networks\\'
     topo_initial = {'Random':'RN','ScaleFree':'SFN','Grid':'GN'}
     with open(net_dir+'List_of_Configurations.txt') as f:
-        config_data = pd.read_csv(f, delimiter='\t')  
+        config_data = pd.read_csv(f, delimiter='\t',header=None) #!!!  
     config_param = config_data.iloc[config]
-    noLayers = int(config_param.loc[' No. Layers'])    
-    noResource = int(config_param.loc[' Resource Cap'])  
+    noLayers = 2 #!!! int(config_param.loc[' No. Layers'])    
+    noResource = int(config_param[5])  #!!! int(config_param.loc[' Resource Cap'])  
     
-    file_dir = net_dir+topo_initial[topology]+'Config_'+str(config)+'\\Sample_'+str(sample)+'\\'
+    import glob
+    folder_names= glob.glob(net_dir+topo_initial[topology]+'Config'+str(config)+'*')
+#    topo_initial[topology]+'Config'+str(config)+'_'+`int(config_param[1])`+'_'+`round(config_param[2],2)`+'_'+`round(config_param[3],3)`+'_'+`config_param[4]`+'_'+`noResource` #!!!
+    file_dir = folder_names[0]+'\\SampleSet_'+str(sample)+'\\IN_0\\' #!!!
     G=InfrastructureNetwork("Test")
     global_index=0
     files = [f for f in os.listdir(file_dir) if os.path.isfile(os.path.join(file_dir, f))]
@@ -795,9 +798,7 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3",topol
                 #                print "Opened",file,"."
                             try:
                                 data = pd.read_csv(f, delimiter='\t',header=None)
-                                for v in data.iterrows():              
-                                    if k in [2,4] and v[0]>(len(data.index)/4.0-1.0):
-                                        continue
+                                for v in data.iterrows():                                      
                                     i = int(v[1][0])
                                     net_i = k
                                     j = int(v[1][1])
@@ -824,11 +825,14 @@ def add_synthetic_failure_scenario(G,BASE_DIR="../data/Generated_Network_Dataset
     net_dir = BASE_DIR+'\\'+topology+'Networks\\'
     topo_initial = {'Random':'RN','ScaleFree':'SFN','Grid':'GN'}
     with open(net_dir+'List_of_Configurations.txt') as f:
-        config_data = pd.read_csv(f, delimiter='\t')  
-    config_param = config_data.iloc[config]
-    noLayers = int(config_param.loc[' No. Layers'])    
+        config_data = pd.read_csv(f, delimiter='\t',header=None) #!!!  
+    config_param = config_data.iloc[config] 
+    noLayers = 2 #!!! int(config_param.loc[' No. Layers'])     #!!! 
+    noResource = int(config_param[5])  #!!! int(config_param.loc[' Resource Cap'])  
+    import glob
+    folder_names= glob.glob(net_dir+topo_initial[topology]+'Config'+str(config)+'*') #!!!
+    file_dir = folder_names[0]+'\\SampleSet_'+str(sample)+'\\IN_0\\' #!!!
     
-    file_dir = net_dir+topo_initial[topology]+'Config_'+str(config)+'\\Sample_'+str(sample)+'\\'
     files = [f for f in os.listdir(file_dir) if os.path.isfile(os.path.join(file_dir, f))]
     for k in range(1,noLayers+1):
         for file in files: 

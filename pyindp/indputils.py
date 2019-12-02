@@ -62,29 +62,34 @@ class INDPResults:
             self.results[new_t]=indp_result[t]
     def add_cost(self,t,cost_type,cost):
         if t not in self.results:
-            self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents()}
+            self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
         self.results[t]['costs'][cost_type]=cost
+    def add_run_time(self,t,run_time):
+        if t not in self.results:
+            self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
+        self.results[t]['run_time']=run_time
     def add_action(self,t,action):
         if t not in self.results:
-            self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents()}
+            self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
         self.results[t]['actions'].append(action)
     def add_gc_size(self,t,gc_size):
         if t not in self.results:
-            self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents()}
+            self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
         self.results[t]['gc_size']=gc_size
     def add_num_components(self,t,num_components):
         if t not in self.results:
-            self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents()}
+            self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
         self.results[t]['num_components']=num_components
     def add_components(self,t,components):
         if t not in self.results:
-            self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents()}
+            self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
         self.results[t]['components']=components
         self.add_num_components(t,components.num_components)
         self.add_gc_size(t,components.gc_size)
     def to_csv(self,outdir,sample_num=1,suffix=""):
         action_file =outdir+"/actions_"+`sample_num`+"_"+suffix+".csv"
         costs_file =outdir+"/costs_"  +`sample_num`+"_"+suffix+".csv"
+        run_time_file =outdir+"/run_time_"  +`sample_num`+"_"+suffix+".csv"
         perc_file  =outdir+"/percolation_"+`sample_num`+"_"+suffix+".csv"
         comp_file  =outdir+"/components_"+`sample_num`+"_"+suffix+".csv"
         with open(action_file,'w') as f:
@@ -92,11 +97,15 @@ class INDPResults:
             for t in self.results:
                 for a in self.results[t]['actions']:
                     f.write(`t`+","+a+"\n")
+        with open(run_time_file,'w') as f:
+            f.write("t,run_time\n")
+            for t in self.results:
+                f.write(`t`+","+`self.results[t]['run_time']`+"\n")
         with open(costs_file,'w') as f:
-            f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total\n")
+            f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total, Under Supply Perc\n")
             for t in self.results:
                 costs=self.results[t]['costs']
-                f.write(`t`+","+`costs["Space Prep"]`+","+`costs["Arc"]`+","+`costs["Node"]`+","+`costs["Over Supply"]`+","+`costs["Under Supply"]`+","+`costs["Flow"]`+","+`costs["Total"]`+"\n")
+                f.write(`t`+","+`costs["Space Prep"]`+","+`costs["Arc"]`+","+`costs["Node"]`+","+`costs["Over Supply"]`+","+`costs["Under Supply"]`+","+`costs["Flow"]`+","+`costs["Total"]`+`costs["Under Supply Perc"]`+","+"\n")
 #        with open(perc_file,'w') as f:
 #            f.write("t,gc_size,num_components\n")
 #            for t in self.results:

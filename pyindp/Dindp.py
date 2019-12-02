@@ -148,7 +148,9 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
         Dindp_results_sum = INDPResults()
         Dindp_results_Real_sum = INDPResults()
         cost_types = Dindp_results[1][0]['costs'].keys()
-        for i in range(num_iterations+1):                
+        for i in range(num_iterations+1):   
+            sum_run_time = 0.0
+            sum_run_time_Real = 0.0             
             for cost_type in cost_types:
                 sumTemp = 0.0
                 sumTemp_Real = 0.0
@@ -163,8 +165,12 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
                 Dindp_results_Real_sum.add_cost(i,cost_type,sumTemp_Real)
             
             for P in layers:
+                sum_run_time += Dindp_results[P][i]['run_time']
+                sum_run_time_Real += Dindp_results_Real[P][i]['run_time']
                 for a in Dindp_results[P][i]['actions']:
                     Dindp_results_sum.add_action(i,a) 
+            Dindp_results_sum.add_run_time(i,sum_run_time)
+            Dindp_results_Real_sum.add_run_time(i,sum_run_time_Real)
                     
         output_dir_auction = output_dir + '/auctions'        
         if auction_type:
@@ -848,7 +854,7 @@ def relative_performance(df,combinations,optimal_combinations,ref_method='indp',
     
     return lambda_df
 
-def generate_combinations(database,mags,sample,layers,no_resources,decision_type,auction_type,valuation_type,failSce_param):
+def generate_combinations(database,mags,sample,layers,no_resources,decision_type,auction_type,valuation_type,listHDadd=None,synthetic_dir=None):
     combinations = []
     optimal_combinations = []
     optimal_method = ['tdindp','indp','sample_indp_12Node']
@@ -856,11 +862,12 @@ def generate_combinations(database,mags,sample,layers,no_resources,decision_type
     idx=0
     no_total = len(mags)*len(sample)  
     if database=='shelby':
-        if failSce_param['filtered_List']:
-            listHD = pd.read_csv(failSce_param['filtered_List'])     
-        L = len(layers)  
+        if listHDadd:
+            listHD = pd.read_csv(listHDadd)     
+        L = len(layers)
+              
         for m,s in itertools.product(mags,sample):
-            if failSce_param['filtered_List']==None or len(listHD.loc[(listHD.set == s) & (listHD.sce == m)].index):
+            if listHDadd==None or len(listHD.loc[(listHD.set == s) & (listHD.sce == m)].index):
                 for rc in no_resources:
                     for dt,at,vt in itertools.product(decision_type,auction_type,valuation_type):
                         if (dt in optimal_method) and not [m,s,L,rc,dt,'',''] in optimal_combinations:
@@ -873,17 +880,14 @@ def generate_combinations(database,mags,sample,layers,no_resources,decision_type
             update_progress(idx,no_total)
     elif database=='synthetic':
         # Read net configurations
-        if not failSce_param['Base_dir']:
+        if synthetic_dir==None:
             sys.exit('Error: Provide the address of the synthetic databse')
-        else:
-            synthetic_dir=failSce_param['Base_dir']+failSce_param['topology']+'Networks/'
-            
         with open(synthetic_dir+'List_of_Configurations.txt') as f:
-            config_data = pd.read_csv(f, delimiter='\t')  
+            config_data = pd.read_csv(f, delimiter='\t',header=None)  
         for m,s in itertools.product(mags,sample):
             config_param = config_data.iloc[m]
-            L = int(config_param.loc[' No. Layers'])    
-            no_resources = [int(config_param.loc[' Resource Cap'])]              
+            L = 2 #!!! int(config_param.loc[' No. Layers'])     #!!! 
+            no_resources = [int(config_param[5])]  #!!! int(config_param.loc[' Resource Cap'])            
             for rc in no_resources:
                 for dt,at,vt in itertools.product(decision_type,auction_type,valuation_type):
                     if (dt in optimal_method) and not [m,s,L,rc,dt,'',''] in optimal_combinations:

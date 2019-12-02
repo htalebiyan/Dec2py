@@ -7,12 +7,13 @@ import networkx as nx
 import matplotlib.pyplot as plt
 #import copy
 import random
+import time
 import sys
 #HOME_DIR="/Users/Andrew/"
 #if platform.system() == "Linux":
 #    HOME_DIR="/home/andrew/"
 
-def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_actions=False, print_cmd=True):
+def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_actions=False, print_cmd=True, time_limit=None):
     """INDP optimization problem. Also solves td-INDP if T > 1.
     :param N: An InfrastructureNetwork instance (created in infrastructure.py)
     :param v_r: Vector of number of resources given to each layer in each timestep. If the size of the vector is 1, it shows the total number of resources for all layers.
@@ -28,8 +29,11 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
     #        for u in functionality[t]:
     #            if functionality[t][u] == 0.0:
     #                print "At Time",`t`,", node",u,"is broken."
+    start_time = time.time()
     m=Model('indp')
     m.setParam('OutputFlag',False)
+    if time_limit:
+        m.setParam('TimeLimit', time_limit)
     G_prime_nodes = [n[0] for n in N.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in layers]
     G_prime = N.G.subgraph(G_prime_nodes)
     # Damaged nodes in whole network
@@ -291,13 +295,21 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
     m.optimize()
     indp_results=INDPResults()
     # Save results.
-    if m.getAttr("Status")==GRB.OPTIMAL:
+    if m.getAttr("Status")==GRB.OPTIMAL or m.status==9:
+        if m.status==9:
+            print ('\nOptimizer time limit, gap = %1.3f\n' % m.MIPGap)
+        # compute total demand
+        total_demand = 0.0
+        for n,d in N_hat_prime:
+            total_demand+=d['data']['inf_data'].demand
+            
         for t in range(T):
             nodeCost=0.0
             arcCost=0.0
             flowCost=0.0
             overSuppCost=0.0
             underSuppCost=0.0
+            underSupp=0.0
             spacePrepCost=0.0
             # Record node recovery actions.
             for n,d in N_hat_prime:
@@ -341,9 +353,11 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
             # Calculate under/oversupply costs.
             for n,d in N_hat.nodes_iter(data=True):
                 overSuppCost+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+`n`+","+`t`).x
+                underSupp+= m.getVarByName('delta+_'+`n`+","+`t`).x
                 underSuppCost+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+`n`+","+`t`).x
             indp_results.add_cost(t,"Over Supply",overSuppCost)
             indp_results.add_cost(t,"Under Supply",underSuppCost)
+            indp_results.add_cost(t,"Under Supply Perc",underSupp/total_demand)
             # Calculate flow costs.
             for u,v,a in N_hat.edges_iter(data=True):
                 flowCost+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+`u`+","+`v`+","+`t`).x
@@ -351,7 +365,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
             # Calculate total costs.
             indp_results.add_cost(t,"Total",flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost)
             indp_results.add_cost(t,"Total no disconnection",spacePrepCost+arcCost+flowCost+nodeCost)
-	                
+            indp_results.add_run_time(t,time.time()-start_time)     
         return [m,indp_results]
     else:
         print m.getAttr("Status"),": SOLUTION NOT FOUND. (Check data and/or violated constraints)."

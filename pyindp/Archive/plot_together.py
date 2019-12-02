@@ -49,7 +49,7 @@ comp_lambda_df=pd.merge(comp_lambda_df, config_info,
 selected_df = comp_lambda_df[(comp_lambda_df['lambda_TC']!='nan')] 
 selected_df["lambda_TC"] = pd.to_numeric(selected_df["lambda_TC"])
 g = sns.catplot(x='auction_type', y='lambda_TC', hue='decision_type',
-                 col=' No. Layers', row='topology',data=selected_df,
+                 col='interdependency', row='topology',data=selected_df,
                  kind='bar',palette="Blues",
                  linewidth=0.5,edgecolor=[.25,.25,.25],
                  capsize=.05,errcolor=[.25,.25,.25],errwidth=1,)
