@@ -109,7 +109,7 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
                 # Make decision based on judgments before communication
                 indp_results = indp(InterdepNet,v_r_applied[P-1],1,layers=layers,
                                 controlled_layers=[P],functionality= functionality[P],
-                                print_cmd=print_cmd)
+                                print_cmd=print_cmd,time_limit=10*60)
                         
                 # Save models for re-evaluation after communication
                 uncorrectedResults[P] = indp_results[1]
@@ -236,7 +236,7 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
                      
     indp_results_Real = indp(N,v_r=0,T=1,layers=layers,controlled_layers=controlled_layers,
                              functionality=functionality_realized,
-                                print_cmd=print_cmd)  
+                                print_cmd=print_cmd,time_limit=10*60)  
     for t in range(T):
         costs = indp_results.results[t]['costs']    
         nodeCost=costs["Node"]
@@ -533,7 +533,7 @@ def compute_valuations(v_r,InterdepNet,layers,T=1,print_cmd=True,judgment_type="
                     indp_results = indp(InterdepNet,v_r=v+1,
                                 T=1,layers=layers,controlled_layers=[P],
                                 functionality=functionality,
-                                print_cmd=print_cmd)
+                                print_cmd=print_cmd,time_limit=2*60)
                     newTotalCost = indp_results[1][0]['costs']['Total']
                     if indp_results[1][0]['actions']!=[]:
                         valuation[P].append(currentTotalCost[P]-newTotalCost)
@@ -553,7 +553,7 @@ def compute_valuations(v_r,InterdepNet,layers,T=1,print_cmd=True,judgment_type="
                         indp_results = indp(InterdepNet,v_r=v+1,
                                     T=1,layers=layers,controlled_layers=[P],
                                     functionality=functionality,
-                                    print_cmd=print_cmd)
+                                    print_cmd=print_cmd,time_limit=2*60)
                         totalCostBounds.append(indp_results[1][0]['costs']['Total'])
                     newTotalCost = np.random.uniform(min(totalCostBounds),
                                                     max(totalCostBounds),1)[0]
@@ -883,12 +883,12 @@ def generate_combinations(database,mags,sample,layers,no_resources,decision_type
         if synthetic_dir==None:
             sys.exit('Error: Provide the address of the synthetic databse')
         with open(synthetic_dir+'List_of_Configurations.txt') as f:
-            config_data = pd.read_csv(f, delimiter='\t',header=None)  
+            config_data = pd.read_csv(f, delimiter='\t')  
         for m,s in itertools.product(mags,sample):
             config_param = config_data.iloc[m]
-            L = 2 #!!! int(config_param.loc[' No. Layers'])     #!!! 
-            no_resources = [int(config_param[5])]  #!!! int(config_param.loc[' Resource Cap'])            
-            for rc in no_resources:
+            L = int(config_param.loc[' No. Layers'])   
+            no_resources =  int(config_param.loc[' Resource Cap'])            
+            for rc in [no_resources]:
                 for dt,at,vt in itertools.product(decision_type,auction_type,valuation_type):
                     if (dt in optimal_method) and not [m,s,L,rc,dt,'',''] in optimal_combinations:
                         optimal_combinations.append([m,s,L,rc,dt,'',''])

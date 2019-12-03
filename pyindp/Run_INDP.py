@@ -229,8 +229,8 @@ if __name__ == "__main__":
 #    failSce_param = {"type":"WU","sample_range":range(23,24),"mags":range(5,6),
 #                     'filtered_List':listFilteredSce}
 #    base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v2_bilateral/'
-    base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3'
-    failSce_param = {"type":"synthetic","sample_range":range(0,1),"mags":range(9,10),
+    base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3/'
+    failSce_param = {"type":"synthetic","sample_range":range(0,1),"mags":range(2,3),
                      'filtered_List':None,'topology':'Random','Base_dir':base_dir}
 
 
@@ -243,16 +243,17 @@ if __name__ == "__main__":
     valuation_types = ['DTC']       #['DTC','DTC_uniform','MDDN']    
     layers=[] # List of layers of the net # Not necessary for synthetic nets
     
-    run_indp_batch(failSce_param,v_r,layers)
-#    run_tdindp_batch(failSce_param, v_r,layers)
-    for jc in judge_types:
-        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None)
-        for at in auction_types:
-            for vt in valuation_types:
-                run_dindp_batch(failSce_param,v_r,layers,
-                    judgment_type=jc,auction_type=at,valuation_type=vt)
+#    run_indp_batch(failSce_param,v_r,layers)
+###    run_tdindp_batch(failSce_param, v_r,layers)
+#    for jc in judge_types:
+#        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None)
+#        for at in auction_types:
+#            for vt in valuation_types:
+#                run_dindp_batch(failSce_param,v_r,layers,
+#                    judgment_type=jc,auction_type=at,valuation_type=vt)
 
     ''' Compute metrics ''' 
+    cost_type = 'Under Supply Perc'
     ref_method = 'indp'
     method_name = ['indp']
     for jc in judge_types:
@@ -270,7 +271,7 @@ if __name__ == "__main__":
     df = read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir=root)
 ##    df = correct_tdindp_results(df,optimal_combinations)
    
-    lambda_df = relative_performance(df,combinations,optimal_combinations,ref_method=ref_method)
+    lambda_df = relative_performance(df,combinations,optimal_combinations,ref_method=ref_method,cost_type=cost_type)
     resource_allocation,res_alloc_rel=read_resourcec_allocation(df,combinations,
                 optimal_combinations,root_result_dir=root,ref_method=ref_method)    
     
@@ -280,7 +281,8 @@ if __name__ == "__main__":
 #    plot_auction_allocation_shelby(resource_allocation,ci=None)
 #    plot_relative_allocation_shelby(res_alloc_rel)
     
-#    plot_performance_curves_synthetic(df,ci=None,x='t',y='normalized_cost')    
-#    plot_relative_performance_synthetic(lambda_df)  
-#    plot_auction_allocation_synthetic(resource_allocation,ci=None,resource_type='normalized_resource')
-#    plot_relative_allocation_synthetic(res_alloc_rel)
+    
+    plot_performance_curves_synthetic(df,ci=None,x='t',y='cost',cost_type=cost_type)    
+    plot_relative_performance_synthetic(lambda_df,cost_type=cost_type)  
+    plot_auction_allocation_synthetic(resource_allocation,ci=None,resource_type='normalized_resource')
+    plot_relative_allocation_synthetic(res_alloc_rel)

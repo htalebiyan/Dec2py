@@ -300,8 +300,10 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
             print ('\nOptimizer time limit, gap = %1.3f\n' % m.MIPGap)
         # compute total demand
         total_demand = 0.0
-        for n,d in N_hat_prime:
-            total_demand+=d['data']['inf_data'].demand
+        for n in N_hat.nodes_iter(data=True):
+            demand_value = n[1]['data']['inf_data'].demand
+            if demand_value<0:
+                total_demand+=demand_value
             
         for t in range(T):
             nodeCost=0.0

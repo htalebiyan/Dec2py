@@ -48,7 +48,7 @@ class INDPComponents:
         return indp_components
 
 class INDPResults:
-    cost_types=["Space Prep","Arc","Node","Over Supply","Under Supply","Flow","Total"]
+    cost_types=["Space Prep","Arc","Node","Over Supply","Under Supply","Flow","Total","Under Supply Perc"]
     def __init__(self):
         self.results={}
     def __len__(self):
@@ -102,10 +102,10 @@ class INDPResults:
             for t in self.results:
                 f.write(`t`+","+`self.results[t]['run_time']`+"\n")
         with open(costs_file,'w') as f:
-            f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total, Under Supply Perc\n")
+            f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Under Supply Perc\n")
             for t in self.results:
                 costs=self.results[t]['costs']
-                f.write(`t`+","+`costs["Space Prep"]`+","+`costs["Arc"]`+","+`costs["Node"]`+","+`costs["Over Supply"]`+","+`costs["Under Supply"]`+","+`costs["Flow"]`+","+`costs["Total"]`+`costs["Under Supply Perc"]`+","+"\n")
+                f.write(`t`+","+`costs["Space Prep"]`+","+`costs["Arc"]`+","+`costs["Node"]`+","+`costs["Over Supply"]`+","+`costs["Under Supply"]`+","+`costs["Flow"]`+","+`costs["Total"]`+","+`costs["Under Supply Perc"]`+"\n")
 #        with open(perc_file,'w') as f:
 #            f.write("t,gc_size,num_components\n")
 #            for t in self.results:
