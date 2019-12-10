@@ -10,7 +10,7 @@ from indputils import *
 import copy
 from gurobipy import *
 import itertools 
-import scipy
+import time
 import sys
 def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=False,validate=False):
     """ Solves an INDP problem with specified parameters using a decentralized hueristic called Judgment Call . Outputs to directory specified in params['OUTPUT_DIR'].
@@ -70,12 +70,14 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
         res_allocate = {}
         PoA = {}
         valuations={}
+        res_alloc_time={}
         for i in range(num_iterations):
             print "\n-Iteration "+`i`+"/"+`num_iterations-1`
             
+            res_alloc_time_start = time.time()
             v_r_applied = []
             if auction_type:
-                res_allocate[i],PoA[i],valuations[i]=auction_resources(sum(v_r),params,
+                res_allocate[i],PoA[i],valuations[i],auction_time,valuation_time=auction_resources(sum(v_r),params,
                     layers=layers,T=1,print_cmd=print_cmd,judgment_type=judgment_type,
                     auction_type=auction_type,valuation_type=valuation_type)
                
@@ -93,7 +95,11 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
                 res_allocate[i] = {P:[] for P in layers}
                 for P in layers:
                     res_allocate[i][P]=range(1,1+v_r_applied[P-1])
-                    
+            if auction_type:
+                res_alloc_time[i]=[time.time()-res_alloc_time_start,auction_time,valuation_time]
+            else:
+                res_alloc_time[i]=[time.time()-res_alloc_time_start,0,0]
+            
             functionality = {p:{} for p in layers}
             uncorrectedResults = {}  
             if print_cmd:
@@ -165,8 +171,10 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
                 Dindp_results_Real_sum.add_cost(i,cost_type,sumTemp_Real)
             
             for P in layers:
-                sum_run_time += Dindp_results[P][i]['run_time']
-                sum_run_time_Real += Dindp_results_Real[P][i]['run_time']
+                if Dindp_results[P][i]['run_time']>sum_run_time:
+                    sum_run_time = Dindp_results[P][i]['run_time']
+                if Dindp_results_Real[P][i]['run_time']>sum_run_time_Real:
+                    sum_run_time_Real = Dindp_results_Real[P][i]['run_time']
                 for a in Dindp_results[P][i]['actions']:
                     Dindp_results_sum.add_action(i,a) 
             Dindp_results_sum.add_run_time(i,sum_run_time)
@@ -174,9 +182,9 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
                     
         output_dir_auction = output_dir + '/auctions'        
         if auction_type:
-            write_auction_csv(output_dir_auction,res_allocate,PoA,valuations,sample_num=params["SIM_NUMBER"],suffix="") 
+            write_auction_csv(output_dir_auction,res_allocate,res_alloc_time,PoA,valuations,sample_num=params["SIM_NUMBER"],suffix="") 
         else:
-            write_auction_csv(output_dir_auction,res_allocate,sample_num=params["SIM_NUMBER"],suffix="")
+            write_auction_csv(output_dir_auction,res_allocate,res_alloc_time,sample_num=params["SIM_NUMBER"],suffix="")
         # Save results of D-iINDP run to file.
         if saveJC:   
             output_dir_agents = output_dir + '/agents'
@@ -388,13 +396,14 @@ def auction_resources(v_r,params,layers,T=1,print_cmd=True,judgment_type="OPTIMI
     #Compute Valuations
     if print_cmd:
         print "Compute Valuations (" + valuation_type + ")"
-    valuation, optimal_valuation = compute_valuations(v_r,InterdepNet,layers=layers,
+    valuation, optimal_valuation, valuation_time = compute_valuations(v_r,InterdepNet,layers=layers,
                                 T=1,print_cmd=print_cmd,judgment_type=judgment_type,
                                 valuation_type=valuation_type)
     
     #Auctioning
     if print_cmd:
         print "Auction (" + auction_type + ")" 
+    start_time_auction = time.time()
     resource_allocation = {P:[] for P in layers}
     PoA = {}
     PoA['optimal'] = optimal_valuation  
@@ -489,14 +498,15 @@ def auction_resources(v_r,params,layers,T=1,print_cmd=True,judgment_type="OPTIMI
         sum_valuation = sum(PoA['winner'])  
 #        m.write('model.lp')
 #        m.write('model.sol')
+    auction_time = time.time()-start_time_auction
     if sum_valuation!=0:
         PoA['poa'] = optimal_valuation/sum_valuation
     else:
         PoA['poa'] = -10
     
-    return resource_allocation,PoA,valuation
+    return resource_allocation,PoA,valuation,auction_time,valuation_time
 
-def compute_valuations(v_r,InterdepNet,layers,T=1,print_cmd=True,judgment_type="OPTIMISTIC",valuation_type='DTC_uniform'):
+def compute_valuations(v_r,InterdepNet,layers,T=1,print_cmd=True,judgment_type="OPTIMISTIC",valuation_type='DTC_uniform',compute_optimal_valuation=False):
     """ computes bidders' valuations for different number of resources
     :param valuation_type: Type of the valuation: DTC (Differential Total Cost), DTC_unifrom (DTC with uniform distribution), MDDN (Max Demand Damaged Nodes).
     """
@@ -509,18 +519,22 @@ def compute_valuations(v_r,InterdepNet,layers,T=1,print_cmd=True,judgment_type="
                             controlled_layers=[P])
         currentTotalCost[P] = indp_results[1][0]['costs']['Total']
             
-    """ Optimal Valuation """      
-    indp_results = indp(InterdepNet,v_r=0,T=1,layers=layers,
-                                controlled_layers=layers)
-    optimal_total_cost_current = indp_results[1][0]['costs']['Total']
-    indp_results = indp(InterdepNet,v_r=v_r,T=1,layers=layers,
-                                controlled_layers=layers)
-    optimal_total_cost = indp_results[1][0]['costs']['Total']
-    optimal_valuation = optimal_total_cost_current - optimal_total_cost
+    """ Optimal Valuation """
+    optimal_valuation = 1.0
+    if compute_optimal_valuation:      
+        indp_results = indp(InterdepNet,v_r=0,T=1,layers=layers,
+                                    controlled_layers=layers)
+        optimal_total_cost_current = indp_results[1][0]['costs']['Total']
+        indp_results = indp(InterdepNet,v_r=v_r,T=1,layers=layers,
+                                    controlled_layers=layers)
+        optimal_total_cost = indp_results[1][0]['costs']['Total']
+        optimal_valuation = optimal_total_cost_current - optimal_total_cost
     
-    valuation={P:[] for P in layers}     
+    valuation={P:[] for P in layers} 
+    valuation_time=[] 
     if T == 1: # For iterative INDP formulation
         for P in layers:
+            start_time_val = time.time()
             if print_cmd:
                 print "Bidder-%d"%(P)
             if valuation_type=='DTC':
@@ -575,19 +589,26 @@ def compute_valuations(v_r,InterdepNet,layers,T=1,print_cmd=True,judgment_type="
                         valuation[P].append(0.0)
             else:
                 sys.exit( "Wrong valuation type!!!")
-    return valuation, optimal_valuation
+            valuation_time.append(time.time()-start_time_val)
+    return valuation, optimal_valuation, valuation_time
                 
-def write_auction_csv(outdir,res_allocate,PoA=None,valuations=None,sample_num=1,suffix=""):
+def write_auction_csv(outdir,res_allocate,res_alloc_time,PoA=None,valuations=None,sample_num=1,suffix=""):
     if not os.path.exists(outdir):
         os.makedirs(outdir)        
     auction_file=outdir+"/auctions_"+`sample_num`+"_"+suffix+".csv"
+    # Making header
     header = "t,"
     for key,value in res_allocate[0].items():
         header += "P"+`key`+","
-    header += "PoA,optimal_val,winner_val"
     if valuations:
+        header += "PoA,optimal_val,winner_val,"
         for p,value in valuations[0].items(): 
-            header +=  ",bidder_"+`p`+"_valuation"
+            header +=  "bidder_"+`p`+"_valuation,"
+    header += "Res Alloc Time,Auction Time,"
+    if valuations:
+        for key,value in res_allocate[0].items():
+            header += "Val. Time P"+`key`+","
+    # Write to file
     with open(auction_file,'w') as f:
         f.write(header+"\n")
         for t,value in res_allocate.items():
@@ -597,11 +618,17 @@ def write_auction_csv(outdir,res_allocate,PoA=None,valuations=None,sample_num=1,
             if valuations:
                 row += `PoA[t]['poa']`+','+`PoA[t]['optimal']`+','
                 for pitem in PoA[t]['winner']:
-                    row += `pitem`+"|"            
+                    row += `pitem`+"|"  
+                row += ','
                 for p,pvalue in valuations[t].items():
-                    row += ','
                     for pitem in pvalue:
                         row += `pitem`+"|"
+                    row += ','
+            row+=`res_alloc_time[t][0]`+','+`res_alloc_time[t][1]`+','
+            if valuations:
+                for titem in res_alloc_time[t][2]:
+                    row += `titem`+','
+                    
             f.write(row+"\n")
             
 def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='indp',suffix="",root_result_dir='../results/'):  
@@ -758,6 +785,60 @@ def read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_r
     update_progress(idx+1,len(joinedlist))
     return agg_results
 
+def read_run_time(combinations,optimal_combinations,suffixes,root_result_dir='../results/'):
+    columns = ['t','Magnitude','decision_type','auction_type','valuation_type','no_resources','sample','decision_time','auction_time','valuation_time']
+    optimal_method = ['tdindp','indp','sample_indp_12Node']
+    run_time_results = pd.DataFrame(columns=columns, dtype=int)
+
+    print "\nReading tun times"
+    joinedlist = combinations + optimal_combinations
+    for idx,x in enumerate(joinedlist):
+        if x[4] in optimal_method:
+            full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`
+        elif x[5]=='Uniform':
+            full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_uniform_alloc'
+        else:
+            full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6] 
+        
+        result_dir = root_result_dir+x[4]+'_results'+full_suffix
+        run_time_all = {}
+        if os.path.exists(result_dir): 
+            for suf in suffixes:
+                run_time_file = result_dir+"/run_time_"  +`x[1]`+"_"+suf+".csv"  
+                if os.path.exists(run_time_file):
+                # Save all results to Pandas dataframe                
+                    with open(run_time_file) as f:
+                        lines=f.readlines()[1:]
+                        for line in lines:
+                            data=string.split(str.strip(line),",")
+                            t=int(data[0])
+                            run_time_all[t]=[float(data[1]),0,0]
+                if x[4] not in optimal_method and x[5]!='Uniform': 
+                    auction_file = result_dir+"/auctions/auctions_"  +`x[1]`+"_"+suf+".csv"  
+                    if os.path.exists(auction_file):
+                    # Save all results to Pandas dataframe                
+                        with open(auction_file) as f:
+                            lines=f.readlines()[1:]
+                            for line in lines:
+                                data=string.split(str.strip(line),",")
+                                t=int(data[0])
+                                auction_time=float(data[2*x[2]+5])
+                                decision_time = run_time_all[t][0]
+                                valuation_time_max = 0.0
+                                for vtm in range(x[2]):
+                                    if float(data[2*x[2]+5+vtm+1])>valuation_time_max:
+                                        valuation_time_max= float(data[2*x[2]+5+vtm+1])                                   
+                                run_time_all[t]=[decision_time,auction_time,valuation_time_max]
+            for t,value in run_time_all.items():
+                values = [t,x[0],x[4],x[5],x[6],x[3],x[1],value[0],value[1],value[2]]
+                run_time_results = run_time_results.append(dict(zip(columns,values)), ignore_index=True)
+            if idx%(len(joinedlist)/100+1)==0:
+                update_progress(idx+1,len(joinedlist))
+        else:
+            sys.exit('Error: The combination or folder does not exist') 
+    update_progress(idx+1,len(joinedlist))
+    return run_time_results
+
 def correct_tdindp_results(df,optimal_combinations):    
     # correct total cost of td-indp
     print '\nCorrecting td-INDP Results\n',
@@ -797,7 +878,8 @@ def correct_tdindp_results(df,optimal_combinations):
     return df
                
 def relative_performance(df,combinations,optimal_combinations,ref_method='indp',ref_at='',ref_vt='',cost_type='Total'):    
-    columns = ['Magnitude','cost_type','decision_type','auction_type','valuation_type','no_resources','sample','Area','lambda_TC']
+    columns = ['Magnitude','cost_type','decision_type','auction_type','valuation_type','no_resources','sample',
+               'Area_TC','Area_P','lambda_TC','lambda_P','lambda_U']
     lambda_df = pd.DataFrame(columns=columns, dtype=int)
     # Computing reference area for lambda
     # Check if the method in optimal combination is the reference method #!!!
@@ -805,13 +887,13 @@ def relative_performance(df,combinations,optimal_combinations,ref_method='indp',
     for idx,x in enumerate(optimal_combinations):
         if x[4]==ref_method:
             rows = df[(df['Magnitude']==x[0])&(df['decision_type']==ref_method)&
-                     (df['sample']==x[1])&(df['cost_type']==cost_type)&
-                     (df['auction_type']==ref_at)&(df['valuation_type']==ref_vt)&
-                     (df['no_resources']==x[3])]
+                     (df['sample']==x[1])&(df['auction_type']==ref_at)&
+                     (df['valuation_type']==ref_vt)&(df['no_resources']==x[3])]
                               
             if not rows.empty:
-                area = np.trapz(rows.cost[:20],dx=1)
-                values = [x[0],cost_type,x[4],ref_at,ref_vt,x[3],x[1],area,'nan']
+                area_TC = np.trapz(rows[rows['cost_type']==cost_type].cost[:20],dx=1)
+                area_P = np.trapz(rows[rows['cost_type']=='Under Supply Perc'].cost[:20],dx=1)
+                values = [x[0],cost_type,x[4],ref_at,ref_vt,x[3],x[1],area_TC,area_P,'nan','nan','nan']
                 lambda_df = lambda_df.append(dict(zip(columns,values)), ignore_index=True)
                 
             if idx%(len(optimal_combinations)/100+1)==0:
@@ -829,21 +911,28 @@ def relative_performance(df,combinations,optimal_combinations,ref_method='indp',
                 (lambda_df['no_resources']==x[3]))
             if not cond.any():
                 sys.exit('Error:Reference type is not here! for %s m %d|resource %d' %(x[4],x[0],x[3]))    
-            ref_area=float(lambda_df.loc[cond==True,'Area'])
-            rows = df[(df['Magnitude']==x[0])&(df['decision_type']==x[4])&
-                     (df['sample']==x[1])&(df['cost_type']==cost_type)&
-                     (df['auction_type']==x[5])&(df['valuation_type']==x[6])&
-                     (df['no_resources']==x[3])]
+            ref_area_TC=float(lambda_df.loc[cond==True,'Area_TC'])
+            ref_area_P=float(lambda_df.loc[cond==True,'Area_P'])
+            
+            rows = df[(df['Magnitude']==x[0])&(df['decision_type']==x[4])&(df['sample']==x[1])&
+                      (df['auction_type']==x[5])&(df['valuation_type']==x[6])&(df['no_resources']==x[3])]
             if not rows.empty:
-                area = np.trapz(rows.cost[:20],dx=1)
+                area_TC = np.trapz(rows[rows['cost_type']==cost_type].cost[:20],dx=1)
+                area_P = np.trapz(rows[rows['cost_type']=='Under Supply Perc'].cost[:20],dx=1)
                 lambda_TC = 'nan'
-                if ref_area != 0.0 and area != 'nan':
-                    lambda_TC = (ref_area-float(area))/ref_area
-                elif area == 0.0:
+                lambda_P = 'nan'
+                if ref_area_TC != 0.0 and area_TC != 'nan':
+                    lambda_TC = (ref_area_TC-float(area_TC))/ref_area_TC
+                elif area_TC == 0.0:
                     lambda_TC = 0.0
+                    
+                if ref_area_P != 0.0 and area_P != 'nan':
+                    lambda_P = (ref_area_P-float(area_P))/ref_area_P
+                elif area_P == 0.0:
+                    lambda_P = 0.0
                 else:
                     pass  
-                values = [x[0],cost_type,x[4],x[5],x[6],x[3],x[1],area,lambda_TC]
+                values = [x[0],cost_type,x[4],x[5],x[6],x[3],x[1],area_TC,area_P,lambda_TC,lambda_P,(lambda_TC+lambda_P)/2]
                 lambda_df = lambda_df.append(dict(zip(columns,values)), ignore_index=True)
             else:
                 sys.exit('Error: No entry for %s %s %s m %d|resource %d,...' %(x[4],x[5],x[6],x[0],x[3]))  
