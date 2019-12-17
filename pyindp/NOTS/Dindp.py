@@ -1,5 +1,5 @@
 import pandas as pd
-import seaborn as sns
+#import seaborn as sns
 import numpy as np
 from indp import *
 import os.path
@@ -633,7 +633,7 @@ def write_auction_csv(outdir,res_allocate,res_alloc_time,PoA=None,valuations=Non
             
 def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='indp',suffix="",root_result_dir='../results/'):  
     cols=['t','resource','decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','normalized_resources','PoA']
-    T = max(df.t.unique().tolist())
+    T = int(max(df.t.unique().tolist()))
     df_res = pd.DataFrame(columns=cols, dtype=int)
     print '\nResource allocation\n',
     for idx,x in enumerate(optimal_combinations):                       
@@ -691,7 +691,7 @@ def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='i
     update_progress(len(optimal_combinations)+idx+1,len(optimal_combinations)+len(combinations)) 
     
     cols=['decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','distance_to_optimal','norm_distance_to_optimal']
-    T = max(df.t.unique().tolist())
+    T = int(max(df.t.unique().tolist()))
     df_res_rel = pd.DataFrame(columns=cols, dtype=int)
     print '\nRelative allocation\n',
     for idx,x in enumerate(combinations+optimal_combinations): 
@@ -790,7 +790,7 @@ def read_run_time(combinations,optimal_combinations,suffixes,root_result_dir='..
     optimal_method = ['tdindp','indp','sample_indp_12Node']
     run_time_results = pd.DataFrame(columns=columns, dtype=int)
 
-    print "\nReading tun times"
+    print "\nReading run times"
     joinedlist = combinations + optimal_combinations
     for idx,x in enumerate(joinedlist):
         if x[4] in optimal_method:

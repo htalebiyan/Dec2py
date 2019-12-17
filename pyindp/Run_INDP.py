@@ -5,7 +5,7 @@ import gametree
 import os.path
 import networkx as nx
 import numpy as np
-
+import pickle
 def batch_run(params,failSce_param,layers,player_ordering=[3,1]):
     """ Batch run INDP optimization problem for all samples (currently 1-1000), given global parameters. 
     Format for params:
@@ -230,7 +230,7 @@ if __name__ == "__main__":
 #                     'filtered_List':listFilteredSce}
 #    base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v2_bilateral/'
     base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3/'
-    failSce_param = {"type":"synthetic","sample_range":range(0,1),"mags":range(12,13),
+    failSce_param = {"type":"synthetic","sample_range":range(0,1),"mags":range(0,10),
                      'filtered_List':None,'topology':'Random','Base_dir':base_dir}
 
 
@@ -243,14 +243,14 @@ if __name__ == "__main__":
     valuation_types = ['DTC']       #['DTC','DTC_uniform','MDDN']    
     layers=[] # List of layers of the net # Not necessary for synthetic nets
     
-#    run_indp_batch(failSce_param,v_r,layers)
-#    run_tdindp_batch(failSce_param, v_r,layers)
-    for jc in judge_types:
-        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None)
-        for at in auction_types:
-            for vt in valuation_types:
-                run_dindp_batch(failSce_param,v_r,layers,
-                    judgment_type=jc,auction_type=at,valuation_type=vt)
+##    run_indp_batch(failSce_param,v_r,layers)
+##    run_tdindp_batch(failSce_param, v_r,layers)
+#    for jc in judge_types:
+#        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None)
+#        for at in auction_types:
+#            for vt in valuation_types:
+#                run_dindp_batch(failSce_param,v_r,layers,
+#                    judgment_type=jc,auction_type=at,valuation_type=vt)
 
     ''' Compute metrics ''' 
     cost_type = 'Total'
@@ -263,19 +263,28 @@ if __name__ == "__main__":
     sample_range=failSce_param["sample_range"]
     mags=failSce_param['mags']
     
-    synthetic_dir=base_dir+failSce_param['topology']+'Networks/'
-    combinations,optimal_combinations=generate_combinations('synthetic',mags,sample_range,
-                layers,v_r,method_name,auction_types,valuation_types,listHDadd=None,synthetic_dir=synthetic_dir)
-    
-    root='../results/' #C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/'
-    df = read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir=root)
-##    df = correct_tdindp_results(df,optimal_combinations)
-   
-    lambda_df = relative_performance(df,combinations,optimal_combinations,ref_method=ref_method,cost_type=cost_type)
-    resource_allocation,res_alloc_rel=read_resourcec_allocation(df,combinations,
-                optimal_combinations,root_result_dir=root,ref_method=ref_method)   
-    run_time_df = read_run_time(combinations,optimal_combinations,suffixes,root_result_dir=root)
+#    synthetic_dir=base_dir+failSce_param['topology']+'Networks/'
+#    combinations,optimal_combinations=generate_combinations('synthetic',mags,sample_range,
+#                layers,v_r,method_name,auction_types,valuation_types,listHDadd=None,synthetic_dir=synthetic_dir)
 #    
+#    root='../results/' #C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/'
+#    df = read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir=root)
+###    df = correct_tdindp_results(df,optimal_combinations)
+#   
+#    lambda_df = relative_performance(df,combinations,optimal_combinations,ref_method=ref_method,cost_type=cost_type)
+#    resource_allocation,res_alloc_rel=read_resourcec_allocation(df,combinations,
+#                optimal_combinations,root_result_dir=root,ref_method=ref_method)   
+#    run_time_df = read_run_time(combinations,optimal_combinations,suffixes,root_result_dir=root)
+#    
+    ''' Save Variables to file '''
+#    object_list = [combinations,optimal_combinations,df,method_name,lambda_df,resource_allocation,res_alloc_rel,cost_type,run_time_df]
+#    # Saving the objects:
+#    with open(output_dir+'objs.pkl', 'w') as f: 
+#        pickle.dump(object_list, f)
+
+     # Getting back the objects:
+    with open('./NOTS/objs.pkl') as f:  # Python 3: open(..., 'rb')
+        [combinations,optimal_combinations,df,method_name,lambda_df,resource_allocation,res_alloc_rel,cost_type,run_time_df] = pickle.load(f)
     """ Plot results """    
 #    plot_performance_curves_shelby(df,cost_type='Total',decision_names=method_name,ci=None,normalize=True)
 #    plot_relative_performance_shelby(lambda_df)

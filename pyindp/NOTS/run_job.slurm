@@ -5,5 +5,10 @@
 #SBATCH --time=00:30:00
 #SBATCH --mail-user=ht20@rice.edu
 #SBATCH --mail-type=ALL
- 
-srun Run_INDP
+
+export GUROBI_HOME="/home/ht20/Gurobi8"
+export PATH="${PATH}:${GUROBI_HOME}/bin"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
+export GRB_LICENSE_FILE="${GUROBI_HOME}/gurobi.lic"
+
+python /home/ht20/Codes/Run_INDP.py

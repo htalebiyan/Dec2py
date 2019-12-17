@@ -13,7 +13,7 @@ noSamples = 30 # Number of sample sets of network
 noConfiguration = 100 # Number of configurations
 noZones = 4 # noZones by noZones tile of zones
 paramError = 0.1
-rootfolder = 'C:\\Users\\ht20\Documents\\Files\Generated_Network_Dataset_v3\\' # Root folder where the database is
+rootfolder = 'C:\\Users\\ht20\Documents\\Files\Generated_Network_Dataset_v3.1\\' # Root folder where the database is
 rootfolder += 'GridNetworks\\' # choose relevant dataset folder
 if not os.path.exists(rootfolder):
     os.makedirs(rootfolder)
@@ -47,7 +47,7 @@ for cnfg in range(0,noConfiguration):
     # Probability of damage of each node or arc in the random networks 
     # Bounds are chosen roughly based on INDP data for Shelby county associated with 
     # M6 (0.05) - M9 (0.5) scenarios
-    damProb = np.random.uniform(low=0.05, high=0.5/2) #Different damage probability range fix in the text #!!!
+    damProb = np.random.uniform(low=0.05, high=0.5) #Different damage probability range fix in the text #!!!
     damProbDict={x:damProb*(1+np.random.normal(0, paramError)) for x in range(1,noLayers+1)}
     # Restoration Resource Cap for each network 
     # based on the sum of mean number of damaged nodes and mean number of 

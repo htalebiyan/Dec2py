@@ -295,8 +295,8 @@ def plot_Evaluation_Results(noConfig, dmRatioSum, aveConn, allPairsConn,folder):
 # Input values
 noSamples = 30
 rootfolder = "C:\\Users\ht20\Documents\\Files\\Generated_Network_Dataset_v3.1\\" # Root folder where the database is
-rootfolder += 'RandomNetworks\\' # choose relevant dataset folder #options: 'RandomNetworks\\'|'ScaleFreeNetworks\\'|'GridNetworks\\'
-NetworkTypeInitial = 'RN' #Options: RN|SFN|GN
+rootfolder += 'GridNetworks\\' # choose relevant dataset folder #options: 'RandomNetworks\\'|'ScaleFreeNetworks\\'|'GridNetworks\\'
+NetworkTypeInitial = 'GN' #Options: RN|SFN|GN
 
 # Read configuration data
 fileNameList = rootfolder + 'List_of_Configurations.txt' 
