@@ -229,9 +229,10 @@ if __name__ == "__main__":
 #    failSce_param = {"type":"WU","sample_range":range(23,24),"mags":range(5,6),
 #                     'filtered_List':listFilteredSce}
 #    base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v2_bilateral/'
-    base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3/'
-    failSce_param = {"type":"synthetic","sample_range":range(0,1),"mags":range(0,10),
-                     'filtered_List':None,'topology':'Random','Base_dir':base_dir}
+    base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3.1/'
+    output_dir = 'C:/Users/ht20/Documents/Files/Auction_synthetic_networks_v3.1/'
+    failSce_param = {"type":"synthetic","sample_range":range(0,5),"mags":range(0,100),
+                     'filtered_List':None,'topology':'ScaleFree','Base_dir':base_dir}
 
 
     ''' Run different methods'''
@@ -253,21 +254,21 @@ if __name__ == "__main__":
 #                    judgment_type=jc,auction_type=at,valuation_type=vt)
 
     ''' Compute metrics ''' 
-    cost_type = 'Total'
-    ref_method = 'indp'
-    method_name = ['indp']
-    for jc in judge_types:
-        method_name.append('judgeCall_'+jc)
-    auction_types.append('Uniform')
-    suffixes = ['Real_sum','']
-    sample_range=failSce_param["sample_range"]
-    mags=failSce_param['mags']
-    
+#    cost_type = 'Total'
+#    ref_method = 'indp'
+#    method_name = ['indp']
+#    for jc in judge_types:
+#        method_name.append('judgeCall_'+jc)
+#    auction_types.append('Uniform')
+#    suffixes = ['Real_sum','']
+#    sample_range=failSce_param["sample_range"]
+#    mags=failSce_param['mags']
+#    
 #    synthetic_dir=base_dir+failSce_param['topology']+'Networks/'
 #    combinations,optimal_combinations=generate_combinations('synthetic',mags,sample_range,
 #                layers,v_r,method_name,auction_types,valuation_types,listHDadd=None,synthetic_dir=synthetic_dir)
 #    
-#    root='../results/' #C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/'
+#    root=output_dir+failSce_param['topology']+'/results/'
 #    df = read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir=root)
 ###    df = correct_tdindp_results(df,optimal_combinations)
 #   
@@ -275,13 +276,13 @@ if __name__ == "__main__":
 #    resource_allocation,res_alloc_rel=read_resourcec_allocation(df,combinations,
 #                optimal_combinations,root_result_dir=root,ref_method=ref_method)   
 #    run_time_df = read_run_time(combinations,optimal_combinations,suffixes,root_result_dir=root)
-#    
+    
     ''' Save Variables to file '''
 #    object_list = [combinations,optimal_combinations,df,method_name,lambda_df,resource_allocation,res_alloc_rel,cost_type,run_time_df]
 #    # Saving the objects:
 #    with open(output_dir+'objs.pkl', 'w') as f: 
 #        pickle.dump(object_list, f)
-
+#
      # Getting back the objects:
     with open('./NOTS/objs.pkl') as f:  # Python 3: open(..., 'rb')
         [combinations,optimal_combinations,df,method_name,lambda_df,resource_allocation,res_alloc_rel,cost_type,run_time_df] = pickle.load(f)

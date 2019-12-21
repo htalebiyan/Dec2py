@@ -543,14 +543,13 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
     elif len(v_r)==1:
         outDirSuffixRes = `v_r[0]`
     else:
-        outDirSuffixRes = `sum(v_r)`+'_fixed_layer_Cap'
+        outDirSuffixRes = `sum(v_r)`+'_uniform_alloc'
             
     indp_results=INDPResults()
     if T == 1:
         print "Running INDP (T=1) or iterative INDP."
         if print_cmd_line:
             print "Num iters=",params["NUM_ITERATIONS"]
-            
         # Run INDP for 1 time step (original INDP).
         output_dir=params["OUTPUT_DIR"]+'_L'+`len(layers)`+'_m'+`params["MAGNITUDE"]`+"_v"+outDirSuffixRes
         # Initial calculations.
@@ -559,7 +558,8 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
 
         for i in range(params["NUM_ITERATIONS"]):
-            print "Time Step (iINDP)=",i,"/",params["NUM_ITERATIONS"]
+            if print_cmd_line:
+			    print "Time Step (iINDP)=",i,"/",params["NUM_ITERATIONS"]
             results=indp(InterdepNet,v_r,T,layers,controlled_layers=controlled_layers,forced_actions=forced_actions)
             indp_results.extend(results[1],t_offset=i+1)
             if saveModel:
@@ -614,8 +614,9 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
                     indp_results.add_components(1,INDPComponents.calculate_components(results[0],InterdepNet,t,layers=controlled_layers))
     # Save results of INDP run.
     if save:
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        make_dir(output_dir)	
+        # if not os.path.exists(output_dir):
+            # os.makedirs(output_dir)
         indp_results.to_csv(output_dir,params["SIM_NUMBER"],suffix=suffix)
     return indp_results
         
@@ -699,8 +700,9 @@ def run_inrg(params,layers=[1,2,3],validate=False,player_ordering=[3,1],suffix="
                 player_strategies[P]=results
             else:
                 player_strategies[P].extend(results,t_offset=i+1,t_start=1,t_end=2)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    make_dir(output_dir)
+    # if not os.path.exists(output_dir):
+        # os.makedirs(output_dir)
     for P in layers:
         player_strategies[P].to_csv(output_dir,params["SIM_NUMBER"],suffix="P"+`P`+"_"+suffix)
     
@@ -751,8 +753,9 @@ def baseline_metrics(BASE_DIR="/Users/Andrew/Dropbox/iINDP",layers=[1,2,3]):
 #baseline_metrics(layers=[1,3],BASE_DIR=HOME_DIR+"/Dropbox/iINDP")
 
 def save_INDP_model_to_file(model,outModelDir,t,l=0,suffix=''):
-    if not os.path.exists(outModelDir):
-        os.makedirs(outModelDir) 
+    make_dir(outModelDir)
+    # if not os.path.exists(outModelDir):
+        # os.makedirs(outModelDir) 
     # Write models to file   
     lname = "/Model_t%d_l%d_%s.lp" % (t,l,suffix)
     model.write(outModelDir+lname)
@@ -851,3 +854,10 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
     plt.tight_layout()   
     plt.savefig(output_dir+'/plot_net'+folderSuffix+'.png',dpi=600)
     
+def make_dir(dir):
+    try:
+        os.makedirs(dir)
+    except OSError, e:
+        if e.errno != os.errno.EEXIST:
+            raise  
+        pass 

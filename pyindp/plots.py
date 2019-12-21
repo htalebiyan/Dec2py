@@ -120,7 +120,7 @@ def plot_performance_curves_synthetic(df,x='t',y='cost',cost_type='Total',ci=Non
         ax.annotate('Valuation = '+ver_grid[idx], xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - 5, 0),
             xycoords=ax.yaxis.label, textcoords='offset points', ha='right', va='center', rotation=90) 
         
-    plt.savefig('Performance_curves.pdf',dpi=600)  
+    plt.savefig('Performance_curves_'+cost_type+'.pdf',dpi=600)  
     
 def plot_relative_performance_shelby(lambda_df,cost_type='Total',lambda_type='U'):    
     no_resources = lambda_df.no_resources.unique().tolist()
@@ -542,7 +542,7 @@ def plot_run_time_synthetic(df,ci=None):
         ax.annotate('Valuation: '+ver_grid[idx], xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - 5, 0),
             xycoords=ax.yaxis.label, textcoords='offset points', ha='right', va='center', rotation=90) 
         
-    plt.savefig('Performance_curves.pdf',dpi=600)  
+    plt.savefig('run_time.pdf',dpi=600)  
 
     
 def correct_legend_labels(labels):

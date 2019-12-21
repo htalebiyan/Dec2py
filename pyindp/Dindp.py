@@ -781,7 +781,7 @@ def read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_r
             if idx%(len(joinedlist)/100+1)==0:
                 update_progress(idx+1,len(joinedlist))
         else:
-            sys.exit('Error: The combination or folder does not exist') 
+            sys.exit('Error: The combination or folder does not exist'+`x`) 
     update_progress(idx+1,len(joinedlist))
     return agg_results
 

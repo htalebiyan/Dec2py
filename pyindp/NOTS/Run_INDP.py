@@ -45,7 +45,7 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1]):
             if failSce_param['filtered_List']==None or len(listHD.loc[(listHD.set == i) & (listHD.sce == m)].index):
                 print '\n---Running Magnitude '+`m`+' sample '+`i`+'...'
             
-                print("Initializing network...")
+                # print("Initializing network...")
                 if not shelby_data:  
                     InterdepNet,noResource,layers=initialize_network(BASE_DIR=base_dir,external_interdependency_dir=ext_interdependency,magnitude=m,sample=i,shelby_data=shelby_data,topology=topology) 
                     params["V"]=noResource
@@ -54,7 +54,16 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1]):
                 params["N"]=InterdepNet
                 params["SIM_NUMBER"]=i
                 params["MAGNITUDE"]=m
-                
+                output_dir_full=''				
+                if params["ALGORITHM"]=="JUDGMENT_CALL" and params["AUCTION_TYPE"]:
+                    output_dir_full = params["OUTPUT_DIR"]+'_L'+`len(layers)`+'_m'+`params["MAGNITUDE"]`+"_v"+`params["V"]`+'_auction_'+params["AUCTION_TYPE"]+'_'+params["VALUATION_TYPE"]+'/actions_'+`i`+'_sum.csv'
+                elif params["ALGORITHM"]=="JUDGMENT_CALL" and not params["AUCTION_TYPE"]:
+                    output_dir_full= params["OUTPUT_DIR"]+'_L'+`len(layers)`+'_m'+`params["MAGNITUDE"]`+"_v"+`params["V"]`+'_uniform_alloc/actions_'+`i`+'_sum.csv'
+                else:	
+                    output_dir_full=params["OUTPUT_DIR"]+'_L'+`len(layers)`+'_m'+`params["MAGNITUDE"]`+"_v"+`params["V"]`+'/actions_'+`i`+'_.csv'
+                if os.path.exists(output_dir_full):
+                    print 'results are already there\n'
+                    continue
                 if failSce_param['type']=='WU':
                     add_Wu_failure_scenario(InterdepNet,BASE_DIR="../data/Wu_Damage_scenarios/",noSet=i,noSce=m)
                 elif failSce_param['type']=='ANDRES':
@@ -228,13 +237,14 @@ def run_parallel(i):
     sampleNo = i/100
     magNo = i%100
     
-    with open('output.txt', 'a') as f:
-        f.write('Sce: '+`magNo`+', Sample: '+`sampleNo`+'\n')
-    f.close
-    base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3/'
+    # with open('output.txt', 'a') as f:
+        # f.write('Sce: '+`magNo`+', Sample: '+`sampleNo`+'\n')
+    # f.close
+    base_dir = '/scratch/ht20/Generated_Network_Dataset_v3.1'
+    output_dir = '/scratch/ht20/'
     failSce_param = {"type":"synthetic","sample_range":range(sampleNo,sampleNo+1),
                      "mags":range(magNo,magNo+1),
-                     'filtered_List':None,'topology':'Random','Base_dir':base_dir}
+                     'filtered_List':None,'topology':'Grid','Base_dir':base_dir}
 
 
     ''' Run different methods'''
@@ -247,14 +257,14 @@ def run_parallel(i):
     layers=[] # List of layers of the net # Not necessary for synthetic nets
 
 
-    run_indp_batch(failSce_param,v_r,layers)
-#    run_tdindp_batch(failSce_param, v_r,layers)
-#    for jc in judge_types:
-#        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None)
-#        for at in auction_types:
-#            for vt in valuation_types:
-#                run_dindp_batch(failSce_param,v_r,layers,
-#                    judgment_type=jc,auction_type=at,valuation_type=vt)
+    run_indp_batch(failSce_param,v_r,layers,output_dir=output_dir)
+   # run_tdindp_batch(failSce_param, v_r,layers,output_dir=output_dir)
+    for jc in judge_types:
+        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None,output_dir=output_dir)
+        for at in auction_types:
+            for vt in valuation_types:
+                run_dindp_batch(failSce_param,v_r,layers,
+                   judgment_type=jc,auction_type=at,valuation_type=vt,output_dir=output_dir)
     return True
 	
 if __name__ == "__main__":  
@@ -276,14 +286,23 @@ if __name__ == "__main__":
 
     base_dir = '/scratch/ht20/Generated_Network_Dataset_v3.1/'
     output_dir = '/scratch/ht20/'
-    failSce_param = {"type":"synthetic","sample_range":range(0,1),"mags":range(0,1),
-                     'filtered_List':None,'topology':'Random','Base_dir':base_dir}
+    failSce_param = {"type":"synthetic","sample_range":range(0,5),"mags":range(0,100),
+                     'filtered_List':None,'topology':'Grid','Base_dir':base_dir}
 
 
     ''' Run different methods'''
+    # No restriction on number of resources for each layer # Not necessary for synthetic nets
+    v_r=[0]                 #[3,6,8,12] 
+#    v_r=[[1,1,1,1],[2,2,2,2],[3,3,3,3]]              # Prescribed number of resources for each layer
+    judge_types = ["OPTIMISTIC"]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
+    auction_types =  ["MDA","MAA","MCA"]      #["MDA","MAA","MCA"] 
+    valuation_types = ['DTC']       #['DTC','DTC_uniform','MDDN']    
+    layers=[] # List of layers of the net # Not necessary for synthetic nets
+	
     num_cores = multiprocessing.cpu_count()
+    print 'number of cores:'+`num_cores`+'\n'
     pool = multiprocessing.Pool(num_cores)  
-    resuls1 = pool.map(run_parallel,range(num_cores*2))
+    resuls1 = pool.map(run_parallel,range(500))
 
     ''' Compute metrics ''' 
     cost_type = 'Total'
