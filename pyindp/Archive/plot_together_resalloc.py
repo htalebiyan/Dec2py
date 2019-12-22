@@ -10,8 +10,8 @@ import random
 plt.close('all')
 sns.set(context='notebook',style='darkgrid')
 
-#plt.rc('text', usetex=True)
-#plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 
 #res_alloc_rel = res_alloc_rel.assign(topology='ScaleFree',interdependency='full')
@@ -111,10 +111,10 @@ plots.plot_relative_allocation_synthetic(selected_df,distance_type='distance_to_
 #
 """Other plots"""
 #selected_df = comp_res[(comp_res['distance_to_optimal']!='nan')&
-#                       (comp_res['distance_to_optimal']<10)&
+#                       (comp_res['distance_to_optimal']<1)&
 #                       (comp_res['auction_type']!='Uniform')]
 #selected_df["distance_to_optimal"] = pd.to_numeric(selected_df["distance_to_optimal"])
-#
+
 #f, ax = plt.subplots()
 #sns.despine(bottom=True, left=True)
 #sns.stripplot(x="norm_distance_to_optimal", y="auction_type", hue=" No. Layers",
@@ -132,8 +132,8 @@ plots.plot_relative_allocation_synthetic(selected_df,distance_type='distance_to_
 #                palette="ch:r=-.2,d=.3_r",
 #                sizes=(1, 8), linewidth=0,
 #                data=selected_df)
-#
-# Draw the two density plots
+
+##Draw the two density plots
 #ax = sns.kdeplot(selected_df[selected_df[' No. Layers']==2][" Damage Prob"],
 #                 selected_df[selected_df[' No. Layers']==2]["distance_to_optimal"],
 #                 cmap="Reds", shade=True, shade_lowest=False)
@@ -147,7 +147,7 @@ plots.plot_relative_allocation_synthetic(selected_df,distance_type='distance_to_
 
 #g = sns.catplot(x="auction_type", y="distance_to_optimal",
 #                 hue="topology", col=" No. Layers",
-#                 data=selected_df, kind="violin", split=True, inner="quartile",
+#                 data=selected_df, kind="violin", split=False, inner="quartile",
 #                 height=4, aspect=.7);
 
 #cols = ['distance_to_optimal', ' No. Layers', ' Interconnection Prob', ' Damage Prob', ' Resource Cap', ' No. Nodes']
@@ -178,7 +178,7 @@ plots.plot_relative_allocation_synthetic(selected_df,distance_type='distance_to_
 #ax.set_xlabel('Principal Component 1', fontsize = 15)
 #ax.set_ylabel('Principal Component 2', fontsize = 15)
 #ax.set_title('2 component PCA', fontsize = 20)
-#targets = ['Random', 'ScaleFree']
+#targets = ['Random', 'ScaleFree','Grid']
 #colors = ['r', 'g', 'b']
 #for target, color in zip(targets,colors):
 #    indicesToKeep = finalDf['topology'] == target

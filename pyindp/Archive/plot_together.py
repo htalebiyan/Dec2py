@@ -8,19 +8,19 @@ import matplotlib.pyplot as plt
 import random
 
 plt.close('all')
-sns.set(context='notebook',style='darkgrid')
+sns.set(context='notebook',style='whitegrid')
 
 #plt.rc('text', usetex=True)
 #plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 
-#lambda_df = lambda_df.assign(topology='ScaleFree',interdependency='full')
+#lambda_df = lambda_df.assign(topology='Grid',interdependency='full')
 #comp_lambda_df = pd.DataFrame(lambda_df)
 #
-comp_lambda_df = pd.read_pickle('temp')
+comp_lambda_df = pd.read_pickle('temp_synthetic_v3.1')
 #comp_lambda_df = pd.concat([comp_lambda_df,lambda_df])
 #
-#comp_lambda_df.to_pickle('temp') 
+#comp_lambda_df.to_pickle('temp_synthetic_v3.1') 
 
 df1 = pd.read_csv("C:\Users\ht20\Documents\Files\Generated_Network_Dataset_v3.1\GridNetworks\List_of_Configurations.txt",
                  header=0, sep="\t")
@@ -36,7 +36,7 @@ config_info = pd.concat([df1,df2,df3])
 comp_lambda_df=pd.merge(comp_lambda_df, config_info,
              left_on=['Magnitude','topology'],
              right_on=['Config Number','topology']) 
-#
+
 """ Plot results """    
 selected_df = comp_lambda_df[(comp_lambda_df['lambda_U']!='nan')]
 selected_df["lambda_TC"] = pd.to_numeric(selected_df["lambda_U"])
@@ -55,6 +55,14 @@ g.set(ylim=(-0.65, 0))
 g.axes[0,0].set_ylabel(r'$E[\lambda_U]$')
 g.axes[0,0].set_xlabel(r'Number of Layers')
 g.axes[0,1].set_xlabel(r'Number of Layers')
+g.axes[0,2].set_xlabel(r'Number of Layers')
+g.axes[0,0].spines['bottom'].set_visible(False)
+g.axes[0,0].spines['left'].set_visible(False)
+g.axes[0,1].spines['bottom'].set_visible(False)
+g.axes[0,1].spines['left'].set_visible(False)
+g.axes[0,2].spines['bottom'].set_visible(False)
+g.axes[0,2].spines['left'].set_visible(False)
+plt.savefig('Relative Performance.pdf', dpi=600)    #, bbox_inches='tight'
 """ Parallel Axes"""
 #cols=list(selected_df.columns.values)
 #selected_df = comp_lambda_df[(comp_lambda_df['lambda_TC']!='nan')&

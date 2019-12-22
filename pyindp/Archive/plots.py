@@ -422,7 +422,7 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
     layer = df_res.layer.unique().tolist()
     decision_type = df_res.decision_type.unique().tolist()
     nolayers = df_res[' No. Layers'].unique().tolist()
-#    auction_type = df_res.auction_type.unique().tolist()
+    auction_type = df_res.auction_type.unique().tolist()
     valuation_type = df_res.valuation_type.unique().tolist()
     if '' in valuation_type:
         valuation_type.remove('')
@@ -446,17 +446,14 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
                 ax = axs[idxvt]
             else:
                 ax = axs[idxvt,idxat]
-            data_ftp = df_res[(df_res[' No. Layers']==vt)|(df_res[' No. Layers']=='')]
+            data_ftp = df_res[(df_res[' No. Layers']==vt)&(df_res['topology']==at)]
             
             for dt in decision_type:
-                bottom = 0
-                for P in layer:
-                    data_ftp.loc[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp[' No. Layers']==vt)&(data_ftp['topology']==at),distance_type]+=bottom
-                    bottom=data_ftp[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp[' No. Layers']==vt)&(data_ftp['topology']==at)][distance_type].mean()
-                bottom = 0
-                for P in layer:
-                    data_ftp.loc[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp[' No. Layers']=='')&(data_ftp['topology']==at),distance_type]+=bottom
-                    bottom=data_ftp[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp[' No. Layers']=='')&(data_ftp['topology']==at)][distance_type].mean()
+                for auc in auction_type:
+                    bottom = 0
+                    for P in layer:
+                        data_ftp.loc[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['auction_type']==auc),distance_type]+=bottom
+                        bottom=data_ftp[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['auction_type']==auc)][distance_type].mean()
 
             for P in reversed(range(1,vt+1)):    
                 with sns.xkcd_palette(clrs[int(P)-1]): #pals[int(P)-1]:
@@ -464,6 +461,7 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
                                 data=data_ftp[(data_ftp['layer']==P)], 
                                 linewidth=0.5,edgecolor=[.25,.25,.25],
                                 capsize=.05,errcolor=[.25,.25,.25],errwidth=.75,ax=ax)
+#                    plt.pause(0.5)
                
             ax.get_legend().set_visible(False)
             ax.grid(which='major', axis='y', color=[.75,.75,.75], linewidth=.75)
@@ -484,8 +482,8 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
         layer_num = len(layer) - idx//(len(decision_type))
 #        labels[idx] = lab[:7] + '. (Layer ' + `layer_num` + ')'
         labels[idx] = 'Layer ' + `layer_num`
-    lgd = fig.legend(handles, labels,loc='center', bbox_to_anchor=(0.5, 0.95),
-               frameon =True,framealpha=0.5, ncol=4)     #, fontsize='small'
+    lgd = fig.legend(handles, labels,loc='center', bbox_to_anchor=(0.85, 0.54),
+               frameon =True,framealpha=0.5, ncol=1)     #, fontsize='small'
 
     if len(hor_grid)==1 and len(ver_grid)==1:
         axx=[axs]
@@ -504,7 +502,7 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
     for idx, ax in enumerate(axy):
         ax.annotate(`int(ver_grid[idx])`+' Layers', xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - 5, 0),
             xycoords=ax.yaxis.label, textcoords='offset points', ha='right', va='center', rotation=90) 
-    return ax
+    plt.savefig('Allocation_Difference.pdf', bbox_extra_artists=(lgd,), dpi=600)    #, bbox_inches='tight'
 
 def plot_run_time_synthetic(df,ci=None):
     auction_type = df.auction_type.unique().tolist()

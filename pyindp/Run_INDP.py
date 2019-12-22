@@ -288,10 +288,10 @@ if __name__ == "__main__":
         [combinations,optimal_combinations,df,method_name,lambda_df,resource_allocation,res_alloc_rel,cost_type,run_time_df] = pickle.load(f)
     """ Plot results """    
 #    plot_performance_curves_shelby(df,cost_type='Total',decision_names=method_name,ci=None,normalize=True)
-#    plot_relative_performance_shelby(lambda_df)
+#    plot_relative_performance_shelby(lambda_df,lambda_type='TC')
 #    plot_auction_allocation_shelby(resource_allocation,ci=None)
 #    plot_relative_allocation_shelby(res_alloc_rel)
-    
+#    plot_run_time_synthetic(run_time_df,ci=None)    
     
     plot_performance_curves_synthetic(df,ci=None,x='t',y='cost',cost_type=cost_type)  
     plot_performance_curves_synthetic(df,ci=None,x='t',y='cost',cost_type='Under Supply Perc')
