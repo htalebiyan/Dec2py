@@ -287,9 +287,9 @@ def plot_auction_allocation_synthetic(df_res,resource_type='resource',ci=None):
     ver_grid = layer
     new_window = valuation_type
     for idxat,at in enumerate(new_window):
-        fig, axs = plt.subplots(len(ver_grid), len(hor_grid), sharex=True, sharey=True, tight_layout=False)
+        fig, axs = plt.subplots(len(ver_grid), len(hor_grid), sharex=True, sharey=True, tight_layout=False)#,figsize=(4,6)
         for idxnr,nr in enumerate(hor_grid):
-            for idxvt,vt in enumerate(ver_grid):
+            for idxvt,vt in enumerate(ver_grid): #[::-1]
                 if len(ver_grid)==1 and len(hor_grid)==1:
                     ax=axs
                 elif len(ver_grid)==1:
@@ -298,17 +298,27 @@ def plot_auction_allocation_synthetic(df_res,resource_type='resource',ci=None):
                     ax = axs[idxvt]
                 else:
                     ax = axs[idxvt,idxnr]
-                    
+                
+#                if vt==1:
+#                    clrs = ['black','strawberry']
+#                elif vt==2:
+#                    clrs = ['black','azure']
+#                elif vt==3:
+#                    clrs = ['black','green']
+#                else:
+#                    clrs = ['black','bluish purple']       
+#                with sns.xkcd_palette(clrs):#   
                 with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
                     ax = sns.lineplot(x='t', y=resource_type, hue="decision_type", style='decision_type',
-                        markers=True, ci=ci, ax=ax,legend='full', 
+                        markers=True, ci=ci, ax=ax,legend='full',
                         data=df_res[(df_res['layer']==vt)&
                                 ((df_res['auction_type']==nr)|(df_res['auction_type']==''))&
                                 ((df_res['valuation_type']==at)|(df_res['valuation_type']==''))]) 
+#                    ax.lines[1].set_linestyle("")
                     ax.get_legend().set_visible(False)
                     ax.set(xlabel=r'time step $t$', ylabel=resource_type)
                     if resource_type=="normalized_resource":
-                        ax.set(ylabel=r'\% resource')
+                        ax.set(ylabel=r'$\% R_c$, L'+`int(vt)`)
                     ax.xaxis.set_ticks(np.arange(1, T+1, 1.0))   #ax.get_xlim()         
                     ax.grid(b=True, which='major', color='w', linewidth=1.0)    
                        
@@ -335,7 +345,7 @@ def plot_auction_allocation_synthetic(df_res,resource_type='resource',ci=None):
             ax.annotate('Layer '+`int(ver_grid[idx])`,xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
                 xycoords=ax.yaxis.label, textcoords='offset points',ha='right',va='center',rotation=90)  
   
-        plt.savefig('Allocations_'+at+'.pdf',dpi=600)
+        plt.savefig('Allocations_'+at+'.pdf',dpi=600, bbox_inches='tight')
         
 def plot_relative_allocation_shelby(df_res,distance_type='distance_to_optimal'):   
     no_resources = df_res.no_resources.unique().tolist()

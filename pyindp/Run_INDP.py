@@ -283,10 +283,10 @@ if __name__ == "__main__":
 #    with open(output_dir+'objs.pkl', 'w') as f: 
 #        pickle.dump(object_list, f)
 #
-     # Getting back the objects:
-    with open('./NOTS/objs.pkl') as f:  # Python 3: open(..., 'rb')
-        [combinations,optimal_combinations,df,method_name,lambda_df,resource_allocation,res_alloc_rel,cost_type,run_time_df] = pickle.load(f)
-    """ Plot results """    
+#     # Getting back the objects:
+#    with open('./NOTS/objs.pkl') as f:  # Python 3: open(..., 'rb')
+#        [combinations,optimal_combinations,df,method_name,lambda_df,resource_allocation,res_alloc_rel,cost_type,run_time_df] = pickle.load(f)
+#    """ Plot results """    
 #    plot_performance_curves_shelby(df,cost_type='Total',decision_names=method_name,ci=None,normalize=True)
 #    plot_relative_performance_shelby(lambda_df,lambda_type='TC')
 #    plot_auction_allocation_shelby(resource_allocation,ci=None)
