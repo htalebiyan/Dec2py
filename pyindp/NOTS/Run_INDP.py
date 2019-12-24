@@ -244,7 +244,7 @@ def run_parallel(i):
     output_dir = '/scratch/ht20/'
     failSce_param = {"type":"synthetic","sample_range":range(sampleNo,sampleNo+1),
                      "mags":range(magNo,magNo+1),
-                     'filtered_List':None,'topology':'Grid','Base_dir':base_dir}
+                     'filtered_List':None,'topology':'Random','Base_dir':base_dir}
 
 
     ''' Run different methods'''
@@ -252,15 +252,15 @@ def run_parallel(i):
     v_r=[0]                 #[3,6,8,12] 
 #    v_r=[[1,1,1,1],[2,2,2,2],[3,3,3,3]]              # Prescribed number of resources for each layer
     judge_types = ["OPTIMISTIC"]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
-    auction_types =  ["MDA","MAA","MCA"]      #["MDA","MAA","MCA"] 
-    valuation_types = ['DTC']       #['DTC','DTC_uniform','MDDN']    
+    auction_types =  ["MCA"]      #["MDA","MAA","MCA"] 
+    valuation_types = ['MDDN']       #['DTC','DTC_uniform','MDDN']    
     layers=[] # List of layers of the net # Not necessary for synthetic nets
 
 
-    run_indp_batch(failSce_param,v_r,layers,output_dir=output_dir)
+    # run_indp_batch(failSce_param,v_r,layers,output_dir=output_dir)
    # run_tdindp_batch(failSce_param, v_r,layers,output_dir=output_dir)
     for jc in judge_types:
-        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None,output_dir=output_dir)
+        # run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None,output_dir=output_dir)
         for at in auction_types:
             for vt in valuation_types:
                 run_dindp_batch(failSce_param,v_r,layers,
@@ -295,13 +295,13 @@ if __name__ == "__main__":
     v_r=[0]                 #[3,6,8,12] 
 #    v_r=[[1,1,1,1],[2,2,2,2],[3,3,3,3]]              # Prescribed number of resources for each layer
     judge_types = ["OPTIMISTIC"]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
-    auction_types =  ["MDA","MAA","MCA"]      #["MDA","MAA","MCA"] 
-    valuation_types = ['DTC']       #['DTC','DTC_uniform','MDDN']    
+    auction_types =  ["MCA"]      #["MDA","MAA","MCA"] 
+    valuation_types = ['MDDN']       #['DTC','DTC_uniform','MDDN']    
     layers=[] # List of layers of the net # Not necessary for synthetic nets
 	
     num_cores = multiprocessing.cpu_count()
     print 'number of cores:'+`num_cores`+'\n'
-    pool = multiprocessing.Pool(num_cores)  
+    pool = multiprocessing.Pool(19)  #num_cores
     resuls1 = pool.map(run_parallel,range(500))
 
     ''' Compute metrics ''' 

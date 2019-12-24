@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=Auctions_synthetic_Random
+#SBATCH --job-name=Auctions_synthetic_ScaleFree
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16 
 #SBATCH --mem-per-cpu=2000m

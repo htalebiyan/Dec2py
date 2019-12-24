@@ -232,7 +232,7 @@ if __name__ == "__main__":
     base_dir = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3.1/'
     output_dir = 'C:/Users/ht20/Documents/Files/Auction_synthetic_networks_v3.1/'
     failSce_param = {"type":"synthetic","sample_range":range(0,5),"mags":range(0,100),
-                     'filtered_List':None,'topology':'ScaleFree','Base_dir':base_dir}
+                     'filtered_List':None,'topology':'Grid','Base_dir':base_dir}
 
 
     ''' Run different methods'''
@@ -240,8 +240,8 @@ if __name__ == "__main__":
     v_r=[0]                 #[3,6,8,12] 
 #    v_r=[[1,1,1,1],[2,2,2,2],[3,3,3,3]]              # Prescribed number of resources for each layer
     judge_types = ["OPTIMISTIC"]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
-    auction_types =  ["MDA","MAA","MCA"]      #["MDA","MAA","MCA"] 
-    valuation_types = ['DTC']       #['DTC','DTC_uniform','MDDN']    
+    auction_types =  ["MCA"]      #["MDA","MAA","MCA"] 
+    valuation_types = ['MDDN']       #['DTC','DTC_uniform','MDDN']    
     layers=[] # List of layers of the net # Not necessary for synthetic nets
     
 ##    run_indp_batch(failSce_param,v_r,layers)
@@ -254,28 +254,28 @@ if __name__ == "__main__":
 #                    judgment_type=jc,auction_type=at,valuation_type=vt)
 
     ''' Compute metrics ''' 
-#    cost_type = 'Total'
-#    ref_method = 'indp'
-#    method_name = ['indp']
-#    for jc in judge_types:
-#        method_name.append('judgeCall_'+jc)
-#    auction_types.append('Uniform')
-#    suffixes = ['Real_sum','']
-#    sample_range=failSce_param["sample_range"]
-#    mags=failSce_param['mags']
-#    
-#    synthetic_dir=base_dir+failSce_param['topology']+'Networks/'
-#    combinations,optimal_combinations=generate_combinations('synthetic',mags,sample_range,
-#                layers,v_r,method_name,auction_types,valuation_types,listHDadd=None,synthetic_dir=synthetic_dir)
-#    
-#    root=output_dir+failSce_param['topology']+'/results/'
-#    df = read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir=root)
-###    df = correct_tdindp_results(df,optimal_combinations)
-#   
-#    lambda_df = relative_performance(df,combinations,optimal_combinations,ref_method=ref_method,cost_type=cost_type)
-#    resource_allocation,res_alloc_rel=read_resourcec_allocation(df,combinations,
-#                optimal_combinations,root_result_dir=root,ref_method=ref_method)   
-#    run_time_df = read_run_time(combinations,optimal_combinations,suffixes,root_result_dir=root)
+    cost_type = 'Total'
+    ref_method = 'indp'
+    method_name = ['indp']
+    for jc in judge_types:
+        method_name.append('judgeCall_'+jc)
+    auction_types.append('Uniform')
+    suffixes = ['Real_sum','']
+    sample_range=failSce_param["sample_range"]
+    mags=failSce_param['mags']
+    
+    synthetic_dir=base_dir+failSce_param['topology']+'Networks/'
+    combinations,optimal_combinations=generate_combinations('synthetic',mags,sample_range,
+                layers,v_r,method_name,auction_types,valuation_types,listHDadd=None,synthetic_dir=synthetic_dir)
+    
+    root=output_dir+failSce_param['topology']+'/results/'
+    df = read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir=root)
+##    df = correct_tdindp_results(df,optimal_combinations)
+   
+    lambda_df = relative_performance(df,combinations,optimal_combinations,ref_method=ref_method,cost_type=cost_type)
+    resource_allocation,res_alloc_rel=read_resourcec_allocation(df,combinations,
+                optimal_combinations,root_result_dir=root,ref_method=ref_method)   
+    run_time_df = read_run_time(combinations,optimal_combinations,suffixes,root_result_dir=root)
     
     ''' Save Variables to file '''
 #    object_list = [combinations,optimal_combinations,df,method_name,lambda_df,resource_allocation,res_alloc_rel,cost_type,run_time_df]
