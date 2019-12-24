@@ -10,17 +10,17 @@ import random
 plt.close('all')
 sns.set(context='notebook',style='whitegrid')
 
-#plt.rc('text', usetex=True)
-#plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 
 #lambda_df = lambda_df.assign(topology='Grid',interdependency='full')
 #comp_lambda_df = pd.DataFrame(lambda_df)
 #
-comp_lambda_df = pd.read_pickle('temp_synthetic_v3_1')
+comp_lambda_df = pd.read_pickle('temp_synthetic_v3_1_MDDN')
 #comp_lambda_df = pd.concat([comp_lambda_df,lambda_df])
 #
-#comp_lambda_df.to_pickle('temp_synthetic_v3_1') 
+#comp_lambda_df.to_pickle('temp_synthetic_v3_1_MDDN') 
 
 df1 = pd.read_csv("C:\Users\ht20\Documents\Files\Generated_Network_Dataset_v3.1\GridNetworks\List_of_Configurations.txt",
                  header=0, sep="\t")
@@ -38,35 +38,37 @@ comp_lambda_df=pd.merge(comp_lambda_df, config_info,
              right_on=['Config Number','topology']) 
 
 """ Plot results """    
-#selected_df = comp_lambda_df[(comp_lambda_df['lambda_U']!='nan')]
-#selected_df["lambda_TC"] = pd.to_numeric(selected_df["lambda_U"])
-#
-#selected_df = selected_df.rename(columns={"lambda_U": "lambda U",
-#                                          "auction_type": "Auction Type",
-#                                          "topology":"Topology"})
-#sns.set(font_scale=1.5) 
-#g = sns.catplot(x=' No. Layers', y='lambda U', hue='Auction Type',
-#                 col='Topology',data=selected_df,
-#                 kind='bar',palette="Reds",
-#                 linewidth=0.5,edgecolor=[.25,.25,.25],
-#                 capsize=.05,errcolor=[.25,.25,.25],errwidth=1,)
-#
+selected_df = comp_lambda_df[(comp_lambda_df['lambda_U']!='nan')]
+selected_df["lambda_TC"] = pd.to_numeric(selected_df["lambda_U"])
+
+selected_df = selected_df.rename(columns={"lambda_U": "lambda U",
+                                          "auction_type": "Auction Type",
+                                          "topology":"Topology"})
+sns.set(font_scale=1.5) 
+g = sns.catplot(x=' No. Layers', y='lambda U', hue='Auction Type',
+                 col='Topology',data=selected_df,
+                 kind='bar',palette="Reds",
+                 linewidth=0.5,edgecolor=[.25,.25,.25],
+                 capsize=.05,errcolor=[.25,.25,.25],errwidth=1,
+                 height=6, aspect=0.5)
+
 #g.set(ylim=(-0.65, 0))
-#g.axes[0,0].set_ylabel(r'$E[\lambda_U]$')
-#g.axes[0,0].set_xlabel(r'Number of Layers')
-#g.axes[0,1].set_xlabel(r'Number of Layers')
-#g.axes[0,2].set_xlabel(r'Number of Layers')
-#g.axes[0,0].spines['bottom'].set_visible(False)
-#g.axes[0,0].spines['left'].set_visible(False)
-#g.axes[0,1].spines['bottom'].set_visible(False)
-#g.axes[0,1].spines['left'].set_visible(False)
-#g.axes[0,2].spines['bottom'].set_visible(False)
-#g.axes[0,2].spines['left'].set_visible(False)
-#g.set_titles(col_template = 'Topology: {col_name}')
-#handles, labels = g.axes[0,2].get_legend_handles_labels()   
-#lgd = g.axes[0,2].legend(handles, labels,loc='lower right', bbox_to_anchor=(0.45, 0),
-#           frameon =True,framealpha=0.9, ncol=1, title='Auction Type') 
-#plt.savefig('Relative Performance.pdf', dpi=600, bbox_extra_artists=(lgd,))    #, bbox_inches='tight'
+g.axes[0,0].set_ylabel(r'$E[\lambda_U]$')
+g.axes[0,0].set_xlabel(r'Number of Layers')
+g.axes[0,1].set_xlabel(r'Number of Layers')
+g.axes[0,2].set_xlabel(r'Number of Layers')
+g.axes[0,0].spines['bottom'].set_visible(False)
+g.axes[0,0].spines['left'].set_visible(False)
+g.axes[0,1].spines['bottom'].set_visible(False)
+g.axes[0,1].spines['left'].set_visible(False)
+g.axes[0,2].spines['bottom'].set_visible(False)
+g.axes[0,2].spines['left'].set_visible(False)
+g.set_titles(col_template = 'Topology: {col_name}')
+handles, labels = g.axes[0,2].get_legend_handles_labels()   
+labels[0]='MCA+MDDN'
+lgd = g.axes[0,2].legend(handles, labels,loc='lower right', bbox_to_anchor=(1.025, 0),
+           frameon =True,framealpha=0.9, ncol=1, title='Auction Type') 
+plt.savefig('Relative Performance.pdf', dpi=600, bbox_extra_artists=(lgd,))    #, bbox_inches='tight'
 """ Parallel Axes"""
 #cols=list(selected_df.columns.values)
 #selected_df = comp_lambda_df[(comp_lambda_df['lambda_TC']!='nan')&
@@ -120,9 +122,9 @@ comp_lambda_df=pd.merge(comp_lambda_df, config_info,
 
 
 """Other plots"""
-selected_df = comp_lambda_df[(comp_lambda_df['lambda_U']!='nan')]
-selected_df["lambda_U"] = pd.to_numeric(selected_df["lambda_U"])
-#
+#selected_df = comp_lambda_df[(comp_lambda_df['lambda_U']!='nan')]
+#selected_df["lambda_U"] = pd.to_numeric(selected_df["lambda_U"])
+##
 #f, ax = plt.subplots()
 #sns.despine(bottom=True, left=True)
 #sns.stripplot(x="lambda_U", y="auction_type", hue=" No. Layers",
@@ -133,23 +135,23 @@ selected_df["lambda_U"] = pd.to_numeric(selected_df["lambda_U"])
 #sns.pointplot(x="lambda_U", y="auction_type", hue=" No. Layers",
 #              data=selected_df, dodge=.532, join=False, palette="dark",
 #              markers="d", scale=.75, ci=None)
-
+#
 #selected_df = selected_df.rename(columns={"norm_distance_to_optimal": "norm distance to optimal",
 #                                          "auction_type": "Auction Type",
 #                                          "topology":"Topology"})
  
 #sns.set(font_scale=1.5) 
-with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
-    g=sns.relplot(x=" Resource Cap", y="lambda_U",
-            hue="topology", size='topology', col="auction_type",
-            legend="full", data=selected_df)
-    g.set(ylim=(-2, .1))
-    g.set(xlim=(-5, 150))
+#with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
+#    g=sns.relplot(x=" Resource Cap", y="lambda_U",
+#            hue="topology", size='topology', col="auction_type",
+#            legend="full", data=selected_df)
+#    g.set(ylim=(-2, .1))
+#    g.set(xlim=(-5, 150))
 #    g.set_xlabels(r'$R_c$')
 #    g.set_ylabels(r'Mean $\lambda_U$ over layers')
 #    g.set_titles(col_template = 'Auction Type: {col_name}')
 #    g._legend.set_bbox_to_anchor([0.89, 0.75])    
-#    
+    
 #plt.savefig('OmegaVsRc.pdf', dpi=600) 
 
 ## Draw the two density plots

@@ -12,18 +12,18 @@ import plotly
 plt.close('all')
 sns.set(context='notebook',style='darkgrid')
 
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+#plt.rc('text', usetex=True)
+#plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 
-#res_alloc_rel = res_alloc_rel.assign(topology='ScaleFree',interdependency='full')
+#res_alloc_rel = res_alloc_rel.assign(topology='Grid',interdependency='full')
 #comp_res = pd.DataFrame(res_alloc_rel)
 
-comp_res = pd.read_pickle('temp_res')
+comp_res = pd.read_pickle('temp_res_MDDN')
 #comp_res = pd.concat([comp_res,res_alloc_rel])
 #
-#comp_res.to_pickle('temp_res') 
-
+#comp_res.to_pickle('temp_res_MDDN') 
+#
 df1 = pd.read_csv("C:\Users\ht20\Documents\Files\Generated_Network_Dataset_v3.1\GridNetworks\List_of_Configurations.txt",
                  header=0, sep="\t")
 df1 = df1.assign(topology='Grid')
@@ -40,10 +40,10 @@ comp_res=pd.merge(comp_res, config_info,
              right_on=['Config Number','topology']) 
 #
 """ Plot results """    
-#selected_df = comp_res[(comp_res['distance_to_optimal']!='nan')&
-#                       (comp_res['auction_type']!='Uniform')]
-#selected_df["distance_to_optimal"] = pd.to_numeric(selected_df["distance_to_optimal"])
-#plots.plot_relative_allocation_synthetic(selected_df,distance_type='norm_distance_to_optimal')
+selected_df = comp_res[(comp_res['distance_to_optimal']!='nan')&
+                       (comp_res['auction_type']!='Uniform')]
+selected_df["distance_to_optimal"] = pd.to_numeric(selected_df["distance_to_optimal"])
+plots.plot_relative_allocation_synthetic(selected_df,distance_type='norm_distance_to_optimal')
 
 #comp_res = comp_res.rename(columns={"distance_to_optimal": "distance to optimal",
 #                                          "auction_type": "Auction Type",
@@ -112,10 +112,10 @@ comp_res=pd.merge(comp_res, config_info,
 ##
 #
 """Other plots"""
-selected_df = comp_res[(comp_res['distance_to_optimal']!='nan')&
-                       (comp_res['distance_to_optimal']<10)&
-                       (comp_res['auction_type']!='Uniform')]
-selected_df["distance_to_optimal"] = pd.to_numeric(selected_df["distance_to_optimal"])
+#selected_df = comp_res[(comp_res['distance_to_optimal']!='nan')&
+#                       (comp_res['distance_to_optimal']<10)&
+#                       (comp_res['auction_type']!='Uniform')]
+#selected_df["distance_to_optimal"] = pd.to_numeric(selected_df["distance_to_optimal"])
 
 #f, ax = plt.subplots()
 #sns.despine(bottom=True, left=True)
@@ -144,27 +144,27 @@ selected_df["distance_to_optimal"] = pd.to_numeric(selected_df["distance_to_opti
 
 
 '''Scatter'''
-selected_df = selected_df.rename(columns={"norm_distance_to_optimal": "norm distance to optimal",
-                                          "auction_type": "Auction Type",
-                                          "topology":"Topology"})
- 
-sns.set(font_scale=1.5) 
-with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
-    g=sns.relplot(x=" Resource Cap", y="norm distance to optimal",
-            hue="Topology", size='Topology', col="Auction Type",
-            legend="full", data=selected_df)
-    g.set(xlim=(-5, 100))
-    g.set_xlabels(r'$R_c$')
-    g.set_ylabels(r'Mean $\omega^k(r^k_d,r^k_c)$ over layers')
-    g.set_titles(col_template = 'Auction Type: {col_name}')
-    g._legend.set_bbox_to_anchor([0.89, 0.75])    
-    
-plt.savefig('OmegaVsRc.pdf', dpi=600)    #, bbox_inches='tight'
+#selected_df = selected_df.rename(columns={"norm_distance_to_optimal": "norm distance to optimal",
+#                                          "auction_type": "Auction Type",
+#                                          "topology":"Topology"})
+# 
+#sns.set(font_scale=1.5) 
+#with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
+#    g=sns.relplot(x=" Resource Cap", y="norm distance to optimal",
+#            hue="Topology", size='Topology', col="Auction Type",
+#            legend="full", data=selected_df)
+#    g.set(xlim=(-5, 100))
+#    g.set_xlabels(r'$R_c$')
+#    g.set_ylabels(r'Mean $\omega^k(r^k_d,r^k_c)$ over layers')
+#    g.set_titles(col_template = 'Auction Type: {col_name}')
+#    g._legend.set_bbox_to_anchor([0.89, 0.75])    
+#    
+#plt.savefig('OmegaVsRc.pdf', dpi=600)    #, bbox_inches='tight'
 #g = sns.catplot(x="auction_type", y="distance_to_optimal",
 #                 hue="topology", col=" No. Layers",
 #                 data=selected_df, kind="violin", split=False, inner="quartile",
 #                 height=4, aspect=.7);
-
+#
 #cols = ['distance_to_optimal', ' No. Layers', ' Interconnection Prob', ' Damage Prob', ' Resource Cap', ' No. Nodes']
 #pp = sns.pairplot(selected_df[cols], size=1.8, aspect=1.8, 
 #                  palette={"red": "#FF9999", "white": "#FFE888"},
