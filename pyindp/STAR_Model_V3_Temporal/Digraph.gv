@@ -1,0 +1,57 @@
+digraph {
+	subgraph "cluster11 x 55" {
+		"(7, 3)_6" [label="(7, 3)_6 ~ Bernoulli" style=filled]
+		"(7, 3)_7" [label="(7, 3)_7 ~ Bernoulli" style=filled]
+		"(7, 3)_4" [label="(7, 3)_4 ~ Bernoulli" style=filled]
+		"(7, 3)_5" [label="(7, 3)_5 ~ Bernoulli" style=filled]
+		"(7, 3)_2" [label="(7, 3)_2 ~ Bernoulli" style=filled]
+		"(7, 3)_3" [label="(7, 3)_3 ~ Bernoulli" style=filled]
+		"(7, 3)_1" [label="(7, 3)_1 ~ Bernoulli" style=filled]
+		"(7, 3)_8" [label="(7, 3)_8 ~ Bernoulli" style=filled]
+		"(7, 3)_9" [label="(7, 3)_9 ~ Bernoulli" style=filled]
+		"(7, 3)_10" [label="(7, 3)_10 ~ Bernoulli" style=filled]
+		label="11 x 55" labeljust=r labelloc=b style=rounded
+	}
+	"p((7, 3))_2" [label="p((7, 3))_2 ~ Deterministic" shape=box]
+	"p((7, 3))_3" [label="p((7, 3))_3 ~ Deterministic" shape=box]
+	"p((7, 3))_0" [label="p((7, 3))_0 ~ Beta"]
+	"p((7, 3))_1" [label="p((7, 3))_1 ~ Deterministic" shape=box]
+	"p((7, 3))_6" [label="p((7, 3))_6 ~ Deterministic" shape=box]
+	"p((7, 3))_7" [label="p((7, 3))_7 ~ Deterministic" shape=box]
+	"p((7, 3))_4" [label="p((7, 3))_4 ~ Deterministic" shape=box]
+	"p((7, 3))_5" [label="p((7, 3))_5 ~ Deterministic" shape=box]
+	"sdy_(7, 3)" [label="sdy_(7, 3) ~ Normal"]
+	"p((7, 3))_8" [label="p((7, 3))_8 ~ Deterministic" shape=box]
+	"p((7, 3))_9" [label="p((7, 3))_9 ~ Deterministic" shape=box]
+	"p((7, 3))_10" [label="p((7, 3))_10 ~ Deterministic" shape=box]
+	"p((7, 3))_6" -> "(7, 3)_6"
+	"p((7, 3))_7" -> "(7, 3)_7"
+	"p((7, 3))_4" -> "(7, 3)_4"
+	"p((7, 3))_5" -> "(7, 3)_5"
+	"p((7, 3))_2" -> "(7, 3)_2"
+	"p((7, 3))_3" -> "(7, 3)_3"
+	"p((7, 3))_1" -> "(7, 3)_1"
+	"p((7, 3))_8" -> "(7, 3)_8"
+	"p((7, 3))_9" -> "(7, 3)_9"
+	"sdy_(7, 3)" -> "p((7, 3))_2"
+	"p((7, 3))_1" -> "p((7, 3))_2"
+	"sdy_(7, 3)" -> "p((7, 3))_3"
+	"p((7, 3))_2" -> "p((7, 3))_3"
+	"sdy_(7, 3)" -> "p((7, 3))_1"
+	"p((7, 3))_0" -> "p((7, 3))_1"
+	"sdy_(7, 3)" -> "p((7, 3))_6"
+	"p((7, 3))_5" -> "p((7, 3))_6"
+	"sdy_(7, 3)" -> "p((7, 3))_7"
+	"p((7, 3))_6" -> "p((7, 3))_7"
+	"sdy_(7, 3)" -> "p((7, 3))_4"
+	"p((7, 3))_3" -> "p((7, 3))_4"
+	"sdy_(7, 3)" -> "p((7, 3))_5"
+	"p((7, 3))_4" -> "p((7, 3))_5"
+	"sdy_(7, 3)" -> "p((7, 3))_8"
+	"p((7, 3))_7" -> "p((7, 3))_8"
+	"sdy_(7, 3)" -> "p((7, 3))_9"
+	"p((7, 3))_8" -> "p((7, 3))_9"
+	"sdy_(7, 3)" -> "p((7, 3))_10"
+	"p((7, 3))_9" -> "p((7, 3))_10"
+	"p((7, 3))_10" -> "(7, 3)_10"
+}
