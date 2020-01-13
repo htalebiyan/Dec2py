@@ -36,29 +36,31 @@ if __name__ == "__main__":
             decomp_graph.remove_edge(u, v)
     graphs = list(nx.connected_component_subgraphs(decomp_graph.to_undirected())) 
     graphs=[graphs[0],graphs[1],graphs[2],graphs[4]]
-#    T=10
-#    samplesDiffTime = {}
-#    for key, val in samples.items(): 
-#        if key not in samplesDiffTime.keys():
-#            samplesDiffTime[key]=[]
-#        for s in range(val.shape[1]):
-#            samplesDiffTime[key].append(0)
-#            for t in range(1,T+1):
-#                if val[t,s]==1:
-#                    if val[t-1,s] == 0:
-#                        samplesDiffTime[key][-1] = t
-#                elif val[t,s]==0 and t==T and samplesDiffTime[key][-1]==0: 
-#                    samplesDiffTime[key][-1] = -1
-#    
-#    samplesDiffTimeMean = {}
+    
+    T=10
+    import pandas as pd 
+    samplesDiffTime = {}
+    for key, val in samples.items(): 
+        if key not in samplesDiffTime.keys():
+            samplesDiffTime[key]=[]
+        for s in range(val.shape[1]):
+            samplesDiffTime[key].append(0)
+            for t in range(1,T+1):
+                if val[t,s]==1:
+                    if val[t-1,s] == 0:
+                        samplesDiffTime[key][-1] = t
+                elif val[t,s]==0 and t==T and samplesDiffTime[key][-1]==0: 
+                    samplesDiffTime[key][-1] = -1    
+    samplesDiffTimeMean = {}
     for key, val in samplesDiffTime.items():
         samplesDiffTimeMean[key]=sum(val)/float(len(val))
-    import pandas as pd 
+    
     feature_dict=pd.DataFrame.from_dict(samplesDiffTimeMean, orient='index', columns=['repair_time'])   
 
     centrality_list=[nx.degree_centrality,nx.closeness_centrality,nx.betweenness_centrality,
                      nx.current_flow_closeness_centrality,nx.eigenvector_centrality_numpy,
-                     nx.katz_centrality,nx.communicability_centrality,nx.communicability_betweenness_centrality]
+                     nx.katz_centrality,nx.communicability_centrality,
+                     nx.communicability_betweenness_centrality,nx.load_centrality]
     for cent_name in centrality_list:
         cent = {}
         for gr in graphs:
@@ -69,52 +71,19 @@ if __name__ == "__main__":
         temp=pd.DataFrame.from_dict(cent, orient='index', columns=[cent_name.func_name])
         feature_dict=pd.concat([feature_dict,temp],axis=1)
 
-##    close_cent = {}
-##    for gr in graphs:
-##        close_cent.update(nx.closeness_centrality(gr))         
-##    temp=pd.DataFrame.from_dict(close_cent, orient='index', columns=['closeness_cent'])
-##    feature_dict=pd.concat([feature_dict,temp],axis=1)
-#
-#    bet_cent = {}
-#    for gr in graphs:
-#        bet_cent.update(nx.betweenness_centrality(gr))          
-#    temp=pd.DataFrame.from_dict(bet_cent, orient='index', columns=['betweenness_cent'])
-#    feature_dict=pd.concat([feature_dict,temp],axis=1)
-#
-##    flow_bet_cent = {}
-##    for gr in graphs:
-##        flow_bet_cent.update(nx.current_flow_closeness_centrality(gr.to_undirected()))  
-##    temp=pd.DataFrame.from_dict(flow_bet_cent, orient='index', columns=['current_flow_closeness_cent'])
-##    feature_dict=pd.concat([feature_dict,temp],axis=1)
-#
-#    eigen_cent = {}
-#    for gr in graphs:
-#        eigen_cent.update(nx.eigenvector_centrality_numpy(gr))  
-#    temp=pd.DataFrame.from_dict(eigen_cent, orient='index', columns=['eigenvector_cent'])
-#    feature_dict=pd.concat([feature_dict,temp],axis=1)
-#
-##    katz_cent = {}
-##    for gr in graphs:
-##        katz_cent.update(nx.katz_centrality(gr))  
-##    temp=pd.DataFrame.from_dict(katz_cent, orient='index', columns=['katz_cent'])
-##    feature_dict=pd.concat([feature_dict,temp],axis=1)
-#
-#    communicability_cent = {}
-#    for gr in graphs:
-#        communicability_cent.update(nx.communicability_centrality(gr))  
-#    temp=pd.DataFrame.from_dict(communicability_cent, orient='index', columns=['communicability_cent'])
-#    feature_dict=pd.concat([feature_dict,temp],axis=1)
-#
-#    communicability_betw_cent = {}
-#    for gr in graphs:
-#        communicability_betw_cent.update(nx.communicability_betweenness_centrality(gr))  
-#    temp=pd.DataFrame.from_dict(communicability_betw_cent, orient='index', columns=['communicability_betw_cent'])
-#    feature_dict=pd.concat([feature_dict,temp],axis=1)
-    
+    demand={}
+    for gr in graphs:
+        for n,d in gr.nodes_iter(data=True):
+            value=d['data']['inf_data'].demand
+            demand[n]=abs(value)           
+    temp=pd.DataFrame.from_dict(demand, orient='index', columns=['demand'])
+    feature_dict=pd.concat([feature_dict,temp],axis=1)
+
     feature_dict=feature_dict.dropna()
+    feature_dict.drop(feature_dict[feature_dict['repair_time']==0].index , inplace=True)
     import seaborn as sns
     sns.set(style="white")
-    g = sns.jointplot(x='degree_centrality',y='repair_time',data=feature_dict,kind="kde",height=7,space=0)
+    g = sns.jointplot(x='demand',y='repair_time',data=feature_dict,kind="reg",height=7,space=0)
 #    g = sns.pairplot(feature_dict, kind="reg")
     
     sns.clustermap(feature_dict.corr(), center=0, cmap="vlag",linewidths=.75, figsize=(13, 13))

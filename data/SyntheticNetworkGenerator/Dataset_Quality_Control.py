@@ -307,7 +307,7 @@ dmRatioSum = np.zeros((len(configList),noSamples))
 aveConn = np.zeros((len(configList),noSamples))
 allPairsConn = np.zeros((len(configList),noSamples)) 
 noInterconnections = np.zeros(len(configList))
- 
+node_ratios_df=pd.DataFrame(columns=['arcs','dam_arcs','dam_nodes','dam_elem','config','sample','noNodes','noLayers','topoParam','resCap'])
 for i in configList: 
     # Reading configuration data from file 
     cnfg = int(i[0])
@@ -323,37 +323,63 @@ for i in configList:
     
         # Computoing the connectedness and average connectivity for each
         # network
-        aveConnect = 0.0
-        isConnected = 1.0
+#        aveConnect = 0.0
+#        isConnected = 1.0
+#        for k in range(noLayers):
+#            node_list = [x for x in G.nodes() if x[1]==k+1]
+#            H = G.subgraph(node_list)
+#            aveConnect += nx.average_node_connectivity(H)
+#            isConnected *= int(nx.is_connected(H.to_undirected()))
+#        aveConn[cnfg,s] = aveConnect/noLayers
+#        allPairsConn[cnfg,s] = isConnected
+#
+#        # Computoing the the percentage of demand which is met
+#        # for all layers            
+#        dmSum = initialPerformanceUndamagedNetwork(G,noLayers)
+#        b = [G.nodes()[x]['data']['b'] for x in list(G.nodes())] 
+#        alldemand = sum([y for y in b if y<0])
+#        dmRatioSum[cnfg,s] = 1.0+dmSum/alldemand
+        
+        # Arc to node ratios
+        arc_to_node_ratio = 0
+        dam_arc_to_node_ratio = 0
+        dam_node_to_node_ratio = 0
+        dam_elem_to_node_ratio = 0        
         for k in range(noLayers):
             node_list = [x for x in G.nodes() if x[1]==k+1]
-            H = G.subgraph(node_list)
-            aveConnect += nx.average_node_connectivity(H)
-            isConnected *= int(nx.is_connected(H.to_undirected()))
-        aveConn[cnfg,s] = aveConnect/noLayers
-        allPairsConn[cnfg,s] = isConnected
-
-        # Computoing the the percentage of demand which is met
-        # for all layers            
-        dmSum = initialPerformanceUndamagedNetwork(G,noLayers)
-        b = [G.nodes()[x]['data']['b'] for x in list(G.nodes())] 
-        alldemand = sum([y for y in b if y<0])
-        dmRatioSum[cnfg,s] = 1.0+dmSum/alldemand
-            
-        print('Config %d | Sample_%d' % (cnfg,s))
+            arc_list = [x for x in G.edges() if x[0][1]==k+1 and x[1][1]==k+1]
+            arc_to_node_ratio += len(arc_list)/float(len(node_list))/float(noLayers)/2.0
+            layer_da = len([x for x in dam_arcs if x[0][1]==k+1 and x[1][1]==k+1])/float(len(node_list))/float(noLayers)/2.0
+            dam_arc_to_node_ratio += layer_da
+            layer_dn = len([x for x in dam_nodes if x[1]==k+1])/float(len(node_list))/float(noLayers)
+            dam_node_to_node_ratio += layer_dn
+            dam_elem_to_node_ratio += layer_da+layer_dn
+        node_ratios_df = node_ratios_df.append({'arcs': arc_to_node_ratio,
+                                                'dam_arcs':dam_arc_to_node_ratio,
+                                                'dam_nodes':dam_node_to_node_ratio,
+                                                'dam_elem':dam_elem_to_node_ratio,
+                                                'config':cnfg,'sample':s,
+                                                'noNodes':noNodes,'noLayers':noLayers,
+                                                'topoParam':arcProb,'resCap':resCap},
+                                                ignore_index=True)
+    print('Config %d | Sample_%d' % (cnfg,s))
     #Number of Interconnections
-    noInterconnections[cnfg] = round(noNodes*noNodes*intConProb)
+#    noInterconnections[cnfg] = round(noNodes*noNodes*intConProb)
 #            
 #            
             
 # Plot QUality  Control results  
 plt.close('all')          
 qcFolder = rootfolder+'Evaluations/'
-plot_Evaluation_Results(len(configList),dmRatioSum,aveConn, allPairsConn,qcFolder)                      
-sns.set()     
-ax = sns.distplot(noInterconnections,rug=True,kde=False)
-ax.set(xlabel='Number of Interconnections', ylabel='Probability (%)')
+#plot_Evaluation_Results(len(configList),dmRatioSum,aveConn, allPairsConn,qcFolder)                      
+#sns.set()     
+#ax = sns.distplot(noInterconnections,rug=True,kde=False)
+#ax.set(xlabel='Number of Interconnections', ylabel='Probability (%)')
 #plt.savefig('noInterconnections_'+NetworkTypeInitial+'.png',dpi=600,bbox_inches="tight")
 
+node_ratios_df.to_pickle(NetworkTypeInitial+'_node_ratio_df.pkl',protocol=2)
+node_ratios_df = pd.read_pickle(NetworkTypeInitial+'_node_ratio_df.pkl')
+sns.relplot(x="dam_elem", y="dam_elem", hue="noLayers", alpha=.5,
+            height=6, data=node_ratios_df)
 #''' Plot one network '''
 #plot_network(BASE_DIR=rootfolder,topo=NetworkTypeInitial,config=0,sample=0)  

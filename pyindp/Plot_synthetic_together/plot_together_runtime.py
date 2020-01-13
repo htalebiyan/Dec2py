@@ -12,8 +12,8 @@ import plotly
 plt.close('all')
 sns.set(context='notebook',style='darkgrid')
 
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+#plt.rc('text', usetex=True)
+#plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 
 #run_time_df = run_time_df.assign(topology='Grid',interdependency='full')
@@ -34,33 +34,45 @@ df3 = pd.read_csv("C:\Users\ht20\Documents\Files\Generated_Network_Dataset_v3.1\
                  header=0, sep="\t")
 df3 = df3.assign(topology='Random')
 config_info = pd.concat([df1,df2,df3])
-
 comp_res=pd.merge(comp_res, config_info,
              left_on=['Magnitude','topology'],
              right_on=['Config Number','topology']) 
+
+df1= pd.read_pickle('GN_node_ratio_df.pkl')
+df1 = df1.assign(topology='Grid')
+df2= pd.read_pickle('SFN_node_ratio_df.pkl')
+df2 = df2.assign(topology='ScaleFree')
+df3= pd.read_pickle('RN_node_ratio_df.pkl')
+df3 = df3.assign(topology='Random')
+dam_info = pd.concat([df1,df2,df3])
+comp_res=pd.merge(comp_res, dam_info,
+             left_on=['Magnitude','topology','sample'],
+             right_on=['config','topology','sample']) 
 #
 """ Plot results """    
-selected_df = comp_res[(comp_res['decision_time']!='Uniform')]
+selected_df = comp_res[(comp_res['decision_time']<1000)] #(comp_res['decision_time']!='Uniform')&
 selected_df["decision_time"] = pd.to_numeric(selected_df["decision_time"])
 
-selected_df = selected_df.rename(columns={"auction_type": "Auction Type",
-                                    "valuation_time": "Valuation Time",
-                                    'topology':'Topology'})
-g = sns.barplot(x=' No. Layers', y='Valuation Time', hue='Topology',data=selected_df,
-                 palette="Blues",linewidth=0.5,edgecolor=[.25,.25,.25],
-                 capsize=.05,errcolor=[.25,.25,.25],errwidth=1,)
-handles, labels = g.get_legend_handles_labels()   
-lgd = g.legend(handles, labels, title='Topology',loc='upper left', bbox_to_anchor=(0, 1),
-           frameon =True,framealpha=0.5, ncol=1)  
-g.set_ylabel(r'Valuation Time (sec)')
-g.set_xlabel(r'Number of Layers') 
-plt.savefig('valuation_time.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')    #, bbox_inches='tight'
-
-#g = sns.catplot(x=' No. Layers', y='auction_time', hue='auction_type',data=comp_res,
-#                 kind='bar',palette="Reds",
-#                 linewidth=0.5,edgecolor=[.25,.25,.25],
-#                 capsize=.05,errcolor=[.25,.25,.25],errwidth=1,)#,row='layer'
-
+#selected_df = selected_df.rename(columns={"auction_type": "Auction Type",
+#                                    "valuation_time": "Valuation Time",
+#                                    'topology':'Topology'})
+#g = sns.barplot(x=' No. Layers', y='valuation_time',hue='topology',data=selected_df,
+#                 palette="Blues",linewidth=0.5,edgecolor=[.25,.25,.25],
+#                 capsize=.05,errcolor=[.25,.25,.25],errwidth=1,)
+#
+#groupedvalues=selected_df.groupby(['topology']).mean().reset_index()
+#handles, labels = g.get_legend_handles_labels()   
+#lgd = g.legend(handles, labels, title='Topology',loc='upper left', bbox_to_anchor=(0, 1),
+#           frameon =True,framealpha=0.5, ncol=1)  
+#g.set_ylabel(r'Valuation Time (sec)')
+#g.set_xlabel(r'Number of Layers') 
+#plt.savefig('valuation_time.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')    #, bbox_inches='tight'
+#
+##g = sns.catplot(x=' No. Layers', y='auction_time', hue='auction_type',data=comp_res,
+##                 kind='bar',palette="Reds",
+##                 linewidth=0.5,edgecolor=[.25,.25,.25],
+##                 capsize=.05,errcolor=[.25,.25,.25],errwidth=1,)#,row='layer'
+#
 #selected_df.loc[selected_df['decision_type']=='indp','auction_type']='iINDP'
 #g = sns.barplot(x='auction_type', y='decision_time',
 #                hue='topology',data=selected_df,palette="Reds",
@@ -78,6 +90,7 @@ plt.savefig('valuation_time.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inche
 #g.set_ylabel(r'Decision Time (sec)')
 #g.set_xlabel(r'Auction Type')   
 #plt.savefig('Decide_time.png', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')    #, bbox_inches='tight'  
+
 """ Parallel Axes"""
 #cols=list(selected_df.columns.values)
 #selected_df = comp_res[(comp_res['decision_time']!='nan')]
@@ -130,17 +143,14 @@ plt.savefig('valuation_time.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inche
 ##
 
 """Other plots"""
-#selected_df = comp_res[(comp_res['decision_type']!='indp')]
-#selected_df["decision_time"] = pd.to_numeric(selected_df["decision_time"])
-
 #f, ax = plt.subplots()
 #sns.despine(bottom=True, left=True)
-#g=sns.stripplot(x="auction_time", y="auction_type", hue=" No. Layers",
+#g=sns.stripplot(x="valuation_time", y="auction_type", hue=" No. Layers",
 #              data=selected_df, dodge=True, jitter=True,
 #              alpha=.25, zorder=1)
-#g.set(xlim=(-.5, 5))
+##g.set(xlim=(-.5, 5))
 ## Show the conditional means
-#g=sns.pointplot(x="auction_time", y="auction_type", hue=" No. Layers",
+#g=sns.pointplot(x="valuation_time", y="auction_type", hue=" No. Layers",
 #              data=selected_df, dodge=.532, join=False, palette="dark",
 #              markers="d", scale=.75, ci=None)
 
@@ -160,16 +170,15 @@ plt.savefig('valuation_time.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inche
 
 
 '''Scatter'''
-#selected_df = selected_df.rename(columns={"norm_distance_to_optimal": "norm distance to optimal",
-#                                          "auction_type": "Auction Type",
-#                                          "topology":"Topology"})
- 
-#sns.set(font_scale=1.5) 
-#with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
-#    g=sns.relplot(x=" Resource Cap", y="decision_time",
-#            hue="topology", size='topology', col="auction_type",
-#            legend="full", data=selected_df)
-#    g.set(xlim=(-5, 100))
+selected_df = comp_res[(comp_res['decision_type']=='indp')&(comp_res['decision_time']<200)] #
+selected_df["decision_time"] = pd.to_numeric(selected_df["decision_time"])
+
+sns.set(font_scale=1.5) 
+with sns.color_palette("muted"):#sns.xkcd_palette(['black',"windows blue",'red',"green"]): #
+    g=sns.relplot(x="noNodes", y="decision_time",
+            size=" No. Layers", hue='topology', col="auction_type",
+            data=selected_df)
+#    g.set(xlim=(-5, 150))
 #    g.set(ylim=(-5, 1000))
 #    g.set_xlabels(r'$R_c$')
 #    g.set_ylabels(r'Mean $\omega^k(r^k_d,r^k_c)$ over layers')
