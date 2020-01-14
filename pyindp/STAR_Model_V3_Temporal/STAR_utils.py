@@ -63,7 +63,7 @@ def importData(params,failSce_param,layers):
                 samples = read_restoration_plans(samples, m, i,results_dir,suffix='')
                 network_objects[m,i]=InterdepNet
     print('Data Imported')
-    return samples,network_objects,initial_net    
+    return samples,network_objects,initial_net,noResource,layers    
 
 
 def initialize_matrix(N, sample, m, i, time_steps):
