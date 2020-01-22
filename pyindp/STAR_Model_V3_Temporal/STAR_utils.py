@@ -63,7 +63,7 @@ def importData(params,failSce_param,layers):
                 samples = read_restoration_plans(samples, m, i,results_dir,suffix='')
                 network_objects[m,i]=InterdepNet
     print('Data Imported')
-    return samples,network_objects,initial_net,noResource,layers    
+    return samples,network_objects,initial_net,params["V"],layers    
 
 
 def initialize_matrix(N, sample, m, i, time_steps):
@@ -93,6 +93,8 @@ def read_restoration_plans(sample, m, i, results_dir,suffix=''):
                     act_data=string.split(str.strip(action),".")
                     node_id=int(act_data[0])
                     sample[(node_id,k)][t:,-1] = 1.0
+    else:
+        sys.exit('No results dir: '+action_file)
     return sample
 
 def collect_feature_data(samples,network_objects):
