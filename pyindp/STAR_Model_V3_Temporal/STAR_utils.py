@@ -6,7 +6,6 @@ import sys
 import string 
 import pymc3 as pm
 print('Running with PyMC3 version v.{}'.format(pm.__version__))
-import copy
 import matplotlib.pyplot as plt
 
 def importData(params,failSce_param,layers):  
@@ -65,7 +64,6 @@ def importData(params,failSce_param,layers):
     print('Data Imported')
     return samples,network_objects,initial_net,params["V"],layers    
 
-
 def initialize_matrix(N, sample, m, i, time_steps):
     for v in N.G.nodes():
         if v not in sample.keys():
@@ -100,108 +98,103 @@ def read_restoration_plans(sample, m, i, results_dir,suffix=''):
 def collect_feature_data(samples,network_objects):
     return True
     
-def train_model(samples):
-    samplesDiff = copy.deepcopy(samples)
-    noSets = 50
-    noScenarios = 96
-    resCap = 3
-    T = 10     
+def train_model(samples,resCap,initial_net):
+    samplesDiff = {}
+    node_names = samples.keys()
+    noSamples = int(samples[node_names[0]].shape[1])
+    T = int(samples[node_names[0]].shape[0])     
     
     for key, val in samples.items(): 
-        for s in range(val.shape[1]):
-            for t in range(1,T+1):
+        if key not in samplesDiff.keys():
+            samplesDiff[key]=np.zeros((T-1,noSamples))
+        for s in range(noSamples):
+            for t in range(1,T):
                 if val[t,s]==1:
                     if val[t-1,s] == 0:
-                        samplesDiff[key][t,s] = 1
+                        samplesDiff[key][t-1,s] = 1
                     elif val[t-1,s] == 1:
-                        samplesDiff[key][t,s] = 2
+                        samplesDiff[key][t-1,s] = 2 #!!!Assumptiom
                     else:
-                        print('???')
+                        print('AYFKM????')
                 elif  val[t,s]==0 and val[t-1,s]==0: 
-                    samplesDiff[key][t,s] = 0 
+                    samplesDiff[key][t-1,s] = 0 
                 else:
-                    print('???')
-    
-          
-    names = list(samples.keys())
-    samplesNodes = {}
-    for i in samples:
-        if True:#i[0] == 'w':
-            samplesNodes[i] = samples[i]
-    noSpa = len(samplesNodes.keys())
-    names = list(samplesNodes.keys())
+                    print('AYFKM????')
+              
+    selected_nodes = {}
+    for key, val in samplesDiff.items():
+        if key[1]==2:
+            selected_nodes[key] = val
+    noSpa = len(selected_nodes.keys())
+    node_names = list(selected_nodes.keys())
     noTmp = T+1
+    A = nx.adjacency_matrix(initial_net.G.subgraph(node_names)).todense()
     
     p = {}
+    a = {}
     sdy = {}
-    y_t = {}
+    y = {}
+    trainData={}
 #    trace=[]
 #    model=[]
 #    conv = pd.read_csv('filteredVarsFromCrudeModel.txt', delimiter = ' ')
-    for i in range(noSpa):
-        estParamAll = pd.DataFrame()
-        key = names[i]
-        if True:#key[-1]=='P':
-            y_t[i,0] = samplesDiff[key][0,:]
-#            ind = conv.index[(conv['name'] == key)].tolist()
-            noTimeSteps =10# len(ind)
-            if noTimeSteps != 0:
-                with pm.Model() as model:
-                    p[i,0] = pm.Beta('p(%s)_%d'%(key,0), alpha=2, beta=2)
-                    sdy[i] = pm.Normal('sdy_%s'%(key,), mu=0, sd=1)
-    
-#                    for j in ind: 
-#                        t = conv['time'][j]
-#                        index = np.argwhere(samplesDiff[key][t,:]==2)
-#                        trainData = np.delete(samplesDiff[key][t,:],index)
-                    for t in range(1,noTimeSteps+1):
-                        index = np.argwhere(samplesDiff[key][t,:]==2)
-                        trainData = np.delete(samplesDiff[key][t,:],index)
-                        p[i,t] = pm.Deterministic('p(%s)_%d'%(key,t),
-                                             logistic(p[i,t-1]+sdy[i]))
-                        y_t[i,t] = pm.Bernoulli('%s_%d'%(key,t),
-                                                   p = p[i,t],
-                                                   observed=trainData)
-                    trace = pm.sample(1500, tune=500, cores=4, njobs=4)
-                    estParam = pm.summary(trace).round(4)
-                    print(estParam)
-#                    estParam['Name'] = key 
-                   
-                    estParam.to_csv('Parameters\\model_parameters_%s.txt' % (names[i],),
-                                    header=True, index=True, sep=' ', mode='w')
+    with pm.Model() as model:
+        priors = {}
+        for i in range(noSpa):
+            # estParamAll = pd.DataFrame()
+            key = node_names[i]
+            priors['p_%s'%(key,)] = pm.Beta('p_%s'%(key,), alpha=2, beta=2)
+            priors['sdy_%s'%(key,)] = pm.Normal('sdy_%s'%(key,), mu=0, sd=1)
+            trainData[key] = samplesDiff[key].transpose().reshape(-1)
+
+        for i in range(noSpa):
+            key = node_names[i]
+            formula = priors['p_%s'%(key,)]+priors['sdy_%s'%(key,)]
+            for j in range(noSpa):
+                if A[i,j]:
+                    key_neighbor = node_names[j]
+                    formula +=  priors['p_%s'%(key_neighbor,)]
+            p[key] = pm.Deterministic('p%s'%(key,),logistic(formula))
+            y[key] = pm.Bernoulli('y_%s'%(key,), p = p[key],
+                                       observed=trainData[key])
+        trace = pm.sample(1500, tune=500, cores=4, njobs=4)
+        estParam = pm.summary(trace).round(4)
+        print(estParam)     
+        estParam.to_csv('Parameters\\model_parameters.txt',
+                        header=True, index=True, sep=' ', mode='w')
     
           
-#    pm.traceplot(trace, combined=True) # ,varnames=['p_w_0_W_6']
-#    pm.model_to_graphviz(model).render()
-#    pp(y_t[1,1])
-#    
-#    ''' Generate and plot samples from the trained model '''
-#    ppc = pm.sample_ppc(trace, samples=1000, model=model)
-#    
-#    
-##    plt.rc('text', usetex=True)
-##    plt.rcParams.update({'font.size': 14})
-##    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-#    times = [1,3,5]
-#    v = 83
-#    f, ax = plt.subplots(1, len(times), sharex=False, sharey=True,figsize=(12,4))
-#    f.text(0.5, 0.01, 'State Transition Value', ha='center', va='center')
-#    f.text(0.1, 0.5, 'Density', ha='center', va='center', rotation='vertical')
-#    #f.tight_layout()
-#    
-#    for i in range(len(times)):
-#        t = times[i]
-#        name = 'w_%d_P_%d'% (v,t)
-#        idx = np.argwhere(samplesDiff[key][t,:]==2)
-#        tdata = np.delete(samplesDiff[key][t,:],idx)
-#        pred = [n.mean() for n in ppc[name]]
-#        
-#        ax[i].hist(pred, bins=20, alpha=0.5, density=True, color="r")
-#        ax[i].axvline(tdata.mean())
-#        ax[i].set_title('$w_%d^{%d}$' % (t,v))
-#        f.legend(['Mean of training data','Predicted distribution of Mean'],
-#            loc=10, frameon=True, framealpha=0.05, ncol=2, bbox_to_anchor=(0.4, 1.05))
-#    plt.savefig('Prediction_w_%d_P.pdf'%v, dpi=300, bbox_inches='tight')
+    # pm.traceplot(trace, combined=True) # ,varnames=['p_w_0_W_6']
+    pm.model_to_graphviz(model).render()
+    
+    ''' Generate and plot samples from the trained model '''
+    ppc = pm.sample_posterior_predictive(trace, samples=1000, model=model)
+    
+    return samplesDiff, trainData, ppc
+    
+def test_model(samples, samplesDiff,trainData, ppc):
+#    plt.rc('text', usetex=True)
+#    plt.rcParams.update({'font.size': 14})
+#    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    ''' Prediction & mean data '''
+    nodes = [1,10,12]
+    f, ax = plt.subplots(1, len(nodes), sharex=False, sharey=True,figsize=(12,4))
+    f.text(0.5, 0.01, 'State Transition Value', ha='center', va='center')
+    f.text(0.1, 0.5, 'Density', ha='center', va='center', rotation='vertical')
+    #f.tight_layout()
+    for i in range(len(nodes)):
+        key= (nodes[i],2)
+        name = 'y_%s'% (key,)
+        data = trainData[key]
+        pred = [n.mean() for n in ppc['y_%s'% (key,)]]
         
+        ax[i].hist(pred, bins=20, alpha=0.5, density=True, color="r")
+        ax[i].axvline(data.mean())
+        # print data.mean()
+        ax[i].set_title('$y_%s$' % (key,))
+        f.legend(['Mean of training data','Predicted distribution of Mean'],
+            loc=10, frameon=True, framealpha=0.05, ncol=2, bbox_to_anchor=(0.4, 1.05))
+    # plt.savefig('Prediction_w_%d_P.pdf'%v, dpi=300, bbox_inches='tight')  
+    ''' Prediction error '''
 def logistic(l):
     return 1 / (1 + pm.math.exp(-l))

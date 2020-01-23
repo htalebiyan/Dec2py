@@ -1,57 +1,151 @@
 digraph {
-	subgraph "cluster11 x 55" {
-		"(7, 3)_6" [label="(7, 3)_6 ~ Bernoulli" style=filled]
-		"(7, 3)_7" [label="(7, 3)_7 ~ Bernoulli" style=filled]
-		"(7, 3)_4" [label="(7, 3)_4 ~ Bernoulli" style=filled]
-		"(7, 3)_5" [label="(7, 3)_5 ~ Bernoulli" style=filled]
-		"(7, 3)_2" [label="(7, 3)_2 ~ Bernoulli" style=filled]
-		"(7, 3)_3" [label="(7, 3)_3 ~ Bernoulli" style=filled]
-		"(7, 3)_1" [label="(7, 3)_1 ~ Bernoulli" style=filled]
-		"(7, 3)_8" [label="(7, 3)_8 ~ Bernoulli" style=filled]
-		"(7, 3)_9" [label="(7, 3)_9 ~ Bernoulli" style=filled]
-		"(7, 3)_10" [label="(7, 3)_10 ~ Bernoulli" style=filled]
-		label="11 x 55" labeljust=r labelloc=b style=rounded
+	"p_(0, 2)" [label="p_(0, 2) ~ Beta"]
+	"p_(2, 2)" [label="p_(2, 2) ~ Beta"]
+	"p_(7, 2)" [label="p_(7, 2) ~ Beta"]
+	"sdy_(3, 2)" [label="sdy_(3, 2) ~ Normal"]
+	"sdy_(4, 2)" [label="sdy_(4, 2) ~ Normal"]
+	"sdy_(2, 2)" [label="sdy_(2, 2) ~ Normal"]
+	"p(2, 2)" [label="p(2, 2) ~ Deterministic" shape=box]
+	"p(5, 2)" [label="p(5, 2) ~ Deterministic" shape=box]
+	"p_(10, 2)" [label="p_(10, 2) ~ Beta"]
+	"sdy_(15, 2)" [label="sdy_(15, 2) ~ Normal"]
+	"p_(13, 2)" [label="p_(13, 2) ~ Beta"]
+	"p_(1, 2)" [label="p_(1, 2) ~ Beta"]
+	"p(9, 2)" [label="p(9, 2) ~ Deterministic" shape=box]
+	"p_(4, 2)" [label="p_(4, 2) ~ Beta"]
+	"sdy_(1, 2)" [label="sdy_(1, 2) ~ Normal"]
+	"p_(6, 2)" [label="p_(6, 2) ~ Beta"]
+	"p_(15, 2)" [label="p_(15, 2) ~ Beta"]
+	"p_(8, 2)" [label="p_(8, 2) ~ Beta"]
+	"p(0, 2)" [label="p(0, 2) ~ Deterministic" shape=box]
+	"p_(12, 2)" [label="p_(12, 2) ~ Beta"]
+	"p(7, 2)" [label="p(7, 2) ~ Deterministic" shape=box]
+	"sdy_(14, 2)" [label="sdy_(14, 2) ~ Normal"]
+	"sdy_(11, 2)" [label="sdy_(11, 2) ~ Normal"]
+	"p(6, 2)" [label="p(6, 2) ~ Deterministic" shape=box]
+	"sdy_(13, 2)" [label="sdy_(13, 2) ~ Normal"]
+	"p_(3, 2)" [label="p_(3, 2) ~ Beta"]
+	"p(14, 2)" [label="p(14, 2) ~ Deterministic" shape=box]
+	"p(13, 2)" [label="p(13, 2) ~ Deterministic" shape=box]
+	"p(11, 2)" [label="p(11, 2) ~ Deterministic" shape=box]
+	"sdy_(9, 2)" [label="sdy_(9, 2) ~ Normal"]
+	"p(1, 2)" [label="p(1, 2) ~ Deterministic" shape=box]
+	"p(3, 2)" [label="p(3, 2) ~ Deterministic" shape=box]
+	"p_(14, 2)" [label="p_(14, 2) ~ Beta"]
+	"sdy_(12, 2)" [label="sdy_(12, 2) ~ Normal"]
+	"p(4, 2)" [label="p(4, 2) ~ Deterministic" shape=box]
+	"p_(11, 2)" [label="p_(11, 2) ~ Beta"]
+	"p(8, 2)" [label="p(8, 2) ~ Deterministic" shape=box]
+	"p(15, 2)" [label="p(15, 2) ~ Deterministic" shape=box]
+	"p_(9, 2)" [label="p_(9, 2) ~ Beta"]
+	"sdy_(8, 2)" [label="sdy_(8, 2) ~ Normal"]
+	"p_(5, 2)" [label="p_(5, 2) ~ Beta"]
+	"p(10, 2)" [label="p(10, 2) ~ Deterministic" shape=box]
+	"p(12, 2)" [label="p(12, 2) ~ Deterministic" shape=box]
+	"sdy_(5, 2)" [label="sdy_(5, 2) ~ Normal"]
+	"sdy_(10, 2)" [label="sdy_(10, 2) ~ Normal"]
+	"sdy_(6, 2)" [label="sdy_(6, 2) ~ Normal"]
+	"sdy_(0, 2)" [label="sdy_(0, 2) ~ Normal"]
+	"sdy_(7, 2)" [label="sdy_(7, 2) ~ Normal"]
+	subgraph cluster550 {
+		"y_(11, 2)" [label="y_(11, 2) ~ Bernoulli" style=filled]
+		"y_(13, 2)" [label="y_(13, 2) ~ Bernoulli" style=filled]
+		"y_(15, 2)" [label="y_(15, 2) ~ Bernoulli" style=filled]
+		"y_(10, 2)" [label="y_(10, 2) ~ Bernoulli" style=filled]
+		"y_(12, 2)" [label="y_(12, 2) ~ Bernoulli" style=filled]
+		"y_(14, 2)" [label="y_(14, 2) ~ Bernoulli" style=filled]
+		"y_(2, 2)" [label="y_(2, 2) ~ Bernoulli" style=filled]
+		"y_(3, 2)" [label="y_(3, 2) ~ Bernoulli" style=filled]
+		"y_(6, 2)" [label="y_(6, 2) ~ Bernoulli" style=filled]
+		"y_(1, 2)" [label="y_(1, 2) ~ Bernoulli" style=filled]
+		"y_(4, 2)" [label="y_(4, 2) ~ Bernoulli" style=filled]
+		"y_(7, 2)" [label="y_(7, 2) ~ Bernoulli" style=filled]
+		"y_(5, 2)" [label="y_(5, 2) ~ Bernoulli" style=filled]
+		"y_(8, 2)" [label="y_(8, 2) ~ Bernoulli" style=filled]
+		"y_(9, 2)" [label="y_(9, 2) ~ Bernoulli" style=filled]
+		"y_(0, 2)" [label="y_(0, 2) ~ Bernoulli" style=filled]
+		label=550 labeljust=r labelloc=b style=rounded
 	}
-	"p((7, 3))_2" [label="p((7, 3))_2 ~ Deterministic" shape=box]
-	"p((7, 3))_3" [label="p((7, 3))_3 ~ Deterministic" shape=box]
-	"p((7, 3))_0" [label="p((7, 3))_0 ~ Beta"]
-	"p((7, 3))_1" [label="p((7, 3))_1 ~ Deterministic" shape=box]
-	"p((7, 3))_6" [label="p((7, 3))_6 ~ Deterministic" shape=box]
-	"p((7, 3))_7" [label="p((7, 3))_7 ~ Deterministic" shape=box]
-	"p((7, 3))_4" [label="p((7, 3))_4 ~ Deterministic" shape=box]
-	"p((7, 3))_5" [label="p((7, 3))_5 ~ Deterministic" shape=box]
-	"sdy_(7, 3)" [label="sdy_(7, 3) ~ Normal"]
-	"p((7, 3))_8" [label="p((7, 3))_8 ~ Deterministic" shape=box]
-	"p((7, 3))_9" [label="p((7, 3))_9 ~ Deterministic" shape=box]
-	"p((7, 3))_10" [label="p((7, 3))_10 ~ Deterministic" shape=box]
-	"p((7, 3))_6" -> "(7, 3)_6"
-	"p((7, 3))_7" -> "(7, 3)_7"
-	"p((7, 3))_4" -> "(7, 3)_4"
-	"p((7, 3))_5" -> "(7, 3)_5"
-	"p((7, 3))_2" -> "(7, 3)_2"
-	"p((7, 3))_3" -> "(7, 3)_3"
-	"p((7, 3))_1" -> "(7, 3)_1"
-	"p((7, 3))_8" -> "(7, 3)_8"
-	"p((7, 3))_9" -> "(7, 3)_9"
-	"sdy_(7, 3)" -> "p((7, 3))_2"
-	"p((7, 3))_1" -> "p((7, 3))_2"
-	"sdy_(7, 3)" -> "p((7, 3))_3"
-	"p((7, 3))_2" -> "p((7, 3))_3"
-	"sdy_(7, 3)" -> "p((7, 3))_1"
-	"p((7, 3))_0" -> "p((7, 3))_1"
-	"sdy_(7, 3)" -> "p((7, 3))_6"
-	"p((7, 3))_5" -> "p((7, 3))_6"
-	"sdy_(7, 3)" -> "p((7, 3))_7"
-	"p((7, 3))_6" -> "p((7, 3))_7"
-	"sdy_(7, 3)" -> "p((7, 3))_4"
-	"p((7, 3))_3" -> "p((7, 3))_4"
-	"sdy_(7, 3)" -> "p((7, 3))_5"
-	"p((7, 3))_4" -> "p((7, 3))_5"
-	"sdy_(7, 3)" -> "p((7, 3))_8"
-	"p((7, 3))_7" -> "p((7, 3))_8"
-	"sdy_(7, 3)" -> "p((7, 3))_9"
-	"p((7, 3))_8" -> "p((7, 3))_9"
-	"sdy_(7, 3)" -> "p((7, 3))_10"
-	"p((7, 3))_9" -> "p((7, 3))_10"
-	"p((7, 3))_10" -> "(7, 3)_10"
+	"p(14, 2)" -> "y_(14, 2)"
+	"p_(10, 2)" -> "p(2, 2)"
+	"sdy_(2, 2)" -> "p(2, 2)"
+	"p_(11, 2)" -> "p(2, 2)"
+	"p_(2, 2)" -> "p(2, 2)"
+	"p_(0, 2)" -> "p(5, 2)"
+	"p_(5, 2)" -> "p(5, 2)"
+	"p_(4, 2)" -> "p(5, 2)"
+	"sdy_(5, 2)" -> "p(5, 2)"
+	"p_(10, 2)" -> "p(5, 2)"
+	"p_(1, 2)" -> "p(5, 2)"
+	"p(1, 2)" -> "y_(1, 2)"
+	"p(4, 2)" -> "y_(4, 2)"
+	"p_(0, 2)" -> "p(9, 2)"
+	"p_(9, 2)" -> "p(9, 2)"
+	"sdy_(9, 2)" -> "p(9, 2)"
+	"p(11, 2)" -> "y_(11, 2)"
+	"p(10, 2)" -> "y_(10, 2)"
+	"sdy_(0, 2)" -> "p(0, 2)"
+	"p_(5, 2)" -> "p(0, 2)"
+	"p_(0, 2)" -> "p(0, 2)"
+	"p_(9, 2)" -> "p(0, 2)"
+	"p_(3, 2)" -> "p(0, 2)"
+	"p_(8, 2)" -> "p(7, 2)"
+	"sdy_(7, 2)" -> "p(7, 2)"
+	"p_(7, 2)" -> "p(7, 2)"
+	"p_(13, 2)" -> "p(7, 2)"
+	"p_(6, 2)" -> "p(6, 2)"
+	"p_(11, 2)" -> "p(6, 2)"
+	"sdy_(6, 2)" -> "p(6, 2)"
+	"p_(13, 2)" -> "p(6, 2)"
+	"p(7, 2)" -> "y_(7, 2)"
+	"sdy_(14, 2)" -> "p(14, 2)"
+	"p_(14, 2)" -> "p(14, 2)"
+	"p_(13, 2)" -> "p(14, 2)"
+	"p_(7, 2)" -> "p(13, 2)"
+	"p_(6, 2)" -> "p(13, 2)"
+	"p_(14, 2)" -> "p(13, 2)"
+	"sdy_(13, 2)" -> "p(13, 2)"
+	"p_(13, 2)" -> "p(13, 2)"
+	"p_(1, 2)" -> "p(13, 2)"
+	"p(13, 2)" -> "y_(13, 2)"
+	"p_(2, 2)" -> "p(11, 2)"
+	"sdy_(11, 2)" -> "p(11, 2)"
+	"p_(12, 2)" -> "p(11, 2)"
+	"p_(11, 2)" -> "p(11, 2)"
+	"p_(6, 2)" -> "p(11, 2)"
+	"p_(1, 2)" -> "p(1, 2)"
+	"p_(5, 2)" -> "p(1, 2)"
+	"sdy_(1, 2)" -> "p(1, 2)"
+	"p_(13, 2)" -> "p(1, 2)"
+	"p_(0, 2)" -> "p(3, 2)"
+	"p_(3, 2)" -> "p(3, 2)"
+	"sdy_(3, 2)" -> "p(3, 2)"
+	"p(0, 2)" -> "y_(0, 2)"
+	"p(8, 2)" -> "y_(8, 2)"
+	"p_(8, 2)" -> "p(15, 2)"
+	"p_(15, 2)" -> "p(15, 2)"
+	"sdy_(15, 2)" -> "p(15, 2)"
+	"p(3, 2)" -> "y_(3, 2)"
+	"p_(10, 2)" -> "p(4, 2)"
+	"p_(5, 2)" -> "p(4, 2)"
+	"p_(4, 2)" -> "p(4, 2)"
+	"sdy_(4, 2)" -> "p(4, 2)"
+	"p_(10, 2)" -> "p(10, 2)"
+	"p_(5, 2)" -> "p(10, 2)"
+	"p_(2, 2)" -> "p(10, 2)"
+	"p_(4, 2)" -> "p(10, 2)"
+	"sdy_(10, 2)" -> "p(10, 2)"
+	"p_(12, 2)" -> "p(12, 2)"
+	"p_(11, 2)" -> "p(12, 2)"
+	"sdy_(12, 2)" -> "p(12, 2)"
+	"p(15, 2)" -> "y_(15, 2)"
+	"p(12, 2)" -> "y_(12, 2)"
+	"p(9, 2)" -> "y_(9, 2)"
+	"p(6, 2)" -> "y_(6, 2)"
+	"p(5, 2)" -> "y_(5, 2)"
+	"sdy_(8, 2)" -> "p(8, 2)"
+	"p_(8, 2)" -> "p(8, 2)"
+	"p_(7, 2)" -> "p(8, 2)"
+	"p_(15, 2)" -> "p(8, 2)"
+	"p(2, 2)" -> "y_(2, 2)"
 }

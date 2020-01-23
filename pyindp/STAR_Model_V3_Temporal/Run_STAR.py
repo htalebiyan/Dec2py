@@ -25,7 +25,6 @@ if __name__ == "__main__":
     params={"NUM_ITERATIONS":10,"OUTPUT_DIR":output_dir+'results/indp_results',
             "V":v,"ALGORITHM":"INDP"}
     
-    samples,network_objects,initial_net=STAR_utils.input_matrices=STAR_utils.importData(params,failSce_param,layers)
-    STAR_utils.train_model(samples)
-    
-   
+    # samples,network_objects,initial_net,_,_=STAR_utils.input_matrices=STAR_utils.importData(params,failSce_param,layers)
+    samplesDiff, trainData, ppc = STAR_utils.train_model(samples,v,initial_net)
+    STAR_utils.test_model(samples, samplesDiff, trainData, ppc)
