@@ -146,17 +146,22 @@ def train_model(samples,resCap,initial_net):
             priors['p_%s'%(key,)] = pm.Beta('p_%s'%(key,), alpha=2, beta=2)
             priors['sdy_%s'%(key,)] = pm.Normal('sdy_%s'%(key,), mu=0, sd=1)
             trainData[key] = samplesDiff[key].transpose().reshape(-1)
-
+            index = np.argwhere(trainData[key]==2)
+            trainData[key] = np.delete(trainData[key],index)
+            
         for i in range(noSpa):
             key = node_names[i]
-            formula = priors['p_%s'%(key,)]+priors['sdy_%s'%(key,)]
-            for j in range(noSpa):
-                if A[i,j]:
-                    key_neighbor = node_names[j]
-                    formula +=  priors['p_%s'%(key_neighbor,)]
-            p[key] = pm.Deterministic('p%s'%(key,),logistic(formula))
-            y[key] = pm.Bernoulli('y_%s'%(key,), p = p[key],
-                                       observed=trainData[key])
+            if len(trainData[key]):
+                formula = priors['p_%s'%(key,)]+priors['sdy_%s'%(key,)]
+                for j in range(noSpa):
+                    if A[i,j]:
+                        key_neighbor = node_names[j]
+                        formula +=  priors['p_%s'%(key_neighbor,)]
+                p[key] = pm.Deterministic('p%s'%(key,),logistic(formula))
+                y[key] = pm.Bernoulli('y_%s'%(key,), p = p[key],
+                                           observed=trainData[key])
+            else: 
+                priors['p_%s'%(key,)] = pm.Deterministic('p_%s'%(key,), 1.0)
         trace = pm.sample(1500, tune=500, cores=4, njobs=4)
         estParam = pm.summary(trace).round(4)
         print(estParam)     
