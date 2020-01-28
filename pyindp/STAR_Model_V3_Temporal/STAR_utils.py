@@ -98,84 +98,98 @@ def read_restoration_plans(sample, m, i, results_dir,suffix=''):
 def collect_feature_data(samples,network_objects):
     return True
     
-def train_model(samples,resCap,initial_net):
-    samplesDiff = {}
+def train_data(samples,resCap,initial_net):
     node_names = samples.keys()
     noSamples = int(samples[node_names[0]].shape[1])
-    T = int(samples[node_names[0]].shape[0])     
-    
-    for key, val in samples.items(): 
-        if key not in samplesDiff.keys():
-            samplesDiff[key]=np.zeros((T-1,noSamples))
-        for s in range(noSamples):
-            for t in range(1,T):
-                if val[t,s]==1:
-                    if val[t-1,s] == 0:
-                        samplesDiff[key][t-1,s] = 1
-                    elif val[t-1,s] == 1:
-                        samplesDiff[key][t-1,s] = 2 #!!!Assumptiom
-                    else:
-                        print('AYFKM????')
-                elif  val[t,s]==0 and val[t-1,s]==0: 
-                    samplesDiff[key][t-1,s] = 0 
-                else:
-                    print('AYFKM????')
+    T = int(samples[node_names[0]].shape[0])                
               
     selected_nodes = {}
-    for key, val in samplesDiff.items():
+    for key, val in samples.items():
         if key[1]==2:
             selected_nodes[key] = val
     noSpa = len(selected_nodes.keys())
     node_names = list(selected_nodes.keys())
-    noTmp = T+1
-    A = nx.adjacency_matrix(initial_net.G.subgraph(node_names)).todense()
+    selected_g = initial_net.G.subgraph(node_names)
+    # A = nx.adjacency_matrix(initial_net.G.subgraph(node_names)).todense()
     
+    x_t={}
+    x_t_1={}   
+    x_j_t_1={} 
+    for key, val in selected_nodes.items():
+        x_t[key]=selected_nodes[key][1:,:]
+        x_t_1[key]=selected_nodes[key][:-1,:]  
+    for key, val in selected_nodes.items():
+        x_j_t_1[key] = np.zeros((T-1,noSamples))
+        for u,v in selected_g.edges():
+            if u==key :
+                x_j_t_1[key]+=x_t_1[v]/2.0
+            if v==key:
+                x_j_t_1[key]+=x_t_1[u]/2.0
+    cols=['x_t','x_t_1','x_j_t_1','sample','time']
+    train_data={}
+    for key, val in selected_nodes.items():
+        train_df = pd.DataFrame(columns=cols)
+        for s in range(noSamples):
+            for t in range(T-1):
+                row = np.array([x_t[key][t,s],x_t_1[key][t,s],x_j_t_1[key][t,s],s,t])
+                temp = pd.Series(row,index=cols)
+                train_df=train_df.append(temp,ignore_index=True)
+        train_data[key]=train_df
+    
+    train_data_all = pd.DataFrame(columns=cols)
+    for key, val in train_data.items():   
+        train_data_all=pd.concat([train_data_all,val])
+    train_data_all=train_data_all.reset_index(drop=True)   
+    return train_data_all,train_data
+
+def train_model(train_data_all,train_data):
     p = {}
     a = {}
     sdy = {}
     y = {}
-    trainData={}
-#    trace=[]
-#    model=[]
-#    conv = pd.read_csv('filteredVarsFromCrudeModel.txt', delimiter = ' ')
-    with pm.Model() as model:
-        priors = {}
-        for i in range(noSpa):
-            # estParamAll = pd.DataFrame()
-            key = node_names[i]
-            priors['p_%s'%(key,)] = pm.Beta('p_%s'%(key,), alpha=2, beta=2)
-            priors['sdy_%s'%(key,)] = pm.Normal('sdy_%s'%(key,), mu=0, sd=1)
-            trainData[key] = samplesDiff[key].transpose().reshape(-1)
-            index = np.argwhere(trainData[key]==2)
-            trainData[key] = np.delete(trainData[key],index)
+
+    # for i in range(noSpa):
+        # key = node_names[i]
+    with pm.Model() as logistic_model:
+        pm.glm.GLM.from_formula('x_t ~ x_t_1 + x_j_t_1',
+                                train_data_all,
+                                family=pm.glm.families.Binomial())
+        trace = pm.sample(1000, tune=1000, init='adapt_diag')
+    # with pm.Model() as model:
+    #     priors = {}
+    #     for i in range(noSpa):
+    #         # estParamAll = pd.DataFrame()
+    #         key = node_names[i]
+    #         priors['p_%s'%(key,)] = pm.Beta('p_%s'%(key,), alpha=2, beta=2)
+    #         # priors['sdy_%s'%(key,)] = pm.Normal('sdy_%s'%(key,), mu=0, sd=1)
             
-        for i in range(noSpa):
-            key = node_names[i]
-            if len(trainData[key]):
-                formula = priors['p_%s'%(key,)]+priors['sdy_%s'%(key,)]
-                for j in range(noSpa):
-                    if A[i,j]:
-                        key_neighbor = node_names[j]
-                        formula +=  priors['p_%s'%(key_neighbor,)]
-                p[key] = pm.Deterministic('p%s'%(key,),logistic(formula))
-                y[key] = pm.Bernoulli('y_%s'%(key,), p = p[key],
-                                           observed=trainData[key])
-            else: 
-                priors['p_%s'%(key,)] = pm.Deterministic('p_%s'%(key,), 1.0)
-        trace = pm.sample(1500, tune=500, cores=4, njobs=4)
-        estParam = pm.summary(trace).round(4)
-        print(estParam)     
-        estParam.to_csv('Parameters\\model_parameters.txt',
-                        header=True, index=True, sep=' ', mode='w')
+        # for i in range(noSpa):
+        #     key = node_names[i]
+        #     if len(trainData[key]):
+        #         formula = priors['p_%s'%(key,)]+priors['sdy_%s'%(key,)]
+        #         for j in range(noSpa):
+        #             if A[i,j]:
+        #                 key_neighbor = node_names[j]
+        #                 formula +=  priors['p_%s'%(key_neighbor,)]
+        #         p[key] = pm.Deterministic('p%s'%(key,),logistic(formula))
+        #         y[key] = pm.Bernoulli('y_%s'%(key,), p = p[key],
+        #                                    observed=trainData[key])
+        #     else: 
+        #         priors['p_%s'%(key,)] = pm.Deterministic('p_%s'%(key,), 1.0)
+        # trace = pm.sample(1500, tune=500, cores=4, njobs=4)
+        # estParam = pm.summary(trace).round(4)
+        # print(estParam)     
+        # estParam.to_csv('Parameters\\model_parameters.txt',
+        #                 header=True, index=True, sep=' ', mode='w')
     
           
     # pm.traceplot(trace, combined=True) # ,varnames=['p_w_0_W_6']
-    pm.model_to_graphviz(model).render()
+    # pm.model_to_graphviz(model).render()
     
-    ''' Generate and plot samples from the trained model '''
-    ppc = pm.sample_posterior_predictive(trace, samples=1000, model=model)
+    # ''' Generate and plot samples from the trained model '''
+    # ppc = pm.sample_posterior_predictive(trace, samples=1000, model=model)
     
-    return samplesDiff, trainData, ppc
+    # return samplesDiff, trainData, ppc
     
 def test_model(samples, samplesDiff,trainData, ppc):
 #    plt.rc('text', usetex=True)
