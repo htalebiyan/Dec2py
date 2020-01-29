@@ -459,11 +459,13 @@ def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependen
     layers_temp=[]
     v_temp = 0
     if shelby_data:
-    #    print "Loading Shelby County data..." #!!!
+        print "Loading Shelby County data..."
         InterdepNet=load_infrastructure_data(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,sim_number=sim_number,cost_scale=cost_scale,magnitude=magnitude,v=v)
-    #    print "Data loaded." #!!!
+        # print "Data loaded."
     else:
+        print "Loading Synthetic data..."
         InterdepNet,v_temp,layers_temp=load_synthetic_network(BASE_DIR=BASE_DIR,topology=topology,config=magnitude,sample=sample,cost_scale=cost_scale)
+        # print "Data loaded."
     return InterdepNet,v_temp,layers_temp
 
 
