@@ -23,21 +23,19 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1]):
     "SIM_NUMBER"    : What failure scenario simulation to use. Used to look up failure scenarios."""
     
     # Set root directories
+    base_dir = failSce_param['Base_dir']
+    damage_dir = failSce_param['Damage_dir'] 
+    topology = None
+    shelby_data = True
+    ext_interdependency = None
     if failSce_param['type']=='Andres':
-        base_dir = "../data/INDP_7-20-2015/"
         ext_interdependency = "../data/INDP_4-12-2016"
-        topology = None
-        shelby_data = True
     elif failSce_param['type']=='WU':
         if failSce_param['filtered_List']!=None:
             listHD = pd.read_csv(failSce_param['filtered_List'])
-        base_dir =  failSce_param['Base_dir']+"Extended_Shelby_County/"
-        ext_interdependency = None
-        topology = None
-        shelby_data = True
+    elif failSce_param['type']=='random':
+        pass
     elif failSce_param['type']=='synthetic':  
-        base_dir = failSce_param['Base_dir']
-        ext_interdependency = None
         shelby_data = False  
         topology = failSce_param['topology']
         
@@ -66,11 +64,13 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1]):
                     print 'results are already there\n'
                     continue
                 if failSce_param['type']=='WU':
-                    add_Wu_failure_scenario(InterdepNet,BASE_DIR=failSce_param['Base_dir']+"Wu_Damage_scenarios/",noSet=i,noSce=m)
+                    add_Wu_failure_scenario(InterdepNet,DAM_DIR=damage_dir,noSet=i,noSce=m)
                 elif failSce_param['type']=='ANDRES':
-                    add_failure_scenario(InterdepNet,BASE_DIR="../data/INDP_7-20-2015/",magnitude=m,v=params["V"],sim_number=i)
+                    add_failure_scenario(InterdepNet,DAM_DIR=damage_dir,magnitude=m,v=params["V"],sim_number=i)
+                elif failSce_param['type']=='random':
+                    add_random_failure_scenario(InterdepNet,DAM_DIR=damage_dir,sample=i)
                 elif failSce_param['type']=='synthetic':
-                    add_synthetic_failure_scenario(InterdepNet,BASE_DIR=base_dir,topology=topology,config=m,sample=i)                
+                    add_synthetic_failure_scenario(InterdepNet,DAM_DIR=base_dir,topology=topology,config=m,sample=i)            
                     
                 if params["ALGORITHM"]=="INDP":
                     run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers,saveModel=False,print_cmd_line=False)
@@ -229,43 +229,51 @@ def run_parallel(i):
     For Wu scenario: set range: failSce_param["sample_range"], sce range: failSce_param['mags']
     For Synthetic nets: sample range: failSce_param["sample_range"], configurations: failSce_param['mags']  
     '''
-    listFilteredSce = '../../data/damagedElements_sliceQuantile_0.95.csv'
-#    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
-#    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
-#    failSce_param = {"type":"synthetic","sample_range":range(0,5),"mags":range(0,100),
-#                     'filtered_List':None,'topology':'Grid','Base_dir':base_dir}
+    listFilteredSce = None #'../data/damagedElements_sliceQuantile_0.95.csv'
+    base_dir = '/scratch/ht20/Extended_Shelby_County/'    #'../../data/Extended_Shelby_County/' #
+    damage_dir = '/scratch/ht20/random_disruption_shelby/'   #'../../data/random_disruption_shelby/' #
+    output_dir = '/scratch/ht20/' #'../../' #
+    
+    # failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
+    # failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9],
+    #                  'Base_dir':base_dir,'Damage_dir':damage_dir}
+    # failSce_param = {"type":"WU","sample_range":range(23,24),"mags":range(5,6),
+    #                 'filtered_List':listFilteredSce,'Base_dir':base_dir,'Damage_dir':damage_dir}
+    failSce_param = {"type":"random","sample_range":range(10,12),"mags":range(0,1),
+                    'filtered_List':None,'Base_dir':base_dir,'Damage_dir':damage_dir}
+    # failSce_param = {"type":"synthetic","sample_range":range(0,5),"mags":range(0,100),
+    #                   'filtered_List':None,'topology':'Grid',
+    #                   'Base_dir':base_dir,'Damage_dir':damage_dir}
 
-    sampleNo = i/96
-    magNo = i%96
+    sampleNo = i
+    magNo = 0
     
     # with open('output.txt', 'a') as f:
         # f.write('Sce: '+`magNo`+', Sample: '+`sampleNo`+'\n')
     # f.close
-    base_dir = '../../data/'#'/scratch/ht20/Generated_Network_Dataset_v3.1/'
-    output_dir = '../../'# '/scratch/ht20/'
-    failSce_param = {"type":"WU","sample_range":range(sampleNo,sampleNo+1),
-                     "mags":range(magNo,magNo+1),
-                     'filtered_List':listFilteredSce,'Base_dir':base_dir}
+    failSce_param = {"type":"random","sample_range":range(sampleNo,sampleNo+1),
+                     "mags":range(magNo,magNo+1),'filtered_List':listFilteredSce,
+                     'Base_dir':base_dir,'Damage_dir':damage_dir}
 
 
     ''' Run different methods'''
     # No restriction on number of resources for each layer # Not necessary for synthetic nets
-    v_r=[3,6,8,12] 
+    v_r=[4,10,20,30,40,50] 
 #    v_r=[[1,1,1,1],[2,2,2,2],[3,3,3,3]]              # Prescribed number of resources for each layer
-    judge_types = ["OPTIMISTIC"]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
-    auction_types =  ["MDA","MAA","MCA"]      #["MDA","MAA","MCA"] 
-    valuation_types = ['DTC']       #['DTC','DTC_uniform','MDDN']    
+    judge_types = [""]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
+    auction_types =  []      #["MDA","MAA","MCA"] 
+    valuation_types = ['']       #['DTC','DTC_uniform','MDDN']    
     layers=[1,2,3,4] # List of layers of the net # Not necessary for synthetic nets
 
 
     run_indp_batch(failSce_param,v_r,layers,output_dir=output_dir)
    # run_tdindp_batch(failSce_param, v_r,layers,output_dir=output_dir)
-    for jc in judge_types:
-        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None,output_dir=output_dir)
-        for at in auction_types:
-            for vt in valuation_types:
-                run_dindp_batch(failSce_param,v_r,layers,
-                   judgment_type=jc,auction_type=at,valuation_type=vt,output_dir=output_dir)
+    # for jc in judge_types:
+    #     run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None,output_dir=output_dir)
+    #     for at in auction_types:
+    #         for vt in valuation_types:
+    #             run_dindp_batch(failSce_param,v_r,layers,
+    #                judgment_type=jc,auction_type=at,valuation_type=vt,output_dir=output_dir)
     return True
 	
 if __name__ == "__main__":  
@@ -279,32 +287,37 @@ if __name__ == "__main__":
     For Wu scenario: set range: failSce_param["sample_range"], sce range: failSce_param['mags']
     For Synthetic nets: sample range: failSce_param["sample_range"], configurations: failSce_param['mags']  
     '''
-    listFilteredSce = '../../data/damagedElements_sliceQuantile_0.95.csv'
-#    failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
-#    failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9]}
-#    failSce_param = {"type":"synthetic","sample_range":range(0,5),"mags":range(0,100),
-#                     'filtered_List':None,'topology':'Grid','Base_dir':base_dir}
-
-    base_dir = '../../data/'#'/scratch/ht20/Generated_Network_Dataset_v3.1/'
-    output_dir = '../../'# '/scratch/ht20/'
-    failSce_param = {"type":"WU","sample_range":range(0,50),"mags":range(0,96),
-                     'filtered_List':listFilteredSce,'Base_dir':base_dir}
+    listFilteredSce = None #'../data/damagedElements_sliceQuantile_0.95.csv'
+    base_dir = '/scratch/ht20/Extended_Shelby_County/'    #'../../data/Extended_Shelby_County/' #
+    damage_dir = '/scratch/ht20/random_disruption_shelby/'   #'../../data/random_disruption_shelby/' #
+    output_dir = '/scratch/ht20/' #'../../' #
+    
+    # failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=8)
+    # failSce_param = {"type":"ANDRES","sample_range":range(1,1001),"mags":[6,7,8,9],
+    #                  'Base_dir':base_dir,'Damage_dir':damage_dir}
+    # failSce_param = {"type":"WU","sample_range":range(23,24),"mags":range(5,6),
+    #                 'filtered_List':listFilteredSce,'Base_dir':base_dir,'Damage_dir':damage_dir}
+    failSce_param = {"type":"random","sample_range":range(50,500),"mags":range(0,1),
+                    'filtered_List':None,'Base_dir':base_dir,'Damage_dir':damage_dir}
+    # failSce_param = {"type":"synthetic","sample_range":range(0,5),"mags":range(0,100),
+    #                   'filtered_List':None,'topology':'Grid',
+    #                   'Base_dir':base_dir,'Damage_dir':damage_dir}
 
 
 
     ''' Run different methods'''
     # No restriction on number of resources for each layer # Not necessary for synthetic nets
-    v_r=[3,6,8,12] 
+    v_r=[4,10,20,30,40,50] 
 #    v_r=[[1,1,1,1],[2,2,2,2],[3,3,3,3]]              # Prescribed number of resources for each layer
-    judge_types = ["OPTIMISTIC"]    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
-    auction_types =  ["MDA","MAA","MCA"]      #["MDA","MAA","MCA"] 
-    valuation_types = ['DTC']       #['DTC','DTC_uniform','MDDN']    
+    judge_types = []    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
+    auction_types =  ['']      #["MDA","MAA","MCA"] 
+    valuation_types = ['']       #['DTC','DTC_uniform','MDDN']    
     layers=[1,2,3,4] # List of layers of the net # Not necessary for synthetic nets
 	
     num_cores = multiprocessing.cpu_count()
     print 'number of cores:'+`num_cores`+'\n'
     pool = multiprocessing.Pool(num_cores-1)  
-    resuls1 = pool.map(run_parallel,range(95*50))
+    resuls1 = pool.map(run_parallel,failSce_param["sample_range"])
 
     ''' Compute metrics ''' 
     cost_type = 'Total'
@@ -312,14 +325,14 @@ if __name__ == "__main__":
     method_name = ['indp']
     for jc in judge_types:
         method_name.append('judgeCall_'+jc)
-    auction_types.append('Uniform')
+    # auction_types.append('Uniform')
     suffixes = ['Real_sum','']
     sample_range=failSce_param["sample_range"]
     mags=failSce_param['mags']
     
-#    synthetic_dir=base_dir+failSce_param['topology']+'Networks/'
+    synthetic_dir=None #base_dir+failSce_param['topology']+'Networks/'
     combinations,optimal_combinations=generate_combinations('shelby',mags,sample_range,
-                layers,v_r,method_name,auction_types,valuation_types,listHDadd=listFilteredSce,synthetic_dir=None)
+                layers,v_r,method_name,auction_types,valuation_types,listHDadd=listFilteredSce,synthetic_dir=synthetic_dir)
     
     root=output_dir+'results/' 
     df = read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir=root)
