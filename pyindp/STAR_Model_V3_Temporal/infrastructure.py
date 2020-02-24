@@ -348,74 +348,7 @@ def load_infrastructure_array_format(BASE_DIR="../data/INDP_7-20-2015/",external
                 #if float(func[1]) == 0.0:
                 #    print "Arc ((",`func[0][1]`+","+`func[0][3]`+"),("+`func[0][2]`+","+`func[0][3]`+")) broken."
     return G
-
-def add_failure_scenario(G,BASE_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim_number=1):
-    if sim_number == "INF":
-        # Destory all nodes!!!!
-        for n,d in G.G.nodes_iter(data=True):
-            G.G.node[n]['data']['inf_data'].functionality=0.0
-            G.G.node[n]['data']['inf_data'].repaired=0.0
-        for u,v,a in G.G.edges_iter(data=True):
-            if not a['data']['inf_data'].is_interdep:
-                G.G[u][v]['data']['inf_data'].functionality=0.0
-                G.G[u][v]['data']['inf_data'].repaired=0.0
-    elif sim_number > 0:
-        variables=['v','c','f','q','Mp','Mm','g','b','u','h','p','gamma','alpha','beta','a','n']
-        entry_regex=         r"\(\s*(?P<tuple>(\d+\s*,\s*)*\d)\s*\)\s*(?P<val>-?\d+)"
-        recovery_entry_regex=r"\(\s*(?P<tuple>(\d+\s+)*\d)\s*\)\s*(?P<val>\d+)"
-        var_regex=   r"(?P<varname>\D+):\s*\[(?P<entries>[^\]]*)\]"
-        pattern = re.compile(var_regex,flags=re.DOTALL)
-        file = BASE_DIR+"/Failure and recovery scenarios/recoveryM"+`magnitude`+"v3.txt"
-        vars={}
-        with open(file) as f:
-            #print "Opened",file,"."                                                                                                      xs                              
-            lines = f.read()
-            vars_strings={}
-            for match in pattern.finditer(lines):
-                vars_strings[string.strip(match.group('varname'))]=string.strip(match.group('entries'))
-            #print "Varstrings=",vars_strings.keys()                                                                                                            
-            for v in vars_strings:
-                entry_string=vars_strings[v]
-                entry_pattern=re.compile(entry_regex,flags=re.DOTALL)
-                is_match=False
-                for match in entry_pattern.finditer(entry_string):
-                    is_match=True
-                    tuple_string=match.group('tuple')
-                    val_string=match.group('val')
-                    tuple_string=string.split(tuple_string,",")
-                    tuple_string=[int(string.strip(x)) for x in tuple_string]
-                    val_string=float(string.strip(val_string))
-                    #print v,":",tuple_string,"=>",val_string                                                                                                         
-                    if v not in vars:
-                        vars[v]=[]
-                    vars[v].append((tuple_string,val_string))
-                if not is_match:
-                    recovery_pattern=re.compile(recovery_entry_regex,flags=re.DOTALL)
-                    for match in recovery_pattern.finditer(entry_string):
-                        is_match=True
-                        tuple_string=match.group('tuple')
-                        val_string=match.group('val')
-                        tuple_string=string.split(tuple_string," ")
-                        tuple_string=[int(string.strip(x)) for x in tuple_string]
-                        val_string=float(string.strip(val_string))
-                        #print v,":",tuple_string,"=>",val_string
-                        if v not in vars:
-                            vars[v]=[]
-                        vars[v].append((tuple_string,val_string))
-        # Load failure scenarios.
-        for func in vars['nresults']:
-            if func[0][0] == sim_number:
-                G.G.node[(func[0][1],func[0][2])]['data']['inf_data'].functionality=float(func[1])
-                G.G.node[(func[0][1],func[0][2])]['data']['inf_data'].repaired=float(func[1])
-                #if float(func[1]) == 0.0:
-                #    print "Node (",`func[0][1]`+","+`func[0][2]`+") broken."
-        for func in vars['aresults']:
-            if func[0][0] == sim_number:
-                G.G[(func[0][1],func[0][3])][(func[0][2],func[0][3])]['data']['inf_data'].functionality=float(func[1])
-                G.G[(func[0][1],func[0][3])][(func[0][2],func[0][3])]['data']['inf_data'].repaired=float(func[1])
-                #if float(func[1]) == 0.0:
-                #    print "Arc ((",`func[0][1]`+","+`func[0][3]`+"),("+`func[0][2]`+","+`func[0][3]`+")) broken."
-
+               
 def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_County/",v=3,sim_number=1,cost_scale=1.0):
     files = [f for f in os.listdir(BASE_DIR) if os.path.isfile(os.path.join(BASE_DIR, f))]
     netNames = {'Water':1,'Gas':2,'Power':3,'Telecommunication':4}
@@ -483,10 +416,107 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
                     G.G.add_edge((a.source,a.source_layer),(a.dest,a.dest_layer),data={'inf_data':a})
     return G
 
-def add_Wu_failure_scenario(G,BASE_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
+def add_failure_scenario(G,DAM_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim_number=1):
+    print("Initiallize Damage...")
+    if sim_number == "INF":
+        # Destory all nodes!!!!
+        for n,d in G.G.nodes_iter(data=True):
+            G.G.node[n]['data']['inf_data'].functionality=0.0
+            G.G.node[n]['data']['inf_data'].repaired=0.0
+        for u,v,a in G.G.edges_iter(data=True):
+            if not a['data']['inf_data'].is_interdep:
+                G.G[u][v]['data']['inf_data'].functionality=0.0
+                G.G[u][v]['data']['inf_data'].repaired=0.0
+    elif sim_number > 0:
+        variables=['v','c','f','q','Mp','Mm','g','b','u','h','p','gamma','alpha','beta','a','n']
+        entry_regex=         r"\(\s*(?P<tuple>(\d+\s*,\s*)*\d)\s*\)\s*(?P<val>-?\d+)"
+        recovery_entry_regex=r"\(\s*(?P<tuple>(\d+\s+)*\d)\s*\)\s*(?P<val>\d+)"
+        var_regex=   r"(?P<varname>\D+):\s*\[(?P<entries>[^\]]*)\]"
+        pattern = re.compile(var_regex,flags=re.DOTALL)
+        file = DAM_DIR+"/Failure and recovery scenarios/recoveryM"+`magnitude`+"v3.txt"
+        vars={}
+        with open(file) as f:
+            #print "Opened",file,"."                                                                                                      xs                              
+            lines = f.read()
+            vars_strings={}
+            for match in pattern.finditer(lines):
+                vars_strings[string.strip(match.group('varname'))]=string.strip(match.group('entries'))
+            #print "Varstrings=",vars_strings.keys()                                                                                                            
+            for v in vars_strings:
+                entry_string=vars_strings[v]
+                entry_pattern=re.compile(entry_regex,flags=re.DOTALL)
+                is_match=False
+                for match in entry_pattern.finditer(entry_string):
+                    is_match=True
+                    tuple_string=match.group('tuple')
+                    val_string=match.group('val')
+                    tuple_string=string.split(tuple_string,",")
+                    tuple_string=[int(string.strip(x)) for x in tuple_string]
+                    val_string=float(string.strip(val_string))
+                    #print v,":",tuple_string,"=>",val_string                                                                                                         
+                    if v not in vars:
+                        vars[v]=[]
+                    vars[v].append((tuple_string,val_string))
+                if not is_match:
+                    recovery_pattern=re.compile(recovery_entry_regex,flags=re.DOTALL)
+                    for match in recovery_pattern.finditer(entry_string):
+                        is_match=True
+                        tuple_string=match.group('tuple')
+                        val_string=match.group('val')
+                        tuple_string=string.split(tuple_string," ")
+                        tuple_string=[int(string.strip(x)) for x in tuple_string]
+                        val_string=float(string.strip(val_string))
+                        #print v,":",tuple_string,"=>",val_string
+                        if v not in vars:
+                            vars[v]=[]
+                        vars[v].append((tuple_string,val_string))
+        # Load failure scenarios.
+        for func in vars['nresults']:
+            if func[0][0] == sim_number:
+                G.G.node[(func[0][1],func[0][2])]['data']['inf_data'].functionality=float(func[1])
+                G.G.node[(func[0][1],func[0][2])]['data']['inf_data'].repaired=float(func[1])
+                #if float(func[1]) == 0.0:
+                #    print "Node (",`func[0][1]`+","+`func[0][2]`+") broken."
+        for func in vars['aresults']:
+            if func[0][0] == sim_number:
+                G.G[(func[0][1],func[0][3])][(func[0][2],func[0][3])]['data']['inf_data'].functionality=float(func[1])
+                G.G[(func[0][1],func[0][3])][(func[0][2],func[0][3])]['data']['inf_data'].repaired=float(func[1])
+                #if float(func[1]) == 0.0:
+                #    print "Arc ((",`func[0][1]`+","+`func[0][3]`+"),("+`func[0][2]`+","+`func[0][3]`+")) broken."
+
+def add_random_failure_scenario(G,sample,config=0,DAM_DIR=""):
+    import csv
+    # print("Initiallize Random Damage...")
+    with open(DAM_DIR+'Initial_node.csv') as csvfile:
+        data = csv.reader(csvfile, delimiter=',')
+        for row in data:
+            rawN = row[0]
+            rawN = rawN.split(',')
+            n = (int(rawN[0].strip(' )(')),int(rawN[1].strip(' )(')))
+            state = float(row[sample+1])
+            G.G.node[n]['data']['inf_data'].functionality=state
+            G.G.node[n]['data']['inf_data'].repaired=state
+            
+    with open(DAM_DIR+'Initial_links.csv') as csvfile:
+       data = csv.reader(csvfile, delimiter=',')
+       for row in data:
+           rawUV = row[0]
+           rawUV = rawUV.split(',')
+           u = (int(rawUV[0].strip(' )(')),int(rawUV[1].strip(' )(')))
+           v = (int(rawUV[2].strip(' )(')),int(rawUV[3].strip(' )(')))
+           state = float(row[sample+1])
+           if state==0.0:
+               G.G[u][v]['data']['inf_data'].functionality=state
+               G.G[u][v]['data']['inf_data'].repaired=state
+            
+               G.G[v][u]['data']['inf_data'].functionality=state
+               G.G[v][u]['data']['inf_data'].repaired=state  
+               
+def add_Wu_failure_scenario(G,DAM_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
+    ("Initiallize Wu failure scenarios...")
     dam_nodes = {}
     dam_arcs = {}
-    folderDir = BASE_DIR+'Set%d/Sce%d/' % (noSet,noSce)
+    folderDir = DAM_DIR+'Set%d/Sce%d/' % (noSet,noSce)
     netNames = {1:'Water',2:'Gas',3:'Power',4:'Telecommunication'}
     ofst = 0 # set to 1 if node IDs start from 1
     # Load failure scenarios.
@@ -524,7 +554,7 @@ def add_Wu_failure_scenario(G,BASE_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
 #                    if G.G.node[v]['data']['inf_data'].repaired == 1.0:
 #                        G.G.node[v]['data']['inf_data'].functionality = 1.0
     else:
-        print folderDir + ' does not exist'   
+        pass #Undamaging scenrios are not presesnted with any file or folder in the datasets      
           
 def load_recovery_scenario(N,T,action_file):
     with open(action_file) as f:
@@ -740,6 +770,7 @@ def read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim
         return vars
 
 def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3",topology='Random',config=6,sample=0,cost_scale=1.0):
+    print("Initiallize Damage...")
     net_dir = BASE_DIR+'\\'+topology+'Networks\\'
     topo_initial = {'Random':'RN','ScaleFree':'SFN','Grid':'GN'}
     with open(net_dir+'List_of_Configurations.txt') as f:
@@ -818,8 +849,8 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3",topol
 
     return G,noResource,range(1,noLayers+1)
 
-def add_synthetic_failure_scenario(G,BASE_DIR="../data/Generated_Network_Dataset_v3",topology='Random',config=0,sample=0):
-    net_dir = BASE_DIR+'\\'+topology+'Networks\\'
+def add_synthetic_failure_scenario(G,DAM_DIR="../data/Generated_Network_Dataset_v3",topology='Random',config=0,sample=0):
+    net_dir = DAM_DIR+'\\'+topology+'Networks\\'
     topo_initial = {'Random':'RN','ScaleFree':'SFN','Grid':'GN'}
     with open(net_dir+'List_of_Configurations.txt') as f:
         config_data = pd.read_csv(f, delimiter='\t')

@@ -10,22 +10,19 @@ import matplotlib.pyplot as plt
 
 def importData(params,failSce_param,layers):  
     # Set root directories
+    base_dir = failSce_param['Base_dir']
+    damage_dir = failSce_param['Damage_dir'] 
+    topology = None
+    shelby_data = True
+    ext_interdependency = None
     if failSce_param['type']=='Andres':
-        base_dir = failSce_param['Base_dir']+"/data/INDP_7-20-2015/"
         ext_interdependency = "../data/INDP_4-12-2016"
-        topology = None
-        shelby_data = True
     elif failSce_param['type']=='WU':
         if failSce_param['filtered_List']!=None:
             listHD = pd.read_csv(failSce_param['filtered_List'])
-        base_dir = failSce_param['Base_dir']+"data/Extended_Shelby_County/"
-        damage_dir = failSce_param['Base_dir']+"/data/Wu_Damage_scenarios/"
-        ext_interdependency = None
-        topology = None
-        shelby_data = True
+    elif failSce_param['type']=='random':
+        pass
     elif failSce_param['type']=='synthetic':  
-        base_dir = failSce_param['Base_dir']
-        ext_interdependency = None
         shelby_data = False  
         topology = failSce_param['topology']
     
@@ -37,7 +34,9 @@ def importData(params,failSce_param,layers):
             if failSce_param['filtered_List']==None or len(listHD.loc[(listHD.set == i) & (listHD.sce == m)].index):
 #                print '\n---Running Magnitude '+`m`+' sample '+`i`+'...'
             
-                print("Initializing network...")
+                # print("Initializing network...")
+                if i%50==0:
+                    print ".", 
                 if not shelby_data:  
                     InterdepNet,noResource,layers=initialize_network(BASE_DIR=base_dir,external_interdependency_dir=ext_interdependency,magnitude=m,sample=i,shelby_data=shelby_data,topology=topology) 
                     params["V"]=noResource
@@ -50,12 +49,13 @@ def importData(params,failSce_param,layers):
                     initial_net = InterdepNet
                 
                 if failSce_param['type']=='WU':
-                    add_Wu_failure_scenario(InterdepNet,BASE_DIR=damage_dir,noSet=i,noSce=m)
+                    add_Wu_failure_scenario(InterdepNet,DAM_DIR=damage_dir,noSet=i,noSce=m)
                 elif failSce_param['type']=='ANDRES':
-                    add_failure_scenario(InterdepNet,BASE_DIR=base_dir,magnitude=m,v=params["V"],sim_number=i)
+                    add_failure_scenario(InterdepNet,DAM_DIR=damage_dir,magnitude=m,v=params["V"],sim_number=i)
+                elif failSce_param['type']=='random':
+                    add_random_failure_scenario(InterdepNet,DAM_DIR=damage_dir,sample=i) 
                 elif failSce_param['type']=='synthetic':
-                    add_synthetic_failure_scenario(InterdepNet,BASE_DIR=base_dir,topology=topology,config=m,sample=i)
-                
+                    add_synthetic_failure_scenario(InterdepNet,DAM_DIR=damage_dir,topology=topology,config=m,sample=i)
                 
                 samples = initialize_matrix(InterdepNet,samples,m,i,10)
                 results_dir=params['OUTPUT_DIR']+'_L'+`len(layers)`+'_m'+`m`+'_v'+`params['V']`
@@ -131,10 +131,13 @@ def train_data(samples,resCap,initial_net):
         train_df = pd.DataFrame(columns=cols)
         for s in range(noSamples):
             for t in range(T-1):
-                row = np.array([x_t[key][t,s],x_t_1[key][t,s],x_j_t_1[key][t,s],s,t])
-                temp = pd.Series(row,index=cols)
-                train_df=train_df.append(temp,ignore_index=True)
-        train_data[key]=train_df
+                if x_t[key][t,s]==1 and x_t_1[key][t,s]==1:
+                    pass
+                else:
+                    row = np.array([x_t[key][t,s],x_t_1[key][t,s],x_j_t_1[key][t,s],s,t])
+                    temp = pd.Series(row,index=cols)
+                    train_df=train_df.append(temp,ignore_index=True)
+        train_data[key]=train_df 
     
     train_data_all = pd.DataFrame(columns=cols)
     for key, val in train_data.items():   
@@ -151,10 +154,16 @@ def train_model(train_data_all,train_data):
     # for i in range(noSpa):
         # key = node_names[i]
     with pm.Model() as logistic_model:
-        pm.glm.GLM.from_formula('x_t ~ x_t_1 + x_j_t_1',
+        pm.glm.GLM.from_formula('x_t ~ x_j_t_1',
                                 train_data_all,
-                                family=pm.glm.families.Binomial())
+                                family=pm.glm.families.Binomial()) #x_t_1 + 
         trace = pm.sample(1000, tune=1000, init='adapt_diag')
+        estParam = pm.summary(trace).round(4)
+        print(estParam)     
+        estParam.to_csv('Parameters\\model_parameters.txt',
+                        header=True, index=True, sep=' ', mode='w')
+        pm.model_to_graphviz(logistic_model).render()
+    return trace,logistic_model
     # with pm.Model() as model:
     #     priors = {}
     #     for i in range(noSpa):
@@ -191,29 +200,45 @@ def train_model(train_data_all,train_data):
     
     # return samplesDiff, trainData, ppc
     
-def test_model(samples, samplesDiff,trainData, ppc):
+def test_model(train_data_all,trace,model):
 #    plt.rc('text', usetex=True)
 #    plt.rcParams.update({'font.size': 14})
 #    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    ''' Traceplot '''
+    pm.traceplot(trace, combined=False) # ,varnames=['p_w_0_W_6']
+    
+    ''' Generate and plot samples from the trained model '''
+    ppc = pm.sample_posterior_predictive(trace, samples=10000, model=model)
+
     ''' Prediction & mean data '''
-    nodes = [1,10,12]
-    f, ax = plt.subplots(1, len(nodes), sharex=False, sharey=True,figsize=(12,4))
-    f.text(0.5, 0.01, 'State Transition Value', ha='center', va='center')
-    f.text(0.1, 0.5, 'Density', ha='center', va='center', rotation='vertical')
-    #f.tight_layout()
-    for i in range(len(nodes)):
-        key= (nodes[i],2)
-        name = 'y_%s'% (key,)
-        data = trainData[key]
-        pred = [n.mean() for n in ppc['y_%s'% (key,)]]
+    data = train_data_all['x_t']
+    pred = [n.mean() for n in ppc['y']]
+    f, ax = plt.subplots(1, 1)
+    ax.hist(pred, bins=20, alpha=0.5, density=True, color="r")
+    ax.axvline(data.mean())
+    f.legend(['Mean of training data','Predicted distribution of Mean'],
+        loc=10, frameon=True, framealpha=0.05, ncol=2, bbox_to_anchor=(0.4, 1.05))
+    # nodes = [1,10,12]
+    # f, ax = plt.subplots(1, len(nodes), sharex=False, sharey=True,figsize=(12,4))
+    # f.text(0.5, 0.01, 'State Transition Value', ha='center', va='center')
+    # f.text(0.1, 0.5, 'Density', ha='center', va='center', rotation='vertical')
+    # #f.tight_layout()
+    # for i in range(len(nodes)):
+    #     key= (nodes[i],2)
+    #     name = 'y_%s'% (key,)
+    #     data = trainData[key]
+    #     pred = [n.mean() for n in ppc['y_%s'% (key,)]]
         
-        ax[i].hist(pred, bins=20, alpha=0.5, density=True, color="r")
-        ax[i].axvline(data.mean())
-        # print data.mean()
-        ax[i].set_title('$y_%s$' % (key,))
-        f.legend(['Mean of training data','Predicted distribution of Mean'],
-            loc=10, frameon=True, framealpha=0.05, ncol=2, bbox_to_anchor=(0.4, 1.05))
+    #     ax[i].hist(pred, bins=20, alpha=0.5, density=True, color="r")
+    #     ax[i].axvline(data.mean())
+    #     # print data.mean()
+    #     ax[i].set_title('$y_%s$' % (key,))
+    #     f.legend(['Mean of training data','Predicted distribution of Mean'],
+    #         loc=10, frameon=True, framealpha=0.05, ncol=2, bbox_to_anchor=(0.4, 1.05))
     # plt.savefig('Prediction_w_%d_P.pdf'%v, dpi=300, bbox_inches='tight')  
     ''' Prediction error '''
+    
+    
+    return ppc
 def logistic(l):
     return 1 / (1 + pm.math.exp(-l))

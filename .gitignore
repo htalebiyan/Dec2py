@@ -107,3 +107,4 @@ venv.bak/
 results/
 *.pyc
 *.log
+pyindp/STAR_Model_V3_Temporal/Find_features_shelby_data_random_disruption.spydata
