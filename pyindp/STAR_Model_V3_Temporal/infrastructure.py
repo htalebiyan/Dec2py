@@ -498,19 +498,19 @@ def add_random_failure_scenario(G,sample,config=0,DAM_DIR=""):
             G.G.node[n]['data']['inf_data'].repaired=state
             
     with open(DAM_DIR+'Initial_links.csv') as csvfile:
-       data = csv.reader(csvfile, delimiter=',')
-       for row in data:
-           rawUV = row[0]
-           rawUV = rawUV.split(',')
-           u = (int(rawUV[0].strip(' )(')),int(rawUV[1].strip(' )(')))
-           v = (int(rawUV[2].strip(' )(')),int(rawUV[3].strip(' )(')))
-           state = float(row[sample+1])
-           if state==0.0:
-               G.G[u][v]['data']['inf_data'].functionality=state
-               G.G[u][v]['data']['inf_data'].repaired=state
+        data = csv.reader(csvfile, delimiter=',')
+        for row in data:
+            rawUV = row[0]
+            rawUV = rawUV.split(',')
+            u = (int(rawUV[0].strip(' )(')),int(rawUV[1].strip(' )(')))
+            v = (int(rawUV[2].strip(' )(')),int(rawUV[3].strip(' )(')))
+            state = float(row[sample+1])
+            if state==0.0:
+                G.G[u][v]['data']['inf_data'].functionality=state
+                G.G[u][v]['data']['inf_data'].repaired=state
             
-               G.G[v][u]['data']['inf_data'].functionality=state
-               G.G[v][u]['data']['inf_data'].repaired=state  
+                G.G[v][u]['data']['inf_data'].functionality=state
+                G.G[v][u]['data']['inf_data'].repaired=state  
                
 def add_Wu_failure_scenario(G,DAM_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
     ("Initiallize Wu failure scenarios...")

@@ -120,6 +120,7 @@ class INDPResults:
         costs_file =outdir+"/costs_"  +`sample_num`+"_"+suffix+".csv"
         perc_file  =outdir+"/percolation_"+`sample_num`+"_"+suffix+".csv"
         comp_file  =outdir+"/components_" +`sample_num`+"_"+suffix+".csv"
+        run_time_file  =outdir+"/run_time_" +`sample_num`+"_"+suffix+".csv"
         indp_result=INDPResults()
         if os.path.isfile(action_file): #!!!
             with open(action_file) as f:
@@ -138,6 +139,13 @@ class INDPResults:
                     costs=data[1:]
                     for ct in range(len(cost_types)):
                         indp_result.add_cost(t,cost_types[ct],float(costs[ct]))
+            with open(run_time_file) as f:
+                lines=f.readlines()
+                for line in lines[1:]:
+                    data=string.split(str.strip(line),",")
+                    t=int(data[0])
+                    run_time=data[1]
+                    indp_result.add_run_time(t,run_time)
 #            with open(perc_file) as f:
 #                lines=f.readlines()[1:]
 #                for line in lines:

@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from indp import *
 import os
 import sys
@@ -66,13 +67,23 @@ def importData(params,failSce_param,layers):
 
 def initialize_matrix(N, sample, m, i, time_steps):
     for v in N.G.nodes():
-        if v not in sample.keys():
-            sample[v]= np.ones((time_steps+1,1))
+        name = 'w_'+`v`
+        if name not in sample.keys():
+            sample[name]= np.ones((time_steps+1,1))
         else:
-            sample[v] = np.append(sample[v], np.ones((time_steps+1,1)), axis=1)
-            
+            sample[name] = np.append(sample[name], np.ones((time_steps+1,1)), axis=1)
         if N.G.node[v]['data']['inf_data'].functionality==0.0:
-            sample[v][:,-1] = 0.0
+            sample[name][:,-1] = 0.0
+           
+    for u,v,a in N.G.edges(data=True):
+        if not a['data']['inf_data'].is_interdep:  
+            name = 'y_'+`u`+','+`v`
+            if name not in sample.keys():
+                sample[name]= np.ones((time_steps+1,1))
+            else:
+                sample[name] = np.append(sample[name], np.ones((time_steps+1,1)), axis=1)
+            if N.G[u][v]['data']['inf_data'].functionality==0.0:
+                sample[name][:,-1] = 0.0    
     return sample
 
 def read_restoration_plans(sample, m, i, results_dir,suffix=''):
@@ -86,11 +97,17 @@ def read_restoration_plans(sample, m, i, results_dir,suffix=''):
                 action=str.strip(data[1])
                 k = int(action[-1])
                 if '/' in action:
-                    pass
+                    act_data=string.split(str.strip(action),"/")
+                    u = string.split(str.strip(act_data[0]),".")
+                    v = string.split(str.strip(act_data[1]),".")
+                    if u[1]!=v[1]:
+                        sys.exit('Interdepndency '+act_data+' is counted as an arc')
+                    arc_id = `(int(u[0]),k)`+','+`(int(v[0]),k)`
+                    sample['y_'+arc_id][t:,-1] = 1.0
                 else:
                     act_data=string.split(str.strip(action),".")
                     node_id=int(act_data[0])
-                    sample[(node_id,k)][t:,-1] = 1.0
+                    sample['w_'+`(node_id,k)`][t:,-1] = 1.0
     else:
         sys.exit('No results dir: '+action_file)
     return sample
@@ -99,42 +116,59 @@ def collect_feature_data(samples,network_objects):
     return True
     
 def train_data(samples,resCap,initial_net):
-    node_names = samples.keys()
-    noSamples = int(samples[node_names[0]].shape[1])
-    T = int(samples[node_names[0]].shape[0])                
+    names = samples.keys()
+    noSamples = int(samples[names[0]].shape[1])
+    T = int(samples[names[0]].shape[0])                
               
     selected_nodes = {}
+    selected_ids = []
+    selected_arcs = {}
     for key, val in samples.items():
-        if key[1]==2:
+        if key[-2:]=='2)':
             selected_nodes[key] = val
-    noSpa = len(selected_nodes.keys())
+            node_id = key[2:].strip(' )(').split(',') 
+            selected_ids.append((int(node_id[0]),int(node_id[1])))
+        elif key[-2:]=='2)':
+            selected_arcs[key] = val
+    noSpa = len(selected_nodes.keys())+len(selected_arcs.keys())
     node_names = list(selected_nodes.keys())
-    selected_g = initial_net.G.subgraph(node_names)
+    arc_names = list(selected_arcs.keys())
+    selected_g = initial_net.G.subgraph(selected_ids)
     # A = nx.adjacency_matrix(initial_net.G.subgraph(node_names)).todense()
     
-    x_t={}
-    x_t_1={}   
-    x_j_t_1={} 
+    w_t={}
+    w_t_1={}   
+    w_n_t_1={}  #neighbor nodes
+    w_a_t_1={}  # connected arcs
+    y_t={}
+    y_t_1={}
     for key, val in selected_nodes.items():
-        x_t[key]=selected_nodes[key][1:,:]
-        x_t_1[key]=selected_nodes[key][:-1,:]  
+        w_t[key]=selected_nodes[key][1:,:]
+        w_t_1[key]=selected_nodes[key][:-1,:]  
+    for key, val in selected_arcs.items():
+        y_t[key]=selected_arcs[key][1:,:]
+        y_t_1[key]=selected_arcs[key][:-1,:]  
     for key, val in selected_nodes.items():
-        x_j_t_1[key] = np.zeros((T-1,noSamples))
+        w_n_t_1[key] = np.zeros((T-1,noSamples))
+        w_a_t_1[key] = np.zeros((T-1,noSamples))
         for u,v in selected_g.edges():
-            if u==key :
-                x_j_t_1[key]+=x_t_1[v]/2.0
-            if v==key:
-                x_j_t_1[key]+=x_t_1[u]/2.0
-    cols=['x_t','x_t_1','x_j_t_1','sample','time']
+            if 'w_'+`u`==key :
+                w_n_t_1[key]+=w_t_1['w_'+`v`]/2.0
+                w_a_t_1[key]+=y_t_1['y_'+`v,u`]/2.0
+            if 'w_'+`v`==key:
+                w_n_t_1[key]+=w_t_1['w_'+`u`]/2.0
+                w_a_t_1[key]+=y_t_1['y_'+`u,v`]/2.0
+    cols=['w_t','w_t_1','w_n_t_1','w_a_t_1','sample','time']
     train_data={}
     for key, val in selected_nodes.items():
         train_df = pd.DataFrame(columns=cols)
         for s in range(noSamples):
             for t in range(T-1):
-                if x_t[key][t,s]==1 and x_t_1[key][t,s]==1:
+                if w_t[key][t,s]==1 and w_t_1[key][t,s]==1:
                     pass
                 else:
-                    row = np.array([x_t[key][t,s],x_t_1[key][t,s],x_j_t_1[key][t,s],s,t])
+                    row = np.array([w_t[key][t,s],w_t_1[key][t,s],w_n_t_1[key][t,s],
+                                    w_a_t_1[key][t,s],s,t])
                     temp = pd.Series(row,index=cols)
                     train_df=train_df.append(temp,ignore_index=True)
         train_data[key]=train_df 
@@ -146,13 +180,6 @@ def train_data(samples,resCap,initial_net):
     return train_data_all,train_data
 
 def train_model(train_data_all,train_data):
-    p = {}
-    a = {}
-    sdy = {}
-    y = {}
-
-    # for i in range(noSpa):
-        # key = node_names[i]
     with pm.Model() as logistic_model:
         pm.glm.GLM.from_formula('x_t ~ x_j_t_1',
                                 train_data_all,
@@ -164,81 +191,60 @@ def train_model(train_data_all,train_data):
                         header=True, index=True, sep=' ', mode='w')
         pm.model_to_graphviz(logistic_model).render()
     return trace,logistic_model
-    # with pm.Model() as model:
-    #     priors = {}
-    #     for i in range(noSpa):
-    #         # estParamAll = pd.DataFrame()
-    #         key = node_names[i]
-    #         priors['p_%s'%(key,)] = pm.Beta('p_%s'%(key,), alpha=2, beta=2)
-    #         # priors['sdy_%s'%(key,)] = pm.Normal('sdy_%s'%(key,), mu=0, sd=1)
-            
-        # for i in range(noSpa):
-        #     key = node_names[i]
-        #     if len(trainData[key]):
-        #         formula = priors['p_%s'%(key,)]+priors['sdy_%s'%(key,)]
-        #         for j in range(noSpa):
-        #             if A[i,j]:
-        #                 key_neighbor = node_names[j]
-        #                 formula +=  priors['p_%s'%(key_neighbor,)]
-        #         p[key] = pm.Deterministic('p%s'%(key,),logistic(formula))
-        #         y[key] = pm.Bernoulli('y_%s'%(key,), p = p[key],
-        #                                    observed=trainData[key])
-        #     else: 
-        #         priors['p_%s'%(key,)] = pm.Deterministic('p_%s'%(key,), 1.0)
-        # trace = pm.sample(1500, tune=500, cores=4, njobs=4)
-        # estParam = pm.summary(trace).round(4)
-        # print(estParam)     
-        # estParam.to_csv('Parameters\\model_parameters.txt',
-        #                 header=True, index=True, sep=' ', mode='w')
-    
-          
-    # pm.traceplot(trace, combined=True) # ,varnames=['p_w_0_W_6']
-    # pm.model_to_graphviz(model).render()
-    
-    # ''' Generate and plot samples from the trained model '''
-    # ppc = pm.sample_posterior_predictive(trace, samples=1000, model=model)
-    
-    # return samplesDiff, trainData, ppc
     
 def test_model(train_data_all,trace,model):
 #    plt.rc('text', usetex=True)
 #    plt.rcParams.update({'font.size': 14})
 #    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    
     ''' Traceplot '''
     pm.traceplot(trace, combined=False) # ,varnames=['p_w_0_W_6']
     
     ''' Generate and plot samples from the trained model '''
-    ppc = pm.sample_posterior_predictive(trace, samples=10000, model=model)
+    ppc = pm.sample_posterior_predictive(trace, samples=1000, model=model)
+         
+    
+    ''' Acceptance rate '''
+    f, ax = plt.subplots(1, 2)
+    accept = trace.get_sampler_stats('mean_tree_accept', burn=0)
+    sns.distplot(accept, kde=False, ax=ax[0])
+    ax[0].set_title('Distribution of Tree Acceptance Rate')
+    print 'Mean Acceptance rate: '+ `accept.mean()`
+    print '\nIndex of all diverging transitions: '+ `trace['diverging'].nonzero()`
 
-    ''' Prediction & mean data '''
-    data = train_data_all['x_t']
-    pred = [n.mean() for n in ppc['y']]
-    f, ax = plt.subplots(1, 1)
-    ax.hist(pred, bins=20, alpha=0.5, density=True, color="r")
-    ax.axvline(data.mean())
-    f.legend(['Mean of training data','Predicted distribution of Mean'],
-        loc=10, frameon=True, framealpha=0.05, ncol=2, bbox_to_anchor=(0.4, 1.05))
-    # nodes = [1,10,12]
-    # f, ax = plt.subplots(1, len(nodes), sharex=False, sharey=True,figsize=(12,4))
-    # f.text(0.5, 0.01, 'State Transition Value', ha='center', va='center')
-    # f.text(0.1, 0.5, 'Density', ha='center', va='center', rotation='vertical')
-    # #f.tight_layout()
-    # for i in range(len(nodes)):
-    #     key= (nodes[i],2)
-    #     name = 'y_%s'% (key,)
-    #     data = trainData[key]
-    #     pred = [n.mean() for n in ppc['y_%s'% (key,)]]
+    ''' Energy level '''
+    energy = trace['energy']
+    energy_diff = np.diff(energy)
+    sns.distplot(energy - energy.mean(), label='energy',ax=ax[1])
+    sns.distplot(energy_diff, label='energy diff',ax=ax[1])
+    ax[1].set_title('Distribution of energy level vs. change of energy between successive samples')
+    ax[1].legend()    
+
+    
+    ''' Prediction & data '''
+    f, ax = plt.subplots(1, 2)
+    x=np.array(train_data_all['x_t'])
+    y=ppc['y'].T.mean(axis=1)
+    ax[0].scatter(x,y,alpha=0.01)
+    ax[0].plot([0,1],[0,1],'r')
+    ax[0].set_title('Data vs. Prediction: training data ')    
+
+    test_data=train_data_all.iloc[100:500,:]
+    with pm.Model() as logistic_model:
+        pm.glm.GLM.from_formula('x_t ~ x_j_t_1',
+                                test_data,
+                                family=pm.glm.families.Binomial()) #x_t_1 + 3
+        ppc_test = pm.sample_posterior_predictive(trace)
+        x=np.array(test_data['x_t'])
+        y=ppc_test['y'].T.mean(axis=1)     
+        ax[1].scatter(x,y,alpha=0.1)
+        ax[1].plot([0,1],[0,1],'r')
+        ax[1].set_title('Data vs. Prediction: test data ')   
+    # diff_pred_train_data = np.subtract(ppc['y'], np.array(train_data_all['x_t']).T).T
         
-    #     ax[i].hist(pred, bins=20, alpha=0.5, density=True, color="r")
-    #     ax[i].axvline(data.mean())
-    #     # print data.mean()
-    #     ax[i].set_title('$y_%s$' % (key,))
-    #     f.legend(['Mean of training data','Predicted distribution of Mean'],
-    #         loc=10, frameon=True, framealpha=0.05, ncol=2, bbox_to_anchor=(0.4, 1.05))
-    # plt.savefig('Prediction_w_%d_P.pdf'%v, dpi=300, bbox_inches='tight')  
-    ''' Prediction error '''
-    
-    
+    ''' Check the performance of predicted plans '''
+
+            
     return ppc
 def logistic(l):
     return 1 / (1 + pm.math.exp(-l))

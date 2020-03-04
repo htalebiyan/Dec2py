@@ -18,8 +18,21 @@ for p in p_values:
 
 arc_samples=[]
 for p in p_values:
-    temp=np.random.choice([0,1],(426,10),p=[p,1-p])
+    temp=np.random.choice([0,1],(213,10),p=[p,1-p])
     if p==0.01:
         arc_samples=temp
     else:
         arc_samples=np.hstack([arc_samples,temp]) 
+
+# initial=initial_net.G.edges()
+# edges = []
+# inter = []
+# for i in initial:
+# 	u=i[0]
+# 	v=i[1]
+# 	if u[1]!=v[1]:
+#         inter.append(i)
+#         if (v,u) in edges:
+#             print((v,u))
+#     elif (v,u) not in edges:       
+#         edges.append(i)
