@@ -124,11 +124,11 @@ def train_data(samples,resCap,initial_net):
     selected_ids = []
     selected_arcs = {}
     for key, val in samples.items():
-        if key[-2:]=='2)':
+        if key[0]=='w':
             selected_nodes[key] = val
             node_id = key[2:].strip(' )(').split(',') 
             selected_ids.append((int(node_id[0]),int(node_id[1])))
-        elif key[-2:]=='2)':
+        elif key[0]=='y':
             selected_arcs[key] = val
     noSpa = len(selected_nodes.keys())+len(selected_arcs.keys())
     node_names = list(selected_nodes.keys())
@@ -151,13 +151,14 @@ def train_data(samples,resCap,initial_net):
     for key, val in selected_nodes.items():
         w_n_t_1[key] = np.zeros((T-1,noSamples))
         w_a_t_1[key] = np.zeros((T-1,noSamples))
-        for u,v in selected_g.edges():
-            if 'w_'+`u`==key :
-                w_n_t_1[key]+=w_t_1['w_'+`v`]/2.0
-                w_a_t_1[key]+=y_t_1['y_'+`v,u`]/2.0
-            if 'w_'+`v`==key:
-                w_n_t_1[key]+=w_t_1['w_'+`u`]/2.0
-                w_a_t_1[key]+=y_t_1['y_'+`u,v`]/2.0
+        for u,v,a in selected_g.edges_iter(data=True):
+            if not a['data']['inf_data'].is_interdep: 
+                if 'w_'+`u`==key :
+                    w_n_t_1[key]+=w_t_1['w_'+`v`]/2.0
+                    w_a_t_1[key]+=y_t_1['y_'+`v`+','+`u`]/2.0
+                if 'w_'+`v`==key:
+                    w_n_t_1[key]+=w_t_1['w_'+`u`]/2.0
+                    w_a_t_1[key]+=y_t_1['y_'+`v`+','+`u`]/2.0
     cols=['w_t','w_t_1','w_n_t_1','w_a_t_1','sample','time']
     train_data={}
     for key, val in selected_nodes.items():
@@ -181,10 +182,10 @@ def train_data(samples,resCap,initial_net):
 
 def train_model(train_data_all,train_data):
     with pm.Model() as logistic_model:
-        pm.glm.GLM.from_formula('x_t ~ x_j_t_1',
+        pm.glm.GLM.from_formula('w_t ~ w_n_t_1+w_a_t_1',
                                 train_data_all,
                                 family=pm.glm.families.Binomial()) #x_t_1 + 
-        trace = pm.sample(1000, tune=1000, init='adapt_diag')
+        trace = pm.sample(500, tune=1000,cores=1)
         estParam = pm.summary(trace).round(4)
         print(estParam)     
         estParam.to_csv('Parameters\\model_parameters.txt',
@@ -223,7 +224,7 @@ def test_model(train_data_all,trace,model):
     
     ''' Prediction & data '''
     f, ax = plt.subplots(1, 2)
-    x=np.array(train_data_all['x_t'])
+    x=np.array(train_data_all['w_t'])
     y=ppc['y'].T.mean(axis=1)
     ax[0].scatter(x,y,alpha=0.01)
     ax[0].plot([0,1],[0,1],'r')
@@ -231,11 +232,11 @@ def test_model(train_data_all,trace,model):
 
     test_data=train_data_all.iloc[100:500,:]
     with pm.Model() as logistic_model:
-        pm.glm.GLM.from_formula('x_t ~ x_j_t_1',
+        pm.glm.GLM.from_formula('w_t ~ w_n_t_1+ w_a_t_1',
                                 test_data,
                                 family=pm.glm.families.Binomial()) #x_t_1 + 3
         ppc_test = pm.sample_posterior_predictive(trace)
-        x=np.array(test_data['x_t'])
+        x=np.array(test_data['w_t'])
         y=ppc_test['y'].T.mean(axis=1)     
         ax[1].scatter(x,y,alpha=0.1)
         ax[1].plot([0,1],[0,1],'r')

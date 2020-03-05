@@ -93,9 +93,9 @@ def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={}
     m.update()
     for t in range(T):
         for n,d in N_hat.nodes_iter(data=True):
-            if v not in interdep_nodes.keys():
-                m.getVarByName('w_'+str(n)+","+str(t)).lb=decision_vars[t]['w_'+`u`]
-                m.getVarByName('w_'+str(n)+","+str(t)).ub=decision_vars[t]['w_'+`u`]
+            if n not in interdep_nodes.keys() or decision_vars[t]['w_'+`n`]==0: #Beacuse repaired interdpendent nodes may beforced to become non-functional by the dependee node
+                m.getVarByName('w_'+str(n)+","+str(t)).lb=decision_vars[t]['w_'+`n`]
+                m.getVarByName('w_'+str(n)+","+str(t)).ub=decision_vars[t]['w_'+`n`]
         for u,v,a in A_hat_prime:
             m.getVarByName('y_'+`u`+","+`v`+","+`t`).lb=decision_vars[t]['y_'+`u`+","+`v`]
             m.getVarByName('y_'+`u`+","+`v`+","+`t`).ub=decision_vars[t]['y_'+`u`+","+`v`]
@@ -184,49 +184,49 @@ def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={}
                 m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G[u][v]['data']['inf_data'].functionality,"Flow arc functionality constraint("+`u`+","+`v`+","+`t`+")")
 
         #Resource availability constraints.
-        isSepResource = 0
-        if isinstance(v_r, (int, long)):
-            totalResource = v_r
-        else:
-            if len(v_r) != 1:
-                isSepResource = 1
-                totalResource = sum(v_r)
-                if len(v_r) != len(layers):
-                    print "\n***ERROR: The number of resource cap values does not match the number of layers.***\n"
-                    sys.exit()
-            else:
-                totalResource = v_r[0]
+        # isSepResource = 0
+        # if isinstance(v_r, (int, long)):
+        #     totalResource = v_r
+        # else:
+        #     if len(v_r) != 1:
+        #         isSepResource = 1
+        #         totalResource = sum(v_r)
+        #         if len(v_r) != len(layers):
+        #             print "\n***ERROR: The number of resource cap values does not match the number of layers.***\n"
+        #             sys.exit()
+        #     else:
+        #         totalResource = v_r[0]
             
-        resourceLeftConstr=LinExpr()
-        if isSepResource:
-            resourceLeftConstrSep = [LinExpr() for i in range(len(v_r))]
+        # resourceLeftConstr=LinExpr()
+        # if isSepResource:
+        #     resourceLeftConstrSep = [LinExpr() for i in range(len(v_r))]
                                      
-        for u,v,a in A_hat_prime:
-            indexLayer = a['data']['inf_data'].layer - 1
-            if T == 1:
-                resourceLeftConstr+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_'+`u`+","+`v`+","+`t`)
-                if isSepResource:
-                    resourceLeftConstrSep[indexLayer]+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_'+`u`+","+`v`+","+`t`)
-            else:
-                resourceLeftConstr+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_tilde_'+`u`+","+`v`+","+`t`)
-                if isSepResource:
-                    resourceLeftConstrSep[indexLayer]+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_tilde_'+`u`+","+`v`+","+`t`)
+        # for u,v,a in A_hat_prime:
+        #     indexLayer = a['data']['inf_data'].layer - 1
+        #     if T == 1:
+        #         resourceLeftConstr+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_'+`u`+","+`v`+","+`t`)
+        #         if isSepResource:
+        #             resourceLeftConstrSep[indexLayer]+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_'+`u`+","+`v`+","+`t`)
+        #     else:
+        #         resourceLeftConstr+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_tilde_'+`u`+","+`v`+","+`t`)
+        #         if isSepResource:
+        #             resourceLeftConstrSep[indexLayer]+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_tilde_'+`u`+","+`v`+","+`t`)
 
-        for n,d in N_hat_prime:
-            indexLayer = n[1] - 1
-            if T == 1:
-                resourceLeftConstr+=d['data']['inf_data'].resource_usage*m.getVarByName('w_'+`n`+","+`t`)
-                if isSepResource:
-                    resourceLeftConstrSep[indexLayer]+=d['data']['inf_data'].resource_usage*m.getVarByName('w_'+`n`+","+`t`)
-            else:
-                resourceLeftConstr+=d['data']['inf_data'].resource_usage*m.getVarByName('w_tilde_'+`n`+","+`t`)
-                if isSepResource:
-                    resourceLeftConstrSep[indexLayer]+=d['data']['inf_data'].resource_usage*m.getVarByName('w_tilde_'+`n`+","+`t`)
+        # for n,d in N_hat_prime:
+        #     indexLayer = n[1] - 1
+        #     if T == 1:
+        #         resourceLeftConstr+=d['data']['inf_data'].resource_usage*m.getVarByName('w_'+`n`+","+`t`)
+        #         if isSepResource:
+        #             resourceLeftConstrSep[indexLayer]+=d['data']['inf_data'].resource_usage*m.getVarByName('w_'+`n`+","+`t`)
+        #     else:
+        #         resourceLeftConstr+=d['data']['inf_data'].resource_usage*m.getVarByName('w_tilde_'+`n`+","+`t`)
+        #         if isSepResource:
+        #             resourceLeftConstrSep[indexLayer]+=d['data']['inf_data'].resource_usage*m.getVarByName('w_tilde_'+`n`+","+`t`)
 
-        m.addConstr(resourceLeftConstr,GRB.LESS_EQUAL,totalResource,"Resource availability constraint at "+`t`+".")
-        if isSepResource:
-            for k in range(len(v_r)):
-                m.addConstr(resourceLeftConstrSep[k],GRB.LESS_EQUAL,v_r[k],"Resource availability constraint at "+`t`+ " for layer "+`k`+".")
+        # m.addConstr(resourceLeftConstr,GRB.LESS_EQUAL,totalResource,"Resource availability constraint at "+`t`+".")
+        # if isSepResource:
+        #     for k in range(len(v_r)):
+        #         m.addConstr(resourceLeftConstrSep[k],GRB.LESS_EQUAL,v_r[k],"Resource availability constraint at "+`t`+ " for layer "+`k`+".")
 
         # Interdependency constraints
         infeasible_actions=[]
