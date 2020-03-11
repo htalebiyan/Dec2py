@@ -6,6 +6,8 @@ import os
 import sys
 import string 
 import pymc3 as pm
+import random
+import sklearn.metrics
 print('Running with PyMC3 version v.{}'.format(pm.__version__))
 import matplotlib.pyplot as plt
 
@@ -138,7 +140,8 @@ def train_data(samples,resCap,initial_net):
     
     w_t={}
     w_t_1={}   
-    w_n_t_1={}  #neighbor nodes
+    w_n_t_1={}  # neighbor nodes
+    w_d_t_1={}  # dependee nodes
     w_a_t_1={}  # connected arcs
     y_t={}
     y_t_1={}
@@ -151,15 +154,19 @@ def train_data(samples,resCap,initial_net):
     for key, val in selected_nodes.items():
         w_n_t_1[key] = np.zeros((T-1,noSamples))
         w_a_t_1[key] = np.zeros((T-1,noSamples))
+        w_d_t_1[key] = np.zeros((T-1,noSamples))
         for u,v,a in selected_g.edges_iter(data=True):
             if not a['data']['inf_data'].is_interdep: 
                 if 'w_'+`u`==key :
-                    w_n_t_1[key]+=w_t_1['w_'+`v`]/2.0
+                    w_n_t_1[key]+=w_t_1['w_'+`v`]/2.0 # Because each arc happens twice
                     w_a_t_1[key]+=y_t_1['y_'+`v`+','+`u`]/2.0
                 if 'w_'+`v`==key:
                     w_n_t_1[key]+=w_t_1['w_'+`u`]/2.0
                     w_a_t_1[key]+=y_t_1['y_'+`v`+','+`u`]/2.0
-    cols=['w_t','w_t_1','w_n_t_1','w_a_t_1','sample','time']
+            else:
+                if 'w_'+`v`==key:
+                    w_d_t_1[key]+=1-w_t_1['w_'+`u`] # So that for non-dependent and those whose depndee nodes are functional, we get the same number
+    cols=['w_t','w_t_1','w_n_t_1','w_a_t_1','w_d_t_1','sample','time']
     train_data={}
     for key, val in selected_nodes.items():
         train_df = pd.DataFrame(columns=cols)
@@ -169,7 +176,7 @@ def train_data(samples,resCap,initial_net):
                     pass
                 else:
                     row = np.array([w_t[key][t,s],w_t_1[key][t,s],w_n_t_1[key][t,s],
-                                    w_a_t_1[key][t,s],s,t])
+                                    w_a_t_1[key][t,s],w_d_t_1[key][t,s],s,t])
                     temp = pd.Series(row,index=cols)
                     train_df=train_df.append(temp,ignore_index=True)
         train_data[key]=train_df 
@@ -182,7 +189,7 @@ def train_data(samples,resCap,initial_net):
 
 def train_model(train_data_all,train_data):
     with pm.Model() as logistic_model:
-        pm.glm.GLM.from_formula('w_t ~ w_n_t_1+w_a_t_1',
+        pm.glm.GLM.from_formula('w_t ~ w_n_t_1 + w_a_t_1 + w_d_t_1 + time',
                                 train_data_all,
                                 family=pm.glm.families.Binomial()) #x_t_1 + 
         trace = pm.sample(500, tune=1000,cores=1)
@@ -229,10 +236,16 @@ def test_model(train_data_all,trace,model):
     ax[0].scatter(x,y,alpha=0.01)
     ax[0].plot([0,1],[0,1],'r')
     ax[0].set_title('Data vs. Prediction: training data ')    
-
-    test_data=train_data_all.iloc[100:500,:]
+    ax[0].set_xlabel('data')
+    ax[0].set_ylabel('Mean Prediction')
+    with open('Parameters\\model_parameters.txt', mode='a') as f:
+        print(sklearn.metrics.r2_score(x,y))
+        f.write('\nTraining data R2: '+`sklearn.metrics.r2_score(x,y)`)
+        f.close()
+        
+    test_data=train_data_all.iloc[[random.randint(0, 10000) for p in range(0, 500)],:]
     with pm.Model() as logistic_model:
-        pm.glm.GLM.from_formula('w_t ~ w_n_t_1+ w_a_t_1',
+        pm.glm.GLM.from_formula('w_t ~ w_n_t_1+ w_a_t_1+w_d_t_1+time',
                                 test_data,
                                 family=pm.glm.families.Binomial()) #x_t_1 + 3
         ppc_test = pm.sample_posterior_predictive(trace)
@@ -240,7 +253,13 @@ def test_model(train_data_all,trace,model):
         y=ppc_test['y'].T.mean(axis=1)     
         ax[1].scatter(x,y,alpha=0.1)
         ax[1].plot([0,1],[0,1],'r')
-        ax[1].set_title('Data vs. Prediction: test data ')   
+        ax[1].set_title('Data vs. Prediction: test data ')  
+        ax[1].set_xlabel('data')
+        ax[1].set_ylabel('Mean Prediction')
+        with open('Parameters\\model_parameters.txt', mode='a') as f:
+            print(sklearn.metrics.r2_score(x,y))
+            f.write('\nTest data R2: '+`sklearn.metrics.r2_score(x,y)`)
+            f.close()
     # diff_pred_train_data = np.subtract(ppc['y'], np.array(train_data_all['x_t']).T).T
         
     ''' Check the performance of predicted plans '''

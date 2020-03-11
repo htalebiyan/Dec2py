@@ -10,13 +10,13 @@ import seaborn as sns
 import flow 
 
 if __name__ == "__main__":  
-    plt.close('all')
-    ''' Decide the failure scenario (Andres or Wu) and network dataset (shelby or synthetic)
-    Help:
-    For Andres scenario: sample range: failSce_param["sample_range"], magnitudes: failSce_param['mags']
-    For Wu scenario: set range: failSce_param["sample_range"], sce range: failSce_param['mags']
-    For Synthetic nets: sample range: failSce_param["sample_range"], configurations: failSce_param['mags']  
-    '''
+    # plt.close('all')
+    # ''' Decide the failure scenario (Andres or Wu) and network dataset (shelby or synthetic)
+    # Help:
+    # For Andres scenario: sample range: failSce_param["sample_range"], magnitudes: failSce_param['mags']
+    # For Wu scenario: set range: failSce_param["sample_range"], sce range: failSce_param['mags']
+    # For Synthetic nets: sample range: failSce_param["sample_range"], configurations: failSce_param['mags']  
+    # '''
     # listFilteredSce = '../data/damagedElements_sliceQuantile_0.95.csv'
     # base_dir = "../../data/Extended_Shelby_County/"
     # damage_dir = "../../data/random_disruption_shelby/"
