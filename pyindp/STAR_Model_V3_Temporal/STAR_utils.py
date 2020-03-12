@@ -143,6 +143,9 @@ def train_data(samples,resCap,initial_net):
     w_n_t_1={}  # neighbor nodes
     w_d_t_1={}  # dependee nodes
     w_a_t_1={}  # connected arcs
+    w_n_list={}  # neighbor nodes
+    w_d_list={}  # dependee nodes
+    w_a_list={}  # connected arcs
     y_t={}
     y_t_1={}
     for key, val in selected_nodes.items():
@@ -155,17 +158,25 @@ def train_data(samples,resCap,initial_net):
         w_n_t_1[key] = np.zeros((T-1,noSamples))
         w_a_t_1[key] = np.zeros((T-1,noSamples))
         w_d_t_1[key] = np.zeros((T-1,noSamples))
+        w_n_list[key]=[]  # neighbor nodes
+        w_d_list[key]=[]  # dependee nodes
+        w_a_list[key]=[]  # connected arcs
         for u,v,a in selected_g.edges_iter(data=True):
             if not a['data']['inf_data'].is_interdep: 
                 if 'w_'+`u`==key :
                     w_n_t_1[key]+=w_t_1['w_'+`v`]/2.0 # Because each arc happens twice
                     w_a_t_1[key]+=y_t_1['y_'+`v`+','+`u`]/2.0
+                    w_n_list[key].append('w_'+`v`)
+                    w_a_list[key].append('y_'+`v`+','+`u`)
                 if 'w_'+`v`==key:
                     w_n_t_1[key]+=w_t_1['w_'+`u`]/2.0
                     w_a_t_1[key]+=y_t_1['y_'+`v`+','+`u`]/2.0
+                    w_n_list[key].append('w_'+`u`)
+                    w_a_list[key].append('y_'+`v`+','+`u`)
             else:
                 if 'w_'+`v`==key:
                     w_d_t_1[key]+=1-w_t_1['w_'+`u`] # So that for non-dependent and those whose depndee nodes are functional, we get the same number
+                    w_d_list[key].append('w_'+`u`)
     cols=['w_t','w_t_1','w_n_t_1','w_a_t_1','w_d_t_1','sample','time']
     train_data={}
     for key, val in selected_nodes.items():
@@ -185,81 +196,92 @@ def train_data(samples,resCap,initial_net):
     for key, val in train_data.items():   
         train_data_all=pd.concat([train_data_all,val])
     train_data_all=train_data_all.reset_index(drop=True)   
-    return train_data_all,train_data
+    return train_data_all,train_data,w_n_list,w_d_list,w_a_list
 
-def train_model(train_data_all,train_data):
+def train_model(train_data_all,train_data,w_n_list,w_d_list,w_a_list):
+    p = {}
+    p_d = {}
+    # sdy={}
+    y={}
     with pm.Model() as logistic_model:
-        pm.glm.GLM.from_formula('w_t ~ w_n_t_1 + w_a_t_1 + w_d_t_1 + time',
-                                train_data_all,
-                                family=pm.glm.families.Binomial()) #x_t_1 + 
+        for key,val in train_data.items(): 
+            p[key] = pm.Beta('p_%s'%(key,), alpha=2, beta=2)
+            # sdy[key] = pm.Normal('sdy_%s'%(key,), mu=0, sd=1)
+            
+        for key,val in train_data.items():            
+            p_d[key] = pm.Deterministic('p_d_%s'%(key,),
+                     logistic(p[key]+sum([p[x] for x in w_n_list[key]])))
+            y[key] = pm.Bernoulli('%s'%(key,),p = p_d[key],
+                           observed=train_data[key]['w_t'])
         trace = pm.sample(500, tune=1000,cores=1)
         estParam = pm.summary(trace).round(4)
         print(estParam)     
-        estParam.to_csv('Parameters\\model_parameters.txt',
+        estParam.to_csv('Parameters\\model_parameters_%s.txt'%(key,),
                         header=True, index=True, sep=' ', mode='w')
         pm.model_to_graphviz(logistic_model).render()
     return trace,logistic_model
     
-def test_model(train_data_all,trace,model):
+def test_model(train_data_all,train_data,trace,model):
 #    plt.rc('text', usetex=True)
 #    plt.rcParams.update({'font.size': 14})
 #    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     
-    ''' Traceplot '''
-    pm.traceplot(trace, combined=False) # ,varnames=['p_w_0_W_6']
-    
+    # ''' Traceplot '''
+    # pm.traceplot(trace, combined=False) # ,varnames=['p_w_0_W_6']
+    key='w_(34, 1)'
     ''' Generate and plot samples from the trained model '''
     ppc = pm.sample_posterior_predictive(trace, samples=1000, model=model)
          
     
-    ''' Acceptance rate '''
-    f, ax = plt.subplots(1, 2)
-    accept = trace.get_sampler_stats('mean_tree_accept', burn=0)
-    sns.distplot(accept, kde=False, ax=ax[0])
-    ax[0].set_title('Distribution of Tree Acceptance Rate')
-    print 'Mean Acceptance rate: '+ `accept.mean()`
-    print '\nIndex of all diverging transitions: '+ `trace['diverging'].nonzero()`
+    # ''' Acceptance rate '''
+    # f, ax = plt.subplots(1, 2)
+    # accept = trace.get_sampler_stats('mean_tree_accept', burn=0)
+    # sns.distplot(accept, kde=False, ax=ax[0])
+    # ax[0].set_title('Distribution of Tree Acceptance Rate')
+    # print 'Mean Acceptance rate: '+ `accept.mean()`
+    # print '\nIndex of all diverging transitions: '+ `trace['diverging'].nonzero()`
 
-    ''' Energy level '''
-    energy = trace['energy']
-    energy_diff = np.diff(energy)
-    sns.distplot(energy - energy.mean(), label='energy',ax=ax[1])
-    sns.distplot(energy_diff, label='energy diff',ax=ax[1])
-    ax[1].set_title('Distribution of energy level vs. change of energy between successive samples')
-    ax[1].legend()    
+    # ''' Energy level '''
+    # energy = trace['energy']
+    # energy_diff = np.diff(energy)
+    # sns.distplot(energy - energy.mean(), label='energy',ax=ax[1])
+    # sns.distplot(energy_diff, label='energy diff',ax=ax[1])
+    # ax[1].set_title('Distribution of energy level vs. change of energy between successive samples')
+    # ax[1].legend()    
 
     
     ''' Prediction & data '''
-    f, ax = plt.subplots(1, 2)
-    x=np.array(train_data_all['w_t'])
-    y=ppc['y'].T.mean(axis=1)
-    ax[0].scatter(x,y,alpha=0.01)
-    ax[0].plot([0,1],[0,1],'r')
-    ax[0].set_title('Data vs. Prediction: training data ')    
-    ax[0].set_xlabel('data')
-    ax[0].set_ylabel('Mean Prediction')
-    with open('Parameters\\model_parameters.txt', mode='a') as f:
-        print(sklearn.metrics.r2_score(x,y))
-        f.write('\nTraining data R2: '+`sklearn.metrics.r2_score(x,y)`)
-        f.close()
-        
-    test_data=train_data_all.iloc[[random.randint(0, 10000) for p in range(0, 500)],:]
-    with pm.Model() as logistic_model:
-        pm.glm.GLM.from_formula('w_t ~ w_n_t_1+ w_a_t_1+w_d_t_1+time',
-                                test_data,
-                                family=pm.glm.families.Binomial()) #x_t_1 + 3
-        ppc_test = pm.sample_posterior_predictive(trace)
-        x=np.array(test_data['w_t'])
-        y=ppc_test['y'].T.mean(axis=1)     
-        ax[1].scatter(x,y,alpha=0.1)
-        ax[1].plot([0,1],[0,1],'r')
-        ax[1].set_title('Data vs. Prediction: test data ')  
-        ax[1].set_xlabel('data')
-        ax[1].set_ylabel('Mean Prediction')
-        with open('Parameters\\model_parameters.txt', mode='a') as f:
+    # f, ax = plt.subplots(1, 2)
+    for key,val in train_data.items():
+        x=np.array(train_data[key]['w_t'])
+        y=ppc[key].T.mean(axis=1)
+        # ax[0].scatter(x,y,alpha=0.01)
+        # ax[0].plot([0,1],[0,1],'r')
+        # ax[0].set_title('Data vs. Prediction: training data ')    
+        # ax[0].set_xlabel('data')
+        # ax[0].set_ylabel('Mean Prediction')
+        with open('Parameters\\Train_R_2.txt', mode='a') as f:
             print(sklearn.metrics.r2_score(x,y))
-            f.write('\nTest data R2: '+`sklearn.metrics.r2_score(x,y)`)
+            f.write(key+'\t'+`sklearn.metrics.r2_score(x,y)`+'\n')
             f.close()
+        
+    # test_data=train_data_all.iloc[[random.randint(0, 10000) for p in range(0, 500)],:]
+    # with pm.Model() as logistic_model:
+    #     pm.glm.GLM.from_formula('w_t ~ w_n_t_1+ w_a_t_1+w_d_t_1+time',
+    #                             test_data,
+    #                             family=pm.glm.families.Binomial()) 
+    #     ppc_test = pm.sample_posterior_predictive(trace)
+    #     x=np.array(test_data['w_t'])
+    #     y=ppc_test['y'].T.mean(axis=1)     
+    #     ax[1].scatter(x,y,alpha=0.1)
+    #     ax[1].plot([0,1],[0,1],'r')
+    #     ax[1].set_title('Data vs. Prediction: test data ')  
+    #     ax[1].set_xlabel('data')
+    #     ax[1].set_ylabel('Mean Prediction')
+    #     with open('Parameters\\model_parameters.txt', mode='a') as f:
+    #         print(sklearn.metrics.r2_score(x,y))
+    #         f.write('\nTest data R2: '+`sklearn.metrics.r2_score(x,y)`)
+    #         f.close()
     # diff_pred_train_data = np.subtract(ppc['y'], np.array(train_data_all['x_t']).T).T
         
     ''' Check the performance of predicted plans '''
