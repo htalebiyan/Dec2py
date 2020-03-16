@@ -10,7 +10,7 @@ import seaborn as sns
 import flow 
 
 if __name__ == "__main__":  
-    # plt.close('all')
+    plt.close('all')
     # ''' Decide the failure scenario (Andres or Wu) and network dataset (shelby or synthetic)
     # Help:
     # For Andres scenario: sample range: failSce_param["sample_range"], magnitudes: failSce_param['mags']
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     # #                   'Base_dir':base_dir,'Damage_dir':damage_dir}
     # # failSce_param = {"type":"WU","sample_range":range(23,24),"mags":range(5,6),
     # #                 'filtered_List':listFilteredSce,'Base_dir':base_dir,'Damage_dir':damage_dir}
-    # failSce_param = {"type":"random","sample_range":range(50,500),"mags":range(0,1),
+    # failSce_param = {"type":"random","sample_range":range(50,990),"mags":range(0,1),
     #                 'filtered_List':None,'Base_dir':base_dir,'Damage_dir':damage_dir}
     # v_r = [4]#,10,20,30,40,50,60,70,80,90,100]
     # layers=[1,2,3,4]
@@ -39,22 +39,24 @@ if __name__ == "__main__":
     #     samples,network_objects,initial_net,_,_=STAR_utils.importData(params,failSce_param,layers) 
     #     sample_all[res]=samples
     #     network_objects_all[res]=network_objects
-    # train_data_all,train_data,w_n_list,w_d_list,w_a_list = STAR_utils.train_data(samples,res,initial_net)  
-    # trace,model = STAR_utils.train_model(train_data_all,train_data,w_n_list,w_d_list,w_a_list)
-    # ppc = STAR_utils.test_model(train_data_all,train_data,trace,model)
+    # train_data_all,train_data = STAR_utils.train_data(samples,res,initial_net)
+    # trace,model = STAR_utils.train_model(train_data_all,train_data) 
+    ppc = STAR_utils.test_model(train_data_all,train_data,trace,model,key='w_(0, 2)')
 
-    for key,val in train_data.items():
-        x=np.array(train_data[key]['w_t'])
-        y=ppc[key].T.mean(axis=1)
-        # ax[0].scatter(x,y,alpha=0.01)
-        # ax[0].plot([0,1],[0,1],'r')
-        # ax[0].set_title('Data vs. Prediction: training data ')    
-        # ax[0].set_xlabel('data')
-        # ax[0].set_ylabel('Mean Prediction')
-        with open('Parameters\\Train_R_2.txt', mode='a') as f:
-            print(sklearn.metrics.r2_score(x,y))
-            f.write(key+'\t'+`sklearn.metrics.r2_score(x,y)`+'\n')
-            f.close()    
+    # for key, val in train_data.items():
+    #     if key[-2]==`2`:
+    #         x=np.array(train_data[key]['w_t'])
+    #         y=ppc[key].T.mean(axis=1)
+    #         # ax[0].scatter(x,y,alpha=0.01)
+    #         # ax[0].plot([0,1],[0,1],'r')
+    #         # ax[0].set_title('Data vs. Prediction: training data ')    
+    #         # ax[0].set_xlabel('data')
+    #         # ax[0].set_ylabel('Mean Prediction')
+    #         with open('Parameters\\Train_R_2.txt', mode='a') as f:
+    #             print(sklearn.metrics.r2_score(x,y))
+    #             f.write(key+'\t'+`sklearn.metrics.r2_score(x,y)`+'\n')
+    #             f.close()    
+    
     # no_samples = samples[samples.keys()[0]].shape[1]
     # no_time_steps = samples[samples.keys()[0]].shape[0]
     # cols=['sample','time','resource_cap','data_cost','data_run_time','data_pref',

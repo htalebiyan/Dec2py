@@ -1,0 +1,5 @@
+
+Training data R2: 0.02054635723258591
+Test data R2: -0.026378114617940263
+Training data R2: 0.4375093161592505
+Test data R2: 0.0

@@ -1,0 +1,16 @@
+digraph {
+	w_d_t_1 [label="w_d_t_1 ~ Normal"]
+	w_n_t_1 [label="w_n_t_1 ~ Normal"]
+	Intercept [label="Intercept ~ Flat"]
+	w_a_t_1 [label="w_a_t_1 ~ Normal"]
+	time [label="time ~ Normal"]
+	subgraph cluster171 {
+		y [label="y ~ Binomial" style=filled]
+		label=171 labeljust=r labelloc=b style=rounded
+	}
+	w_d_t_1 -> y
+	w_n_t_1 -> y
+	Intercept -> y
+	w_a_t_1 -> y
+	time -> y
+}
