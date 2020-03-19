@@ -9,10 +9,12 @@ import pymc3 as pm
 import random
 import sklearn.metrics
 import flow 
-print('Running with PyMC3 version v.{}'.format(pm.__version__))
+import time
 import matplotlib.pyplot as plt
+print('Running with PyMC3 version v.{}'.format(pm.__version__))
 
 def importData(params,failSce_param,layers):  
+    print('Importing data:')
     # Set root directories
     base_dir = failSce_param['Base_dir']
     damage_dir = failSce_param['Damage_dir'] 
@@ -32,15 +34,16 @@ def importData(params,failSce_param,layers):
     
     samples={}
     network_objects={}
-    initial_net = 0
+    initial_net = {}
     for m in failSce_param['mags']:    
         for i in failSce_param['sample_range']:
             if failSce_param['filtered_List']==None or len(listHD.loc[(listHD.set == i) & (listHD.sce == m)].index):
 #                print '\n---Running Magnitude '+`m`+' sample '+`i`+'...'
             
                 # print("Initializing network...")
-                if i%50==0:
-                    print ".", 
+                if (i-failSce_param['sample_range'][0]+1)%25==0:
+                    update_progress(i-failSce_param['sample_range'][0]+1,len(failSce_param['sample_range']))
+
                 if not shelby_data:  
                     InterdepNet,noResource,layers=initialize_network(BASE_DIR=base_dir,external_interdependency_dir=ext_interdependency,magnitude=m,sample=i,shelby_data=shelby_data,topology=topology) 
                     params["V"]=noResource
@@ -49,8 +52,8 @@ def importData(params,failSce_param,layers):
                 params["N"]=InterdepNet
                 params["SIM_NUMBER"]=i
                 params["MAGNITUDE"]=m
-                if not initial_net:
-                    initial_net = InterdepNet
+                if not initial_net.keys():
+                    initial_net[0] = InterdepNet
                 
                 if failSce_param['type']=='WU':
                     add_Wu_failure_scenario(InterdepNet,DAM_DIR=damage_dir,noSet=i,noSce=m)
@@ -65,7 +68,7 @@ def importData(params,failSce_param,layers):
                 results_dir=params['OUTPUT_DIR']+'_L'+`len(layers)`+'_m'+`m`+'_v'+`params['V']`
                 samples = read_restoration_plans(samples, m, i,results_dir,suffix='')
                 network_objects[m,i]=InterdepNet
-    print('Data Imported')
+    update_progress(i-failSce_param['sample_range'][0]+1,len(failSce_param['sample_range']))
     return samples,network_objects,initial_net,params["V"],layers    
 
 def initialize_matrix(N, sample, m, i, time_steps):
@@ -119,6 +122,7 @@ def collect_feature_data(samples,network_objects):
     return True
     
 def prepare_data(samples,resCap,initial_net,keys):
+    print('\nPreparing data:')
     names = samples.keys()
     noSamples = int(samples[names[0]].shape[1])
     T = int(samples[names[0]].shape[0])                
@@ -135,7 +139,7 @@ def prepare_data(samples,resCap,initial_net,keys):
             selected_arcs[key] = val
     node_names = list(selected_nodes.keys())
     arc_names = list(selected_arcs.keys())
-    selected_g = initial_net.G.subgraph(selected_ids)
+    selected_g = initial_net[0].G.subgraph(selected_ids)
     
     w_t={}
     w_t_1={}   
@@ -151,8 +155,8 @@ def prepare_data(samples,resCap,initial_net,keys):
     for key, val in selected_arcs.items():
         y_t[key]=selected_arcs[key][1:,:]
         y_t_1[key]=selected_arcs[key][:-1,:] 
-        
-    for key, val in selected_nodes.items():
+       
+    for key, val in selected_nodes.items():           
         w_n_t_1[key] = np.zeros((T-1,noSamples))
         w_a_t_1[key] = np.zeros((T-1,noSamples))
         w_d_t_1[key] = np.zeros((T-1,noSamples))
@@ -168,18 +172,20 @@ def prepare_data(samples,resCap,initial_net,keys):
                 else:
                     if 'w_'+`v`==key:
                         w_d_t_1[key]+=1-w_t_1['w_'+`u`] # So that for non-dependent and those whose depndee nodes are functional, we get the same number
-                        
+    update_progress(len(node_names),2*len(node_names+arc_names))
+                     
     for u,v,a in selected_g.edges_iter(data=True):
-        key = 'y_'+`u`+','+`v`
-        if key in keys:
-            if not a['data']['inf_data'].is_interdep:
+        if not a['data']['inf_data'].is_interdep:
+            key = 'y_'+`u`+','+`v`               
+            if key in keys:
                 y_n_t_1[key] = np.zeros((T-1,noSamples))
                 y_n_t_1[key]+=w_t_1['w_'+`v`]
                 y_n_t_1[key]+=w_t_1['w_'+`u`]
-                
+    update_progress(len(node_names+arc_names),2*len(node_names+arc_names))
+             
     cols=['w_t','w_t_1','w_n_t_1','w_a_t_1','w_d_t_1','sample','time']
     node_data={}
-    for key, val in selected_nodes.items():
+    for key, val in selected_nodes.items():   
         if key in keys:
             train_df = pd.DataFrame(columns=cols)
             for s in range(noSamples):
@@ -192,10 +198,14 @@ def prepare_data(samples,resCap,initial_net,keys):
                     temp = pd.Series(row,index=cols)
                     train_df=train_df.append(temp,ignore_index=True)
             node_data[key]=train_df 
-    
+    update_progress(len(node_names)+len(node_names+arc_names),2*len(node_names+arc_names))
+
     cols=['y_t','y_t_1','y_n_t_1','sample','time']
     arc_data={}
     for key, val in selected_arcs.items():
+        if arc_names.index(key)%25==0:
+            update_progress(arc_names.index(key),len(arc_names))
+
         if key in keys:
             train_df = pd.DataFrame(columns=cols)
             for s in range(noSamples):
@@ -208,7 +218,7 @@ def prepare_data(samples,resCap,initial_net,keys):
                     temp = pd.Series(row,index=cols)
                     train_df=train_df.append(temp,ignore_index=True)
             arc_data[key]=train_df 
-            
+    update_progress(2*len(node_names+arc_names),2*len(node_names+arc_names))        
     # data_all = pd.DataFrame(columns=cols)
     # # for key, val in data.items():   
     # #     data_all=pd.concat([data_all,val])
@@ -216,9 +226,14 @@ def prepare_data(samples,resCap,initial_net,keys):
     return node_data,arc_data
 
 def train_model(train_data):
+    print('\nTraining models:')
     logistic_model={}
     trace={}
+    t_suf = time.strftime("%Y%m%d")
     for key, val in train_data.items():
+        if train_data.keys().index(key)%10==0:
+            update_progress(train_data.keys().index(key),len(train_data.keys()))
+
         if key[0]=='w':#[-2]==`2`:
             with pm.Model() as logistic_model[key]:
                 pm.glm.GLM.from_formula('w_t ~ w_t_1 + w_n_t_1 + w_a_t_1 + w_d_t_1 + time',
@@ -227,7 +242,7 @@ def train_model(train_data):
                 trace[key] = pm.sample(1500, tune=750,chains=4, cores=4)
                 estParam = pm.summary(trace[key]).round(4)
                 print(estParam)     
-                estParam.to_csv('Parameters\\model_parameters_%s.txt'%(key,),
+                estParam.to_csv('parameters'+t_suf+'/model_parameters_'+key+'.txt',
                                 header=True, index=True, sep=' ', mode='w')
                 # pm.model_to_graphviz(logistic_model[key]).render(filename='Parameters\\model_graph_%s'%(key,))
         if key[0]=='y':#[-2]==`2`:
@@ -238,7 +253,7 @@ def train_model(train_data):
                 trace[key] = pm.sample(1500, tune=750,chains=4, cores=4)
                 estParam = pm.summary(trace[key]).round(4)
                 print(estParam)     
-                estParam.to_csv('Parameters\\model_parameters_%s.txt'%(key,),
+                estParam.to_csv('parameters'+t_suf+'/model_parameters_'+key+'.txt',
                                 header=True, index=True, sep=' ', mode='w')
                 # pm.model_to_graphviz(logistic_model[key]).render(filename='Parameters\\model_graph_%s'%(key,))
 
@@ -348,14 +363,14 @@ def test_model(train_data,test_data,trace_all,model_all):
 
 def save_trace_and_data(train_data,test_data,trace,initial_net,samples,network_objects):
     import pickle
-    
-    pickle.dump([samples,network_objects,initial_net.G], open( "initial_data.pkl", "wb" ))
-    pickle.dump([train_data,test_data], open( "train_test_data.pkl", "wb" ))
+    t_suf = time.strftime("%Y%m%d")
+    pickle.dump([samples,network_objects,initial_net], open('data'+t_suf+'/initial_data.pkl', "wb" ))
+    pickle.dump([train_data,test_data], open( 'data'+t_suf+'train_test_data.pkl', "wb" ))
     
     # save traces
     fname={}
     for key,val in trace.items():
-        fname[key]=pm.save_trace(trace[key],directory='./traces/'+key,overwrite=True)  
+        fname[key]=pm.save_trace(trace[key],directory='./traces'+t_suf+'/'+key,overwrite=True)  
 
 def compare_resotration(samples,network_objects,failSce_param,initial_net,layers,v_r,real_results_dir,no_prediction_samples=2):
     no_samples = samples[samples.keys()[0]].shape[1]
@@ -393,7 +408,7 @@ def compare_resotration(samples,network_objects,failSce_param,initial_net,layers
                                 w_n_t_1=0
                                 w_a_t_1=0
                                 w_d_t_1=0
-                                for u,v,a in initial_net.G.edges_iter(data=True):
+                                for u,v,a in initial_net[0].G.edges_iter(data=True):
                                     if not a['data']['inf_data'].is_interdep: 
                                         if 'w_'+`u`==key :
                                             w_n_t_1+=pred_state['w_'+`v`][t-1,s_itr]/2.0 # Because each arc happens twice
@@ -476,7 +491,7 @@ def train_test_split(node_data,arc_data,keys):
         elif key[0]=='y':
             data=arc_data[key]
             duplicates.append(key)
-            u,v=STAR_utils.arc_to_node(key)
+            u,v=arc_to_node(key)
             if 'y_'+v+','+u in duplicates:
                 duplicate=True
         else:
@@ -496,3 +511,8 @@ def arc_to_node(arc_key):
     u = arc_id[0]+')'
     v = '('+arc_id[1] 
     return u,v
+
+def update_progress(progress,total):
+    print '\r[%s] %1.1f%%' % ('#'*int(progress/float(total)*20), (progress/float(total)*100)),
+    sys.stdout.flush()
+              
