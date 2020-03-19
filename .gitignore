@@ -109,8 +109,8 @@ results/
 *.log
 *.spydata
 *.pkl
-pyindp/STAR_Model_V3_Temporal/Find_features_shelby_data_random_disruption.spydata
-pyindp/STAR_Model_V3_Temporal/temp.spydata
-pyindp/STAR_Model_V3_Temporal/models/
-pyindp/STAR_Model_V3_Temporal/traces/
-pyindp/STAR_Model_V3_Temporal/Parameters/
+/STAR_Model/Find_features_shelby_data_random_disruption.spydata
+/STAR_Model/temp.spydata
+/STAR_Model/models/
+/STAR_Model/traces/
+/STAR_Model/parameters/
