@@ -1,16 +1,16 @@
 import numpy as np
 import pandas as pd
-import seaborn as sns
 from indp import *
 import os
 import sys
 import string 
 import pymc3 as pm
-import random
 import sklearn.metrics
 import flow 
 import time
-import matplotlib.pyplot as plt
+import cPickle as pickle
+from infrastructure import *
+
 print('Running with PyMC3 version v.{}'.format(pm.__version__))
 
 def importData(params,failSce_param,layers):  
@@ -361,124 +361,103 @@ def test_model(train_data,test_data,trace_all,model_all):
             
     return ppc,ppc_test
 
-def save_trace_and_data(train_data,test_data,trace,initial_net,samples,network_objects):
-    import pickle
-    t_suf = time.strftime("%Y%m%d")
-    pickle.dump([samples,network_objects,initial_net], open('data'+t_suf+'/initial_data.pkl', "wb" ))
-    pickle.dump([train_data,test_data], open( 'data'+t_suf+'train_test_data.pkl', "wb" ))
-    
-    # save traces
-    fname={}
-    for key,val in trace.items():
-        fname[key]=pm.save_trace(trace[key],directory='./traces'+t_suf+'/'+key,overwrite=True)  
-
-def compare_resotration(samples,network_objects,failSce_param,initial_net,layers,v_r,real_results_dir,no_prediction_samples=2):
+def compare_resotration(samples,s,res,network_objects,failSce_param,initial_net,layers,real_results_dir,pred_s):
     no_samples = samples[samples.keys()[0]].shape[1]
     no_time_steps = samples[samples.keys()[0]].shape[0]
-    cols_results=['sample','time','resource_cap','pred_sample','result_type','cost',
-                  'run_time','performance']
-    result_df = pd.DataFrame(columns=cols_results)
-    for res in v_r:
-        pred_state={}
+    s_itr = s - failSce_param['sample_range'][0]
+    pred_state={}
+    print '\nPrediction '+`pred_s`+': time step ',
+    for key,val in samples.iteritems():
+        pred_state[key] = np.ones((no_time_steps))
+    for t in range(no_time_steps):
+        '''compute total cost for the predictions'''
+        print `t`+'.',
+        decision_vars={0:{}} #0 becasue iINDP
         for key,val in samples.iteritems():
-            pred_state[key] = np.ones((no_time_steps,no_samples))
-        for s in failSce_param['sample_range']:
-            s_itr = s - failSce_param['sample_range'][0]
-            for pred_s in range(no_prediction_samples):
-                print '\nPrediction '+`pred_s+1`+': time step ',
-                for t in range(no_time_steps):
-                    '''compute total cost for the predictions'''
-                    print `t`+'.',
-                    decision_vars={0:{}} #0 becasue iINDP
-                    for key,val in samples.iteritems():
-                        if t==0:
-                            pred_state[key][t,s_itr] = samples[key][0,s_itr] 
-                            decision_vars[0][key]=pred_state[key][t,s_itr]
-                        elif pred_state[key][t-1,s_itr]==1.0:
-                            pred_state[key][t,s_itr] = 1.0
-                            decision_vars[0][key]=1.0
-                            if key[0]=='y':
-                                arc_id = key[2:].split('),(') 
-                                u = arc_id[0]+')'
-                                v = '('+arc_id[1]
-                                decision_vars[0]['y_'+v+','+u]=1.0
-                        else:                        
-                            if key[0]=='w':
-                                w_t_1=pred_state[key][t-1,s_itr]  
-                                w_n_t_1=0
-                                w_a_t_1=0
-                                w_d_t_1=0
-                                for u,v,a in initial_net[0].G.edges_iter(data=True):
-                                    if not a['data']['inf_data'].is_interdep: 
-                                        if 'w_'+`u`==key :
-                                            w_n_t_1+=pred_state['w_'+`v`][t-1,s_itr]/2.0 # Because each arc happens twice
-                                            w_a_t_1+=pred_state['y_'+`v`+','+`u`][t-1,s_itr]/2.0
-                                        if 'w_'+`v`==key:
-                                            w_n_t_1+=pred_state['w_'+`u`][t-1,s_itr]/2.0
-                                            w_a_t_1+=pred_state['y_'+`v`+','+`u`][t-1,s_itr]/2.0
-                                    else:
-                                        if 'w_'+`v`==key:
-                                            w_d_t_1+=1-pred_state['w_'+`u`][t-1,s_itr] # So that for non-dependent and those whose depndee nodes are functional, we get the same number
-                                cols=['w_t','w_t_1','w_n_t_1','w_a_t_1','w_d_t_1','time']
-                                row = np.array([0,w_t_1,w_n_t_1,w_a_t_1,w_d_t_1,t])
-                                with pm.Model() as logistic_model_test:
-                                    pm.glm.GLM.from_formula('w_t ~ w_t_1 + w_n_t_1+ w_a_t_1+w_d_t_1+time',
-                                                            pd.Series(row,index=cols),
-                                                            family=pm.glm.families.Binomial())
-                                    trace = pm.load_trace('./traces/'+key) 
-                                    ppc_test = pm.sample_posterior_predictive(trace,
-                                                                              samples=1,
-                                                                              progressbar=False)
-                                    pred_state[key][t,s_itr]=ppc_test['y']
-                                decision_vars[0][key]=pred_state[key][t,s_itr] #0 becasue iINDP
-                                    
-                            if key[0]=='y': 
-                                if key not in decision_vars[0].keys():
-                                    y_n_t_1=0
-                                    y_t_1=pred_state[key][t-1,s_itr] 
-                                    
-                                    u,v=arc_to_node(key)
-                                    y_n_t_1+=pred_state['w_'+u][t-1,s_itr]
-                                    y_n_t_1+=pred_state['w_'+v][t-1,s_itr]
-                                    cols=['y_t','y_t_1','y_n_t_1','time']
-                                    row = np.array([0,y_t_1,y_n_t_1,t+1])
-                                    with pm.Model() as logistic_model_pred:
-                                        pm.glm.GLM.from_formula('y_t ~ y_t_1 + y_n_t_1+time',
-                                                                        pd.Series(row,index=cols),
-                                                                        family=pm.glm.families.Binomial())
-                                        trace = pm.load_trace('./traces/'+key) 
-                                        ppc_test = pm.sample_posterior_predictive(trace,
-                                                                                  samples=1,
-                                                                                  progressbar=False)
-                                        pred_state[key][t,s_itr]=ppc_test['y']
-                                     #0 becasue iINDP
-                                    decision_vars[0][key]=pred_state[key][t,s_itr]
-                                    decision_vars[0]['y_'+v+','+u]=pred_state[key][t,s_itr] #0 becasue iINDP
-                        
-                    flow_results=flow.flow_problem(network_objects[0,s],v_r=0,
-                                    layers=layers,controlled_layers=layers,
-                                  decision_vars=decision_vars,print_cmd=True, time_limit=None)
-                    row = np.array([s,t,res,pred_s,'predicted',
-                                    flow_results[1][0]['costs']['Total'],
-                                    flow_results[1][0]['run_time'],
-                                    flow_results[1][0]['costs']['Under Supply Perc']])
-                    temp = pd.Series(row,index=cols_results)
-                    result_df=result_df.append(temp,ignore_index=True)     
-                    if pred_s==0:
-                        ''' read cost from the actual data computed by INDP '''
-                        folder_name = real_results_dir+'results/indp_results_L'+`len(layers)`+'_m0_v'+`res`
-                        real_results=indputils.INDPResults()
-                        real_results=real_results.from_csv(folder_name,s,suffix="")
-                        row = np.array([s,t,res,-1,'data',
-                                        real_results[t]['costs']['Total'],
-                                        real_results[t]['run_time'],
-                                        real_results[t]['costs']['Under Supply Perc']])
-                        temp = pd.Series(row,index=cols_results)
-                        result_df=result_df.append(temp,ignore_index=True)
-                    ### Write models to file  
-                    # indp.save_INDP_model_to_file(flow_results[0],'./models',t,l=0)   
-    return result_df
-
+            if t==0:
+                pred_state[key][t] = samples[key][0,s_itr] 
+                decision_vars[0][key]=pred_state[key][t]
+            elif pred_state[key][t-1]==1.0:
+                pred_state[key][t] = 1.0
+                decision_vars[0][key]=1.0
+                if key[0]=='y':
+                    arc_id = key[2:].split('),(') 
+                    u = arc_id[0]+')'
+                    v = '('+arc_id[1]
+                    decision_vars[0]['y_'+v+','+u]=1.0
+            elif key[0]=='w':
+                w_t_1=pred_state[key][t-1]  
+                w_n_t_1=0
+                w_a_t_1=0
+                w_d_t_1=0
+                for u,v,a in initial_net[0].G.edges_iter(data=True):
+                    if not a['data']['inf_data'].is_interdep: 
+                        if 'w_'+`u`==key :
+                            w_n_t_1+=pred_state['w_'+`v`][t-1]/2.0 # Because each arc happens twice
+                            w_a_t_1+=pred_state['y_'+`v`+','+`u`][t-1]/2.0
+                        if 'w_'+`v`==key:
+                            w_n_t_1+=pred_state['w_'+`u`][t-1]/2.0
+                            w_a_t_1+=pred_state['y_'+`v`+','+`u`][t-1]/2.0
+                    else:
+                        if 'w_'+`v`==key:
+                            w_d_t_1+=1-pred_state['w_'+`u`][t-1] # So that for non-dependent and those whose depndee nodes are functional, we get the same number
+                cols=['w_t','w_t_1','w_n_t_1','w_a_t_1','w_d_t_1','time']
+                row = np.array([0,w_t_1,w_n_t_1,w_a_t_1,w_d_t_1,t])
+                with pm.Model() as logistic_model_pred:
+                    pm.glm.GLM.from_formula('w_t ~ w_t_1 + w_n_t_1+ w_a_t_1+w_d_t_1+time',
+                                            pd.Series(row,index=cols),
+                                            family=pm.glm.families.Binomial())
+                    trace = pm.load_trace('./traces/'+key)
+                    ppc_test = pm.sample_posterior_predictive(trace,samples=1,
+                                                              progressbar=False)
+                    pred_state[key][t]=ppc_test['y']
+                decision_vars[0][key]=pred_state[key][t] #0 becasue iINDP
+            elif key[0]=='y': 
+                if key not in decision_vars[0].keys():
+                    y_n_t_1=0
+                    y_t_1=pred_state[key][t-1] 
+                    
+                    u,v=arc_to_node(key)
+                    y_n_t_1+=pred_state['w_'+u][t-1]
+                    y_n_t_1+=pred_state['w_'+v][t-1]
+                    cols=['y_t','y_t_1','y_n_t_1','time']
+                    row = np.array([0,y_t_1,y_n_t_1,t+1])
+                    with pm.Model() as logistic_model_pred:
+                        pm.glm.GLM.from_formula('y_t ~ y_t_1 + y_n_t_1+time',
+                                                        pd.Series(row,index=cols),
+                                                        family=pm.glm.families.Binomial())
+                        trace = pm.load_trace('./traces/'+key) 
+                        if len(trace.chains)==0:
+                            trace = pm.load_trace('./traces/'+'y_'+v+','+u)
+                        ppc_test = pm.sample_posterior_predictive(trace,samples=1,
+                                                                  progressbar=False)
+                        pred_state[key][t]=ppc_test['y']
+                     #0 becasue iINDP
+                    decision_vars[0][key]=pred_state[key][t]
+                    decision_vars[0]['y_'+v+','+u]=pred_state[key][t] #0 becasue iINDP
+            
+        flow_results=flow.flow_problem(network_objects[0,s],v_r=0,
+                        layers=layers,controlled_layers=layers,
+                      decision_vars=decision_vars,print_cmd=True, time_limit=None)
+        row = np.array([s,t,res,pred_s,'predicted',
+                        flow_results[1][0]['costs']['Total'],
+                        flow_results[1][0]['run_time'],
+                        flow_results[1][0]['costs']['Under Supply Perc']])
+        write_results_to_file(row,process=`pred_s`)     
+        #'''Write models to file'''  
+        # indp.save_INDP_model_to_file(flow_results[0],'./models',t,l=0)           
+    if pred_s==0:
+        ''' read cost from the actual data computed by INDP '''
+        folder_name = real_results_dir+'results/indp_results_L'+`len(layers)`+'_m0_v'+`res`
+        real_results=indputils.INDPResults()
+        real_results=real_results.from_csv(folder_name,s,suffix="")
+        for t in range(no_time_steps):
+            row = np.array([s,t,res,-1,'data',
+                            real_results[t]['costs']['Total'],
+                            real_results[t]['run_time'],
+                            real_results[t]['costs']['Under Supply Perc']])
+            write_results_to_file(row,process=`pred_s`)
+    
 def train_test_split(node_data,arc_data,keys):
     train_data={}
     test_data={}
@@ -503,6 +482,26 @@ def train_test_split(node_data,arc_data,keys):
             train_data[key]=data[msk]
     return train_data,test_data
 
+def save_initial_data(initial_net,samples,network_objects):
+    t_suf = time.strftime("%Y%m%d")
+    folder_name = 'data'+t_suf
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+    pickle.dump([samples,network_objects,initial_net], open(folder_name+'/initial_data.pkl', "wb" ))
+        
+def save_prepared_data(train_data,test_data):
+    t_suf = time.strftime("%Y%m%d")
+    folder_name = 'data'+t_suf
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+    pickle.dump([train_data,test_data], open(folder_name+'/train_test_data.pkl', "wb" ))
+
+def save_traces(trace):
+    t_suf = time.strftime("%Y%m%d")
+    fname={}
+    for key,val in trace.items():
+        fname[key]=pm.save_trace(trace[key],directory='./traces'+t_suf+'/'+key,overwrite=True)  
+
 def logistic(l):
     return 1 / (1 + pm.math.exp(-l))
 
@@ -511,6 +510,17 @@ def arc_to_node(arc_key):
     u = arc_id[0]+')'
     v = '('+arc_id[1] 
     return u,v
+
+def write_results_to_file(row,process=''):
+    t_suf = time.strftime("%Y%m%d")
+    folder_name = 'results'+t_suf
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+    with open(folder_name+'/results'+t_suf+'_'+process+'.txt', 'a') as filehandle:
+        for i in row:
+            filehandle.write('%s\t' % i)
+        filehandle.write('\n')   
+    filehandle.close()
 
 def update_progress(progress,total):
     print '\r[%s] %1.1f%%' % ('#'*int(progress/float(total)*20), (progress/float(total)*100)),
