@@ -33,7 +33,7 @@ def importData(params,failSce_param,layers):
         topology = failSce_param['topology']
     
     samples={}
-    network_objects={}
+    # network_objects={}
     initial_net = {}
     for m in failSce_param['mags']:    
         for i in failSce_param['sample_range']:
@@ -67,9 +67,9 @@ def importData(params,failSce_param,layers):
                 samples = initialize_matrix(InterdepNet,samples,m,i,10)
                 results_dir=params['OUTPUT_DIR']+'_L'+`len(layers)`+'_m'+`m`+'_v'+`params['V']`
                 samples = read_restoration_plans(samples, m, i,results_dir,suffix='')
-                network_objects[m,i]=InterdepNet
+                # network_objects[m,i]=InterdepNet
     update_progress(i-failSce_param['sample_range'][0]+1,len(failSce_param['sample_range']))
-    return samples,network_objects,initial_net,params["V"],layers    
+    return samples,initial_net,params["V"],layers    
 
 def initialize_matrix(N, sample, m, i, time_steps):
     for v in N.G.nodes():
@@ -361,7 +361,7 @@ def test_model(train_data,test_data,trace_all,model_all):
             
     return ppc,ppc_test
 
-def compare_resotration(samples,s,res,network_objects,failSce_param,initial_net,layers,real_results_dir,pred_s):
+def compare_resotration(samples,s,res,network_object,failSce_param,initial_net,layers,real_results_dir,pred_s):
     no_samples = samples[samples.keys()[0]].shape[1]
     no_time_steps = samples[samples.keys()[0]].shape[0]
     s_itr = s - failSce_param['sample_range'][0]
@@ -436,14 +436,14 @@ def compare_resotration(samples,s,res,network_objects,failSce_param,initial_net,
                     decision_vars[0][key]=pred_state[key][t]
                     decision_vars[0]['y_'+v+','+u]=pred_state[key][t] #0 becasue iINDP
             
-        flow_results=flow.flow_problem(network_objects[0,s],v_r=0,
+        flow_results=flow.flow_problem(network_object,v_r=0,
                         layers=layers,controlled_layers=layers,
                       decision_vars=decision_vars,print_cmd=True, time_limit=None)
         row = np.array([s,t,res,pred_s,'predicted',
                         flow_results[1][0]['costs']['Total'],
                         flow_results[1][0]['run_time'],
                         flow_results[1][0]['costs']['Under Supply Perc']])
-        write_results_to_file(row,process=`pred_s`)     
+        write_results_to_file(row)     
         #'''Write models to file'''  
         # indp.save_INDP_model_to_file(flow_results[0],'./models',t,l=0)           
     if pred_s==0:
@@ -456,7 +456,8 @@ def compare_resotration(samples,s,res,network_objects,failSce_param,initial_net,
                             real_results[t]['costs']['Total'],
                             real_results[t]['run_time'],
                             real_results[t]['costs']['Under Supply Perc']])
-            write_results_to_file(row,process=`pred_s`)
+            write_results_to_file(row)
+    return None
     
 def train_test_split(node_data,arc_data,keys):
     train_data={}
@@ -482,12 +483,12 @@ def train_test_split(node_data,arc_data,keys):
             train_data[key]=data[msk]
     return train_data,test_data
 
-def save_initial_data(initial_net,samples,network_objects):
+def save_initial_data(initial_net,samples):
     t_suf = time.strftime("%Y%m%d")
     folder_name = 'data'+t_suf
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
-    pickle.dump([samples,network_objects,initial_net], open(folder_name+'/initial_data.pkl', "wb" ))
+    pickle.dump([samples,initial_net], open(folder_name+'/initial_data.pkl', "wb" ))
         
 def save_prepared_data(train_data,test_data):
     t_suf = time.strftime("%Y%m%d")
@@ -511,12 +512,12 @@ def arc_to_node(arc_key):
     v = '('+arc_id[1] 
     return u,v
 
-def write_results_to_file(row,process=''):
+def write_results_to_file(row):
     t_suf = time.strftime("%Y%m%d")
     folder_name = 'results'+t_suf
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
-    with open(folder_name+'/results'+t_suf+'_'+process+'.txt', 'a') as filehandle:
+    with open(folder_name+'/results'+t_suf+'.txt', 'a') as filehandle:
         for i in row:
             filehandle.write('%s\t' % i)
         filehandle.write('\n')   
