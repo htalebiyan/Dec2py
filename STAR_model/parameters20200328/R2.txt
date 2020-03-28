@@ -1,0 +1,23 @@
+
+w_(1, 1) Training data R2: 0.7754542191308467
+w_(1, 1) Test data R2: 0.8778422225506399
+w_(0, 1) Training data R2: 0.7761632371464646
+w_(0, 1) Test data R2: 0.7336168626569197
+w_(0, 1) Training data R2: 0.7413563288409704
+w_(0, 1) Test data R2: 0.7886800267489713
+w_(0, 1) Training data R2: 0.7637724610024281
+w_(0, 1) Test data R2: 0.694518260260704
+w_(0, 1) Training data R2: 0.7314315447799826
+w_(0, 1) Test data R2: 0.6996583642060618
+w_(0, 1) Training data R2: 0.7260691080826157
+w_(0, 1) Test data R2: 0.7274236440022112
+w_(0, 1) Training data R2: 0.7412187678526329
+w_(0, 1) Test data R2: 0.7857925914587824
+w_(0, 1) Training data R2: 0.15681250723417794
+w_(0, 1) Test data R2: 0.09483661773085272
+w_(1, 1) Training data R2: 0.061438643256155556
+w_(1, 1) Test data R2: 0.010832340927550366
+w_(1, 1) Training data R2: 0.12378889683760708
+w_(1, 1) Test data R2: 0.0
+w_(1, 3) Training data R2: 0.1275872788695791
+w_(1, 3) Test data R2: -0.07577629014686349

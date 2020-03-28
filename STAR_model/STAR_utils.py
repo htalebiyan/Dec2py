@@ -158,7 +158,9 @@ def prepare_data(samples,initial_net,keys):
     y_n_t_1={}  # connected nodes
     for key, val in selected_nodes.items():
         w_t[key]=selected_nodes[key][1:,:]
-        w_t_1[key]=selected_nodes[key][:-1,:]  
+        w_t_1[key] = np.zeros((T-1,noSamples))
+        for t in range(T-1):
+            w_t_1[key][t,:]+=selected_nodes[key][:t+1,:].sum(axis=0)/(t+1.0)  
     for key, val in selected_arcs.items():
         y_t[key]=selected_arcs[key][1:,:]
         y_t_1[key]=selected_arcs[key][:-1,:]
@@ -230,13 +232,13 @@ def prepare_data(samples,initial_net,keys):
             train_df = pd.DataFrame(columns=cols)
             for s in range(noSamples):
                 for t in range(T-1):
-                    if w_t[key][t,s]==1 and w_t_1[key][t,s]==1:
+                    if w_t[key][t,s]==1 and w_t_1[key][t,s]>0:
                         pass
                     else:
                         row = np.array([w_t[key][t,s],w_t_1[key][t,s],w_n_t_1[key][t,s],
                                         w_a_t_1[key][t,s],w_d_t_1[key][t,s],
                                         w_h_t_1[int(key[-2])][t,s],
-                                        w_c_t_1[int(key[-2])][t,s],s,t+1])
+                                        w_c_t_1[int(key[-2])][t,s],s,(t+1)/float(T-1)])
                         temp = pd.Series(row,index=cols)
                         train_df=train_df.append(temp,ignore_index=True)
             node_data[key]=train_df 
@@ -281,7 +283,7 @@ def train_model(train_data):
 
         if key[0]=='w':
             with pm.Model() as logistic_model[key]:
-                pm.glm.GLM.from_formula('w_t ~ w_t_1 + w_n_t_1 + w_a_t_1 + w_d_t_1 + w_h_t_1 + w_c_t_1 + time',
+                pm.glm.GLM.from_formula('w_t~w_t_1+w_n_t_1+w_a_t_1+w_d_t_1+w_h_t_1+w_c_t_1+time',
                                         val,
                                         family=pm.glm.families.Binomial()) 
                 trace[key] = pm.sample(1500, tune=750,chains=4, cores=4)
@@ -356,7 +358,7 @@ def test_model(train_data,test_data,trace_all,model_all):
                 
             # test_data=train_data[key].iloc[[random.randint(0, train_data[key].shape[0]/2) for p in range(0, train_data[key].shape[0]/5)],:]
             with pm.Model() as logistic_model_test:
-                pm.glm.GLM.from_formula('w_t ~ w_t_1 + w_n_t_1+ w_a_t_1+w_d_t_1+w_h_t_1+w_c_t_1 +time',
+                pm.glm.GLM.from_formula('w_t ~ w_t_1 + w_n_t_1+ w_a_t_1+w_d_t_1+w_h_t_1+w_c_t_1+time',
                                         test_data[key],
                                         family=pm.glm.families.Binomial())
                 ppc_test = pm.sample_posterior_predictive(trace)

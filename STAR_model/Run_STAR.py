@@ -28,14 +28,17 @@ if __name__ == "__main__":
     #     sample_all[res]=samples
     # STAR_utils.save_initial_data(initial_net,samples)
     
-    # t_suf = '20200325'
+    # t_suf = ''
     # samples,initial_net = pickle.load(open('data'+t_suf+'/initial_data.pkl', "rb" ))     
     
     ''' Prepare training and testing datsets '''
-    keys=['w_(1, 1)'] #$samples.keys() #,'y_(2, 2),(11, 2)','y_(11, 2),(2, 2)'
+    keys=['w_(1, 3)'] #$samples.keys() #,'y_(2, 2),(11, 2)','y_(11, 2),(2, 2)'
     node_data,arc_data = STAR_utils.prepare_data(samples,initial_net,keys)
     train_data,test_data = STAR_utils.train_test_split(node_data,arc_data,keys)
     STAR_utils.save_prepared_data(train_data,test_data)
+    
+    # for key in keys:
+    #     sns.pairplot(node_data[key].drop(columns=['sample','w_t_1']))
     
     ''' train and test model'''        
     trace,model = STAR_utils.train_model(train_data) 
