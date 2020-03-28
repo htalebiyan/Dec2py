@@ -109,8 +109,6 @@ results/
 *.log
 *.spydata
 *.pkl
-/STAR_Model/Find_features_shelby_data_random_disruption.spydata
-/STAR_Model/temp.spydata
 /STAR_Model/models/
-/STAR_Model/traces/
-/STAR_Model/parameters/
+*.json
+*.npz

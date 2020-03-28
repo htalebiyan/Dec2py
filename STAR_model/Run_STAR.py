@@ -19,7 +19,6 @@ if __name__ == "__main__":
     
     # ''' Read all data '''
     # sample_all={}
-    # # network_objects_all={}
     # feature_all= {}
     # for res in v_r:
     #     params={"NUM_ITERATIONS":10,"OUTPUT_DIR":output_dir+'results/indp_results',
@@ -27,33 +26,33 @@ if __name__ == "__main__":
         
     #     samples,initial_net,_,_=STAR_utils.importData(params,failSce_param,layers) 
     #     sample_all[res]=samples
-    #     # network_objects_all[res]=network_objects
     # STAR_utils.save_initial_data(initial_net,samples)
-        
-    # ''' Prepare training and testing datsets '''
-    # keys=['w_(1, 2)','y_(2, 2),(11, 2)','y_(11, 2),(2, 2)'] #$samples.keys() 
-    # node_data,arc_data = STAR_utils.prepare_data(samples,res,initial_net,keys)
-    # train_data,test_data = STAR_utils.train_test_split(node_data,arc_data,keys)
-    # STAR_utils.save_prepared_data(train_data,test_data)
     
-    # ''' train and test model'''        
-    # trace,model = STAR_utils.train_model(train_data) 
-    # STAR_utils.save_traces(trace)
-    # ppc,ppc_test = STAR_utils.test_model(train_data,test_data,trace,model)
+    # t_suf = '20200325'
+    # samples,initial_net = pickle.load(open('data'+t_suf+'/initial_data.pkl', "rb" ))     
+    
+    ''' Prepare training and testing datsets '''
+    keys=['w_(1, 1)'] #$samples.keys() #,'y_(2, 2),(11, 2)','y_(11, 2),(2, 2)'
+    node_data,arc_data = STAR_utils.prepare_data(samples,initial_net,keys)
+    train_data,test_data = STAR_utils.train_test_split(node_data,arc_data,keys)
+    STAR_utils.save_prepared_data(train_data,test_data)
+    
+    ''' train and test model'''        
+    trace,model = STAR_utils.train_model(train_data) 
+    STAR_utils.save_traces(trace)
+    ppc,ppc_test = STAR_utils.test_model(train_data,test_data,trace,model)
 
     '''compare restoration plans'''  
-    t_suf = '20200323'
-    samples,initial_net = pickle.load(open('data'+t_suf+'/initial_data.pkl', "rb" ))
-    test_samples = [50,100,150,200,250,300,350,400,450]
-    no_prediction_samples=5
-    for res in v_r:
-        for s in test_samples:#failSce_param['sample_range']:
-            print '\nSample '+`s`,
-            network_object = copy.deepcopy(initial_net[0])
-            indp.add_random_failure_scenario(network_object,DAM_DIR=damage_dir,sample=s)
-            for pred_s in range(no_prediction_samples):
-                STAR_utils.compare_resotration(samples,s,res,network_object,
-                          failSce_param,initial_net,layers,output_dir,pred_s)    
+    # test_samples = [50,100,150,200,250,300,350,400,450]
+    # no_prediction_samples=5
+    # for res in v_r:
+    #     for s in test_samples:#failSce_param['sample_range']:
+    #         print '\nSample '+`s`,
+    #         network_object = copy.deepcopy(initial_net[0])
+    #         indp.add_random_failure_scenario(network_object,DAM_DIR=damage_dir,sample=s)
+    #         for pred_s in range(no_prediction_samples):
+    #             STAR_utils.compare_resotration(samples,s,res,network_object,
+    #                       failSce_param,initial_net,layers,output_dir,pred_s)    
         
     # cols_results=['sample','time','resource_cap','pred_sample','result_type','cost',
     #               'run_time','performance']

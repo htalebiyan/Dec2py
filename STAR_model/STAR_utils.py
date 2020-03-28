@@ -10,6 +10,8 @@ import flow
 import time
 import cPickle as pickle
 from infrastructure import *
+from operator import itemgetter 
+import seaborn as sns
 
 print('Running with PyMC3 version v.{}'.format(pm.__version__))
 
@@ -120,8 +122,8 @@ def read_restoration_plans(sample, m, i, results_dir,suffix=''):
 
 def collect_feature_data(samples,network_objects):
     return True
-    
-def prepare_data(samples,resCap,initial_net,keys):
+
+def prepare_data(samples,initial_net,keys):
     print('\nPreparing data:')
     names = samples.keys()
     noSamples = int(samples[names[0]].shape[1])
@@ -146,6 +148,11 @@ def prepare_data(samples,resCap,initial_net,keys):
     w_n_t_1={}  # neighbor nodes
     w_d_t_1={}  # dependee nodes
     w_a_t_1={}  # connected arcs
+    w_h_t_1={}  # highest demand nodes
+    w_c_t_1={}  # highest demand nodes
+    no_w_n={}  
+    no_w_d={}   
+    no_w_c={}  
     y_t={}
     y_t_1={}
     y_n_t_1={}  # connected nodes
@@ -154,24 +161,57 @@ def prepare_data(samples,resCap,initial_net,keys):
         w_t_1[key]=selected_nodes[key][:-1,:]  
     for key, val in selected_arcs.items():
         y_t[key]=selected_arcs[key][1:,:]
-        y_t_1[key]=selected_arcs[key][:-1,:] 
-       
-    for key, val in selected_nodes.items():           
+        y_t_1[key]=selected_arcs[key][:-1,:]
+        
+    for key in keys:           
         w_n_t_1[key] = np.zeros((T-1,noSamples))
         w_a_t_1[key] = np.zeros((T-1,noSamples))
         w_d_t_1[key] = np.zeros((T-1,noSamples))
-        for u,v,a in selected_g.edges_iter(data=True):
-            if 'w_'+`v` in keys or 'w_'+`u` in keys:
-                if not a['data']['inf_data'].is_interdep: 
-                    if 'w_'+`u`==key :
-                        w_n_t_1[key]+=w_t_1['w_'+`v`]/2.0 # Because each arc happens twice
-                        w_a_t_1[key]+=y_t_1['y_'+`v`+','+`u`]/2.0
-                    if 'w_'+`v`==key:
-                        w_n_t_1[key]+=w_t_1['w_'+`u`]/2.0
-                        w_a_t_1[key]+=y_t_1['y_'+`v`+','+`u`]/2.0
-                else:
-                    if 'w_'+`v`==key:
-                        w_d_t_1[key]+=1-w_t_1['w_'+`u`] # So that for non-dependent and those whose depndee nodes are functional, we get the same number
+        no_w_n[key]=0
+        no_w_d[key]=0
+    for u,v,a in selected_g.edges_iter(data=True):
+        if 'w_'+`v` in keys or 'w_'+`u` in keys:
+            if not a['data']['inf_data'].is_interdep: 
+                key = 'w_'+`u`
+                if key in keys:
+                    w_n_t_1[key]+=w_t_1['w_'+`v`]/2.0 # Because each arc happens twice
+                    w_a_t_1[key]+=y_t_1['y_'+`v`+','+`u`]/2.0
+                    no_w_n[key]+=0.5
+                key = 'w_'+`v`
+                if key in keys:
+                    w_n_t_1[key]+=w_t_1['w_'+`u`]/2.0
+                    w_a_t_1[key]+=y_t_1['y_'+`v`+','+`u`]/2.0
+                    no_w_n[key]+=0.5
+            else:
+                if 'w_'+`v`in keys:
+                    w_d_t_1['w_'+`v`]+=1-w_t_1['w_'+`u`] # o that for non-dependent and those whose depndee nodes are functional, we get the same number
+                    no_w_d['w_'+`v`]+=1
+    for key in keys:
+        w_n_t_1[key]/=no_w_n[key]
+        w_a_t_1[key]/=no_w_n[key] 
+        if no_w_d[key]!=0.0:
+            w_d_t_1[key]/=no_w_d[key]
+              
+    node_demand={}      
+    no_high_nodes=5                                   
+    for n,d in selected_g.nodes_iter(data=True):
+        if n[1] not in node_demand.keys():
+            node_demand[n[1]]={}
+            w_c_t_1[n[1]] = np.zeros((T-1,noSamples))
+            no_w_c[n[1]]=0 
+        node_demand[n[1]]['w_'+`n`]=abs(d['data']['inf_data'].demand)
+        w_c_t_1[n[1]]+=w_t_1['w_'+`n`]
+        no_w_c[n[1]]+=1
+        
+    for nn in node_demand.keys():
+        node_demand_highest = dict(sorted(node_demand[nn].items(), key = itemgetter(1),
+                                          reverse = True)[:no_high_nodes]) 
+        w_h_t_1[nn] = np.zeros((T-1,noSamples)) 
+        for nhd in node_demand_highest.keys():
+             w_h_t_1[nn]+=w_t_1[nhd]/no_high_nodes
+        
+        w_c_t_1[nn]/=no_w_c[nn]
+        
     update_progress(len(node_names),2*len(node_names+arc_names))
                      
     for u,v,a in selected_g.edges_iter(data=True):
@@ -183,20 +223,22 @@ def prepare_data(samples,resCap,initial_net,keys):
                 y_n_t_1[key]+=w_t_1['w_'+`u`]
     update_progress(len(node_names+arc_names),2*len(node_names+arc_names))
              
-    cols=['w_t','w_t_1','w_n_t_1','w_a_t_1','w_d_t_1','sample','time']
+    cols=['w_t','w_t_1','w_n_t_1','w_a_t_1','w_d_t_1','w_h_t_1','w_c_t_1','sample','time']
     node_data={}
     for key, val in selected_nodes.items():   
         if key in keys:
             train_df = pd.DataFrame(columns=cols)
             for s in range(noSamples):
                 for t in range(T-1):
-                    # if w_t[key][t,s]==1 and w_t_1[key][t,s]==1:
-                    #     pass
-                    # else:
-                    row = np.array([w_t[key][t,s],w_t_1[key][t,s],w_n_t_1[key][t,s],
-                                    w_a_t_1[key][t,s],w_d_t_1[key][t,s],s,t+1])
-                    temp = pd.Series(row,index=cols)
-                    train_df=train_df.append(temp,ignore_index=True)
+                    if w_t[key][t,s]==1 and w_t_1[key][t,s]==1:
+                        pass
+                    else:
+                        row = np.array([w_t[key][t,s],w_t_1[key][t,s],w_n_t_1[key][t,s],
+                                        w_a_t_1[key][t,s],w_d_t_1[key][t,s],
+                                        w_h_t_1[int(key[-2])][t,s],
+                                        w_c_t_1[int(key[-2])][t,s],s,t+1])
+                        temp = pd.Series(row,index=cols)
+                        train_df=train_df.append(temp,ignore_index=True)
             node_data[key]=train_df 
     update_progress(len(node_names)+len(node_names+arc_names),2*len(node_names+arc_names))
 
@@ -210,13 +252,13 @@ def prepare_data(samples,resCap,initial_net,keys):
             train_df = pd.DataFrame(columns=cols)
             for s in range(noSamples):
                 for t in range(T-1):
-                    # if w_t[key][t,s]==1 and w_t_1[key][t,s]==1:
-                    #     pass
-                    # else:
-                    row = np.array([y_t[key][t,s],y_t_1[key][t,s],y_n_t_1[key][t,s],
-                                   s,t+1])
-                    temp = pd.Series(row,index=cols)
-                    train_df=train_df.append(temp,ignore_index=True)
+                    if y_t[key][t,s]==1 and y_t_1[key][t,s]==1:
+                        pass
+                    else:
+                        row = np.array([y_t[key][t,s],y_t_1[key][t,s],y_n_t_1[key][t,s],
+                                       s,t+1])
+                        temp = pd.Series(row,index=cols)
+                        train_df=train_df.append(temp,ignore_index=True)
             arc_data[key]=train_df 
     update_progress(2*len(node_names+arc_names),2*len(node_names+arc_names))        
     # data_all = pd.DataFrame(columns=cols)
@@ -230,22 +272,25 @@ def train_model(train_data):
     logistic_model={}
     trace={}
     t_suf = time.strftime("%Y%m%d")
+    folder_name = 'parameters'+t_suf
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
     for key, val in train_data.items():
-        if train_data.keys().index(key)%10==0:
-            update_progress(train_data.keys().index(key),len(train_data.keys()))
+        # if train_data.keys().index(key)%10==0:
+        update_progress(train_data.keys().index(key),len(train_data.keys()))
 
-        if key[0]=='w':#[-2]==`2`:
+        if key[0]=='w':
             with pm.Model() as logistic_model[key]:
-                pm.glm.GLM.from_formula('w_t ~ w_t_1 + w_n_t_1 + w_a_t_1 + w_d_t_1 + time',
+                pm.glm.GLM.from_formula('w_t ~ w_t_1 + w_n_t_1 + w_a_t_1 + w_d_t_1 + w_h_t_1 + w_c_t_1 + time',
                                         val,
                                         family=pm.glm.families.Binomial()) 
                 trace[key] = pm.sample(1500, tune=750,chains=4, cores=4)
                 estParam = pm.summary(trace[key]).round(4)
                 print(estParam)     
-                estParam.to_csv('parameters'+t_suf+'/model_parameters_'+key+'.txt',
+                estParam.to_csv(folder_name+'/model_parameters_'+key+'.txt',
                                 header=True, index=True, sep=' ', mode='w')
                 # pm.model_to_graphviz(logistic_model[key]).render(filename='Parameters\\model_graph_%s'%(key,))
-        if key[0]=='y':#[-2]==`2`:
+        if key[0]=='y':
             with pm.Model() as logistic_model[key]:
                 pm.glm.GLM.from_formula('y_t ~ y_t_1 + y_n_t_1 + time',
                                         val,
@@ -253,7 +298,7 @@ def train_model(train_data):
                 trace[key] = pm.sample(1500, tune=750,chains=4, cores=4)
                 estParam = pm.summary(trace[key]).round(4)
                 print(estParam)     
-                estParam.to_csv('parameters'+t_suf+'/model_parameters_'+key+'.txt',
+                estParam.to_csv(folder_name+'/model_parameters_'+key+'.txt',
                                 header=True, index=True, sep=' ', mode='w')
                 # pm.model_to_graphviz(logistic_model[key]).render(filename='Parameters\\model_graph_%s'%(key,))
 
@@ -264,81 +309,82 @@ def test_model(train_data,test_data,trace_all,model_all):
 #    plt.rcParams.update({'font.size': 14})
 #    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     
-    # plt.close('all')
+    plt.close('all')
+    t_suf = time.strftime("%Y%m%d")
+    folder_name = 'parameters'+t_suf
     for key, val in train_data.items():
         trace = trace_all[key]
         model = model_all[key]
         ''' Traceplot '''
-        # pm.traceplot(trace, combined=False) 
+        pm.traceplot(trace, combined=False) 
         
         ''' Generate and plot samples from the trained model '''
         ppc = pm.sample_posterior_predictive(trace, samples=1000, model=model)
              
         
         ''' Acceptance rate '''
-        # f, ax = plt.subplots(2, 2)
+        f, ax = plt.subplots(2, 2)
         accept = trace.get_sampler_stats('mean_tree_accept', burn=0)
-        # sns.distplot(accept, kde=False, ax=ax[0,0])
-        # ax[0,0].set_title('Distribution of Tree Acceptance Rate')
+        sns.distplot(accept, kde=False, ax=ax[0,0])
+        ax[0,0].set_title('Distribution of Tree Acceptance Rate')
         print 'Mean Acceptance rate: '+ `accept.mean()`
-        # print 'Index of all diverging transitions: '+ `trace['diverging'].nonzero()`
-        # print 'No of diverging transitions: '+ `len(trace['diverging'].nonzero()[0])`
+        print 'Index of all diverging transitions: '+ `trace['diverging'].nonzero()`
+        print 'No of diverging transitions: '+ `len(trace['diverging'].nonzero()[0])`
     
         ''' Energy level '''
-        # energy = trace['energy']
-        # energy_diff = np.diff(energy)
-        # sns.distplot(energy - energy.mean(), label='energy',ax=ax[0,1])
-        # sns.distplot(energy_diff, label='energy diff',ax=ax[0,1])
-        # ax[0,1].set_title('Distribution of energy level vs. change of energy between successive samples')
-        # ax[0,1].legend()    
+        energy = trace['energy']
+        energy_diff = np.diff(energy)
+        sns.distplot(energy - energy.mean(), label='energy',ax=ax[0,1])
+        sns.distplot(energy_diff, label='energy diff',ax=ax[0,1])
+        ax[0,1].set_title('Distribution of energy level vs. change of energy between successive samples')
+        ax[0,1].legend()    
     
         
         ''' Prediction & data '''
         if key[0]=='w':
             x=np.array(train_data[key]['w_t'])
             y=ppc['y'].T.mean(axis=1)
-            # ax[1,0].scatter(x,y,alpha=0.1)
-            # ax[1,0].plot([0,1],[0,1],'r')
-            # ax[1,0].set_title('Data vs. Prediction: training data ')    
-            # ax[1,0].set_xlabel('data')
-            # ax[1,0].set_ylabel('Mean Prediction')
-            with open('Parameters\\R2.txt', mode='a') as f:
+            ax[1,0].scatter(x,y,alpha=0.1)
+            ax[1,0].plot([0,1],[0,1],'r')
+            ax[1,0].set_title('Data vs. Prediction: training data ')    
+            ax[1,0].set_xlabel('data')
+            ax[1,0].set_ylabel('Mean Prediction')
+            with open(folder_name+'/R2.txt', mode='a') as f:
                 print('\n'+key+' Training data R2: '+`sklearn.metrics.r2_score(x,y)`)
                 f.write('\n'+key+' Training data R2: '+`sklearn.metrics.r2_score(x,y)`)
                 f.close()
                 
             # test_data=train_data[key].iloc[[random.randint(0, train_data[key].shape[0]/2) for p in range(0, train_data[key].shape[0]/5)],:]
             with pm.Model() as logistic_model_test:
-                pm.glm.GLM.from_formula('w_t ~ w_t_1 + w_n_t_1+ w_a_t_1+w_d_t_1+time',
+                pm.glm.GLM.from_formula('w_t ~ w_t_1 + w_n_t_1+ w_a_t_1+w_d_t_1+w_h_t_1+w_c_t_1 +time',
                                         test_data[key],
                                         family=pm.glm.families.Binomial())
                 ppc_test = pm.sample_posterior_predictive(trace)
                 x=np.array(test_data[key]['w_t'])
                 y=ppc_test['y'].T.mean(axis=1)     
-                # ax[1,1].scatter(x,y,alpha=0.2)
-                # ax[1,1].plot([0,1],[0,1],'r')
-                # ax[1,1].set_title('Data vs. Prediction: test data ')  
-                # ax[1,1].set_xlabel('data')
-                # ax[1,1].set_ylabel('Mean Prediction')
-                with open('Parameters\\R2.txt', mode='a') as f:
+                ax[1,1].scatter(x,y,alpha=0.2)
+                ax[1,1].plot([0,1],[0,1],'r')
+                ax[1,1].set_title('Data vs. Prediction: test data ')  
+                ax[1,1].set_xlabel('data')
+                ax[1,1].set_ylabel('Mean Prediction')
+                with open(folder_name+'/R2.txt', mode='a') as f:
                     print('\n'+key+' Test data R2: '+`sklearn.metrics.r2_score(x,y)`)
                     f.write('\n'+key+' Test data R2: '+`sklearn.metrics.r2_score(x,y)`)
                     f.close()
-        # diff_pred_train_data = np.subtract(ppc['y'], np.array(train_data[key]['x_t']).T).T
+
         if key[0]=='y':
             x=np.array(train_data[key]['y_t'])
             y=ppc['y'].T.mean(axis=1)
-            # ax[1,0].scatter(x,y,alpha=0.1)
-            # ax[1,0].plot([0,1],[0,1],'r')
-            # ax[1,0].set_title('Data vs. Prediction: training data ')    
-            # ax[1,0].set_xlabel('data')
-            # ax[1,0].set_ylabel('Mean Prediction')
-            with open('Parameters\\R2.txt', mode='a') as f:
+            ax[1,0].scatter(x,y,alpha=0.1)
+            ax[1,0].plot([0,1],[0,1],'r')
+            ax[1,0].set_title('Data vs. Prediction: training data ')    
+            ax[1,0].set_xlabel('data')
+            ax[1,0].set_ylabel('Mean Prediction')
+            with open(folder_name+'/R2.txt', mode='a') as f:
                 print('\n'+key+' Training data R2: '+`sklearn.metrics.r2_score(x,y)`)
                 f.write('\n'+key+' Training data R2: '+`sklearn.metrics.r2_score(x,y)`)
                 f.close()
                 
-            # test_data=train_data[key].iloc[[random.randint(0, train_data[key].shape[0]/2) for p in range(0, train_data[key].shape[0]/5)],:]
             with pm.Model() as logistic_model_test:
                 pm.glm.GLM.from_formula('y_t ~ y_t_1 + y_n_t_1+time',
                                         test_data[key],
@@ -346,12 +392,12 @@ def test_model(train_data,test_data,trace_all,model_all):
                 ppc_test = pm.sample_posterior_predictive(trace)
                 x=np.array(test_data[key]['y_t'])
                 y=ppc_test['y'].T.mean(axis=1)     
-                # ax[1,1].scatter(x,y,alpha=0.2)
-                # ax[1,1].plot([0,1],[0,1],'r')
-                # ax[1,1].set_title('Data vs. Prediction: test data ')  
-                # ax[1,1].set_xlabel('data')
-                # ax[1,1].set_ylabel('Mean Prediction')
-                with open('Parameters\\R2.txt', mode='a') as f:
+                ax[1,1].scatter(x,y,alpha=0.2)
+                ax[1,1].plot([0,1],[0,1],'r')
+                ax[1,1].set_title('Data vs. Prediction: test data ')  
+                ax[1,1].set_xlabel('data')
+                ax[1,1].set_ylabel('Mean Prediction')
+                with open(folder_name+'/R2.txt', mode='a') as f:
                     print('\n'+key+' Test data R2: '+`sklearn.metrics.r2_score(x,y)`)
                     f.write('\n'+key+' Test data R2: '+`sklearn.metrics.r2_score(x,y)`)
                     f.close()
@@ -500,8 +546,11 @@ def save_prepared_data(train_data,test_data):
 def save_traces(trace):
     t_suf = time.strftime("%Y%m%d")
     fname={}
+    folder_name = 'traces'+t_suf
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
     for key,val in trace.items():
-        fname[key]=pm.save_trace(trace[key],directory='./traces'+t_suf+'/'+key,overwrite=True)  
+        fname[key]=pm.save_trace(trace[key],directory=folder_name+'/'+key,overwrite=True)  
 
 def logistic(l):
     return 1 / (1 + pm.math.exp(-l))
