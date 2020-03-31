@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # samples,initial_net = pickle.load(open('data'+t_suf+'/initial_data.pkl', "rb" ))     
     
     ''' Prepare training and testing datsets '''
-    keys=['w_(1, 3)'] #$samples.keys() #,'y_(2, 2),(11, 2)','y_(11, 2),(2, 2)'
+    keys=['w_(1, 1)','y_(2, 2),(11, 2)','y_(11, 2),(2, 2)']#,'w_(11, 2)','w_(22, 3)','w_(8, 4)'] #$samples.keys() #,'y_(2, 2),(11, 2)','y_(11, 2),(2, 2)'
     node_data,arc_data = STAR_utils.prepare_data(samples,initial_net,keys)
     train_data,test_data = STAR_utils.train_test_split(node_data,arc_data,keys)
     STAR_utils.save_prepared_data(train_data,test_data)
@@ -40,10 +40,10 @@ if __name__ == "__main__":
     # for key in keys:
     #     sns.pairplot(node_data[key].drop(columns=['sample','w_t_1']))
     
-    ''' train and test model'''        
-    trace,model = STAR_utils.train_model(train_data) 
-    STAR_utils.save_traces(trace)
-    ppc,ppc_test = STAR_utils.test_model(train_data,test_data,trace,model)
+    # ''' train and test model'''        
+    # trace,model = STAR_utils.train_model(train_data) 
+    # STAR_utils.save_traces(trace)
+    # ppc,ppc_test = STAR_utils.test_model(train_data,test_data,trace,model)
 
     '''compare restoration plans'''  
     # test_samples = [50,100,150,200,250,300,350,400,450]

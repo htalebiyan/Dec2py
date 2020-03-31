@@ -6,6 +6,7 @@ increasing order in terms of p. For example, the first 10 samples have p=1%,
 the second 10 samples have p=2%, and so on and so forth.
 '''
 import numpy as np
+import matplotlib.pyplot as plt
 
 p_values = np.linspace(0.01,0.99,99)
 node_samples=[]
@@ -36,3 +37,8 @@ for p in p_values:
 #             print((v,u))
 #     elif (v,u) not in edges:       
 #         edges.append(i)
+        
+ax=plt.imshow(node_samples)      
+plt.xlabel('scenario')
+plt.ylabel('element')  
+plt.xlim(0,500)

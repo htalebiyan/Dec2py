@@ -149,26 +149,17 @@ def prepare_data(samples,initial_net,keys):
     w_d_t_1={}  # dependee nodes
     w_a_t_1={}  # connected arcs
     w_h_t_1={}  # highest demand nodes
-    w_c_t_1={}  # highest demand nodes
     no_w_n={}  
     no_w_d={}   
     no_w_c={}  
     y_t={}
     y_t_1={}
     y_n_t_1={}  # connected nodes
-    for key, val in selected_nodes.items():
-        w_t[key]=selected_nodes[key][1:,:]
-        w_t_1[key] = np.zeros((T-1,noSamples))
-        for t in range(T-1):
-            w_t_1[key][t,:]+=selected_nodes[key][:t+1,:].sum(axis=0)/(t+1.0)  
-    for key, val in selected_arcs.items():
-        y_t[key]=selected_arcs[key][1:,:]
-        y_t_1[key]=selected_arcs[key][:-1,:]
-        
+       
     for key in keys:           
-        w_n_t_1[key] = np.zeros((T-1,noSamples))
-        w_a_t_1[key] = np.zeros((T-1,noSamples))
-        w_d_t_1[key] = np.zeros((T-1,noSamples))
+        w_n_t_1[key] = []
+        w_a_t_1[key] = []
+        w_d_t_1[key] = []
         no_w_n[key]=0
         no_w_d[key]=0
     for u,v,a in selected_g.edges_iter(data=True):
@@ -176,69 +167,65 @@ def prepare_data(samples,initial_net,keys):
             if not a['data']['inf_data'].is_interdep: 
                 key = 'w_'+`u`
                 if key in keys:
-                    w_n_t_1[key]+=w_t_1['w_'+`v`]/2.0 # Because each arc happens twice
-                    w_a_t_1[key]+=y_t_1['y_'+`v`+','+`u`]/2.0
+                    if 'w_'+`v` not in w_n_t_1[key]:
+                        w_n_t_1[key].append('w_'+`v`)
+                    if 'y_'+`v`+','+`u` not in w_a_t_1[key] and 'y_'+`u`+','+`v` not in w_a_t_1[key]:
+                        w_a_t_1[key].append('y_'+`v`+','+`u`)
                     no_w_n[key]+=0.5
                 key = 'w_'+`v`
                 if key in keys:
-                    w_n_t_1[key]+=w_t_1['w_'+`u`]/2.0
-                    w_a_t_1[key]+=y_t_1['y_'+`v`+','+`u`]/2.0
+                    if 'w_'+`u` not in w_n_t_1[key]:
+                        w_n_t_1[key].append('w_'+`u`)
+                    if 'y_'+`v`+','+`u` not in w_a_t_1[key] and 'y_'+`u`+','+`v` not in w_a_t_1[key]:
+                        w_a_t_1[key].append('y_'+`v`+','+`u`)
                     no_w_n[key]+=0.5
             else:
                 if 'w_'+`v`in keys:
-                    w_d_t_1['w_'+`v`]+=1-w_t_1['w_'+`u`] # o that for non-dependent and those whose depndee nodes are functional, we get the same number
-                    no_w_d['w_'+`v`]+=1
-    for key in keys:
-        w_n_t_1[key]/=no_w_n[key]
-        w_a_t_1[key]/=no_w_n[key] 
-        if no_w_d[key]!=0.0:
-            w_d_t_1[key]/=no_w_d[key]
-              
+                    w_d_t_1['w_'+`v`].append('w_'+`u`) # o that for non-dependent and those whose depndee nodes are functional, we get the same number
+                    no_w_d['w_'+`v`]+=1              
     node_demand={}      
     no_high_nodes=5                                   
     for n,d in selected_g.nodes_iter(data=True):
         if n[1] not in node_demand.keys():
             node_demand[n[1]]={}
-            w_c_t_1[n[1]] = np.zeros((T-1,noSamples))
             no_w_c[n[1]]=0 
         node_demand[n[1]]['w_'+`n`]=abs(d['data']['inf_data'].demand)
-        w_c_t_1[n[1]]+=w_t_1['w_'+`n`]
         no_w_c[n[1]]+=1
         
     for nn in node_demand.keys():
         node_demand_highest = dict(sorted(node_demand[nn].items(), key = itemgetter(1),
                                           reverse = True)[:no_high_nodes]) 
-        w_h_t_1[nn] = np.zeros((T-1,noSamples)) 
-        for nhd in node_demand_highest.keys():
-             w_h_t_1[nn]+=w_t_1[nhd]/no_high_nodes
-        
-        w_c_t_1[nn]/=no_w_c[nn]
+        w_h_t_1[nn]=node_demand_highest
         
     update_progress(len(node_names),2*len(node_names+arc_names))
                      
-    for u,v,a in selected_g.edges_iter(data=True):
-        if not a['data']['inf_data'].is_interdep:
-            key = 'y_'+`u`+','+`v`               
-            if key in keys:
-                y_n_t_1[key] = np.zeros((T-1,noSamples))
-                y_n_t_1[key]+=w_t_1['w_'+`v`]
-                y_n_t_1[key]+=w_t_1['w_'+`u`]
-    update_progress(len(node_names+arc_names),2*len(node_names+arc_names))
+    # for u,v,a in selected_g.edges_iter(data=True):
+    #     if not a['data']['inf_data'].is_interdep:
+    #         key = 'y_'+`u`+','+`v`               
+    #         if key in keys:
+    #             y_n_t_1[key] = np.zeros((T-1,noSamples))
+    #             y_n_t_1[key]+=w_t_1['w_'+`v`]
+    #             y_n_t_1[key]+=w_t_1['w_'+`u`]
+    # update_progress(len(node_names+arc_names),2*len(node_names+arc_names))
              
-    cols=['w_t','w_t_1','w_n_t_1','w_a_t_1','w_d_t_1','w_h_t_1','w_c_t_1','sample','time']
     node_data={}
     for key, val in selected_nodes.items():   
         if key in keys:
+            cols=['w_t','w_t_1','sample','time']+w_n_t_1[key]+w_a_t_1[key]+w_d_t_1[key]+w_h_t_1[int(key[-2])].keys()
             train_df = pd.DataFrame(columns=cols)
             for s in range(noSamples):
                 for t in range(T-1):
-                    if w_t[key][t,s]==1 and w_t_1[key][t,s]>0:
+                    if selected_nodes[key][t+1,s]==1 and selected_nodes[key][t,s]>0:
                         pass
                     else:
-                        row = np.array([w_t[key][t,s],w_t_1[key][t,s],w_n_t_1[key][t,s],
-                                        w_a_t_1[key][t,s],w_d_t_1[key][t,s],
-                                        w_h_t_1[int(key[-2])][t,s],
-                                        w_c_t_1[int(key[-2])][t,s],s,(t+1)/float(T-1)])
+                        temp1 = [selected_nodes[w_n_t_1[key][i]][t,s] for i in range(int(no_w_n[key]))]
+                        temp2 = [selected_arcs[w_a_t_1[key][i]][t,s] for i in range(int(no_w_n[key]))]
+                        temp3 = [selected_nodes[w_d_t_1[key][i]][t,s] for i in range(int(no_w_d[key]))]
+                        temp4 = [selected_nodes[w_h_t_1[int(key[-2])].keys()[i]][t,s] for i in range(no_high_nodes)]
+                        row = np.array([selected_nodes[key][t+1,s],
+                                        selected_nodes[key][t,s],
+                                        s,(t+1)/float(T-1)]+
+                                       temp1+temp2+temp3+temp4)
                         temp = pd.Series(row,index=cols)
                         train_df=train_df.append(temp,ignore_index=True)
             node_data[key]=train_df 
@@ -246,22 +233,22 @@ def prepare_data(samples,initial_net,keys):
 
     cols=['y_t','y_t_1','y_n_t_1','sample','time']
     arc_data={}
-    for key, val in selected_arcs.items():
-        if arc_names.index(key)%25==0:
-            update_progress(arc_names.index(key),len(arc_names))
+    # for key, val in selected_arcs.items():
+    #     if arc_names.index(key)%25==0:
+    #         update_progress(arc_names.index(key),len(arc_names))
 
-        if key in keys:
-            train_df = pd.DataFrame(columns=cols)
-            for s in range(noSamples):
-                for t in range(T-1):
-                    if y_t[key][t,s]==1 and y_t_1[key][t,s]==1:
-                        pass
-                    else:
-                        row = np.array([y_t[key][t,s],y_t_1[key][t,s],y_n_t_1[key][t,s],
-                                       s,t+1])
-                        temp = pd.Series(row,index=cols)
-                        train_df=train_df.append(temp,ignore_index=True)
-            arc_data[key]=train_df 
+    #     if key in keys:
+    #         train_df = pd.DataFrame(columns=cols)
+    #         for s in range(noSamples):
+    #             for t in range(T-1):
+    #                 if y_t[key][t,s]==1 and y_t_1[key][t,s]==1:
+    #                     pass
+    #                 else:
+    #                     row = np.array([y_t[key][t,s],y_t_1[key][t,s],y_n_t_1[key][t,s],
+    #                                    s,t+1])
+    #                     temp = pd.Series(row,index=cols)
+    #                     train_df=train_df.append(temp,ignore_index=True)
+    #         arc_data[key]=train_df 
     update_progress(2*len(node_names+arc_names),2*len(node_names+arc_names))        
     # data_all = pd.DataFrame(columns=cols)
     # # for key, val in data.items():   
@@ -283,8 +270,16 @@ def train_model(train_data):
 
         if key[0]=='w':
             with pm.Model() as logistic_model[key]:
-                pm.glm.GLM.from_formula('w_t~w_t_1+w_n_t_1+w_a_t_1+w_d_t_1+w_h_t_1+w_c_t_1+time',
-                                        val,
+                rename_dict={}
+                for varName in val.columns.tolist():
+                    rename_dict[varName]=varName.replace('(','').replace(')',"").replace(' ','').replace(',','_')
+                val2 = val.rename(rename_dict, axis=1)  # new method
+                temp =''
+                for varName in val2.columns.tolist():
+                    if varName not in ['sample','w_t','w_t_1','w_19_1','w_2_1','w_26_3','y_1_1_2_1','w_3_1','w_24_1']:
+                        temp+=varName+'+'
+                pm.glm.GLM.from_formula('w_t~'+temp[:-1],
+                                        val2,
                                         family=pm.glm.families.Binomial()) 
                 trace[key] = pm.sample(1500, tune=750,chains=4, cores=4)
                 estParam = pm.summary(trace[key]).round(4)
@@ -358,11 +353,19 @@ def test_model(train_data,test_data,trace_all,model_all):
                 
             # test_data=train_data[key].iloc[[random.randint(0, train_data[key].shape[0]/2) for p in range(0, train_data[key].shape[0]/5)],:]
             with pm.Model() as logistic_model_test:
-                pm.glm.GLM.from_formula('w_t ~ w_t_1 + w_n_t_1+ w_a_t_1+w_d_t_1+w_h_t_1+w_c_t_1+time',
-                                        test_data[key],
-                                        family=pm.glm.families.Binomial())
+                rename_dict={}
+                for varName in test_data[key].columns.tolist():
+                    rename_dict[varName]=varName.replace('(','').replace(')',"").replace(' ','').replace(',','_')
+                val2 = test_data[key].rename(rename_dict, axis=1)  # new method
+                temp =''
+                for varName in val2.columns.tolist():
+                    if varName not in ['sample','w_t','w_t_1','w_19_1','w_2_1','w_26_3','y_1_1_2_1','w_3_1','w_24_1']:
+                        temp+=varName+'+'
+                pm.glm.GLM.from_formula('w_t~'+temp[:-1],
+                                        val2,
+                                        family=pm.glm.families.Binomial()) 
                 ppc_test = pm.sample_posterior_predictive(trace)
-                x=np.array(test_data[key]['w_t'])
+                x=np.array(val2['w_t'])
                 y=ppc_test['y'].T.mean(axis=1)     
                 ax[1,1].scatter(x,y,alpha=0.2)
                 ax[1,1].plot([0,1],[0,1],'r')
