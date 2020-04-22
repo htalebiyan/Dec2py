@@ -786,17 +786,3 @@ def plot_correlation(node_data,keys,exclusions):
     sns.heatmap(plot_df,annot=True, center=0, cmap="vlag",linewidths=.75)
     sns.clustermap(plot_df, cmap="vlag")
     
-def replace_labels(df, col):
-    rename_dict={"Intercept": r'$\alpha$',
-                 "w_n_t_1": r'$\beta_{1,i}$ (neighbor nodes)',
-                 "w_a_t_1": r'$\beta_{2,i}$ (connected arcs)',
-                 "w_d_t_1": r'$\beta_{3,i}$ (dependee nodes)',
-                 "w_c_t_1": r'$\beta_{4,i}$ (all nodes)',
-                 "y_c_t_1": r'$\beta_{5,i}$ (all arcs)',
-                 "Node": r'$\gamma_{1,i}$ (Node cost)',
-                 "Arc": r'$\gamma_{2,i}$ (Arc cost)',
-                 "Under_Supply": r'$\gamma_{3,i}$ (Demand penalty)',
-                 "Flow": r'$\gamma_{4,i}$ (Flow cost)'}
-    for i in df[col].unique():
-        df=df.replace(i,rename_dict[i])
-    return df

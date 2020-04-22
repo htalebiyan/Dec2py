@@ -36,12 +36,12 @@ if __name__ == "__main__":
     # save_initial_data(initial_net,samples,costs,costs_local)
 
     ''' Prepare training and testing datsets '''
-    from os import listdir
-    from os.path import isfile, join
-    mypath='parameters20200419/'
-    files = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f))]
-    keys= [x for x in samples.keys() if (x[0]=='w' and x not in files)] 
-    # keys = ['w_(1, 4)']   #samples.keys()   #['y_(2, 2),(11, 2)','y_(11, 2),(2, 2)'] 
+    # from os import listdir
+    # from os.path import isfile, join
+    # mypath='parameters20200419/'
+    # files = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f))]
+    # keys= [x for x in samples.keys() if (x[0]=='w' and x not in files)] 
+    keys = ['w_(1, 4)']   #samples.keys()   #['y_(2, 2),(11, 2)','y_(11, 2),(2, 2)'] 
     
     # node_data,arc_data = prepare_data(samples,costs,costs_local,initial_net,keys)
     # train_data,test_data = train_test_split(node_data,arc_data,keys)
@@ -64,92 +64,16 @@ if __name__ == "__main__":
     # plot_correlation(node_data,keys,exclusions)
     
     '''compare restoration plans'''  
-    test_samples =range(250,450,10) #[50,100,150,200,250,300,350,400]
-    no_prediction_samples=1
-    t_suf = '20200419'
-    model_folder='./traces'+t_suf
-    param_folder ='./parameters'+t_suf
-    for res in v_r:
-        for s in test_samples:#failSce_param['sample_range']:
-            print '\nSample '+`s`,
-            for pred_s in range(0,no_prediction_samples):
-                network_object = copy.deepcopy(initial_net[0])
-                indp.add_random_failure_scenario(network_object,DAM_DIR=damage_dir,sample=s)
-                compare_resotration(pred_s,samples,costs,costs_local,s,res,network_object,failSce_param,
-                                    initial_net,layers,output_dir,model_folder,param_folder)    
-                
-    # t_suf = '20200419'    
-
-    # cols_results=['sample','time','resource_cap','pred_sample','result_type','cost',
-    #               'run_time','performance']    
-    # folder_name = 'results'+t_suf
-    # result_df=pd.read_csv(folder_name+'/results'+t_suf+'.txt',delimiter='\t',
-    #                       names=cols_results,index_col=False)                   
-    # figure_df = result_df#[result_df['sample']==200]
-    # sns.lineplot(x="time", y="cost",style='result_type',
-    #               data=figure_df[figure_df['result_type']=='predicted'])
-    # sns.lineplot(x="time", y="cost",data=figure_df[figure_df['result_type']=='data'])
-
-    # cols_results=['sample','element','resource_cap','pred_sample','real_repair_time',
-    #               'predicted_repair_time','prediction_error']    
-    # folder_name = 'results'+t_suf
-    # result_df=pd.read_csv(folder_name+'/pred_error'+t_suf+'.txt',delimiter='\t',
-    #                       names=cols_results,index_col=False)
-    # plt.figure()                   
-    # figure_df = result_df#[result_df['sample']==200]
-    # for index, row in figure_df.iterrows():
-    #     if row['element'][0]=='y':
-    #         figure_df=figure_df.drop(index=index)
-    # figure_df=figure_df.reset_index()
-    # sns.boxplot(x="real_repair_time", y="prediction_error",data=figure_df,palette="muted", whis=1)
-    # plt.ylim((-10,10))
-    # plt.figure() 
-    # sns.distplot(figure_df['prediction_error'], kde=False, rug=False)
-    # plt.xlim((-15,15))
-
-    # cols_results=['sample','time','resource_cap','pred_sample','real_repair_perc',
-    #               'predicted_repair_perc'] 
-    # plt.figure()    
-    # folder_name = 'results'+t_suf
-    # result_df=pd.read_csv(folder_name+'/rep_prec'+t_suf+'.txt',delimiter='\t',
-    #                       names=cols_results,index_col=False)                   
-    # figure_df = result_df#[result_df['sample']==200]
-    # sns.lineplot(x="time", y="real_repair_perc",data=figure_df,palette="muted",ci=95)
-    # sns.lineplot(x="time", y="predicted_repair_perc",data=figure_df,palette="muted",ci=95)  
-    
-    '''Analyze the coefficients''' 
+    # test_samples =range(250,450,10) #[50,100,150,200,250,300,350,400]
+    # no_prediction_samples=1
     # t_suf = '20200419'
-    # keys = samples.keys() 
-    # node_params=pd.DataFrame(columns=['key','name','mean','sd','mc_error','hpd_2.5','hpd_97.5','n_eff','Rhat'])
-    # arc_params=pd.DataFrame(columns=['key','name','mean','sd','mc_error','hpd_2.5','hpd_97.5','n_eff','Rhat'])
-    # for key in keys:
-    #     if key[0]=='w':
-    #         filename= 'parameters'+t_suf+'/model_parameters_'+key+'.txt'
-    #         paramters = result_df=pd.read_csv(filename,delimiter=' ',index_col=False) 
-    #         paramters=paramters.rename(columns={'Unnamed: 0': 'name'})
-    #         paramters['key']=key
-    #         node_params=pd.concat([node_params,paramters], axis=0, ignore_index=True)
-    #     if key[0]=='y':
-    #         filename= 'parameters'+t_suf+'/model_parameters_'+key+'.txt'
-    #         try: 
-    #             paramters = result_df=pd.read_csv(filename,delimiter=' ',index_col=False) 
-    #             paramters=paramters.rename(columns={'Unnamed: 0': 'name'})
-    #             paramters['key']=key
-    #             arc_params=pd.concat([arc_params,paramters], axis=0, ignore_index=True)
-    #         except:
-    #             pass
-    # node_params['cov'] =abs(node_params['sd']/node_params['mean'])
-    # node_params_filtered=node_params[(node_params['mc_error']<0.1) & (abs(node_params['Rhat']-1)<0.005)]
-    # node_params_filtered=replace_labels(node_params_filtered, 'name')
-    # ax=sns.boxplot(y="name", x="mean",data=node_params_filtered, whis=1,fliersize=1,linewidth=1,
-    #                 palette=sns.cubehelix_palette(25))
-    # ax.set_xlim((-15,15))
-    
-    # plt.figure()    
-    # arc_params['cov'] =abs(arc_params['sd']/arc_params['mean'])
-    # ax=sns.boxplot(y="name", x="mean",data=arc_params, whis=1,fliersize=1,linewidth=1,
-    #                 palette=sns.cubehelix_palette(25))
-    # ax.set_xlim((-25,25))
-        
-    # sns.pairplot(node_params_filtered.drop(columns=['hpd_2.5','hpd_97.5']),
-    #     kind='reg', plot_kws={'line_kws':{'color':'red'}, 'scatter_kws': {'alpha': 0.1}})
+    # model_folder='./traces'+t_suf
+    # param_folder ='./parameters'+t_suf
+    # for res in v_r:
+    #     for s in test_samples:#failSce_param['sample_range']:
+    #         print '\nSample '+`s`,
+    #         for pred_s in range(0,no_prediction_samples):
+    #             network_object = copy.deepcopy(initial_net[0])
+    #             indp.add_random_failure_scenario(network_object,DAM_DIR=damage_dir,sample=s)
+    #             compare_resotration(pred_s,samples,costs,costs_local,s,res,network_object,failSce_param,
+    #                                 initial_net,layers,output_dir,model_folder,param_folder)    
