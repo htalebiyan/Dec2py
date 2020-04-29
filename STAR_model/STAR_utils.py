@@ -18,8 +18,8 @@ import multiprocessing
 from functools import partial
 print('Running with PyMC3 version v.{}'.format(pm.__version__))
 
-def importData(params,failSce_param,layers):  
-    print('Importing data:')
+def importData(params,failSce_param,layers,suffix=''):  
+    print('\nNumber of resources: '+`params["V"]`)
     # Set root directories
     base_dir = failSce_param['Base_dir']
     damage_dir = failSce_param['Damage_dir'] 
@@ -39,41 +39,52 @@ def importData(params,failSce_param,layers):
     
     samples={}
     costs = {}
-    costs_local = {i:{} for i in layers}
-    # network_objects={}
     initial_net = {}
+    
+    t_suf = time.strftime("%Y%m%d")
+    folder_name = 'data'+t_suf
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)  
+        
     for m in failSce_param['mags']:    
         for i in failSce_param['sample_range']:
-            if failSce_param['filtered_List']==None or len(listHD.loc[(listHD.set == i) & (listHD.sce == m)].index):
-#                print '\n---Running Magnitude '+`m`+' sample '+`i`+'...'
-            
-                # print("Initializing network...")
-                if (i-failSce_param['sample_range'][0]+1)%2==0:
-                    update_progress(i-failSce_param['sample_range'][0]+1,len(failSce_param['sample_range']))
-
-                if not shelby_data:  
-                    InterdepNet,noResource,layers=initialize_network(BASE_DIR=base_dir,external_interdependency_dir=ext_interdependency,magnitude=m,sample=i,shelby_data=shelby_data,topology=topology) 
-                    params["V"]=noResource
-                else:  
-                    InterdepNet,_,_=initialize_network(BASE_DIR=base_dir,external_interdependency_dir=ext_interdependency,sim_number=0,magnitude=6,sample=0,v=params["V"],shelby_data=shelby_data)                    
-                params["N"]=InterdepNet
-                params["SIM_NUMBER"]=i
-                params["MAGNITUDE"]=m
-                if not initial_net.keys():
-                    initial_net[0] = copy.deepcopy(InterdepNet)
+            results_dir=params['OUTPUT_DIR']+'_L'+`len(layers)`+'_m'+`m`+'_v'+`params['V']`
+            action_file=results_dir+"/actions_"+`i`+"_"+suffix+".csv" 
+            cost_file=results_dir+"/costs_"+`i`+"_"+suffix+".csv" 
+            if os.path.isfile(action_file) and os.path.isfile(cost_file):
+                if failSce_param['filtered_List']==None or len(listHD.loc[(listHD.set == i) & (listHD.sce == m)].index):
+    #                print '\n---Running Magnitude '+`m`+' sample '+`i`+'...'
                 
-                if failSce_param['type']=='WU':
-                    add_Wu_failure_scenario(InterdepNet,DAM_DIR=damage_dir,noSet=i,noSce=m)
-                elif failSce_param['type']=='ANDRES':
-                    add_failure_scenario(InterdepNet,DAM_DIR=damage_dir,magnitude=m,v=params["V"],sim_number=i)
-                elif failSce_param['type']=='random':
-                    add_random_failure_scenario(InterdepNet,DAM_DIR=damage_dir,sample=i) 
-                elif failSce_param['type']=='synthetic':
-                    add_synthetic_failure_scenario(InterdepNet,DAM_DIR=damage_dir,topology=topology,config=m,sample=i)
-                
-                samples = initialize_matrix(InterdepNet,samples,m,i,10)
-                results_dir=params['OUTPUT_DIR']+'_L'+`len(layers)`+'_m'+`m`+'_v'+`params['V']`
-                samples,costs,costs_local = read_restoration_plans(samples, costs, costs_local, InterdepNet, m, i,results_dir,suffix='')
+                    # print("Initializing network...")
+                    if (i-failSce_param['sample_range'][0]+1)%2==0:
+                        update_progress(i-failSce_param['sample_range'][0]+1,len(failSce_param['sample_range']))
+    
+                    if not shelby_data:  
+                        InterdepNet,noResource,layers=initialize_network(BASE_DIR=base_dir,external_interdependency_dir=ext_interdependency,magnitude=m,sample=i,shelby_data=shelby_data,topology=topology) 
+                        params["V"]=noResource
+                    else:  
+                        InterdepNet,_,_=initialize_network(BASE_DIR=base_dir,external_interdependency_dir=ext_interdependency,sim_number=0,magnitude=6,sample=0,v=params["V"],shelby_data=shelby_data)                    
+                    params["N"]=InterdepNet
+                    params["SIM_NUMBER"]=i
+                    params["MAGNITUDE"]=m
+                    if not initial_net.keys():
+                        initial_net[0] = copy.deepcopy(InterdepNet)
+                    
+                    if failSce_param['type']=='WU':
+                        add_Wu_failure_scenario(InterdepNet,DAM_DIR=damage_dir,noSet=i,noSce=m)
+                    elif failSce_param['type']=='ANDRES':
+                        add_failure_scenario(InterdepNet,DAM_DIR=damage_dir,magnitude=m,v=params["V"],sim_number=i)
+                    elif failSce_param['type']=='random':
+                        add_random_failure_scenario(InterdepNet,DAM_DIR=damage_dir,sample=i) 
+                    elif failSce_param['type']=='synthetic':
+                        add_synthetic_failure_scenario(InterdepNet,DAM_DIR=damage_dir,topology=topology,config=m,sample=i)
+                    
+                    samples = initialize_matrix(InterdepNet,samples,m,i,10)
+                    samples,costs = read_restoration_plans(samples, costs, InterdepNet, m, i,results_dir,suffix='')
+            else:
+                with open(folder_name+'/missing_scenatios.txt', 'a') as filehandle:
+                    filehandle.write(`params["V"]`+'\t'+`m`+'\t'+`i`+'\n')   
+                    filehandle.close()                  
     update_progress(i-failSce_param['sample_range'][0]+1,len(failSce_param['sample_range']))
     return samples,costs,costs_local,initial_net,params["V"],layers    
 
@@ -98,7 +109,7 @@ def initialize_matrix(N, sample, m, i, time_steps):
                 sample[name][:,-1] = 0.0
     return sample
 
-def read_restoration_plans(sample,costs,costs_local,InterdepNet,m,i,results_dir,suffix=''):
+def read_restoration_plans(sample,costs,InterdepNet,m,i,results_dir,suffix=''):
     # Read elemnts' states
     action_file=results_dir+"/actions_"+`i`+"_"+suffix+".csv" 
     if os.path.isfile(action_file):
@@ -147,75 +158,34 @@ def read_restoration_plans(sample,costs,costs_local,InterdepNet,m,i,results_dir,
                     costs[cost_name][t,-1]=float(ii)
     else:
         sys.exit('No results dir: '+cost_file)
-        
-    # Calculate local costs for each layer
-    cost_temp={}
-    layers = costs_local.keys()
-    for h in headers[1:]:
-        cost_temp[h]=np.zeros((T,1))
-    for l in layers:
-        for h in headers[1:]:
-            if h not in costs_local[l].keys():
-                costs_local[l][h]= np.zeros((T,1))
-            else:
-                costs_local[l][h] = np.append(costs_local[l][h], np.zeros((T,1)), axis=1)
-    for t in range(T):
-        decision_vars={0:{}}
-        for key in sample.keys():
-            decision_vars[0][key]=sample[key][t,-1]
-        flow_results=flow.flow_problem(InterdepNet,v_r=0,
-                        layers=layers,controlled_layers=layers,
-                        decision_vars=decision_vars,print_cmd=False,time_limit=None)
-        apply_recovery(InterdepNet,flow_results[1],0)
-        for h in headers[1:]:
-            cost_temp[h][t,-1]=flow_results[1][0]['costs'][h.replace('_', ' ')]
-            for l in layers:
-                costs_local[l][h][t,-1]=flow_results[2][l][0]['costs'][h.replace('_', ' ')]
-        
-    # Validate local costs
-    for h in headers[1:]:
-        if h not in ['Space_Prep','Under_Supply_Perc']:
-            cost_recal=np.zeros((T))
-            for l in layers:
-                cost_recal+=costs_local[l][h][:,-1]
-            if not np.allclose(cost_recal,np.trunc(costs[h][:,-1]),rtol=0.01):
-                sys.exit('Local Cost discrepancy in '+h+' cost for m '+`m`+ ' and i '+`i`)    
-            if not np.allclose(cost_temp[h][:,-1],np.trunc(costs[h][:,-1]),rtol=0.01):
-                sys.exit('Cost discrepancy in '+h+' cost for m '+`m`+ ' and i '+`i`)   
                 
-    return sample,costs,costs_local
+    return sample,costs
 
-def prepare_data(samples,costs,costs_local,initial_net,keys):
-    print('\nPreparing data:')
+def prepare_data(samples,costs,initial_net,res,keys):
+    print('Preparing data:')
     names = samples.keys()
     noSamples = int(samples[names[0]].shape[1])
     T = int(samples[names[0]].shape[0])                
-    layers = costs_local.keys()
-       
+      
     w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1=extract_features(samples,initial_net,keys)
     
     print('\nBuilding Dataframes:') 
     cost_names=costs.keys()
-    cost_names_layer=[st+'_layer' for st in cost_names]
     costs_normed={}
-    costs_normed_layer={l:{} for l in layers}
     for i in cost_names: 
         costs_normed[i] = normalize_costs(costs[i],i,costs['Total'][0,:])
-    for l in layers:
-        for i in cost_names: 
-            costs_normed_layer[l][i] = normalize_costs(costs_local[l][i],i,costs_local[l]['Total'][0,:])
- 
-    node_cols=['w_t','w_t_1','sample','time','w_n_t_1','w_a_t_1','w_d_t_1','w_h_t_1','w_c_t_1','y_c_t_1']
-    arc_cols=['y_t','y_t_1','sample','time','y_n_t_1','y_c_t_1']
+        
+    node_cols=['w_t','w_t_1','sample','time','Rc','w_n_t_1','w_a_t_1','w_d_t_1','w_h_t_1','w_c_t_1','y_c_t_1']
+    arc_cols=['y_t','y_t_1','sample','time','Rc','y_n_t_1','y_c_t_1']
     node_data={} 
     arc_data={}
     for key in keys:
         if keys.index(key)%10==0:
             update_progress(keys.index(key),len(keys))
         
-        cols=node_cols+cost_names+cost_names_layer
+        cols=node_cols+cost_names
         if key[0]=='y':
-            cols=arc_cols+cost_names+cost_names_layer
+            cols=arc_cols+cost_names
         train_df = pd.DataFrame(columns=cols)
         for s in range(noSamples):
             for t in range(T-1):
@@ -224,27 +194,22 @@ def prepare_data(samples,costs,costs_local,initial_net,keys):
                 else:
                     norm_cost_values=[costs_normed[x][t,s] for x in cost_names]
                     l = int(key[-2])
-                    norm_cost_layer=[costs_normed_layer[l][x][t,s] for x in cost_names]
-                    basic_features=[samples[key][t+1,s],samples[key][t,s],s,(t+1)/float(T-1)]
+                    basic_features=[samples[key][t+1,s],samples[key][t,s],s,(t+1)/float(T-1),res]
                     if key[0]=='w':
                         special_feature=[w_n_t_1[key][t,s],w_a_t_1[key][t,s],
                                         w_d_t_1[key][t,s],w_h_t_1[l][t,s],
                                         w_c_t_1[l][t,s],y_c_t_1[l][t,s]]
                     elif key[0]=='y':
                         special_feature=[y_n_t_1[key][t,s],y_c_t_1[l][t,s]]
-                    row = np.array(basic_features+special_feature+norm_cost_values+norm_cost_layer)
+                    row = np.array(basic_features+special_feature+norm_cost_values)
                     temp = pd.Series(row,index=cols)
                     train_df=train_df.append(temp,ignore_index=True)
         if key[0]=='w':
             node_data[key]=train_df
         elif key[0]=='y':
             arc_data[key]=train_df 
-    update_progress(len(keys),len(keys))
-       
-    # data_all = pd.DataFrame(columns=cols)
-    # # for key, val in data.items():   
-    # #     data_all=pd.concat([data_all,val])
-    # # data_all=data_all.reset_index(drop=True)   
+            
+    update_progress(len(keys),len(keys))  
     return node_data,arc_data
 
 def extract_features(samples,initial_net,keys,prog_bar=True):
@@ -445,7 +410,7 @@ def test_model(train_data,test_data,trace_all,model_all,exclusions,plot=True):
         formula = make_formula(variables,exclusions,dependent)
         y=ppc['y'].T.mean(axis=1)
         if plot:
-            ax[1,0].scatter(x,y,alpha=0.1)
+            ax[1,0].scatter(x,y,alpha=0.005)
             ax[1,0].plot([0,1],[0,1],'r')
             ax[1,0].set_title('Data vs. Prediction: training data ')    
             ax[1,0].set_xlabel('data')
@@ -464,7 +429,7 @@ def test_model(train_data,test_data,trace_all,model_all,exclusions,plot=True):
                 x=np.array(test_data[key]['y_t'])           
             y=ppc_test['y'].T.mean(axis=1)
             if plot:
-                ax[1,1].scatter(x,y,alpha=0.2)
+                ax[1,1].scatter(x,y,alpha=0.01)
                 ax[1,1].plot([0,1],[0,1],'r')
                 ax[1,1].set_title('Data vs. Prediction: test data ')  
                 ax[1,1].set_xlabel('data')
@@ -652,12 +617,12 @@ def train_test_split(node_data,arc_data,keys):
             train_data[key]=train_data[key].reset_index()
     return train_data,test_data
 
-def save_initial_data(initial_net,samples,costs,costs_local):
+def save_initial_data(initial_net,samples,costs):
     t_suf = time.strftime("%Y%m%d")
     folder_name = 'data'+t_suf
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
-    pickle.dump([samples,costs,costs_local,initial_net], open(folder_name+'/initial_data.pkl', "wb" ))
+    pickle.dump([samples,costs,initial_net], open(folder_name+'/initial_data.pkl', "wb" ))
 
 def save_prepared_data(train_data,test_data):
     t_suf = time.strftime("%Y%m%d")
@@ -749,40 +714,3 @@ def normalize_costs(costs, i,initial_TC):
 def update_progress(progress,total):
     print '\r[%s] %1.1f%%' % ('#'*int(progress/float(total)*20), (progress/float(total)*100)),
     sys.stdout.flush()
-              
-def plot_correlation(node_data,keys,exclusions):
-    import math
-    corr_matrices={}
-    for key in keys:
-        if key[0]=='w':
-            corr_matrices[key]=node_data[key].drop([], axis=1).corr()
-        # if key[0]=='y':
-        #     corr_matrices[key]=arc_data[key].drop([], axis=1).corr()
-    corr_mean= pd.DataFrame().reindex_like(corr_matrices[key]) 
-    corr_cov= pd.DataFrame().reindex_like(corr_matrices[key])      
-    for v in list(node_data[keys[0]].columns):
-        for vv in list(node_data[keys[0]].columns):
-            corr_vec = []
-            for key in keys:
-                if key[0]=='w':
-                    if math.isnan(corr_matrices[key][v][vv]):
-                        pass
-                    else:
-                        corr_vec.append(corr_matrices[key][v][vv])
-            if len(corr_vec):
-                mean = sum(corr_vec)/len(corr_vec) 
-                variance = sum([((x-mean)**2) for x in corr_vec])/len(corr_vec)
-                corr_mean[v][vv]=mean
-                corr_cov[v][vv]=0.0
-                if mean!=0.0:
-                    corr_cov[v][vv]=variance**0.5/mean
-            
-            
-    plot_df = corr_mean.drop(['w_t_1','Space_Prep_layer','Space_Prep'], axis=1).drop(['w_t_1','Space_Prep_layer','Space_Prep'], axis=0)
-    #node_data[key] #corr_mean #corr_cov
-    # sns.pairplot(node_data[key].drop(columns=[x for x in exclusions if x not in ['y_t_1','index']]),
-    #     kind='reg', plot_kws={'line_kws':{'color':'red'}, 'scatter_kws': {'alpha': 0.1}})
-    plt.figure()
-    sns.heatmap(plot_df,annot=True, center=0, cmap="vlag",linewidths=.75)
-    sns.clustermap(plot_df, cmap="vlag")
-    
