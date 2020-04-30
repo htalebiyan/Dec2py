@@ -82,7 +82,7 @@ def importData(params,failSce_param,layers,suffix=''):
                     samples = initialize_matrix(InterdepNet,samples,m,i,10)
                     samples,costs = read_restoration_plans(samples, costs, InterdepNet, m, i,results_dir,suffix='')
             else:
-                with open(folder_name+'/missing_scenatios.txt', 'a') as filehandle:
+                with open(folder_name+'/missing_scenarios.txt', 'a') as filehandle:
                     filehandle.write(`params["V"]`+'\t'+`m`+'\t'+`i`+'\n')   
                     filehandle.close()                  
     update_progress(i-failSce_param['sample_range'][0]+1,len(failSce_param['sample_range']))
@@ -194,7 +194,7 @@ def prepare_data(samples,costs,initial_net,res,keys):
                 else:
                     norm_cost_values=[costs_normed[x][t,s] for x in cost_names]
                     l = int(key[-2])
-                    basic_features=[samples[key][t+1,s],samples[key][t,s],s,(t+1)/float(T-1),res]
+                    basic_features=[samples[key][t+1,s],samples[key][t,s],s,(t+1)/float(T-1),res/100.0]
                     if key[0]=='w':
                         special_feature=[w_n_t_1[key][t,s],w_a_t_1[key][t,s],
                                         w_d_t_1[key][t,s],w_h_t_1[l][t,s],
@@ -441,31 +441,35 @@ def test_model(train_data,test_data,trace_all,model_all,exclusions,plot=True):
                 
     return ppc,ppc_test
 
-def compare_resotration(pred_s,samples,costs,costs_local,s,res,network_object,failSce_param,
+def compare_resotration(pred_s,samples,costs,s,s_itr,res,network_object,failSce_param,
                         initial_net,layers,real_results_dir,model_folder,param_folder):
     print '\nPrediction '+`pred_s`+': time step ',
     
     # Define a few vars and lists
     no_samples = samples[samples.keys()[0]].shape[1]
     T = samples[samples.keys()[0]].shape[0]
-    s_itr = s - failSce_param['sample_range'][0] #index of the scenario is data
     keys=samples.keys()
     cost_names=costs.keys()
-    node_cols=['w_t','w_t_1','sample','time','w_n_t_1','w_a_t_1','w_d_t_1','w_h_t_1','w_c_t_1','y_c_t_1']
-    arc_cols=['y_t','y_t_1','sample','time','y_n_t_1','y_c_t_1']
+    node_cols=['w_t','w_t_1','sample','time','Rc','w_n_t_1','w_a_t_1','w_d_t_1','w_h_t_1','w_c_t_1','y_c_t_1']
+    arc_cols=['y_t','y_t_1','sample','time','Rc','y_n_t_1','y_c_t_1']
     
     '''Isolate input data for the current sample'''
     costs_iso={}
-    costs_iso_layer={l:{} for l in layers}
     for i in cost_names: 
         costs_iso[i]=np.asarray([x  for x in costs[i][:,s_itr]]).reshape((T, -1))
-    for l in layers:
-        for i in cost_names: 
-            costs_iso_layer[l][i]=np.asarray([x  for x in costs_local[l][i][:,s_itr]]).reshape((T, -1))
     samples_iso={}
     for key in keys:
         samples_iso[key]=np.asarray([x  for x in samples[key][:,s_itr]]).reshape((T, -1))
 
+    ''' read cost from the actual data computed by INDP '''
+    if pred_s==0:
+        real_results=indputils.INDPResults()
+        real_results=real_results.from_csv(real_results_dir,s,suffix="")
+        for t in range(T):
+            row = np.array([s,t,res,-1,'data',costs_iso[key]['Total'][t,0],
+                real_results[t]['run_time'],costs_iso[key]['Under_Supply_Perc'][t,0]])
+            write_results_to_file(row)
+            
     '''Writ initial costs to file'''
     print `0`+'.',
     row = np.array([s,0,res,pred_s,'predicted',costs_iso['Total'][0,0],0.0,costs_iso['Under_Supply_Perc'][0,0]])
@@ -481,18 +485,14 @@ def compare_resotration(pred_s,samples,costs,costs_local,s,res,network_object,fa
         w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1=extract_features(samples_iso,initial_net,keys,prog_bar=False)
         
         costs_normed={}
-        costs_normed_layer={l:{} for l in layers}
         for i in cost_names: 
             costs_normed[i] = normalize_costs(costs_iso[i],i,costs_iso['Total'][0])
-        for l in layers:
-            for i in cost_names: 
-                costs_normed_layer[l][i] = normalize_costs(costs_iso_layer[l][i],i,costs_iso_layer[l]['Total'][0])
         
         decision_vars={0:{}} #0 becasue iINDP
         for key in keys:
             if key[0]=='w':                   
-                decision_vars[0][key]=predict_next_step(key,s,t,samples_iso,param_folder,model_folder,
-                            node_cols,arc_cols,costs_normed,costs_normed_layer,
+                decision_vars[0][key]=predict_next_step(key,s,t,samples_iso,param_folder,
+                            model_folder,node_cols,arc_cols,costs_normed,res,
                             w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1)
             if key[0]=='y' and key not in decision_vars[0].keys():
                 decision_vars[0][key]=samples_iso[key][t+1,0]
@@ -513,20 +513,9 @@ def compare_resotration(pred_s,samples,costs,costs_local,s,res,network_object,fa
         '''Update the cost dict for the next time step'''
         for h in cost_names:
             costs_iso[h][t+1]=flow_results[1][0]['costs'][h.replace('_', ' ')]
-            for l in layers:
-                costs_iso_layer[l][h][t+1]=flow_results[2][l][0]['costs'][h.replace('_', ' ')]
         
         #'''Write models to file'''  
         # indp.save_INDP_model_to_file(flow_results[0],'./models',t,l=0)           
-    if pred_s==0:
-        ''' read cost from the actual data computed by INDP '''
-        folder_name = real_results_dir+'results/indp_results_L'+`len(layers)`+'_m0_v'+`res`
-        real_results=indputils.INDPResults()
-        real_results=real_results.from_csv(folder_name,s,suffix="")
-        for t in range(T):
-            row = np.array([s,t,res,-1,'data',real_results[t]['costs']['Total'],
-                real_results[t]['run_time'],real_results[t]['costs']['Under Supply Perc']])
-            write_results_to_file(row)
     
     sum_real_rep_perc=np.zeros((T)) 
     sum_pred_rep_perc=np.zeros((T))       
@@ -549,12 +538,11 @@ def compare_resotration(pred_s,samples,costs,costs_local,s,res,network_object,fa
     return run_times
 
 def predict_next_step(key,s,t,samples_iso,param_folder,model_folder,
-                      node_cols,arc_cols,costs_normed,costs_normed_layer,
+                      node_cols,arc_cols,costs_normed,res,
                       w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1):
     l = int(key[-2])
     T = samples_iso[samples_iso.keys()[0]].shape[0]
     cost_names=costs_normed.keys()
-    cost_names_layer=[st+'_layer' for st in cost_names]
     pred_decision=0.0
     if samples_iso[key][t,0]==1:
         pred_decision=1.0
@@ -566,19 +554,17 @@ def predict_next_step(key,s,t,samples_iso,param_folder,model_folder,
 
         if key[0]=='w':
             dependent =['w_t'] 
-            cols=node_cols+cost_names+cost_names_layer
+            cols=node_cols+cost_names
             special_feature=[w_n_t_1[key][t,0],w_a_t_1[key][t,0],w_d_t_1[key][t,0],
                       w_h_t_1[l][t,0],w_c_t_1[l][t,0],y_c_t_1[l][t,0]]
         elif key[0]=='y':
             dependent =['y_t']
-            cols=arc_cols+cost_names+cost_names_layer
+            cols=arc_cols+cost_names
             special_feature=[y_n_t_1[key][t,0],y_c_t_1[l][t,0]] 
         formula = make_formula(varibales,[],dependent)
-        
         norm_cost_values=[costs_normed[x][t,0] for x in cost_names]
-        norm_cost_layer=[costs_normed_layer[l][x][t,0] for x in cost_names]
-        basic_features=[samples_iso[key][t+1,0],samples_iso[key][t,0],s,(t+1)/float(T-1)]
-        row = np.array(basic_features+special_feature+norm_cost_values+norm_cost_layer)
+        basic_features=[samples_iso[key][t+1,0],samples_iso[key][t,0],s,(t+1)/float(T-1),res/100.0]
+        row = np.array(basic_features+special_feature+norm_cost_values)
         
         with pm.Model() as logistic_model_pred:
             pm.glm.GLM.from_formula(formula,
@@ -710,7 +696,18 @@ def normalize_costs(costs, i,initial_TC):
     else:
         sys.exit('Wrong cost name: '+i)
     return costs_normed
-   
+
+def find_sce_index(s, res, mis_sce_file):   
+    if os.path.isfile(mis_sce_file):
+        mis_sce=np.loadtxt(mis_sce_file)
+        mis_sce_filtered_by_res=mis_sce[mis_sce[:,0]==res,:]
+        if s in mis_sce_filtered_by_res[:,2]:
+            return -1
+        else:
+            mis_sce_before_s=[x for x in mis_sce_filtered_by_res[:,2] if x<s]
+            return s-len(mis_sce_before_s)
+    else:
+        sys.exit('No nissing scenario file: '+mis_sce_file)    
 def update_progress(progress,total):
     print '\r[%s] %1.1f%%' % ('#'*int(progress/float(total)*20), (progress/float(total)*100)),
     sys.stdout.flush()

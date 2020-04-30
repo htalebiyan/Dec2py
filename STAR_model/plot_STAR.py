@@ -5,6 +5,7 @@ import seaborn as sns
 import cPickle as pickle
 from os import listdir
 from os.path import isfile, join
+
 def replace_labels(df, col):
     rename_dict={"Intercept": r'$\alpha$',
                  "w_n_t_1": r'$\beta_{1,i}$ (Neighbor nodes)',
@@ -63,7 +64,7 @@ def plot_results():
     # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     plt.close('all')
               
-    t_suf = '20200420'    
+    t_suf = '20200429'    
     folder_name = 'results'+t_suf
     
     cols_results=['sample','Time Step','resource_cap','pred_sample','Result Type','Total Cost',
@@ -176,5 +177,5 @@ def plot_coef():
         
     # sns.pairplot(node_params_filtered.drop(columns=['hpd_2.5','hpd_97.5']),
     #     kind='reg', plot_kws={'line_kws':{'color':'red'}, 'scatter_kws': {'alpha': 0.1}})
+plot_results()
     
-plot_coef()
