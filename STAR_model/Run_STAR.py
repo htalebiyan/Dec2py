@@ -7,25 +7,28 @@ import cPickle as pickle
 from functools import partial
 import indp 
 import copy
+from os import listdir
+from os.path import isfile, join
 # from plot_STAR import plot_correlation
+
 if __name__ == "__main__": 
-    t_suf = '20200429'
-    samples_all,costs_all,costs_local_all,initial_net = pickle.load(open('data'+t_suf+'/initial_data.pkl', "rb" ))     
+    # t_suf = '20200430'
+    # samples_all,costs_all,costs_local_all,initial_net = pickle.load(open('data'+t_suf+'/initial_data.pkl', "rb" ))     
     # train_data,test_data = pickle.load(open('data'+t_suf+'/train_test_data.pkl', "rb" ))     
             
     plt.close('all')
     base_dir = "../data/Extended_Shelby_County/"
     damage_dir = "../data/random_disruption_shelby/"
     output_dir = 'C:/Users/ht20/Documents/Files/STAR_training_data/INDP_random_disruption/'   
-    failSce_param = {"type":"random","sample_range":range(50,100),"mags":range(0,1),
+    failSce_param = {"type":"random","sample_range":range(0,990),"mags":range(0,1),
                     'filtered_List':None,'Base_dir':base_dir,'Damage_dir':damage_dir}
-    v_r = [1]#[1,2,3,4,5,6,8,10,12,15,18,20,30,40,50,60,70,80,90,100]
+    v_r = [1,2,3,4,5,6,8,10,12,15,18,20,30,40,50,60,70,80,90,100]
     # 
     layers=[1,2,3,4]
  
     ''' Read all data '''
-    # # samples_all={}
-    # # costs_all={}
+    # samples_all={}
+    # costs_all={}
     # print('Importing data:')
     # for res in v_r:
     #     params={"NUM_ITERATIONS":10,"OUTPUT_DIR":output_dir+'results/indp_results',
@@ -37,40 +40,40 @@ if __name__ == "__main__":
     # save_initial_data(initial_net,samples_all,costs_all)
 
     ''' Prepare training and testing datsets '''    
-    # from os import listdir
-    # from os.path import isfile, join
-    # mypath='parameters20200429/'
-    # files = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f))]
-    # keys= [x for x in samples_all[samples_all.keys()[0]].keys() if (x[0]=='y' and x not in files)] 
-    keys = ['y_(2, 2),(11, 2)','y_(11, 2),(2, 2)']
-    #['w_(1, 4)']   #samples.keys()   #['y_(2, 2),(11, 2)','y_(11, 2),(2, 2)'] 
+    # keys = ['y_(8, 2),(15, 2)','y_(15, 2),(8, 2)']
+    ##['w_(1, 4)']   #samples.keys()   #['y_(2, 2),(11, 2)','y_(11, 2),(2, 2)'] 
     
-    node_data_all={key:pd.DataFrame() for key in keys}
-    arc_data_all={key:pd.DataFrame() for key in keys}
-    for res in v_r:
-        print('\nNumber of resources: '+`res`)
-        node_data,arc_data = prepare_data(samples_all[res],costs_all[res],
-                                          initial_net,res,keys)
-        for key in keys:
-            if  arc_data_all[key].empty: #node_data_all[key].empty or arc_data_all[key].empty:
-                # node_data_all[key]=node_data[key]
-                arc_data_all[key]=arc_data[key]
-            else:
-                # node_data_all[key]=node_data_all[key].append(node_data[key],ignore_index=True)
-                arc_data_all[key]=arc_data_all[key].append(arc_data[key],ignore_index=True)
+    # node_data_all={key:pd.DataFrame() for key in keys}
+    # arc_data_all={key:pd.DataFrame() for key in keys}
+    # for res in v_r:
+    #     print('\nNumber of resources: '+`res`)
+    #     node_data,arc_data = prepare_data(samples_all[res],costs_all[res],
+    #                                       initial_net,res,keys)
+    #     for key in keys:
+    #         if  arc_data_all[key].empty: #node_data_all[key].empty or arc_data_all[key].empty:
+    #             # node_data_all[key]=node_data[key]
+    #             arc_data_all[key]=arc_data[key]
+    #         else:
+    #             # node_data_all[key]=node_data_all[key].append(node_data[key],ignore_index=True)
+    #             arc_data_all[key]=arc_data_all[key].append(arc_data[key],ignore_index=True)
     
-    train_data,test_data = train_test_split(node_data_all,arc_data_all,keys)
-    save_prepared_data(train_data,test_data)
+    # train_data,test_data = train_test_split(node_data_all,arc_data_all,keys)
+    # save_prepared_data(train_data,test_data)
     
     ''' train and test model'''
     exclusions=['w_t_1','y_t_1','w_h_t_1','time','Total','Under_Supply_Perc','Over_Supply','Space_Prep'] 
     ##,'y_t_1','w_n_t_1','w_a_t_1', 'w_d_t_1','time','w_h_t_1','Total','Flow','Under_Supply_layer'
+    
+    mypath='parameters20200505/'
+    files = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f))]
+    keys= [x for x in train_data.keys() if (x not in files)] 
+    
     for key in keys:  
         print '\n'+key
         trace,model = train_model({key:train_data[key]},exclusions) 
         save_traces(trace)
         _,_ = test_model({key:train_data[key]},{key:test_data[key]},
-                          trace,model,exclusions,plot=True)
+                          trace,model,exclusions,plot=False)
     
     # plot_correlation(node_data_all,keys,['w_t_1'])
     

@@ -11,6 +11,7 @@ def replace_labels(df, col):
                  "w_n_t_1": r'$\beta_{1,i}$ (Neighbor nodes)',
                  "w_a_t_1": r'$\beta_{2,i}$ (Connected arcs)',
                  "w_d_t_1": r'$\beta_{3,i}$ (Dependee nodes)',
+                 "y_n_t_1": r'$\beta_{3,i}$ (End nodes)',
                  "w_c_t_1": r'$\beta_{4,i}$ (All nodes)',
                  "y_c_t_1": r'$\beta_{5,i}$ (All arcs)',
                  "Node": r'$\gamma_{1,i}$ (Node cost)',
@@ -137,10 +138,9 @@ def plot_coef():
     # samples,costs,costs_local,initial_net = pickle.load(open('data'+t_suf+'/initial_data.pkl', "rb" ))
     # keys=samples.keys()
 
-    t_suf = '20200428'
+    t_suf = '20200505'
     mypath='parameters'+t_suf+'/'
     keys = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f)) and f[:2]!='R2']
-    plt.figure() 
     node_params=pd.DataFrame(columns=['key','name','mean','sd','mc_error','hpd_2.5','hpd_97.5','n_eff','Rhat'])
     arc_params=pd.DataFrame(columns=['key','name','mean','sd','mc_error','hpd_2.5','hpd_97.5','n_eff','Rhat'])
     for key in keys:
@@ -159,23 +159,32 @@ def plot_coef():
                 arc_params=pd.concat([arc_params,paramters], axis=0, ignore_index=True)
             except:
                 pass
-    node_params['cov'] =abs(node_params['sd']/node_params['mean'])
-    node_params_filtered=node_params[(node_params['mc_error']<0.1) & (abs(node_params['Rhat']-1)<0.005)]
-    node_params_filtered=replace_labels(node_params_filtered, 'name')
-    node_params_filtered=node_params_filtered.rename(columns={'name':'Predictors','mean':'Estimated Mean'})
+            
+    # plt.figure() 
+    # node_params['cov'] =abs(node_params['sd']/node_params['mean'])
+    # node_params_filtered=node_params[(node_params['mc_error']<0.1) & (abs(node_params['Rhat']-1)<0.005)]
+    # node_params_filtered=replace_labels(node_params_filtered, 'name')
+    # node_params_filtered=node_params_filtered.rename(columns={'name':'Predictors','mean':'Estimated Mean'})
     
-    ax=sns.boxplot(y="Predictors", x="Estimated Mean",data=node_params_filtered, whis=1,
-                   linewidth=0.75, fliersize=3, palette=sns.cubehelix_palette(20))
-    ax.set_xlim((-25,25))
-    ax.set_xticks(np.arange(-25,25, 5.0))
-    plt.savefig('Node_mean_predictors.png',dpi=600,bbox_inches='tight')
-    # plt.figure()    
-    # arc_params['cov'] =abs(arc_params['sd']/arc_params['mean'])
-    # ax=sns.boxplot(y="name", x="mean",data=arc_params, whis=1,fliersize=1,linewidth=1,
-    #                 palette=sns.cubehelix_palette(25))
+    # ax=sns.boxplot(y="Predictors", x="Estimated Mean",data=node_params_filtered, whis=1,
+    #                linewidth=0.75, fliersize=3, palette=sns.cubehelix_palette(20))
     # ax.set_xlim((-25,25))
+    # ax.set_xticks(np.arange(-25,25, 5.0))
+    # plt.savefig('Node_mean_predictors.png',dpi=600,bbox_inches='tight')
+
+    arc_params['cov'] =abs(arc_params['sd']/arc_params['mean'])
+    arc_params_filtered=arc_params[(arc_params['mc_error']<0.1) &
+                                   (abs(arc_params['Rhat']-1)<0.005) & 
+                                   (arc_params['cov']<1)]
+    arc_params_filtered=replace_labels(arc_params_filtered, 'name')
+    arc_params_filtered=arc_params_filtered.rename(columns={'name':'Predictors','mean':'Estimated Mean'})    
+    plt.figure()    
+    ax=sns.boxplot(y="Predictors", x="Estimated Mean",data=arc_params_filtered, whis=1,fliersize=1,linewidth=1,
+                    palette=sns.cubehelix_palette(25))
+    ax.set_xlim((-15,15))
         
     # sns.pairplot(node_params_filtered.drop(columns=['hpd_2.5','hpd_97.5']),
     #     kind='reg', plot_kws={'line_kws':{'color':'red'}, 'scatter_kws': {'alpha': 0.1}})
-plot_results()
+    return arc_params,arc_params_filtered
+arc_params,arc_params_filtered=plot_coef()
     

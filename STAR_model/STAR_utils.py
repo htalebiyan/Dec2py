@@ -86,7 +86,7 @@ def importData(params,failSce_param,layers,suffix=''):
                     filehandle.write(`params["V"]`+'\t'+`m`+'\t'+`i`+'\n')   
                     filehandle.close()                  
     update_progress(i-failSce_param['sample_range'][0]+1,len(failSce_param['sample_range']))
-    return samples,costs,costs_local,initial_net,params["V"],layers    
+    return samples,costs,initial_net,params["V"],layers    
 
 def initialize_matrix(N, sample, m, i, time_steps):
     for v in N.G.nodes():
@@ -176,7 +176,7 @@ def prepare_data(samples,costs,initial_net,res,keys):
         costs_normed[i] = normalize_costs(costs[i],i,costs['Total'][0,:])
         
     node_cols=['w_t','w_t_1','sample','time','Rc','w_n_t_1','w_a_t_1','w_d_t_1','w_h_t_1','w_c_t_1','y_c_t_1']
-    arc_cols=['y_t','y_t_1','sample','time','Rc','y_n_t_1','y_c_t_1']
+    arc_cols=['y_t','y_t_1','sample','time','Rc','y_n_t_1','w_c_t_1','y_c_t_1']
     node_data={} 
     arc_data={}
     for key in keys:
@@ -200,7 +200,7 @@ def prepare_data(samples,costs,initial_net,res,keys):
                                         w_d_t_1[key][t,s],w_h_t_1[l][t,s],
                                         w_c_t_1[l][t,s],y_c_t_1[l][t,s]]
                     elif key[0]=='y':
-                        special_feature=[y_n_t_1[key][t,s],y_c_t_1[l][t,s]]
+                        special_feature=[y_n_t_1[key][t,s],w_c_t_1[l][t,s],y_c_t_1[l][t,s]]
                     row = np.array(basic_features+special_feature+norm_cost_values)
                     temp = pd.Series(row,index=cols)
                     train_df=train_df.append(temp,ignore_index=True)
@@ -323,8 +323,8 @@ def extract_features(samples,initial_net,keys,prog_bar=True):
             key = 'y_'+`u`+','+`v`               
             if key in arc_keys:
                 y_n_t_1[key] = np.zeros((T-1,noSamples))
-                y_n_t_1[key]+=w_t_1['w_'+`v`]
-                y_n_t_1[key]+=w_t_1['w_'+`u`]
+                y_n_t_1[key]+=w_t_1['w_'+`v`]/2.0
+                y_n_t_1[key]+=w_t_1['w_'+`u`]/2.0
     if prog_bar:
         update_progress(7.0,7.0) 
     
@@ -410,7 +410,7 @@ def test_model(train_data,test_data,trace_all,model_all,exclusions,plot=True):
         formula = make_formula(variables,exclusions,dependent)
         y=ppc['y'].T.mean(axis=1)
         if plot:
-            ax[1,0].scatter(x,y,alpha=0.005)
+            ax[1,0].scatter(x,y,alpha=0.1)
             ax[1,0].plot([0,1],[0,1],'r')
             ax[1,0].set_title('Data vs. Prediction: training data ')    
             ax[1,0].set_xlabel('data')
@@ -429,7 +429,7 @@ def test_model(train_data,test_data,trace_all,model_all,exclusions,plot=True):
                 x=np.array(test_data[key]['y_t'])           
             y=ppc_test['y'].T.mean(axis=1)
             if plot:
-                ax[1,1].scatter(x,y,alpha=0.01)
+                ax[1,1].scatter(x,y,alpha=0.1)
                 ax[1,1].plot([0,1],[0,1],'r')
                 ax[1,1].set_title('Data vs. Prediction: test data ')  
                 ax[1,1].set_xlabel('data')
@@ -672,7 +672,7 @@ def write_results_to_file(row,filename='results'):
 ''' Data should be normailzied so that when using models such normalization is reproducible
 at each time step including the first one. Therefore, the normalization should be based
 on information that we have before starting the restoration'''
-def normalize_costs(costs, i,initial_TC):
+def normalize_costs(costs, i):
     T = int(costs.shape[0])
     S = int(costs.shape[1])
     
@@ -692,7 +692,9 @@ def normalize_costs(costs, i,initial_TC):
                 if norm_factor!=0:
                     costs_normed[t,s] = costs[t,s]/norm_factor
                 else:
-                    costs_normed[t,s] = costs[t,s]     
+                    costs_normed[t,s] = costs[t,s]
+    elif i=='Total_no_disconnection':
+        pass
     else:
         sys.exit('Wrong cost name: '+i)
     return costs_normed
