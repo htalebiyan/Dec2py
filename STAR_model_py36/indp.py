@@ -382,13 +382,13 @@ def apply_recovery(N,indp_results,t):
     for action in indp_results[t]['actions']:
         if "/" in action:
             # Edge recovery action.
-            data=string.split(action,"/")
-            src=tuple([int(x) for x in string.split(data[0],".")])
-            dst=tuple([int(x) for x in string.split(data[1],".")])
+            data=action.split("/")
+            src=tuple([int(x) for x in data[0].split(".")])
+            dst=tuple([int(x) for x in data[1].split(".")])
             N.G[src][dst]['data']['inf_data'].functionality=1.0
         else:
             # Node recovery action.
-            node=tuple([int(x) for x in string.split(action,".")])
+            node=tuple([int(x) for x in action.split(".")])
             #print "Applying recovery:",node
             N.G.node[node]['data']['inf_data'].repaired=1.0
             N.G.node[node]['data']['inf_data'].functionality=1.0

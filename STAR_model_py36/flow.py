@@ -30,17 +30,17 @@ def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={}
     m.setParam('OutputFlag',False)
     if time_limit:
         m.setParam('TimeLimit', time_limit)
-    G_prime_nodes = [n[0] for n in N.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in layers]
+    G_prime_nodes = [n[0] for n in N.G.nodes(data=True) if n[1]['data']['inf_data'].net_id in layers]
     G_prime = N.G.subgraph(G_prime_nodes)
     # Damaged nodes in whole network
-    N_prime = [n for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].repaired==0.0]
+    N_prime = [n for n in G_prime.nodes(data=True) if n[1]['data']['inf_data'].repaired==0.0]
     # Nodes in controlled network.
-    N_hat_nodes   = [n[0] for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in controlled_layers]
+    N_hat_nodes   = [n[0] for n in G_prime.nodes(data=True) if n[1]['data']['inf_data'].net_id in controlled_layers]
     N_hat = G_prime.subgraph(N_hat_nodes)
     # Damaged nodes in controlled network.
-    N_hat_prime= [n for n in N_hat.nodes_iter(data=True) if n[1]['data']['inf_data'].repaired==0.0]
+    N_hat_prime= [n for n in N_hat.nodes(data=True) if n[1]['data']['inf_data'].repaired==0.0]
     # Damaged arcs in whole network
-    A_prime = [(u,v,a) for u,v,a in G_prime.edges_iter(data=True) if a['data']['inf_data'].functionality==0.0]
+    A_prime = [(u,v,a) for u,v,a in G_prime.edges(data=True) if a['data']['inf_data'].functionality==0.0]
     # Damaged arcs in controlled network.
     A_hat_prime = [(u,v,a) for u,v,a in A_prime if N_hat.has_node(u) and N_hat.has_node(v)]
     #print "A_hat_prime=",A_hat_prime
@@ -49,7 +49,7 @@ def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={}
     #print "New sim."
     # Populate interdepencies. Add nodes to N' if they currently rely on a non-functional node.
     interdep_nodes={}
-    for u,v,a in G_prime.edges_iter(data=True):
+    for u,v,a in G_prime.edges(data=True):
         if not functionality:
             if a['data']['inf_data'].is_interdep and G_prime.node[u]['data']['inf_data'].functionality == 0.0:
                 #print "Dependency edge goes from:",u,"to",v
@@ -57,7 +57,7 @@ def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={}
                     interdep_nodes[v]=[]
                 interdep_nodes[v].append((u,a['data']['inf_data'].gamma))
         else:
-            # Should populate N_hat with layers that are controlled. Then go through N_hat.edges_iter(data=True)
+            # Should populate N_hat with layers that are controlled. Then go through N_hat.edges(data=True)
             # to find interdependencies.
             for t in range(T):
                 if t not in interdep_nodes:
@@ -74,16 +74,16 @@ def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={}
         for s in S:
             m.addVar(name='z_'+str(s.id)+","+str(t),vtype=GRB.BINARY)
         # Add over/undersupply variables for each node.
-        for n,d in N_hat.nodes_iter(data=True):
+        for n,d in N_hat.nodes(data=True):
             m.addVar(name='delta+_'+str(n)+","+str(t),lb=0.0)
             m.addVar(name='delta-_'+str(n)+","+str(t),lb=0.0)
         # Add functionality binary variables for each node in N'.
-        for n,d in N_hat.nodes_iter(data=True):
+        for n,d in N_hat.nodes(data=True):
             m.addVar(name='w_'+str(n)+","+str(t),vtype=GRB.BINARY)
             if T > 1:
                 m.addVar(name='w_tilde_'+str(n)+","+str(t),vtype=GRB.BINARY)
         # Add flow variables for each arc.
-        for u,v,a in N_hat.edges_iter(data=True):
+        for u,v,a in N_hat.edges(data=True):
             m.addVar(name='x_'+str(u)+","+str(v)+","+str(t),lb=0.0)
         # Add functionality binary variables for each arc in A'.
         for u,v,a in A_hat_prime:
@@ -92,7 +92,7 @@ def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={}
                 m.addVar(name='y_tilde_'+str(u)+","+str(v)+","+str(t),vtype=GRB.BINARY)
     m.update()
     for t in range(T):
-        for n,d in N_hat.nodes_iter(data=True):
+        for n,d in N_hat.nodes(data=True):
             if n not in interdep_nodes.keys() or decision_vars[t]['w_'+str(n)]==0: #Beacuse repaired interdpendent nodes may beforced to become non-functional by the dependee node
                 m.getVarByName('w_'+str(n)+","+str(t)).lb=decision_vars[t]['w_'+str(n)]
                 m.getVarByName('w_'+str(n)+","+str(t)).ub=decision_vars[t]['w_'+str(n)]
@@ -114,10 +114,10 @@ def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={}
                 objFunc+=d['data']['inf_data'].reconstruction_cost*m.getVarByName('w_'+str(n)+","+str(t))
             else:
                 objFunc+=d['data']['inf_data'].reconstruction_cost*m.getVarByName('w_tilde_'+str(n)+","+str(t))
-        for n,d in N_hat.nodes_iter(data=True):
+        for n,d in N_hat.nodes(data=True):
             objFunc+=d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t))
             objFunc+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t))
-        for u,v,a in N_hat.edges_iter(data=True):
+        for u,v,a in N_hat.edges(data=True):
             objFunc+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+str(u)+","+str(v)+","+str(t))
             
             
@@ -127,7 +127,7 @@ def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={}
     #Constraints.
     # Time-dependent constraints.
     if T > 1:
-        for n,d in N_hat.nodes_iter(data=True):
+        for n,d in N_hat.nodes(data=True):
             m.addConstr(m.getVarByName('w_'+str(n)+",0"),GRB.EQUAL,0)
         for u,v,a in A_hat_prime:
             m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+",0"),GRB.EQUAL,0)
@@ -135,7 +135,7 @@ def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={}
         
     for t in range(T):
         # Time-dependent constraint.
-        for n,d in N_hat.nodes_iter(data=True):
+        for n,d in N_hat.nodes(data=True):
             if t > 0:
                 wTildeSum=LinExpr()
                 for t_prime in range(1,t):
@@ -154,7 +154,7 @@ def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={}
             if T > 1:
                 m.addConstr(m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t)),GRB.EQUAL,m.getVarByName('y_tilde_'+str(v)+","+str(u)+","+str(t)),"Arc reconstruction equality ("+str(u)+","+str(v)+","+str(t)+")")
         # Conservation of flow constraint. (2) in INDP paper.
-        for n,d in N_hat.nodes_iter(data=True):
+        for n,d in N_hat.nodes(data=True):
             outFlowConstr=LinExpr()
             inFlowConstr= LinExpr()
             demandConstr= LinExpr()
@@ -169,7 +169,7 @@ def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={}
             interdep_nodes_list = interdep_nodes.keys() #Interdepndent nodes with a damaged dependee node 
         else:
             interdep_nodes_list = interdep_nodes[t].keys() #Interdepndent nodes with a damaged dependee node 
-        for u,v,a in N_hat.edges_iter(data=True):
+        for u,v,a in N_hat.edges(data=True):
             if (u in [n for (n,d) in N_hat_prime]) | (u in interdep_nodes_list):
                 m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*m.getVarByName('w_'+str(u)+","+str(t)),"Flow in functionality constraint("+str(u)+","+str(v)+","+str(t)+")")
             else:
@@ -230,7 +230,7 @@ def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={}
 
         # Interdependency constraints
         infeasible_actions=[]
-        for n,d in N_hat.nodes_iter(data=True):
+        for n,d in N_hat.nodes(data=True):
             if not functionality:
                 if n in interdep_nodes:
                     interdepLConstr=LinExpr()
@@ -328,7 +328,7 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,decision
     # compute total demand of all layers and each layer
     total_demand = 0.0
     total_demand_layer={l:0.0 for l in layers}
-    for n,d in N_hat.nodes_iter(data=True):
+    for n,d in N_hat.nodes(data=True):
         demand_value = d['data']['inf_data'].demand
         if demand_value<0:
             total_demand+=demand_value
@@ -401,7 +401,7 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,decision
         for l in layers:
             layer_results[l].add_cost(t,"Node",nodeCost_layer[l])
         # Calculate under/oversupply costs.
-        for n,d in N_hat.nodes_iter(data=True):
+        for n,d in N_hat.nodes(data=True):
             overSuppCost+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t)).x
             overSuppCost_layer[n[1]]+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t)).x
             underSupp+= m.getVarByName('delta+_'+str(n)+","+str(t)).x
@@ -416,7 +416,7 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,decision
             layer_results[l].add_cost(t,"Under Supply",underSuppCost_layer[l])
             layer_results[l].add_cost(t,"Under Supply Perc",underSupp_layer[l]/total_demand_layer[l])
         # Calculate flow costs.
-        for u,v,a in N_hat.edges_iter(data=True):
+        for u,v,a in N_hat.edges(data=True):
             flowCost+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)).x
             flowCost_layer[u[1]]+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)).x
         indp_results.add_cost(t,"Flow",flowCost)
