@@ -6,7 +6,7 @@ import cPickle as pickle
 from os import listdir
 from os.path import isfile, join
 
-def replace_labels(df, col):
+def add_labels(df, col):
     rename_dict={"Intercept": r'$\alpha$',
                  "w_n_t_1": r'$\beta_{1,i}$ (Neighbor nodes)',
                  "w_a_t_1": r'$\beta_{2,i}$ (Connected arcs)',
@@ -19,8 +19,9 @@ def replace_labels(df, col):
                  "Under_Supply": r'$\gamma_{3,i}$ (Demand deficit)',
                  "Flow": r'$\gamma_{4,i}$ (Flow cost)',
                  "Rc": r'$R_c$ (Resource)'}
+    df['Predictors']=df[col]
     for i in df[col].unique():
-        df=df.replace(i,rename_dict[i])
+        df['Predictors']=df['Predictors'].replace(i,rename_dict[i])
     return df
 
 def plot_correlation(node_data,keys,exclusions):
@@ -128,63 +129,86 @@ def plot_results():
     ###############################################################################
     
 '''Analyze the coefficients''' 
-def plot_coef():
-    sns.set(context='notebook',style='darkgrid')
-    # plt.rc('text', usetex=True)
-    # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-    plt.close('all')
-    
-    # t_suf = '20200415'
-    # samples,costs,costs_local,initial_net = pickle.load(open('data'+t_suf+'/initial_data.pkl', "rb" ))
-    # keys=samples.keys()
-
-    t_suf = '20200505'
-    mypath='parameters'+t_suf+'/'
+def read_coef():
+    t_suf = ''#'20200505'
+    root='C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc/'
+    mypath=root+'parameters'+t_suf+'/'
     keys = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f)) and f[:2]!='R2']
     node_params=pd.DataFrame(columns=['key','name','mean','sd','mc_error','hpd_2.5','hpd_97.5','n_eff','Rhat'])
     arc_params=pd.DataFrame(columns=['key','name','mean','sd','mc_error','hpd_2.5','hpd_97.5','n_eff','Rhat'])
     for key in keys:
         if key[0]=='w':
-            filename= 'parameters'+t_suf+'/model_parameters_'+key+'.txt'
+            filename= mypath+'model_parameters_'+key+'.txt'
             paramters = result_df=pd.read_csv(filename,delimiter=' ',index_col=False) 
             paramters=paramters.rename(columns={'Unnamed: 0': 'name'})
             paramters['key']=key
             node_params=pd.concat([node_params,paramters], axis=0, ignore_index=True)
         if key[0]=='y':
-            filename= 'parameters'+t_suf+'/model_parameters_'+key+'.txt'
-            try: 
-                paramters = result_df=pd.read_csv(filename,delimiter=' ',index_col=False) 
-                paramters=paramters.rename(columns={'Unnamed: 0': 'name'})
-                paramters['key']=key
-                arc_params=pd.concat([arc_params,paramters], axis=0, ignore_index=True)
-            except:
-                pass
+            filename= mypath+'model_parameters_'+key+'.txt' 
+            paramters = result_df=pd.read_csv(filename,delimiter=' ',index_col=False) 
+            paramters=paramters.rename(columns={'Unnamed: 0': 'name'})
+            paramters['key']=key
+            arc_params=pd.concat([arc_params,paramters], axis=0, ignore_index=True)
             
-    # plt.figure() 
-    # node_params['cov'] =abs(node_params['sd']/node_params['mean'])
-    # node_params_filtered=node_params[(node_params['mc_error']<0.1) & (abs(node_params['Rhat']-1)<0.005)]
-    # node_params_filtered=replace_labels(node_params_filtered, 'name')
-    # node_params_filtered=node_params_filtered.rename(columns={'name':'Predictors','mean':'Estimated Mean'})
-    
-    # ax=sns.boxplot(y="Predictors", x="Estimated Mean",data=node_params_filtered, whis=1,
-    #                linewidth=0.75, fliersize=3, palette=sns.cubehelix_palette(20))
-    # ax.set_xlim((-25,25))
-    # ax.set_xticks(np.arange(-25,25, 5.0))
-    # plt.savefig('Node_mean_predictors.png',dpi=600,bbox_inches='tight')
-
-    arc_params['cov'] =abs(arc_params['sd']/arc_params['mean'])
+    node_params['CoV'] =abs(node_params['sd']/node_params['mean'])
+    node_params_filtered=node_params[(node_params['mc_error']<0.1) &
+                                     (abs(node_params['Rhat']-1)<0.01) &
+                                     (node_params['CoV']<1)]
+    node_params_filtered=add_labels(node_params_filtered, 'name')
+    node_params_filtered=node_params_filtered.rename(columns={'mean':'Estimated Mean'})
+    arc_params['CoV'] =abs(arc_params['sd']/arc_params['mean'])
     arc_params_filtered=arc_params[(arc_params['mc_error']<0.1) &
-                                   (abs(arc_params['Rhat']-1)<0.005) & 
-                                   (arc_params['cov']<1)]
-    arc_params_filtered=replace_labels(arc_params_filtered, 'name')
-    arc_params_filtered=arc_params_filtered.rename(columns={'name':'Predictors','mean':'Estimated Mean'})    
-    plt.figure()    
-    ax=sns.boxplot(y="Predictors", x="Estimated Mean",data=arc_params_filtered, whis=1,fliersize=1,linewidth=1,
-                    palette=sns.cubehelix_palette(25))
-    ax.set_xlim((-15,15))
-        
-    # sns.pairplot(node_params_filtered.drop(columns=['hpd_2.5','hpd_97.5']),
-    #     kind='reg', plot_kws={'line_kws':{'color':'red'}, 'scatter_kws': {'alpha': 0.1}})
-    return arc_params,arc_params_filtered
-arc_params,arc_params_filtered=plot_coef()
+                                   (abs(arc_params['Rhat']-1)<0.01) &
+                                   (arc_params['CoV']<1)]
+    arc_params_filtered=add_labels(arc_params_filtered, 'name')
+    arc_params_filtered=arc_params_filtered.rename(columns={'mean':'Estimated Mean'})     
+    return arc_params,arc_params_filtered,node_params,node_params_filtered
+
+def plot_coef(arc_params_filtered,node_params_filtered):
+    sns.set(context='notebook',style='darkgrid')
+    # plt.rc('text', usetex=True)
+    # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    plt.close('all')
+           
+    f, axs = plt.subplots(2, 1,sharex=True,gridspec_kw={'height_ratios': [11/20.0,9/20.0]})
+    sns.boxplot(y="Predictors", x="Estimated Mean",data=node_params_filtered, whis=1, ax=axs[0],
+                    linewidth=0.5, fliersize=.5, palette=sns.cubehelix_palette(20))
+    sns.boxplot(y="Predictors", x="Estimated Mean",data=arc_params_filtered, whis=1, ax=axs[1],
+                    linewidth=0.5, fliersize=.5, palette=sns.cubehelix_palette(20))
+    axs[0].set_ylabel('Predictors - Nodes')
+    axs[0].set_xlabel('')
+    axs[1].set_ylabel('Predictors - Arcs')
+    axs[1].set_xlim((-25,25))
+    axs[1].set_xticks(np.arange(-25,25, 5.0))
+    plt.savefig('mean_predictors.png',dpi=600,bbox_inches='tight')
+
+    f, axs = plt.subplots(2, 1, sharex=True,gridspec_kw={'height_ratios': [11/20.0,9/20.0]})
+    sns.boxplot(y="Predictors", x="CoV",data=node_params_filtered, whis=1, ax=axs[0],
+                    linewidth=0.5, fliersize=.5, palette=sns.cubehelix_palette(20))
+    sns.boxplot(y="Predictors", x="CoV",data=arc_params_filtered, whis=1, ax=axs[1],
+                    linewidth=0.5, fliersize=.5, palette=sns.cubehelix_palette(20))
+    axs[0].set_ylabel('Predictors - Nodes')
+    axs[0].set_xlabel('')
+    axs[1].set_ylabel('Predictors - Arcs')
+    axs[1].set_xlim((-0,1))
+    axs[1].set_xticks(np.arange(-0,1, 0.1))
+    plt.savefig('cov_predictors.png',dpi=600,bbox_inches='tight')   
+
+# arc_params,arc_params_filtered,node_params,node_params_filtered=read_coef()
+# plot_coef(arc_params_filtered,node_params_filtered)
     
+# sns.set(style="white", color_codes=True)
+# g=sns.jointplot('Estimated Mean', 'CoV', data=arc_params_filtered,
+#                   kind="kde", space=0, color="b",xlim=(-25,25),ylim=(-0,1))
+# sns.set(style="white", color_codes=True)
+# g=sns.jointplot('Estimated Mean', 'CoV', data=node_params_filtered,
+#                   kind="kde", space=0, color="b",xlim=(-25,25),ylim=(-0,1))
+
+# df = pd.merge(node_params, node_params_filtered, on=list(node_params.columns), 
+              # how='outer', indicator=True).query("_merge != 'both'").drop('_merge', axis=1).reset_index(drop=True)
+# for i in df['key'].unique():
+#     print train_data[i]['w_t'].mean()
+# print len(df['key'].unique())
+
+# sns.pairplot(node_params_filtered.drop(columns=['hpd_2.5','hpd_97.5']),
+#     kind='reg', plot_kws={'line_kws':{'color':'red'}, 'scatter_kws': {'alpha': 0.1}})
