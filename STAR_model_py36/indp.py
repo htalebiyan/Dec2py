@@ -294,81 +294,19 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
     m.update()
     m.optimize()
     indp_results=INDPResults()
+    run_time = time.time()-start_time
     # Save results.
     if m.getAttr("Status")==GRB.OPTIMAL or m.status==9:
         if m.status==9:
             print ('\nOptimizer time limit, gap = %1.3f\n' % m.MIPGap)
-        # compute total demand of all layers
-        total_demand = 0.0
-        for n in G_prime.nodes(data=True):
-            demand_value = n[1]['data']['inf_data'].demand
-            if demand_value<0:
-                total_demand+=demand_value
-            
-        for t in range(T):
-            nodeCost=0.0
-            arcCost=0.0
-            flowCost=0.0
-            overSuppCost=0.0
-            underSuppCost=0.0
-            underSupp=0.0
-            spacePrepCost=0.0
-            # Record node recovery actions.
-            for n,d in N_hat_prime:
-                nodeVar='w_tilde_'+str(n)+","+str(t)
-                if T == 1:
-                    nodeVar='w_'+str(n)+","+str(t)
-                if round(m.getVarByName(nodeVar).x)==1:
-                    action=str(n[0])+"."+str(n[1])
-                    indp_results.add_action(t,action)
-                        #if T == 1:
-                        #N.G.node[n]['data']['inf_data'].functionality=1.0
-            # Record edge recovery actions.
-            for u,v,a in A_hat_prime:
-                arcVar='y_tilde_'+str(u)+","+str(v)+","+str(t)
-                if T == 1:
-                    arcVar='y_'+str(u)+","+str(v)+","+str(t)
-                if round(m.getVarByName(arcVar).x)==1:
-                    action=str(u[0])+"."+str(u[1])+"/"+str(v[0])+"."+str(v[1])
-                    indp_results.add_action(t,action)
-                    #if T == 1:
-                    #N.G[u][v]['data']['inf_data'].functionality=1.0
-            # Calculate space preparation costs.
-            for s in S:
-                spacePrepCost+=s.cost*m.getVarByName('z_'+str(s.id)+","+str(t)).x
-            indp_results.add_cost(t,"Space Prep",spacePrepCost)
-            # Calculate arc preparation costs.
-            for u,v,a in A_hat_prime:
-                arcVar='y_tilde_'+str(u)+","+str(v)+","+str(t)
-                if T == 1:
-                    arcVar='y_'+str(u)+","+str(v)+","+str(t)
-                arcCost+=(a['data']['inf_data'].reconstruction_cost/2.0)*m.getVarByName(arcVar).x
-            indp_results.add_cost(t,"Arc",arcCost)
-            # Calculate node preparation costs.
-            for n,d in N_hat_prime:
-                nodeVar = 'w_tilde_'+str(n)+","+str(t)
-                if T == 1:
-                    nodeVar = 'w_'+str(n)+","+str(t)
-                nodeCost+=d['data']['inf_data'].reconstruction_cost*m.getVarByName(nodeVar).x
-            indp_results.add_cost(t,"Node",nodeCost)
 
-            # Calculate under/oversupply costs.
-            for n,d in N_hat.nodes(data=True):
-                overSuppCost+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t)).x
-                underSupp+= m.getVarByName('delta+_'+str(n)+","+str(t)).x
-                underSuppCost+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t)).x
-            indp_results.add_cost(t,"Over Supply",overSuppCost)
-            indp_results.add_cost(t,"Under Supply",underSuppCost)
-            indp_results.add_cost(t,"Under Supply Perc",underSupp/total_demand)
-            # Calculate flow costs.
-            for u,v,a in N_hat.edges(data=True):
-                flowCost+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)).x
-            indp_results.add_cost(t,"Flow",flowCost)
-            # Calculate total costs.
-            indp_results.add_cost(t,"Total",flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost)
-            indp_results.add_cost(t,"Total no disconnection",spacePrepCost+arcCost+flowCost+nodeCost)
-            indp_results.add_run_time(t,time.time()-start_time)     
-        return [m,indp_results]
+        results=collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S)
+
+        results[0].add_run_time(t,run_time)  
+        for l in controlled_layers:
+            results[1][l].add_run_time(t,run_time) 
+            
+        return [m,results[0],results[1]]
     else:
         print(m.getAttr("Status"),": SOLUTION NOT FOUND. (Check data and/or violated constraints).")
         m.computeIIS()
@@ -377,6 +315,117 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
             if c.IISConstr:
                 print('%s' % c.constrName)
         return None
+
+def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
+    layers = controlled_layers
+    indp_results=INDPResults()
+    layer_results={}
+    for l in layers:
+        layer_results[l]=INDPResults()
+    # compute total demand of all layers and each layer
+    total_demand = 0.0
+    total_demand_layer={l:0.0 for l in layers}
+    for n,d in N_hat.nodes(data=True):
+        demand_value = d['data']['inf_data'].demand
+        if demand_value<0:
+            total_demand+=demand_value
+            total_demand_layer[n[1]]+=demand_value
+    for t in range(T):
+        nodeCost=0.0
+        arcCost=0.0
+        flowCost=0.0
+        overSuppCost=0.0
+        underSuppCost=0.0
+        underSupp=0.0
+        spacePrepCost=0.0
+        nodeCost_layer={l:0.0 for l in layers}
+        arcCost_layer={l:0.0 for l in layers}
+        flowCost_layer={l:0.0 for l in layers}
+        overSuppCost_layer={l:0.0 for l in layers}
+        underSuppCost_layer={l:0.0 for l in layers}
+        underSupp_layer={l:0.0 for l in layers}
+        spacePrepCost_layer={l:0.0 for l in layers}
+        # Record node recovery actions.
+        for n,d in N_hat_prime:
+            nodeVar='w_tilde_'+str(n)+","+str(t)
+            if T == 1:
+                nodeVar='w_'+str(n)+","+str(t)
+            if round(m.getVarByName(nodeVar).x)==1:
+                action=str(n[0])+"."+str(n[1])
+                indp_results.add_action(t,action)
+                layer_results[n[1]].add_action(t,action)
+                    #if T == 1:
+                    #N.G.node[n]['data']['inf_data'].functionality=1.0
+        # Record edge recovery actions.
+        for u,v,a in A_hat_prime:
+            arcVar='y_tilde_'+str(u)+","+str(v)+","+str(t)
+            if T == 1:
+                arcVar='y_'+str(u)+","+str(v)+","+str(t)
+            if round(m.getVarByName(arcVar).x)==1:
+                action=str(u[0])+"."+str(u[1])+"/"+str(v[0])+"."+str(v[1])
+                indp_results.add_action(t,action)
+                layer_results[n[1]].add_action(t,action)
+                #if T == 1:
+                #N.G[u][v]['data']['inf_data'].functionality=1.0
+        # Calculate space preparation costs.
+        for s in S:
+            spacePrepCost+=s.cost*m.getVarByName('z_'+str(s.id)+","+str(t)).x
+        indp_results.add_cost(t,"Space Prep",spacePrepCost)
+        # Calculate arc preparation costs.
+        for u,v,a in A_hat_prime:
+            arcVar='y_tilde_'+str(u)+","+str(v)+","+str(t)
+            if T == 1:
+                arcVar='y_'+str(u)+","+str(v)+","+str(t)
+            arcCost+=(a['data']['inf_data'].reconstruction_cost/2.0)*m.getVarByName(arcVar).x
+            arcCost_layer[u[1]]+=(a['data']['inf_data'].reconstruction_cost/2.0)*m.getVarByName(arcVar).x
+            if m.getVarByName(arcVar).x==0:
+                arcCost+=a['data']['inf_data'].reconstruction_cost/2.0
+                arcCost_layer[u[1]]+=a['data']['inf_data'].reconstruction_cost/2.0
+        indp_results.add_cost(t,"Arc",arcCost)
+        for l in layers:
+            layer_results[l].add_cost(t,"Arc", arcCost_layer[l])
+        # Calculate node preparation costs.
+        for n,d in N_hat_prime:
+            nodeVar = 'w_tilde_'+str(n)+","+str(t)
+            if T == 1:
+                nodeVar = 'w_'+str(n)+","+str(t)
+            nodeCost+=d['data']['inf_data'].reconstruction_cost*m.getVarByName(nodeVar).x
+            nodeCost_layer[n[1]]+=d['data']['inf_data'].reconstruction_cost*m.getVarByName(nodeVar).x
+            if m.getVarByName(nodeVar).x==0:
+                nodeCost+=d['data']['inf_data'].reconstruction_cost
+                nodeCost_layer[n[1]]+=d['data']['inf_data'].reconstruction_cost
+        indp_results.add_cost(t,"Node",nodeCost)
+        for l in layers:
+            layer_results[l].add_cost(t,"Node",nodeCost_layer[l])
+        # Calculate under/oversupply costs.
+        for n,d in N_hat.nodes(data=True):
+            overSuppCost+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t)).x
+            overSuppCost_layer[n[1]]+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t)).x
+            underSupp+= m.getVarByName('delta+_'+str(n)+","+str(t)).x
+            underSupp_layer[n[1]]+= m.getVarByName('delta+_'+str(n)+","+str(t)).x
+            underSuppCost+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t)).x
+            underSuppCost_layer[n[1]]+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t)).x
+        indp_results.add_cost(t,"Over Supply",overSuppCost)
+        indp_results.add_cost(t,"Under Supply",underSuppCost)
+        indp_results.add_cost(t,"Under Supply Perc",underSupp/total_demand)
+        for l in layers:
+            layer_results[l].add_cost(t,"Over Supply",overSuppCost_layer[l])
+            layer_results[l].add_cost(t,"Under Supply",underSuppCost_layer[l])
+            layer_results[l].add_cost(t,"Under Supply Perc",underSupp_layer[l]/total_demand_layer[l])
+        # Calculate flow costs.
+        for u,v,a in N_hat.edges(data=True):
+            flowCost+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)).x
+            flowCost_layer[u[1]]+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)).x
+        indp_results.add_cost(t,"Flow",flowCost)
+        for l in layers:
+            layer_results[l].add_cost(t,"Flow",flowCost_layer[l])
+        # Calculate total costs.
+        indp_results.add_cost(t,"Total",flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost)
+        indp_results.add_cost(t,"Total no disconnection",spacePrepCost+arcCost+flowCost+nodeCost)           
+        for l in layers:
+            layer_results[l].add_cost(t,"Total",flowCost_layer[l]+arcCost_layer[l]+nodeCost_layer[l]+overSuppCost_layer[l]+underSuppCost_layer[l]+spacePrepCost_layer[l])
+            layer_results[l].add_cost(t,"Total no disconnection",spacePrepCost_layer[l]+arcCost_layer[l]+flowCost+nodeCost_layer[l])
+    return [indp_results,layer_results]
 
 def apply_recovery(N,indp_results,t):
     for action in indp_results[t]['actions']:
