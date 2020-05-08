@@ -49,8 +49,10 @@ class INDPComponents:
 
 class INDPResults:
     cost_types=["Space Prep","Arc","Node","Over Supply","Under Supply","Flow","Total","Under Supply Perc"]
-    def __init__(self):
+    def __init__(self,layers=[]):
         self.results={}
+        self.layers=layers
+        self.results_layer={l:{} for l in layers}
     def __len__(self):
         return len(self.results)
     def __getitem__(self,index):
@@ -60,6 +62,12 @@ class INDPResults:
             t_end = len(indp_result)
         for new_t,t in zip([x+t_offset for x in range(t_end-t_start)],[y+t_start for y in range(t_end-t_start)]):
             self.results[new_t]=indp_result[t]
+    def extend_layer(self,indp_result,t_offset=0,t_start=0,t_end=0):
+        if t_end == 0: 
+            t_end = len(indp_result[self.layers[0]])
+        for l in self.layers:
+            for new_t,t in zip([x+t_offset for x in range(t_end-t_start)],[y+t_start for y in range(t_end-t_start)]):
+                self.results_layer[l][new_t]=indp_result[l][t]
     def add_cost(self,t,cost_type,cost):
         if t not in self.results:
             self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
@@ -114,6 +122,25 @@ class INDPResults:
 #            f.write("t,components\n")
 #            for t in self.results:
 #                f.write(str(t)+","+self.results[t]['components'].to_csv_string()+"\n")
+    def to_csv_layer(self,outdir,sample_num=1,suffix=""):
+        for l in self.layers:
+            action_file =outdir+"/actions_"+str(sample_num)+"_l"+str(l)+"_"+suffix+".csv"
+            costs_file =outdir+"/costs_"  +str(sample_num)+"_l"+str(l)+"_"+suffix+".csv"
+            run_time_file =outdir+"/run_time_"  +str(sample_num)+"_l"+str(l)+"_"+suffix+".csv"
+            with open(action_file,'w') as f:
+                f.write("t,action\n")
+                for t in self.results_layer[l]:
+                    for a in self.results_layer[l][t]['actions']:
+                        f.write(str(t)+","+a+"\n")
+            with open(run_time_file,'w') as f:
+                f.write("t,run_time\n")
+                for t in self.results_layer[l]:
+                    f.write(str(t)+","+str(self.results_layer[l][t]['run_time'])+"\n")
+            with open(costs_file,'w') as f:
+                f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Under Supply Perc\n")
+                for t in self.results_layer[l]:
+                    costs=self.results_layer[l][t]['costs']
+                    f.write(str(t)+","+str(costs["Space Prep"])+","+str(costs["Arc"])+","+str(costs["Node"])+","+str(costs["Over Supply"])+","+str(costs["Under Supply"])+","+str(costs["Flow"])+","+str(costs["Total"])+","+str(costs["Under Supply Perc"])+"\n")
     @classmethod
     def from_csv(clss,outdir,sample_num=1,suffix=""):
         action_file=outdir+"/actions_"+str(sample_num)+"_"+suffix+".csv"

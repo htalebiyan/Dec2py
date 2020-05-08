@@ -136,52 +136,39 @@ def import_initial_data(params,failSce_param,suffix=''):
         else:
             objs['w_'+str(v)].add_dependee('w_'+str(u))
     
-    # initial costs       
-    indp_results=indp(params['N'],v_r=0,T=1,layers=params['L'],controlled_layers=params['L'],
-                      print_cmd=False,time_limit=None)
-    costs = {x:{} for x in params['L']+[0]}
-    for h in list(indp_results[1][0]['costs'].keys()):
-        costs[0][h.replace(' ', '_')]=indp_results[1][0]['costs'][h]
-        for l in params['L']:
-            costs[l][h.replace(' ', '_')]=indp_results[2][l][0]['costs'][h]
-    return objs,costs,indp_results[1][0]['run_time']
-
-def writ_pred_to_file(predictions,num_pred,sample,mag):
-    for pred_s in range(num_pred):
-        for key in list(predictions.keys()):
-            t_suf = time.strftime("%Y%m%d")
-            folder_name = './results'+t_suf
-            if not os.path.exists(folder_name):
-                os.makedirs(folder_name)
-            with open(folder_name+'/actions'+str(pred_s)+'.txt', 'a') as filehandle:
-                for i in row:
-                    filehandle.write('%s\t' % i)
-                filehandle.write('\n')   
-                filehandle.close()         
+    return objs
                 
-def predict_resotration(objs,initial_costs,initial_run_time,pred_dict,failSce_param,params):
+def predict_resotration(objs,pred_dict,failSce_param,params):
     print('\nPredicting sample '+str(pred_dict['sample'])+': time step ',)
     
     ''' Define a few vars and lists '''
     num_pred = pred_dict['num_pred']
     T = params['NUM_ITERATIONS']
     net_obj = {x:copy.deepcopy(params['N']) for x in range(num_pred)}
-    pred_results={x:INDPResults() for x in range(num_pred)} 
+    pred_results={x:INDPResults(params['L']) for x in range(num_pred)} 
     run_times={x:[0,0] for x in range(T+1)}
-    run_times[0][0]=initial_run_time
-    ''' Initialize prediction and cost vectors '''
+    
+    
+    ''' Initialize state and cost vectors '''
     for key,val in objs.items(): 
         val.initialize_state_matrices(T,num_pred)
         val.check_model_exist(pred_dict['param_folder'])
-    costs={}
-    for l in list(initial_costs.keys()):
-        costs[l]={}
-        for h in list(initial_costs[l].keys()):
-            costs[l][h]=np.zeros((T+1,num_pred))
-            costs[l][h][0,:]=initial_costs[l][h]     
+      
+    indp_results=indp(params['N'],v_r=0,T=1,layers=params['L'],controlled_layers=params['L'],
+                      print_cmd=False,time_limit=None)
+    run_times[0][0]=indp_results[1][0]['run_time']
+    for pred_s in range(num_pred):
+        pred_results[pred_s].extend(indp_results[1],t_offset=0)
+        pred_results[pred_s].extend_layer(indp_results[2],t_offset=0)
+    costs = {x:{} for x in params['L']+[0]}
+    for h in list(indp_results[1][0]['costs'].keys()):
+        costs[0][h.replace(' ', '_')]=np.zeros((T+1,num_pred))
+        costs[0][h.replace(' ', '_')][0,:]=indp_results[1][0]['costs'][h]
+        for l in params['L']:
+            costs[l][h.replace(' ', '_')]=np.zeros((T+1,num_pred))
+            costs[l][h.replace(' ', '_')][0,:]=indp_results[2][l][0]['costs'][h]  
            
     '''Predict restoration plans'''
-
     for t in range(T): # t is the time index for previous time step
         print(str(t+1)+'.'),
         start_time = time.time()
@@ -191,7 +178,7 @@ def predict_resotration(objs,initial_costs,initial_run_time,pred_dict,failSce_pa
         
         '''  Cost normalization '''
         costs_normed={}
-        for c in list(initial_costs[0].keys()): 
+        for c in list(costs[0].keys()): 
             costs_normed[c] = STAR_utils.normalize_costs(costs[0][c],c)
         run_times[t+1][1]=predict_next_step(t,T,objs,pred_dict,costs_normed,params['V'],layer_dict,print_cmd=True)
         
@@ -206,6 +193,7 @@ def predict_resotration(objs,initial_costs,initial_run_time,pred_dict,failSce_pa
                         controlled_layers=params['L'],decision_vars=decision_vars,
                         print_cmd=True, time_limit=None)
             pred_results[pred_s].extend(flow_results[1],t_offset=t+1)
+            pred_results[pred_s].extend_layer(flow_results[2],t_offset=t+1)
             apply_recovery(net_obj[pred_s],flow_results[1],0)
             # run_times.append(time.time()-start_time)
             # row = np.array([s,t+1,res,pred_s,'predicted',flow_results[1][0]['costs']['Total'],
@@ -213,14 +201,14 @@ def predict_resotration(objs,initial_costs,initial_run_time,pred_dict,failSce_pa
             # write_results_to_file(row)    
     
             ''' Update the cost dict for the next time step '''
-            for h in list(initial_costs[0].keys()):
+            for h in list(costs[0].keys()):
                 costs[0][h][t+1,pred_s]=flow_results[1][0]['costs'][h.replace('_', ' ')]
                 for l in params['L']:
                     costs[l][h][t+1,pred_s]=flow_results[2][l][0]['costs'][h.replace('_', ' ')]                
                 #'''Write models to file'''  
                 # indp.save_INDP_model_to_file(flow_results[0],'./models',t,l=0)           
         run_times[t+1][0]=time.time()-start_time
-    return costs,pred_results,run_times
+    return pred_results,run_times
 
 def predict_next_step(t,T,objs,pred_dict,costs_normed,res,layer_dict,print_cmd=True):
     '''define vars and lists'''
@@ -341,14 +329,70 @@ def extract_features(objs,net_obj,t,layers,num_pred,prog_bar=True):
                 layer_dict[val.net_id]['w_h_t_1'][pred_s]+=val.state_hist[t,pred_s]/no_high_nodes
                         
     return layer_dict
-  
+
+def plot_results(failSce_param,pred_dict,params):
+    sns.set(context='notebook',style='darkgrid')
+    # plt.rc('text', usetex=True)
+    # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    plt.close('all')
+              
+    t_suf = ''    
+    folder_name = 'results'+t_suf
+    for pred_s in range(pred_dict['num_pred']):
+        suffix = 'ps'+str(pred_s)
+        cost_file = folder_name+"/costs_"+str(failSce_param["sample"])+"_"+suffix+".csv"
+        if pred_s==0:
+            tc_df = pd.read_csv(cost_file,delimiter=',')
+            tc_df['pred sample']=pred_s
+            tc_df['layer']=0
+            tc_df['cost scope']='Overall'
+            tc_df['sample']=failSce_param["sample"]
+            tc_df['type']='predicted'
+        else:
+            temp=pd.read_csv(cost_file,delimiter=',')
+            temp['pred sample']=pred_s
+            temp['cost scope']='Overall'
+            temp['layer']=0
+            temp['sample']=failSce_param["sample"]
+            temp['type']='predicted'
+            tc_df = pd.concat([tc_df,temp])
+        for l in params['L']:
+            suffix = 'l'+str(l)+'_ps'+str(pred_s)
+            cost_file = folder_name+"/layers/costs_"+str(failSce_param["sample"])+"_"+suffix+".csv"
+            temp=pd.read_csv(cost_file,delimiter=',')
+            temp['pred sample']=pred_s
+            temp['layer']=l
+            temp['cost scope']='layer'
+            temp['sample']=failSce_param["sample"]
+            temp['type']='predicted'
+            tc_df = pd.concat([tc_df,temp])
+    # tc_df=tc_df.replace('predicted','Logistic Model Prediction')    
+    # tc_df=tc_df.replace('data','Optimal Scenario')               
+    figure_df = tc_df#[result_df['sample']==200]
+    sns.lineplot(x="t", y="Total",style='layer',hue='layer',
+                 data=figure_df,markers=True,ci=99)
+    # plt.savefig('Total_cost_vs_time.png',dpi=600,bbox_inches='tight')
+    return tc_df
+    
 t_suf = ''
 dirrrr='C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
-failSce_param = {"type":"WU","sample":1,"mag":37,'Base_dir':"../data/Extended_Shelby_County/",
+failSce_param = {"type":"WU","sample":1,"mag":52,'Base_dir':"../data/Extended_Shelby_County/",
                  'Damage_dir':"../data/Wu_Damage_scenarios/" ,'topology':None}
-pred_dict={"sample":0,'sample_index':0,'num_pred':4,
+pred_dict={"sample":0,'sample_index':0,'num_pred':5,
            'model_dir':dirrrr+'/traces'+t_suf,'param_folder':dirrrr+'/parameters'+t_suf }
 params={"NUM_ITERATIONS":10,"V":5,"ALGORITHM":"INDP",'L':[1,2,3,4]}
 
-objs,costs,run_time=import_initial_data(params,failSce_param,suffix='') 
-cost,pred_results,run_time=predict_resotration(objs,costs,run_time,pred_dict,failSce_param,params)
+# objs=import_initial_data(params,failSce_param,suffix='') 
+# pred_results,run_time=predict_resotration(objs,pred_dict,failSce_param,params)
+
+# for pred_s in range(pred_dict['num_pred']):
+#     output_dir='./results'
+#     if not os.path.exists(output_dir):
+#         os.makedirs(output_dir)
+#     output_dir_l='./results/layers'
+#     if not os.path.exists(output_dir_l):
+#         os.makedirs(output_dir_l)
+#     pred_results[pred_s].to_csv(output_dir,failSce_param["sample"],suffix='ps'+str(pred_s))
+#     pred_results[pred_s].to_csv_layer(output_dir_l,failSce_param["sample"],suffix='ps'+str(pred_s))
+
+results=plot_results(failSce_param,pred_dict,params)

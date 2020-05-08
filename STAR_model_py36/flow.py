@@ -322,9 +322,7 @@ def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={}
 def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,decision_vars,S):
     layers = controlled_layers
     indp_results=INDPResults()
-    layer_results={}
-    for l in layers:
-        layer_results[l]=INDPResults()
+    layer_results={l:INDPResults() for l in layers}
     # compute total demand of all layers and each layer
     total_demand = 0.0
     total_demand_layer={l:0.0 for l in layers}
@@ -367,7 +365,7 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,decision
             if round(m.getVarByName(arcVar).x)==1 or decision_vars[t]['y_'+str(u)+","+str(v)]==1:
                 action=str(u[0])+"."+str(u[1])+"/"+str(v[0])+"."+str(v[1])
                 indp_results.add_action(t,action)
-                layer_results[n[1]].add_action(t,action)
+                layer_results[u[1]].add_action(t,action)
                 #if T == 1:
                 #N.G[u][v]['data']['inf_data'].functionality=1.0
         # Calculate space preparation costs.

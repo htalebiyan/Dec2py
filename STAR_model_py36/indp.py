@@ -319,9 +319,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
 def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
     layers = controlled_layers
     indp_results=INDPResults()
-    layer_results={}
-    for l in layers:
-        layer_results[l]=INDPResults()
+    layer_results={l:INDPResults() for l in layers}
     # compute total demand of all layers and each layer
     total_demand = 0.0
     total_demand_layer={l:0.0 for l in layers}
@@ -364,7 +362,7 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
             if round(m.getVarByName(arcVar).x)==1:
                 action=str(u[0])+"."+str(u[1])+"/"+str(v[0])+"."+str(v[1])
                 indp_results.add_action(t,action)
-                layer_results[n[1]].add_action(t,action)
+                layer_results[u[1]].add_action(t,action)
                 #if T == 1:
                 #N.G[u][v]['data']['inf_data'].functionality=1.0
         # Calculate space preparation costs.
@@ -378,9 +376,6 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
                 arcVar='y_'+str(u)+","+str(v)+","+str(t)
             arcCost+=(a['data']['inf_data'].reconstruction_cost/2.0)*m.getVarByName(arcVar).x
             arcCost_layer[u[1]]+=(a['data']['inf_data'].reconstruction_cost/2.0)*m.getVarByName(arcVar).x
-            if m.getVarByName(arcVar).x==0:
-                arcCost+=a['data']['inf_data'].reconstruction_cost/2.0
-                arcCost_layer[u[1]]+=a['data']['inf_data'].reconstruction_cost/2.0
         indp_results.add_cost(t,"Arc",arcCost)
         for l in layers:
             layer_results[l].add_cost(t,"Arc", arcCost_layer[l])
@@ -391,9 +386,6 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
                 nodeVar = 'w_'+str(n)+","+str(t)
             nodeCost+=d['data']['inf_data'].reconstruction_cost*m.getVarByName(nodeVar).x
             nodeCost_layer[n[1]]+=d['data']['inf_data'].reconstruction_cost*m.getVarByName(nodeVar).x
-            if m.getVarByName(nodeVar).x==0:
-                nodeCost+=d['data']['inf_data'].reconstruction_cost
-                nodeCost_layer[n[1]]+=d['data']['inf_data'].reconstruction_cost
         indp_results.add_cost(t,"Node",nodeCost)
         for l in layers:
             layer_results[l].add_cost(t,"Node",nodeCost_layer[l])
