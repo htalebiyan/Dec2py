@@ -117,7 +117,7 @@ def import_initial_data(params,failSce_param,suffix=''):
     elif failSce_param['type']=='ANDRES':
         add_failure_scenario(InterdepNet,DAM_DIR=damage_dir,magnitude=mag,v=params["V"],sim_number=sample)
     elif failSce_param['type']=='random':
-        add_random_failure_scenario(InterdepNet,DAM_DIR=damage_dir,sample=mag) 
+        add_random_failure_scenario(InterdepNet,DAM_DIR=damage_dir,sample=sample) 
     elif failSce_param['type']=='synthetic':
         add_synthetic_failure_scenario(InterdepNet,DAM_DIR=damage_dir,topology=topology,config=mag,sample=sample)              
      
@@ -170,7 +170,7 @@ def predict_resotration(objs,pred_dict,failSce_param,params):
            
     '''Predict restoration plans'''
     for t in range(T): # t is the time index for previous time step
-        print(str(t+1)+'.'),
+        print(str(t+1)+'.', end=" ")
         start_time = time.time()
         
         ''' Feature extraction'''
@@ -180,7 +180,8 @@ def predict_resotration(objs,pred_dict,failSce_param,params):
         costs_normed={}
         for c in list(costs[0].keys()): 
             costs_normed[c] = STAR_utils.normalize_costs(costs[0][c],c)
-        run_times[t+1][1]=predict_next_step(t,T,objs,pred_dict,costs_normed,params['V'],layer_dict,print_cmd=True)
+        run_times[t+1][1]=predict_next_step(t,T,objs,pred_dict,costs_normed,params['V'],
+                                            layer_dict,print_cmd=False)
         
         ''' Calculate the cost of scenario '''
         for pred_s in range(num_pred):
@@ -330,7 +331,7 @@ def extract_features(objs,net_obj,t,layers,num_pred,prog_bar=True):
                         
     return layer_dict
 
-def plot_results(failSce_param,pred_dict,params):
+def plot_results(failSce_param,pred_dict,params,tc_df,opt_dir=None):
     sns.set(context='notebook',style='darkgrid')
     # plt.rc('text', usetex=True)
     # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
@@ -341,58 +342,87 @@ def plot_results(failSce_param,pred_dict,params):
     for pred_s in range(pred_dict['num_pred']):
         suffix = 'ps'+str(pred_s)
         cost_file = folder_name+"/costs_"+str(failSce_param["sample"])+"_"+suffix+".csv"
-        if pred_s==0:
+        if pred_s==0 and tc_df.empty:
             tc_df = pd.read_csv(cost_file,delimiter=',')
-            tc_df['pred sample']=pred_s
-            tc_df['layer']=0
-            tc_df['cost scope']='Overall'
-            tc_df['sample']=failSce_param["sample"]
-            tc_df['type']='predicted'
+            temp_dict={'pred sample':pred_s,'layer':-1,'cost scope':'Overall',
+                       'sample':failSce_param["sample"], 'mag':failSce_param["mag"],
+                       'type':'predicted'}
+            for x in temp_dict.keys():
+                tc_df[x]=temp_dict[x]
         else:
             temp=pd.read_csv(cost_file,delimiter=',')
-            temp['pred sample']=pred_s
-            temp['cost scope']='Overall'
-            temp['layer']=0
-            temp['sample']=failSce_param["sample"]
-            temp['type']='predicted'
+            temp_dict={'pred sample':pred_s,'layer':-1,'cost scope':'Overall',
+               'sample':failSce_param["sample"], 'mag':failSce_param["mag"],
+               'type':'predicted'}
+            for x in temp_dict.keys():
+                temp[x]=temp_dict[x]
             tc_df = pd.concat([tc_df,temp])
         for l in params['L']:
             suffix = 'l'+str(l)+'_ps'+str(pred_s)
             cost_file = folder_name+"/layers/costs_"+str(failSce_param["sample"])+"_"+suffix+".csv"
             temp=pd.read_csv(cost_file,delimiter=',')
-            temp['pred sample']=pred_s
-            temp['layer']=l
-            temp['cost scope']='layer'
-            temp['sample']=failSce_param["sample"]
-            temp['type']='predicted'
+            temp_dict={'pred sample':pred_s,'layer':l,'cost scope':'Layer',
+               'sample':failSce_param["sample"], 'mag':failSce_param["mag"],
+               'type':'predicted'}
+            for x in temp_dict.keys():
+                temp[x]=temp_dict[x]
             tc_df = pd.concat([tc_df,temp])
+    if opt_dir:
+        suffix=''
+        cost_file = opt_dir+"/costs_"+str(failSce_param["sample"])+"_"+suffix+".csv"
+        temp=pd.read_csv(cost_file,delimiter=',')
+        temp_dict={'pred sample':-1,'layer':-1,'cost scope':'Overall',
+           'sample':failSce_param["sample"], 'mag':failSce_param["mag"],
+           'type':'optimal'}
+        for x in temp_dict.keys():
+            temp[x]=temp_dict[x]
+        tc_df = pd.concat([tc_df,temp])        
     # tc_df=tc_df.replace('predicted','Logistic Model Prediction')    
     # tc_df=tc_df.replace('data','Optimal Scenario')               
-    figure_df = tc_df#[result_df['sample']==200]
-    sns.lineplot(x="t", y="Total",style='layer',hue='layer',
+    figure_df = tc_df[tc_df['cost scope']=='Overall']
+    sns.lineplot(x="t", y="Total",style='type',hue='sample',
                  data=figure_df,markers=True,ci=99)
     # plt.savefig('Total_cost_vs_time.png',dpi=600,bbox_inches='tight')
     return tc_df
+
+def check_folder(output_dir):
+    if not os.path.exists(output_dir):
+       os.makedirs(output_dir)   
+    return output_dir
+
+def make_parallel:
     
+sample_range=[50,70,90]#[50,70]#range(50,70)
+mags=range(0,1)
 t_suf = ''
-dirrrr='C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
-failSce_param = {"type":"WU","sample":1,"mag":52,'Base_dir':"../data/Extended_Shelby_County/",
-                 'Damage_dir':"../data/Wu_Damage_scenarios/" ,'topology':None}
+mod_dir='C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
+opt_dir='C:/Users/ht20/Documents/Files/STAR_training_data/INDP_random_disruption/results/indp_results_L4_m0_v5'
+        
+# failSce_param = {"type":"WU","sample":1,"mag":52,'Base_dir':"../data/Extended_Shelby_County/",
+#                  'Damage_dir':"../data/Wu_Damage_scenarios/" ,'topology':None}
+failSce_param = {"type":"random","sample":None,"mag":None,
+                'filtered_List':None,'Base_dir':"../data/Extended_Shelby_County/",
+                'Damage_dir':"../data/random_disruption_shelby/"}
 pred_dict={"sample":0,'sample_index':0,'num_pred':5,
-           'model_dir':dirrrr+'/traces'+t_suf,'param_folder':dirrrr+'/parameters'+t_suf }
+           'model_dir':mod_dir+'/traces'+t_suf,'param_folder':mod_dir+'/parameters'+t_suf }
 params={"NUM_ITERATIONS":10,"V":5,"ALGORITHM":"INDP",'L':[1,2,3,4]}
+output_dir=check_folder('./results')
+output_dir_l=check_folder('./results/layers')
 
-# objs=import_initial_data(params,failSce_param,suffix='') 
-# pred_results,run_time=predict_resotration(objs,pred_dict,failSce_param,params)
+for mag in mags:
+    for sample in sample_range:
+        failSce_param['sample']=sample
+        failSce_param['mag']=mag
+        objs=import_initial_data(params,failSce_param,suffix='') 
+        pred_results,run_time=predict_resotration(objs,pred_dict,failSce_param,params)
+        
+        for pred_s in range(pred_dict['num_pred']):
+            pred_results[pred_s].to_csv(output_dir,failSce_param["sample"],suffix='ps'+str(pred_s))
+            pred_results[pred_s].to_csv_layer(output_dir_l,failSce_param["sample"],suffix='ps'+str(pred_s))
 
-# for pred_s in range(pred_dict['num_pred']):
-#     output_dir='./results'
-#     if not os.path.exists(output_dir):
-#         os.makedirs(output_dir)
-#     output_dir_l='./results/layers'
-#     if not os.path.exists(output_dir_l):
-#         os.makedirs(output_dir_l)
-#     pred_results[pred_s].to_csv(output_dir,failSce_param["sample"],suffix='ps'+str(pred_s))
-#     pred_results[pred_s].to_csv_layer(output_dir_l,failSce_param["sample"],suffix='ps'+str(pred_s))
-
-results=plot_results(failSce_param,pred_dict,params)
+# tc_df=pd.DataFrame()           
+# for mag in mags:
+#     for sample in sample_range:
+#         failSce_param['sample']=sample
+#         failSce_param['mag']=mag
+#         tc_df=plot_results(failSce_param,pred_dict,params,tc_df=tc_df,opt_dir=opt_dir)
