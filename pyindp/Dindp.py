@@ -39,23 +39,23 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
  
     num_iterations = params["NUM_ITERATIONS"]
     v_r=params["V"]
-    if isinstance(v_r, (int, long)):
+    if isinstance(v_r, (int)):
         v_r = [v_r]
     if auction_type:
-        output_dir = params["OUTPUT_DIR"]+'_L'+`len(layers)`+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_auction_'+auction_type+'_'+valuation_type
+        output_dir = params["OUTPUT_DIR"]+'_L'+str(len(layers))+'_m'+str(params["MAGNITUDE"])+"_v"+str(sum(v_r))+'_auction_'+auction_type+'_'+valuation_type
     else:
-        output_dir = params["OUTPUT_DIR"]+'_L'+`len(layers)`+'_m'+`params["MAGNITUDE"]`+"_v"+`sum(v_r)`+'_uniform_alloc'
+        output_dir = params["OUTPUT_DIR"]+'_L'+str(len(layers))+'_m'+str(params["MAGNITUDE"])+"_v"+str(sum(v_r))+'_uniform_alloc'
     
     Dindp_results={P:INDPResults() for P in layers}   
     Dindp_results_Real={P:INDPResults() for P in layers} 
     currentTotalCost = {}
     if T == 1: 
         if auction_type:
-            print "\n--Running Judgment Call with type "+judgment_type +" with auction "+auction_type+ ' & valuation '+ valuation_type
+            print("\n--Running Judgment Call with type "+judgment_type +" with auction "+auction_type+ ' & valuation '+ valuation_type)
         else:
-            print "\n--Running Judgment Call with type "+judgment_type +" with uniform allocation "
+            print("\n--Running Judgment Call with type "+judgment_type +" with uniform allocation ")
         if print_cmd:
-            print "Num iters=",params["NUM_ITERATIONS"]
+            print("Num iters=",params["NUM_ITERATIONS"])
         # Initial calculations.
         indp_results_initial=indp(InterdepNet,0,1,layers,controlled_layers=layers)
         # Initial costs are just saved to cost_#_sum.csv not to cost_#_P.csv (to be corrected)
@@ -72,7 +72,7 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
         valuations={}
         res_alloc_time={}
         for i in range(num_iterations):
-            print "\n-Iteration "+`i`+"/"+`num_iterations-1`
+            print("\n-Iteration "+str(i)+"/"+str(num_iterations-1))
             
             res_alloc_time_start = time.time()
             v_r_applied = []
@@ -84,7 +84,7 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
                 for key, value in res_allocate[i].items():
                     v_r_applied.append(len(value))
             elif len(v_r)!=len(layers):
-                v_r_applied =  [v_r[0]/len(layers) for x in layers]
+                v_r_applied =  [int(v_r[0]/len(layers)) for x in layers]
                 for x in range(v_r[0]%len(layers)):
                     v_r_applied[x]+=1
                 res_allocate[i] = {P:[] for P in layers}
@@ -103,10 +103,10 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
             functionality = {p:{} for p in layers}
             uncorrectedResults = {}  
             if print_cmd:
-                print "Judgment: "                
+                print( "Judgment: ")                
             for P in layers:
                 if print_cmd:
-                    print "Layer-%d"%(P)
+                    print( "Layer-%d"%(P))
                     
                 negP=[x for x in layers if x != P]    
                 functionality[P] = create_judgment_matrix(InterdepNet,T,negP,v_r_applied,
@@ -132,10 +132,10 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
             
             # Re-evaluate judgments based on other agents' decisions
             if print_cmd:
-                print "Re-evaluation: "
+                print( "Re-evaluation: ")
             for P in layers:
                 if print_cmd:
-                    print "Layer-%d"%(P)  
+                    print( "Layer-%d"%(P) ) 
                                      
                 indp_results_Real,realizations = Decentralized_INDP_Realized_Performance(InterdepNet,i+1,
                                 uncorrectedResults[P],functionality= functionality[P],
@@ -193,15 +193,15 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
             if not os.path.exists(output_dir_agents):
                 os.makedirs(output_dir_agents)
             for P in layers:
-                Dindp_results[P].to_csv(output_dir_agents,params["SIM_NUMBER"],suffix=`P`)
-                Dindp_results_Real[P].to_csv(output_dir_agents,params["SIM_NUMBER"],suffix='Real_'+`P`)
+                Dindp_results[P].to_csv(output_dir_agents,params["SIM_NUMBER"],suffix=str(P))
+                Dindp_results_Real[P].to_csv(output_dir_agents,params["SIM_NUMBER"],suffix='Real_'+str(P))
             Dindp_results_sum.to_csv(output_dir,params["SIM_NUMBER"],suffix='sum')
             Dindp_results_Real_sum.to_csv(output_dir,params["SIM_NUMBER"],suffix='Real_sum')
     else:
         # td-INDP formulations. Includes "DELTA_T" parameter for sliding windows to increase
         # efficiency.
         # Edit 2/8/16: "Sliding window" now overlaps.
-        print 'hahahaha'
+        print( 'hahahaha')
 
 
 '''
@@ -214,11 +214,11 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
                                             layers,T=1,controlled_layers=[1],
                                             print_cmd=False,saveJCModel=False):
     
-    G_prime_nodes = [n[0] for n in N.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in layers]
+    G_prime_nodes = [n[0] for n in N.G.nodes(data=True) if n[1]['data']['inf_data'].net_id in layers]
     G_prime = N.G.subgraph(G_prime_nodes)
     
     interdep_nodes={}
-    for u,v,a in G_prime.edges_iter(data=True):
+    for u,v,a in G_prime.edges(data=True):
         if a['data']['inf_data'].is_interdep and G_prime.node[v]['data']['inf_data'].net_id in controlled_layers:
             if u not in interdep_nodes:
                 interdep_nodes[u]=[]
@@ -229,7 +229,7 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
     realizations = {t:{} for t in range(T)}       
     for t in range(T):     
         realCount = 0 
-        for u, value in functionality[t].iteritems(): 
+        for u, value in functionality[t].items(): 
             if u in list_interdep_nodes:
                 realCount += 1 
                 vValues = [G_prime.node[x]['data']['inf_data'].functionality for x in interdep_nodes[u]]
@@ -240,7 +240,7 @@ def Decentralized_INDP_Realized_Performance(N,iteration,indp_results,functionali
                     functionality_realized[t][u] = 0.0
                     realizations[t][realCount]['uCorrected'] = True
                     if print_cmd:
-                        print 'Correct '+`u`+' to 0 (affect. '+`vValues`+')'  
+                        print( 'Correct '+str(u)+' to 0 (affect. '+str(vValues)+')'  )
                      
     indp_results_Real = indp(N,v_r=0,T=1,layers=layers,controlled_layers=controlled_layers,
                              functionality=functionality_realized,
@@ -273,10 +273,10 @@ def create_judgment_matrix(N,T,layers,v_r=[],actions=[],judgment_type="OPTIMISTI
     :returns: A functionality dictionary used for input into indp.
     """
     functionality={}
-    G_prime_nodes = [n[0] for n in N.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in layers]
+    G_prime_nodes = [n[0] for n in N.G.nodes(data=True) if n[1]['data']['inf_data'].net_id in layers]
     G_prime = N.G.subgraph(G_prime_nodes)
-    N_prime = [n for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].functionality==0.0]
-    N_prime_nodes = [n[0] for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].functionality==0.0]
+    N_prime = [n for n in G_prime.nodes(data=True) if n[1]['data']['inf_data'].functionality==0.0]
+    N_prime_nodes = [n[0] for n in G_prime.nodes(data=True) if n[1]['data']['inf_data'].functionality==0.0]
     
     for t in range(T):
         functionality[t]={}
@@ -298,7 +298,7 @@ def create_judgment_matrix(N,T,layers,v_r=[],actions=[],judgment_type="OPTIMISTI
                 else:
                     resCap = int(sum(v_r)/num_layers)  
                            
-                for u,v,a in N.G.edges_iter(data=True):
+                for u,v,a in N.G.edges(data=True):
                     if a['data']['inf_data'].is_interdep and u[1] in layers:
                         interdepSrc.append(u)
                         
@@ -310,7 +310,7 @@ def create_judgment_matrix(N,T,layers,v_r=[],actions=[],judgment_type="OPTIMISTI
             for key in functionality[t_p]:
                 if functionality[t_p][key]==1.0:
                     functional_nodes.append(key)                     
-        for n,d in G_prime.nodes_iter(data=True):
+        for n,d in G_prime.nodes(data=True):
             #print "layers=",layers,"n=",n
             if d['data']['inf_data'].net_id in layers:
                 # Undamged Nodes
@@ -360,11 +360,11 @@ def demand_based_priority_List(N,layers):
     for P in layers:
         com[P] = [0] #assuming single commodity for all layers
         for l in com[P]:
-            G_prime_nodes[P] = [n[0] for n in N.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id==P]
+            G_prime_nodes[P] = [n[0] for n in N.G.nodes(data=True) if n[1]['data']['inf_data'].net_id==P]
             G_prime[P] = N.G.subgraph(G_prime_nodes[P])
-            maxValues[P,l,'Demand'] = min([n[1]['data']['inf_data'].demand for n in G_prime[P].nodes_iter(data=True)])
-            maxValues[P,l,'Supply'] = max([n[1]['data']['inf_data'].demand for n in G_prime[P].nodes_iter(data=True)])
-            for n in G_prime[P].nodes_iter(data=True):
+            maxValues[P,l,'Demand'] = min([n[1]['data']['inf_data'].demand for n in G_prime[P].nodes(data=True)])
+            maxValues[P,l,'Supply'] = max([n[1]['data']['inf_data'].demand for n in G_prime[P].nodes(data=True)])
+            for n in G_prime[P].nodes(data=True):
                 if not n[0] in prob.keys():
                     p = []
                     for l in com[P]:
@@ -374,7 +374,7 @@ def demand_based_priority_List(N,layers):
                         elif value<=0:
                             p.append(value/maxValues[P,l,'Demand'])
                         else:
-                            print 'Are you kidding me???'
+                            print( 'Are you kidding me???')
                     prob[n[0]] = [max(p),np.random.choice([0, 1], p=[1-max(p), max(p)])]                
     return prob
 
@@ -395,14 +395,14 @@ def auction_resources(v_r,params,layers,T=1,print_cmd=True,judgment_type="OPTIMI
                      
     #Compute Valuations
     if print_cmd:
-        print "Compute Valuations (" + valuation_type + ")"
+        print( "Compute Valuations (" + valuation_type + ")")
     valuation, optimal_valuation, valuation_time = compute_valuations(v_r,InterdepNet,layers=layers,
                                 T=1,print_cmd=print_cmd,judgment_type=judgment_type,
                                 valuation_type=valuation_type)
     
     #Auctioning
     if print_cmd:
-        print "Auction (" + auction_type + ")" 
+        print( "Auction (" + auction_type + ")" )
     start_time_auction = time.time()
     resource_allocation = {P:[] for P in layers}
     PoA = {}
@@ -413,10 +413,10 @@ def auction_resources(v_r,params,layers,T=1,print_cmd=True,judgment_type="OPTIMI
         cur_valuation = {v+1:{} for v in range(v_r)}
         for v in range(v_r):
             if print_cmd:
-                print "Resource-%d"%(v+1),
+                print( "Resource-%d"%(v+1),)
             for P in layers:
                 cur_valuation[v+1][P]= valuation[P][len(resource_allocation[P])]
-            winner = max(cur_valuation[v+1].iteritems(), key=operator.itemgetter(1))[0]
+            winner = max(cur_valuation[v+1].items(), key=operator.itemgetter(1))[0]
             PoA['winner'].append(cur_valuation[v+1][winner])
 #            if cur_valuation[v+1][winner]==0:
 #                for x in layers:
@@ -429,12 +429,12 @@ def auction_resources(v_r,params,layers,T=1,print_cmd=True,judgment_type="OPTIMI
 #                resource_allocation[winner].append(v+1)             
             if cur_valuation[v+1][winner]>0:
                 if print_cmd:
-                    print "Player %d wins!" % winner
+                    print( "Player %d wins!" % winner)
                 sum_valuation += cur_valuation[v+1][winner]
                 resource_allocation[winner].append(v+1) 
             else:
                 if print_cmd:
-                    print "No auction winner!"
+                    print( "No auction winner!")
     if auction_type=="MAA":
         all_valuations = []
         for p,value in valuation.items():
@@ -463,7 +463,7 @@ def auction_resources(v_r,params,layers,T=1,print_cmd=True,judgment_type="OPTIMI
             for v in range(int(v_r-Q[t])):
                 PoA['winner'].append(0.0)
                 if print_cmd:
-                    print "No auction winner for resource %d!" %(Q[t]+v+1)                
+                    print( "No auction winner for resource %d!" %(Q[t]+v+1))
         for P in layers:
             resource_allocation[P] = range(1,q[P][t]+1)
             
@@ -474,7 +474,7 @@ def auction_resources(v_r,params,layers,T=1,print_cmd=True,judgment_type="OPTIMI
         # Add allocation variables and populate objective function.
         for P in layers:
             for v in range(v_r):
-                m.addVar(name='y_'+`v+1`+","+`P`,vtype=GRB.BINARY,
+                m.addVar(name='y_'+str(v+1)+","+str(P),vtype=GRB.BINARY,
                          obj=sum([-valuation[P][vv] for vv in range(v+1)]))
         m.update()
         # Add constraints
@@ -482,16 +482,16 @@ def auction_resources(v_r,params,layers,T=1,print_cmd=True,judgment_type="OPTIMI
         for P in layers:
             eachBidderAllocation=LinExpr()
             for v in range(v_r):
-                numAllocatedResources+=m.getVarByName('y_'+`v+1`+","+`P`)*(v+1)
-                eachBidderAllocation+=m.getVarByName('y_'+`v+1`+","+`P`)
-            m.addConstr(eachBidderAllocation,GRB.LESS_EQUAL,1.0,"Bidder "+`P`+" allocation")   
+                numAllocatedResources+=m.getVarByName('y_'+str(v+1)+","+str(P))*(v+1)
+                eachBidderAllocation+=m.getVarByName('y_'+str(v+1)+","+str(P))
+            m.addConstr(eachBidderAllocation,GRB.LESS_EQUAL,1.0,"Bidder "+str(P)+" allocation")   
         m.addConstr(numAllocatedResources,GRB.LESS_EQUAL,v_r,"Total number of resources")  
         #    print "Solving..."
         m.update()
         m.optimize()   
         for P in layers:
             for v in range(v_r):
-                if m.getVarByName('y_'+`v+1`+","+`P`).x==1:
+                if m.getVarByName('y_'+str(v+1)+","+str(P)).x==1:
                     resource_allocation[P] = range(1,v+2)
                     for vv in range(v+1):
                         PoA['winner'].append(valuation[P][vv])
@@ -536,7 +536,7 @@ def compute_valuations(v_r,InterdepNet,layers,T=1,print_cmd=True,judgment_type="
         for P in layers:
             start_time_val = time.time()
             if print_cmd:
-                print "Bidder-%d"%(P)
+                print( "Bidder-%d"%(P))
             if valuation_type=='DTC':
                 for v in range(v_r):  
                     indp_results={}
@@ -577,9 +577,9 @@ def compute_valuations(v_r,InterdepNet,layers,T=1,print_cmd=True,judgment_type="
                         valuation[P].append(0.0)
                         
             elif valuation_type=='MDDN':
-                G_prime_nodes = [n[0] for n in InterdepNet.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id==P]
+                G_prime_nodes = [n[0] for n in InterdepNet.G.nodes(data=True) if n[1]['data']['inf_data'].net_id==P]
                 G_prime = InterdepNet.G.subgraph(G_prime_nodes)
-                dem_damaged_nodes = [abs(n[1]['data']['inf_data'].demand) for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].repaired==0.0]
+                dem_damaged_nodes = [abs(n[1]['data']['inf_data'].demand) for n in G_prime.nodes(data=True) if n[1]['data']['inf_data'].repaired==0.0]
                 dem_damaged_nodes_reverse_sorted = np.sort(dem_damaged_nodes)[::-1]
                 if len(dem_damaged_nodes)>=v_r:
                     valuation[P] = dem_damaged_nodes_reverse_sorted[0:v_r].tolist()
@@ -595,39 +595,39 @@ def compute_valuations(v_r,InterdepNet,layers,T=1,print_cmd=True,judgment_type="
 def write_auction_csv(outdir,res_allocate,res_alloc_time,PoA=None,valuations=None,sample_num=1,suffix=""):
     if not os.path.exists(outdir):
         os.makedirs(outdir)        
-    auction_file=outdir+"/auctions_"+`sample_num`+"_"+suffix+".csv"
+    auction_file=outdir+"/auctions_"+str(sample_num)+"_"+suffix+".csv"
     # Making header
     header = "t,"
     for key,value in res_allocate[0].items():
-        header += "P"+`key`+","
+        header += "P"+str(key)+","
     if valuations:
         header += "PoA,optimal_val,winner_val,"
         for p,value in valuations[0].items(): 
-            header +=  "bidder_"+`p`+"_valuation,"
+            header +=  "bidder_"+str(p)+"_valuation,"
     header += "Res Alloc Time,Auction Time,"
     if valuations:
         for key,value in res_allocate[0].items():
-            header += "Val. Time P"+`key`+","
+            header += "Val. Time P"+str(key)+","
     # Write to file
     with open(auction_file,'w') as f:
         f.write(header+"\n")
         for t,value in res_allocate.items():
-            row = `t+1`+","
+            row = str(t+1)+","
             for p,pvalue in value.items():
-                row += `len(pvalue)`+','
+                row += str(len(pvalue))+','
             if valuations:
-                row += `PoA[t]['poa']`+','+`PoA[t]['optimal']`+','
+                row += str(PoA[t]['poa'])+','+str(PoA[t]['optimal'])+','
                 for pitem in PoA[t]['winner']:
-                    row += `pitem`+"|"  
+                    row += str(pitem)+"|"  
                 row += ','
                 for p,pvalue in valuations[t].items():
                     for pitem in pvalue:
-                        row += `pitem`+"|"
+                        row += str(pitem)+"|"
                     row += ','
-            row+=`res_alloc_time[t][0]`+','+`res_alloc_time[t][1]`+','
+            row+=str(res_alloc_time[t][0])+','+str(res_alloc_time[t][1])+','
             if valuations:
                 for titem in res_alloc_time[t][2]:
-                    row += `titem`+','
+                    row += str(titem)+','
                     
             f.write(row+"\n")
             
@@ -635,21 +635,21 @@ def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='i
     cols=['t','resource','decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','normalized_resources','PoA']
     T = max(df.t.unique().tolist())
     df_res = pd.DataFrame(columns=cols, dtype=int)
-    print '\nResource allocation\n',
+    print( '\nResource allocation\n',end='')
     for idx,x in enumerate(optimal_combinations):                       
-        compare_to_dir= root_result_dir+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`
+        compare_to_dir= root_result_dir+x[4]+'_results_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])
         for t in range(T):
             for P in range(1,x[2]+1):
                 df_res=df_res.append({'t':t+1,'resource':0.0,'normalized_resource':0.0,
                     'decision_type':x[4],'auction_type':'','valuation_type':'','sample':x[1],
                     'Magnitude':x[0],'layer':P,'no_resources':x[3],'PoA':1}, ignore_index=True)
         # Read optimal resource allocation based on the actions
-        action_file=compare_to_dir+"/actions_"+`x[1]`+"_"+suffix+".csv" 
+        action_file=compare_to_dir+"/actions_"+str(x[1])+"_"+suffix+".csv" 
         if os.path.isfile(action_file):
             with open(action_file) as f:
                 lines=f.readlines()[1:]
                 for line in lines:
-                    data=string.split(str.strip(line),",")
+                    data=line.strip().split(',')
                     t=int(data[0])
                     action=str.strip(data[1])
                     P = int(action[-1])
@@ -666,15 +666,15 @@ def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='i
     # Read  resource allocation based on auction results
     for idx,x in enumerate(combinations): 
         if x[5] in ['Uniform']:
-            outdir= root_result_dir+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_uniform_alloc/auctions'
+            outdir= root_result_dir+x[4]+'_results_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])+'_uniform_alloc/auctions'
         else:
-            outdir= root_result_dir+x[4]+'_results_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6]+'/auctions'
-        auction_file=outdir+"/auctions_"+`x[1]`+"_"+suffix+".csv"
+            outdir= root_result_dir+x[4]+'_results_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])+'_auction_'+x[5]+'_'+x[6]+'/auctions'
+        auction_file=outdir+"/auctions_"+str(x[1])+"_"+suffix+".csv"
         if os.path.isfile(auction_file):
             with open(auction_file) as f:
                 lines=f.readlines()[1:]
                 for line in lines:
-                    data=string.split(str.strip(line),",")
+                    data=line.strip().split(',')
                     t=int(data[0])
                     for P in range(1,x[2]+1):
                         if x[5] in ['Uniform']:
@@ -693,7 +693,7 @@ def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='i
     cols=['decision_type','auction_type','valuation_type','sample','Magnitude','layer','no_resources','distance_to_optimal','norm_distance_to_optimal']
     T = max(df.t.unique().tolist())
     df_res_rel = pd.DataFrame(columns=cols, dtype=int)
-    print '\nRelative allocation\n',
+    print('\nRelative allocation\n', end='')
     for idx,x in enumerate(combinations+optimal_combinations): 
         # Construct vector of resource allocation of reference method 
         if x[4]!=ref_method:                      
@@ -729,50 +729,50 @@ def write_judgments_csv(outdir,realizations,sample_num=1,agent=1,time=0,suffix="
     if not os.path.exists(outdir):
         os.makedirs(outdir)  
         
-    judge_file=outdir+'/judge_'+`sample_num`+"_agent"+`agent`+'_time'+`time`+'_'+suffix+".csv"
+    judge_file=outdir+'/judge_'+str(sample_num)+"_agent"+str(agent)+'_time'+str(time)+'_'+suffix+".csv"
     header = "no.,src node,src layer,src judge,if src corr.,dest Names,dest init. funcs"
     with open(judge_file,'w') as f:
         f.write(header+"\n")
-        for t,timeValue in realizations.iteritems():
+        for t,timeValue in realizations.items():
             if timeValue:
-                for c,Value in timeValue.iteritems():
-                    row = `c`+','+`Value['uName']`+','+`Value['uJudge']`+','+`Value['uCorrected']`+','\
-                        +`Value['vNames']`+','+`Value['vValues']`
+                for c,Value in timeValue.items():
+                    row = str(c)+','+str(Value['uName'])+','+str(Value['uJudge'])+','+str(Value['uCorrected'])+','\
+                        +str(Value['vNames'])+','+str(Value['vValues'])
                     f.write(row+'\n')
             else:
-                print '<><><> No judgment by agent '+`agent`+' t:'+`time`+' step:'+`t`
+                print( '<><><> No judgment by agent '+str(agent)+' t:'+str(time)+' step:'+str(t))
 
 def read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_result_dir='../results/'):
     columns = ['t','Magnitude','cost_type','decision_type','auction_type','valuation_type','no_resources','sample','cost','normalized_cost']
     optimal_method = ['tdindp','indp','sample_indp_12Node']
     agg_results = pd.DataFrame(columns=columns, dtype=int)
 
-    print "\nAggregating Results"
+    print( "\nAggregating Results")
     joinedlist = combinations + optimal_combinations
     for idx,x in enumerate(joinedlist):
         if x[4] in optimal_method:
-            full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`
+            full_suffix = '_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])
         elif x[5]=='Uniform':
-            full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_uniform_alloc'
+            full_suffix = '_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])+'_uniform_alloc'
         else:
-            full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6] 
+            full_suffix = '_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])+'_auction_'+x[5]+'_'+x[6] 
         
         result_dir = root_result_dir+x[4]+'_results'+full_suffix
         if os.path.exists(result_dir):    
             # Save all results to Pandas dataframe
             sample_result = INDPResults()
             for suf in suffixes:
-                if os.path.exists(result_dir+"/costs_"  +`x[1]`+"_"+suf+".csv"):
+                if os.path.exists(result_dir+"/costs_"  +str(x[1])+"_"+suf+".csv"):
                     sample_result=sample_result.from_csv(result_dir,x[1],suffix=suf)
-            intitial_cost = {}
+            
+            initial_cost={}
+            for c in sample_result.cost_types:
+                initial_cost[c] = sample_result[0]['costs'][c]
             norm_cost = 0
             for t in sample_result.results:
                 for c in sample_result.cost_types:
-                    if t==0:
-                        norm_cost = 1.0
-                        intitial_cost[c] = sample_result[t]['costs'][c]
-                    elif intitial_cost[c]!=0.0:
-                        norm_cost = sample_result[t]['costs'][c]/intitial_cost[c]
+                    if initial_cost[c]!=0.0:
+                        norm_cost = sample_result[t]['costs'][c]/initial_cost[c]
                     else:
                         norm_cost = -1.0
                     values = [t,x[0],c,x[4],x[5],x[6],x[3],x[1],
@@ -781,7 +781,7 @@ def read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_r
             if idx%(len(joinedlist)/100+1)==0:
                 update_progress(idx+1,len(joinedlist))
         else:
-            sys.exit('Error: The combination or folder does not exist'+`x`) 
+            sys.exit('Error: The combination or folder does not exist'+str(x)) 
     update_progress(idx+1,len(joinedlist))
     return agg_results
 
@@ -790,37 +790,37 @@ def read_run_time(combinations,optimal_combinations,suffixes,root_result_dir='..
     optimal_method = ['tdindp','indp','sample_indp_12Node']
     run_time_results = pd.DataFrame(columns=columns, dtype=int)
 
-    print "\nReading tun times"
+    print( "\nReading tun times")
     joinedlist = combinations + optimal_combinations
     for idx,x in enumerate(joinedlist):
         if x[4] in optimal_method:
-            full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`
+            full_suffix = '_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])
         elif x[5]=='Uniform':
-            full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_uniform_alloc'
+            full_suffix = '_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])+'_uniform_alloc'
         else:
-            full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6] 
+            full_suffix = '_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])+'_auction_'+x[5]+'_'+x[6] 
         
         result_dir = root_result_dir+x[4]+'_results'+full_suffix
         run_time_all = {}
         if os.path.exists(result_dir): 
             for suf in suffixes:
-                run_time_file = result_dir+"/run_time_"  +`x[1]`+"_"+suf+".csv"  
+                run_time_file = result_dir+"/run_time_"  +str(x[1])+"_"+suf+".csv"  
                 if os.path.exists(run_time_file):
                 # Save all results to Pandas dataframe                
                     with open(run_time_file) as f:
                         lines=f.readlines()[1:]
                         for line in lines:
-                            data=string.split(str.strip(line),",")
+                            data=line.strip().split(',')
                             t=int(data[0])
                             run_time_all[t]=[float(data[1]),0,0]
                 if x[4] not in optimal_method and x[5]!='Uniform': 
-                    auction_file = result_dir+"/auctions/auctions_"  +`x[1]`+"_"+suf+".csv"  
+                    auction_file = result_dir+"/auctions/auctions_"  +str(x[1])+"_"+suf+".csv"  
                     if os.path.exists(auction_file):
                     # Save all results to Pandas dataframe                
                         with open(auction_file) as f:
                             lines=f.readlines()[1:]
                             for line in lines:
-                                data=string.split(str.strip(line),",")
+                                data=line.strip().split(',')
                                 t=int(data[0])
                                 auction_time=float(data[2*x[2]+5])
                                 decision_time = run_time_all[t][0]
@@ -841,7 +841,7 @@ def read_run_time(combinations,optimal_combinations,suffixes,root_result_dir='..
 
 def correct_tdindp_results(df,optimal_combinations):    
     # correct total cost of td-indp
-    print '\nCorrecting td-INDP Results\n',
+    print('\nCorrecting td-INDP Results\n', end='')
     tVector = df['t'].unique().tolist()
     for t in tVector:
         for idx,x in enumerate(optimal_combinations):
@@ -883,7 +883,7 @@ def relative_performance(df,combinations,optimal_combinations,ref_method='indp',
     lambda_df = pd.DataFrame(columns=columns, dtype=int)
     # Computing reference area for lambda
     # Check if the method in optimal combination is the reference method #!!!
-    print '\nRef area calculation\n',
+    print('\nRef area calculation\n', end='')
     for idx,x in enumerate(optimal_combinations):
         if x[4]==ref_method:
             rows = df[(df['Magnitude']==x[0])&(df['decision_type']==ref_method)&
@@ -901,7 +901,7 @@ def relative_performance(df,combinations,optimal_combinations,ref_method='indp',
     update_progress(idx+1,len(optimal_combinations))
     
     # Computing areaa and lambda
-    print '\nLambda calculation\n',
+    print('\nLambda calculation\n', end='')
     for idx,x in enumerate(combinations+optimal_combinations):
         if x[4]!=ref_method:
             # Check if reference area exists
@@ -947,7 +947,7 @@ def generate_combinations(database,mags,sample,layers,no_resources,decision_type
     combinations = []
     optimal_combinations = []
     optimal_method = ['tdindp','indp','sample_indp_12Node']
-    print '\nCombination Generation\n',
+    print('\nCombination Generation\n', end='')
     idx=0
     no_total = len(mags)*len(sample)  
     if database=='shelby':
@@ -993,6 +993,6 @@ def generate_combinations(database,mags,sample,layers,no_resources,decision_type
     return combinations,optimal_combinations
 
 def update_progress(progress,total):
-    print '\r[%s] %1.1f%%' % ('#'*int(progress/float(total)*20), (progress/float(total)*100)),
+    print('\r[%s] %1.1f%%' % ('#'*int(progress/float(total)*20), (progress/float(total)*100)),end='')
     sys.stdout.flush()
               

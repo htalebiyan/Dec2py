@@ -270,7 +270,7 @@ def plot_auction_allocation_shelby(df_res,ci=None):
         for idx, ax in enumerate(axx):
             ax.set_title(r'Total resources = %d'%(no_resources[idx]))
         for idx, ax in enumerate(axy):
-            ax.annotate('Layer '+`layer[idx]`,xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
+            ax.annotate('Layer '+str(layer[idx]),xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
                 xycoords=ax.yaxis.label, textcoords='offset points',ha='right',va='center',rotation=90)  
   
         plt.savefig('Allocations_'+at+'.pdf',dpi=600)
@@ -334,7 +334,7 @@ def plot_auction_allocation_synthetic(df_res,resource_type='resource',ci=None):
         for idx, ax in enumerate(axx):
             ax.set_title(r'Auction Type: %s'%(hor_grid[idx]))
         for idx, ax in enumerate(axy):
-            ax.annotate('Layer '+`int(ver_grid[idx])`,xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
+            ax.annotate('Layer '+str(int(ver_grid[idx])),xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
                 xycoords=ax.yaxis.label, textcoords='offset points',ha='right',va='center',rotation=90)  
   
         plt.savefig('Allocations_'+at+'.pdf',dpi=600)
@@ -397,7 +397,7 @@ def plot_relative_allocation_shelby(df_res,distance_type='distance_to_optimal'):
     labels = correct_legend_labels(labels)
     for idx,lab in enumerate(labels):
         layer_num = len(layer) - idx//(len(decision_type))
-        labels[idx] = lab[:7] + '. (Layer ' + `layer_num` + ')'
+        labels[idx] = lab[:7] + '. (Layer ' + str(layer_num) + ')'
     lgd = fig.legend(handles, labels,loc='center', bbox_to_anchor=(0.5, 0.95),
                frameon =True,framealpha=0.5, ncol=4)     #, fontsize='small'
     if len(auction_type)==1 and len(valuation_type)==1:
@@ -478,7 +478,7 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
     labels = correct_legend_labels(labels)
     for idx,lab in enumerate(labels):
         layer_num = len(layer) - idx//(len(decision_type))
-        labels[idx] = lab[:7] + '. (Layer ' + `layer_num` + ')'
+        labels[idx] = lab[:7] + '. (Layer ' + str(layer_num) + ')'
     lgd = fig.legend(handles, labels,loc='center', bbox_to_anchor=(0.5, 0.95),
                frameon =True,framealpha=0.5, ncol=4)     #, fontsize='small'
 

@@ -39,7 +39,7 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1]):
     for m in failSce_param['mags']:    
         for i in failSce_param['sample_range']:
             if failSce_param['filtered_List']==None or len(listHD.loc[(listHD.set == i) & (listHD.sce == m)].index):
-                print '\n---Running Magnitude '+`m`+' sample '+`i`+'...'
+                print('\n---Running Magnitude '+str(m)+' sample '+str(i)+'...')
             
                 print("Initializing network...")
                 if shelby_data:  
@@ -243,22 +243,22 @@ if __name__ == "__main__":
 
     ''' Run different methods'''
     # No restriction on number of resources for each layer  # Not necessary for synthetic nets
-    v_r=[4,6,8,10,12,14]                 #[3,6,8,12] 
+    v_r=[4]                 #[3,6,8,12] 
 #    v_r=[[1,1,1,1],[2,2,2,2],[3,3,3,3]]              # Prescribed number of resources for each layer
     layers=[1,2,3,4] # List of layers of the net # Not necessary for synthetic nets
-    judge_types = []    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
-    auction_types =  ['']      #["MDA","MAA","MCA"] 
-    valuation_types = ['']       #['DTC','DTC_uniform','MDDN']    
+    judge_types = ['OPTIMISTIC']    #["PESSIMISTIC","OPTIMISTIC","DEMAND","DET-DEMAND","RANDOM"]
+    auction_types =  ['MCA']      #["MDA","MAA","MCA"] 
+    valuation_types = ['MDDN']       #['DTC','DTC_uniform','MDDN']    
 
     
-    run_indp_batch(failSce_param,v_r,layers)
-##    run_tdindp_batch(failSce_param, v_r,layers)
-#    for jc in judge_types:
-#        run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None)
-#        for at in auction_types:
-#            for vt in valuation_types:
-#                run_dindp_batch(failSce_param,v_r,layers,
-#                    judgment_type=jc,auction_type=at,valuation_type=vt)
+    # run_indp_batch(failSce_param,v_r,layers)
+#    run_tdindp_batch(failSce_param, v_r,layers)
+    # for jc in judge_types:
+    #     run_dindp_batch(failSce_param,v_r,layers,judgment_type=jc,auction_type=None,valuation_type=None)
+    #     for at in auction_types:
+    #         for vt in valuation_types:
+    #             run_dindp_batch(failSce_param,v_r,layers,
+    #                 judgment_type=jc,auction_type=at,valuation_type=vt)
 
     ''' Compute metrics ''' 
     cost_type = 'Total'
@@ -285,21 +285,21 @@ if __name__ == "__main__":
     run_time_df = read_run_time(combinations,optimal_combinations,suffixes,root_result_dir=root)
     
     ''' Save Variables to file '''
-#    object_list = [combinations,optimal_combinations,df,method_name,lambda_df,resource_allocation,res_alloc_rel,cost_type,run_time_df]
-#    # Saving the objects:
-#    with open(output_dir+'objs.pkl', 'w') as f: 
-#        pickle.dump(object_list, f)
-#
-#     # Getting back the objects:
-#    with open('./NOTS/objs.pkl') as f:  # Python 3: open(..., 'rb')
-#        [combinations,optimal_combinations,df,method_name,lambda_df,resource_allocation,res_alloc_rel,cost_type,run_time_df] = pickle.load(f)
+    # object_list = [combinations,optimal_combinations,df,method_name,lambda_df,resource_allocation,res_alloc_rel,cost_type,run_time_df]
+    # # Saving the objects:
+    # with open(output_dir+'objs.pkl', 'w') as f: 
+    #     pickle.dump(object_list, f)
+
+    # # Getting back the objects:
+    # with open('./NOTS/objs.pkl') as f:  # Python 3: open(..., 'rb')
+    #     [combinations,optimal_combinations,df,method_name,lambda_df,resource_allocation,res_alloc_rel,cost_type,run_time_df] = pickle.load(f)
     
     """ Plot results """    
-#    plot_performance_curves_shelby(df,cost_type='Total',decision_names=method_name,ci=None,normalize=True)
-#    plot_relative_performance_shelby(lambda_df,lambda_type='TC')
-#    plot_auction_allocation_shelby(resource_allocation,ci=None)
-#    plot_relative_allocation_shelby(res_alloc_rel)
-#    plot_run_time_synthetic(run_time_df,ci=None)    
+    plot_performance_curves_shelby(df,cost_type='Total',decision_names=method_name,ci=None,normalize=True)
+    plot_relative_performance_shelby(lambda_df,lambda_type='TC')
+    plot_auction_allocation_shelby(resource_allocation,ci=None)
+    plot_relative_allocation_shelby(res_alloc_rel)
+    plot_run_time_synthetic(run_time_df,ci=None)    
     
     # plot_performance_curves_synthetic(df,ci=None,x='t',y='cost',cost_type=cost_type)  
     # plot_performance_curves_synthetic(df,ci=None,x='t',y='cost',cost_type='Under Supply Perc')

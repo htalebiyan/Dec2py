@@ -85,15 +85,15 @@ class InfrastructureNetwork(object):
             self.G[src][dst]['data']['inf_data'].repaired=round(strat['repair'])
             self.G[src][dst]['data']['inf_data'].functionality=round(strat['y'])
     def get_clusters(self,layer):
-        G_prime_nodes=[n[0] for n in self.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id == layer and n[1]['data']['inf_data'].functionality==1.0]
+        G_prime_nodes=[n[0] for n in self.G.nodes(data=True) if n[1]['data']['inf_data'].net_id == layer and n[1]['data']['inf_data'].functionality==1.0]
         G_prime=nx.DiGraph(self.G.subgraph(G_prime_nodes).copy())
-        G_prime.remove_edges_from([(u,v) for u,v,a in G_prime.edges_iter(data=True) if a['data']['inf_data'].functionality==0.0])
+        G_prime.remove_edges_from([(u,v) for u,v,a in G_prime.edges(data=True) if a['data']['inf_data'].functionality==0.0])
         #print nx.connected_components(G_prime.to_undirected())
         return list(nx.connected_components(G_prime.to_undirected()))
     def gc_size(self,layer):
-        G_prime_nodes=[n[0] for n in self.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id == layer and n[1]['data']['inf_data'].functionality==1.0]
-        G_prime=self.G.subgraph(G_prime_nodes)
-        G_prime.remove_edges_from([(u,v) for u,v,a in G_prime.edges_iter(data=True) if a['data']['inf_data'].functionality==0.0])
+        G_prime_nodes=[n[0] for n in self.G.nodes(data=True) if n[1]['data']['inf_data'].net_id == layer and n[1]['data']['inf_data'].functionality==1.0]
+        G_prime=nx.Graph(self.G.subgraph(G_prime_nodes))
+        G_prime.remove_edges_from([(u,v) for u,v,a in G_prime.edges(data=True) if a['data']['inf_data'].functionality==0.0])
         cc=nx.connected_components(G_prime.to_undirected())
         if cc:
             #if len(list(cc)) == 1:
@@ -110,24 +110,24 @@ class InfrastructureNetwork(object):
         """ Used for multidefender security games."""
         with open("../results/indp_gamefile.game") as f:
             num_players=len(layers)
-            num_targets=len([n for n in self.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in layers])
-            f.write(`num_players`+","+`num_targets`+",2\n")
+            num_targets=len([n for n in self.G.nodes(data=True) if n[1]['data']['inf_data'].net_id in layers])
+            f.write(str(num_players)+","+str(num_targets)+",2\n")
             for layer in range(len(layers)):
-                layer_nodes=[n for n in self.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id==layers[layer]]
+                layer_nodes=[n for n in self.G.nodes(data=True) if n[1]['data']['inf_data'].net_id==layers[layer]]
                 for node in layer_nodes:
                     def_values=[0.0]*len(layers)
                     def_values[layer]=abs(node[1]['data']['inf_data'].demand)
                     atk_values=sum(def_values)
-                    f.write(`layer`+"\n")
+                    f.write(str(layer)+"\n")
                     # f.write("0.0,1.0")
                     for v in def_values:
-                        f.write(`v`+"\n")
-                    f.write(`atk_values`+"\n")
+                        f.write(str(v)+"\n")
+                    f.write(str(atk_values)+"\n")
                     
     def to_csv(self,layers=[1,3],filename="infrastructure_adj.csv"):
         with open(filename,'w') as f:
-            for u,v,a in self.G.edges_iter(data=True):
-                f.write(`u[0]`+"."+`u[1]`+","+`v[0]`+"."+`v[1]`+"\n")
+            for u,v,a in self.G.edges(data=True):
+                f.write(str(u[0])+"."+str(u[1])+","+str(v[0])+"."+str(v[1])+"\n")
                             
 
 def load_sample():
@@ -174,7 +174,7 @@ def load_sample():
 
 def load_percolation_model(supply_net):
     G=InfrastructureNetwork("PercolationModel")
-    for x,d in supply_net.N.nodes_iter(data=True):
+    for x,d in supply_net.N.nodes(data=True):
         n=InfrastructureNode(x,0,x)
         n.functionality=1.0
         n.repaired=1.0
@@ -185,7 +185,7 @@ def load_percolation_model(supply_net):
         n.space=1
         n.resource_usage=1
         G.G.add_node((x,0), data={'inf_data':n})
-    for u,v,x in supply_net.N_c.edges_iter(data=True):
+    for u,v,x in supply_net.N_c.edges(data=True):
         a=InfrastructureArc(u,v,0)
         a.flow_cost=0.0
         a.capacity=100000.0
@@ -224,7 +224,7 @@ def load_interdependencies(netnumber,src_netnumber,BASE_DIR="../data/INDP_4-12-2
 	# S<netnumber>_lb  : Lower bound on arc capacity (typically 0).
 	# S<netnumber>_imt : Interdependency matrix for network <netnumber>. <=== This method will only load interdependencies.
     arcs=[]
-    with open(BASE_DIR+"/csv/S"+`netnumber`+"_imt.csv") as f:
+    with open(BASE_DIR+"/csv/S"+str(netnumber)+"_imt.csv") as f:
         rows=[[int(y) for y in string.split(x,",")] for x in f.readlines()]
         for i in range(len(rows)):
             for j in range(len(rows[i])):
@@ -241,7 +241,7 @@ def load_infrastructure_array_format(BASE_DIR="../data/INDP_7-20-2015/",external
     pattern = re.compile(var_regex,flags=re.DOTALL)
     files=[BASE_DIR+"/INDP_InputData/MURI_INDP_data.txt"]
     if sim_number > 0:
-        files.append(BASE_DIR+"/Failure and recovery scenarios/recoveryM"+`magnitude`+"v3.txt")
+        files.append(BASE_DIR+"/Failure and recovery scenarios/recoveryM"+str(magnitude)+"v3.txt")
     vars={}
     for file in files:
         with open(file) as f:
@@ -290,7 +290,7 @@ def load_infrastructure_array_format(BASE_DIR="../data/INDP_7-20-2015/",external
         a=InfrastructureArc(arc[0][0],arc[0][1],arc[0][2]) 
         G.G.add_edge((a.source,a.layer),(a.dest,a.layer),data={'inf_data':a})
     if external_interdependency_dir:
-        print "Loading external interdependencies..."
+        print( "Loading external interdependencies...")
         interdep_arcs=load_interdependencies(1,3,BASE_DIR=external_interdependency_dir)
         for a in interdep_arcs:
             G.G.add_edge((a.source,a.source_layer),(a.dest,a.dest_layer),data={'inf_data':a})
@@ -420,10 +420,10 @@ def add_failure_scenario(G,DAM_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim
     print("Initiallize Damage...")
     if sim_number == "INF":
         # Destory all nodes!!!!
-        for n,d in G.G.nodes_iter(data=True):
+        for n,d in G.G.nodes(data=True):
             G.G.node[n]['data']['inf_data'].functionality=0.0
             G.G.node[n]['data']['inf_data'].repaired=0.0
-        for u,v,a in G.G.edges_iter(data=True):
+        for u,v,a in G.G.edges(data=True):
             if not a['data']['inf_data'].is_interdep:
                 G.G[u][v]['data']['inf_data'].functionality=0.0
                 G.G[u][v]['data']['inf_data'].repaired=0.0
@@ -433,7 +433,7 @@ def add_failure_scenario(G,DAM_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim
         recovery_entry_regex=r"\(\s*(?P<tuple>(\d+\s+)*\d)\s*\)\s*(?P<val>\d+)"
         var_regex=   r"(?P<varname>\D+):\s*\[(?P<entries>[^\]]*)\]"
         pattern = re.compile(var_regex,flags=re.DOTALL)
-        file = DAM_DIR+"/Failure and recovery scenarios/recoveryM"+`magnitude`+"v3.txt"
+        file = DAM_DIR+"/Failure and recovery scenarios/recoveryM"+str(magnitude)+"v3.txt"
         vars={}
         with open(file) as f:
             #print "Opened",file,"."                                                                                                      xs                              
@@ -486,7 +486,7 @@ def add_failure_scenario(G,DAM_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim
 
 def add_random_failure_scenario(G,sample,config=0,DAM_DIR=""):
     import csv
-    print("Initiallize Random Damage...")
+    # print("Initiallize Random Damage...")
     with open(DAM_DIR+'Initial_node.csv') as csvfile:
         data = csv.reader(csvfile, delimiter=',')
         for row in data:
@@ -498,19 +498,19 @@ def add_random_failure_scenario(G,sample,config=0,DAM_DIR=""):
             G.G.node[n]['data']['inf_data'].repaired=state
             
     with open(DAM_DIR+'Initial_links.csv') as csvfile:
-       data = csv.reader(csvfile, delimiter=',')
-       for row in data:
-           rawUV = row[0]
-           rawUV = rawUV.split(',')
-           u = (int(rawUV[0].strip(' )(')),int(rawUV[1].strip(' )(')))
-           v = (int(rawUV[2].strip(' )(')),int(rawUV[3].strip(' )(')))
-           state = float(row[sample+1])
-           if state==0.0:
-               G.G[u][v]['data']['inf_data'].functionality=state
-               G.G[u][v]['data']['inf_data'].repaired=state
+        data = csv.reader(csvfile, delimiter=',')
+        for row in data:
+            rawUV = row[0]
+            rawUV = rawUV.split(',')
+            u = (int(rawUV[0].strip(' )(')),int(rawUV[1].strip(' )(')))
+            v = (int(rawUV[2].strip(' )(')),int(rawUV[3].strip(' )(')))
+            state = float(row[sample+1])
+            if state==0.0:
+                G.G[u][v]['data']['inf_data'].functionality=state
+                G.G[u][v]['data']['inf_data'].repaired=state
             
-               G.G[v][u]['data']['inf_data'].functionality=state
-               G.G[v][u]['data']['inf_data'].repaired=state  
+                G.G[v][u]['data']['inf_data'].functionality=state
+                G.G[v][u]['data']['inf_data'].repaired=state  
                
 def add_Wu_failure_scenario(G,DAM_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
     ("Initiallize Wu failure scenarios...")
@@ -546,7 +546,7 @@ def add_Wu_failure_scenario(G,DAM_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
                     G.G[(a[1]+ofst,k)][(a[0]+ofst,k)]['data']['inf_data'].repaired=0.0
 #                    print "Arc ((",`a[1]+ofst`+","+`k`+"),("+`a[0]+ofst`+","+`k`+")) broken."
 #                    
-#        for u,v,a in G.G.edges_iter(data=True):
+#        for u,v,a in G.G.edges(data=True):
 #            if a['data']['inf_data'].is_interdep:
 #                if G.G.node[u]['data']['inf_data'].functionality == 0.0:
 #                    G.G.node[v]['data']['inf_data'].functionality = 0.0
@@ -587,7 +587,7 @@ def compare_results(strategy_list_string,BASE_DIR="../data/INDP_7-20-2015/",magn
         recovery_entry_regex=r"\(\s*(?P<tuple>(\d+\s+)*\d)\s*\)\s*(?P<val>\d+)"
         var_regex=   r"(?P<varname>\D+):\s*\[(?P<entries>[^\]]*)\]"
         pattern = re.compile(var_regex,flags=re.DOTALL)
-        file = BASE_DIR+"/Failure and recovery scenarios/recoveryM"+`magnitude`+"v3.txt"
+        file = BASE_DIR+"/Failure and recovery scenarios/recoveryM"+str(magnitude)+"v3.txt"
         vars={}
         with open(file) as f:
             #print "Opened",file,"."                                                                                                      xs                                      
@@ -634,7 +634,7 @@ def compare_results(strategy_list_string,BASE_DIR="../data/INDP_7-20-2015/",magn
                 if iteration_repaired not in repair_dict:
                     repair_dict[iteration_repaired]=[]
                 #print "Adding repair:",node_num,".",net_num,"on iteration",iteration_repaired
-                repair_dict[iteration_repaired].append("("+`node_num`+"."+`net_num`+")")
+                repair_dict[iteration_repaired].append("("+str(node_num)+"."+str(net_num)+")")
         for func in vars['resultsy']:
             if func[0][0] == sim_number:
                 src_node=int(func[0][1])
@@ -644,13 +644,13 @@ def compare_results(strategy_list_string,BASE_DIR="../data/INDP_7-20-2015/",magn
                 if iteration_repaired not in repair_dict:
                     repair_dict[iteration_repaired]=[]
                 #print "Adding repair",src_node,".",net_num,"=>",dst_node,".",net_num,"on iteration",iteration_repaired
-                repair_dict[iteration_repaired].append("("+`src_node`+"."+`net_num`+","+`dst_node`+"."+`net_num`+")")
+                repair_dict[iteration_repaired].append("("+str(src_nodeum)+"."+str(net_num)+","+str(dst_node)+"."+str(net_num)+")")
         it_array=repair_dict.keys()
         it_array.sort()
         strat_list_array=string.split(strategy_list_string,"-")
         strat_list_array=[x[1:-1] for x in strat_list_array]
-        print repair_dict
-        print strat_list_array
+        print(repair_dict)
+        print(strat_list_array)
         for s in it_array:
             if len(strat_list_array) >= s:
                 real_strats=repair_dict[s]
@@ -668,44 +668,44 @@ def compare_results(strategy_list_string,BASE_DIR="../data/INDP_7-20-2015/",magn
 def count_interdependencies(N):
     interdep_dict={1:{2:0,3:0},2:{1:0,3:0},3:{1:0,2:0}}
     total_interdeps=0
-    for u,v,a in N.G.edges_iter(data=True):
+    for u,v,a in N.G.edges(data=True):
         if a['data']['inf_data'].is_interdep:
             total_interdeps+=1
             src_layer=u[1]
             dst_layer=v[1]
-            print `u[0]`+"."+`u[1]`,"=>",`v[0]`+"."+`v[1]`
+            print(str(u[0])+"."+str(u[1]),"=>",str(v[0])+"."+str(v[1]))
             interdep_dict[dst_layer][src_layer]=interdep_dict[dst_layer][src_layer]+1
             #if N.G.node[u]['data']['inf_data'].demand >= 0:
             #    print "...is supply node"
             #else:
             #    print "I'm demanding",N.G.node[u]['data']['inf_data'].demand
-    print "Total Interdependencies =",total_interdeps
-    print "Layer 1 (Water) dependencies on Layer 2 (Gas) =  ",interdep_dict[1][2]
-    print "Layer 1 (Water) dependencies on Layer 3 (Power) =",interdep_dict[1][3]
-    print "Layer 2 (Gas) dependencies on Layer 1 (Water)   =",interdep_dict[2][1]
-    print "Layer 2 (Gas) dependencies on Layer 3 (Power)   =",interdep_dict[2][3]
-    print "Layer 3 (Power) dependencies on Layer 1 (Water) =",interdep_dict[3][1]
-    print "Layer 3 (Power) dependencies on Layer 2 (Gas)   =",interdep_dict[3][2]
+    print( "Total Interdependencies =",total_interdeps)
+    print( "Layer 1 (Water) dependencies on Layer 2 (Gas) =  ",interdep_dict[1][2])
+    print( "Layer 1 (Water) dependencies on Layer 3 (Power) =",interdep_dict[1][3])
+    print( "Layer 2 (Gas) dependencies on Layer 1 (Water)   =",interdep_dict[2][1])
+    print( "Layer 2 (Gas) dependencies on Layer 3 (Power)   =",interdep_dict[2][3])
+    print( "Layer 3 (Power) dependencies on Layer 1 (Water) =",interdep_dict[3][1])
+    print( "Layer 3 (Power) dependencies on Layer 2 (Gas)   =",interdep_dict[3][2])
 
 def count_supply(N,layer_id=1):
     total_supply=0.0
     total_demand=0.0
-    for n,d in N.G.nodes_iter(data=True):
+    for n,d in N.G.nodes(data=True):
         if n[1] == layer_id:
             demand=d['data']['inf_data'].demand
-            print "Demand for node",n,"=",demand
+            print( "Demand for node",n,"=",demand)
             if demand < 0:
                 total_demand+=-demand
             else:
                 total_supply+=demand
-    print "Total supply for Layer",layer_id,"=",total_supply
-    print "Total demand for Layer",layer_id,"=",total_demand
+    print( "Total supply for Layer",layer_id,"=",total_supply)
+    print( "Total demand for Layer",layer_id,"=",total_demand)
             
 def count_nodes(N,layer_id=1):
-    num_nodes=len([x for x,d in N.G.nodes_iter(data=True) if x[1] == layer_id])
-    num_arcs= len([u for u,v,a in N.G.edges_iter(data=True) if u[1] == layer_id and not a['data']['inf_data'].is_interdep])
-    print "Nodes in Layer",layer_id,"=",num_nodes
-    print "Arcs in Layer", layer_id,"=",num_arcs
+    num_nodes=len([x for x,d in N.G.nodes(data=True) if x[1] == layer_id])
+    num_arcs= len([u for u,v,a in N.G.edges(data=True) if u[1] == layer_id and not a['data']['inf_data'].is_interdep])
+    print( "Nodes in Layer",layer_id,"=",num_nodes)
+    print( "Arcs in Layer", layer_id,"=",num_arcs)
         
 
 def debug():
@@ -730,7 +730,7 @@ def read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim
         recovery_entry_regex=r"\(\s*(?P<tuple>(\d+\s+)*\d)\s*\)\s*(?P<val>\d+)"
         var_regex=   r"(?P<varname>\D+):\s*\[(?P<entries>[^\]]*)\]"
         pattern = re.compile(var_regex,flags=re.DOTALL)
-        file = BASE_DIR+"/Failure and recovery scenarios/recoveryM"+`magnitude`+"v3.txt"
+        file = BASE_DIR+"/Failure and recovery scenarios/recoveryM"+str(magnitude)+"v3.txt"
         vars={}
         with open(file) as f:
             #print "Opened",file,"."                                                                                                      xs                              

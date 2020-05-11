@@ -85,15 +85,15 @@ class InfrastructureNetwork(object):
             self.G[src][dst]['data']['inf_data'].repaired=round(strat['repair'])
             self.G[src][dst]['data']['inf_data'].functionality=round(strat['y'])
     def get_clusters(self,layer):
-        G_prime_nodes=[n[0] for n in self.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id == layer and n[1]['data']['inf_data'].functionality==1.0]
+        G_prime_nodes=[n[0] for n in self.G.nodes(data=True) if n[1]['data']['inf_data'].net_id == layer and n[1]['data']['inf_data'].functionality==1.0]
         G_prime=nx.DiGraph(self.G.subgraph(G_prime_nodes).copy())
-        G_prime.remove_edges_from([(u,v) for u,v,a in G_prime.edges_iter(data=True) if a['data']['inf_data'].functionality==0.0])
+        G_prime.remove_edges_from([(u,v) for u,v,a in G_prime.edges(data=True) if a['data']['inf_data'].functionality==0.0])
         #print nx.connected_components(G_prime.to_undirected())
         return list(nx.connected_components(G_prime.to_undirected()))
     def gc_size(self,layer):
-        G_prime_nodes=[n[0] for n in self.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id == layer and n[1]['data']['inf_data'].functionality==1.0]
+        G_prime_nodes=[n[0] for n in self.G.nodes(data=True) if n[1]['data']['inf_data'].net_id == layer and n[1]['data']['inf_data'].functionality==1.0]
         G_prime=self.G.subgraph(G_prime_nodes)
-        G_prime.remove_edges_from([(u,v) for u,v,a in G_prime.edges_iter(data=True) if a['data']['inf_data'].functionality==0.0])
+        G_prime.remove_edges_from([(u,v) for u,v,a in G_prime.edges(data=True) if a['data']['inf_data'].functionality==0.0])
         cc=nx.connected_components(G_prime.to_undirected())
         if cc:
             #if len(list(cc)) == 1:
@@ -110,10 +110,10 @@ class InfrastructureNetwork(object):
         """ Used for multidefender security games."""
         with open("../results/indp_gamefile.game") as f:
             num_players=len(layers)
-            num_targets=len([n for n in self.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in layers])
+            num_targets=len([n for n in self.G.nodes(data=True) if n[1]['data']['inf_data'].net_id in layers])
             f.write(str(num_players)+","+str(num_targets)+",2\n")
             for layer in range(len(layers)):
-                layer_nodes=[n for n in self.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id==layers[layer]]
+                layer_nodes=[n for n in self.G.nodes(data=True) if n[1]['data']['inf_data'].net_id==layers[layer]]
                 for node in layer_nodes:
                     def_values=[0.0]*len(layers)
                     def_values[layer]=abs(node[1]['data']['inf_data'].demand)
@@ -126,7 +126,7 @@ class InfrastructureNetwork(object):
                     
     def to_csv(self,layers=[1,3],filename="infrastructure_adj.csv"):
         with open(filename,'w') as f:
-            for u,v,a in self.G.edges_iter(data=True):
+            for u,v,a in self.G.edges(data=True):
                 f.write(str(u[0])+"."+str(u[1])+","+str(v[0])+"."+str(v[1])+"\n")
                             
 
@@ -174,7 +174,7 @@ def load_sample():
 
 def load_percolation_model(supply_net):
     G=InfrastructureNetwork("PercolationModel")
-    for x,d in supply_net.N.nodes_iter(data=True):
+    for x,d in supply_net.N.nodes(data=True):
         n=InfrastructureNode(x,0,x)
         n.functionality=1.0
         n.repaired=1.0
@@ -185,7 +185,7 @@ def load_percolation_model(supply_net):
         n.space=1
         n.resource_usage=1
         G.G.add_node((x,0), data={'inf_data':n})
-    for u,v,x in supply_net.N_c.edges_iter(data=True):
+    for u,v,x in supply_net.N_c.edges(data=True):
         a=InfrastructureArc(u,v,0)
         a.flow_cost=0.0
         a.capacity=100000.0
@@ -420,10 +420,10 @@ def add_failure_scenario(G,DAM_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim
     print("Initiallize Damage...")
     if sim_number == "INF":
         # Destory all nodes!!!!
-        for n,d in G.G.nodes_iter(data=True):
+        for n,d in G.G.nodes(data=True):
             G.G.node[n]['data']['inf_data'].functionality=0.0
             G.G.node[n]['data']['inf_data'].repaired=0.0
-        for u,v,a in G.G.edges_iter(data=True):
+        for u,v,a in G.G.edges(data=True):
             if not a['data']['inf_data'].is_interdep:
                 G.G[u][v]['data']['inf_data'].functionality=0.0
                 G.G[u][v]['data']['inf_data'].repaired=0.0
@@ -546,7 +546,7 @@ def add_Wu_failure_scenario(G,DAM_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
                     G.G[(a[1]+ofst,k)][(a[0]+ofst,k)]['data']['inf_data'].repaired=0.0
 #                    print "Arc ((",`a[1]+ofst`+","+`k`+"),("+`a[0]+ofst`+","+`k`+")) broken."
 #                    
-#        for u,v,a in G.G.edges_iter(data=True):
+#        for u,v,a in G.G.edges(data=True):
 #            if a['data']['inf_data'].is_interdep:
 #                if G.G.node[u]['data']['inf_data'].functionality == 0.0:
 #                    G.G.node[v]['data']['inf_data'].functionality = 0.0
@@ -668,7 +668,7 @@ def compare_results(strategy_list_string,BASE_DIR="../data/INDP_7-20-2015/",magn
 def count_interdependencies(N):
     interdep_dict={1:{2:0,3:0},2:{1:0,3:0},3:{1:0,2:0}}
     total_interdeps=0
-    for u,v,a in N.G.edges_iter(data=True):
+    for u,v,a in N.G.edges(data=True):
         if a['data']['inf_data'].is_interdep:
             total_interdeps+=1
             src_layer=u[1]
@@ -690,7 +690,7 @@ def count_interdependencies(N):
 def count_supply(N,layer_id=1):
     total_supply=0.0
     total_demand=0.0
-    for n,d in N.G.nodes_iter(data=True):
+    for n,d in N.G.nodes(data=True):
         if n[1] == layer_id:
             demand=d['data']['inf_data'].demand
             print( "Demand for node",n,"=",demand)
@@ -702,8 +702,8 @@ def count_supply(N,layer_id=1):
     print( "Total demand for Layer",layer_id,"=",total_demand)
             
 def count_nodes(N,layer_id=1):
-    num_nodes=len([x for x,d in N.G.nodes_iter(data=True) if x[1] == layer_id])
-    num_arcs= len([u for u,v,a in N.G.edges_iter(data=True) if u[1] == layer_id and not a['data']['inf_data'].is_interdep])
+    num_nodes=len([x for x,d in N.G.nodes(data=True) if x[1] == layer_id])
+    num_arcs= len([u for u,v,a in N.G.edges(data=True) if u[1] == layer_id and not a['data']['inf_data'].is_interdep])
     print( "Nodes in Layer",layer_id,"=",num_nodes)
     print( "Arcs in Layer", layer_id,"=",num_arcs)
         
