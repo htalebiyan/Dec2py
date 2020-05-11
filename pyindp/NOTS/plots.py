@@ -1,5 +1,5 @@
 import pandas as pd
-#import seaborn as sns
+import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -120,7 +120,7 @@ def plot_performance_curves_synthetic(df,x='t',y='cost',cost_type='Total',ci=Non
         ax.annotate('Valuation = '+ver_grid[idx], xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - 5, 0),
             xycoords=ax.yaxis.label, textcoords='offset points', ha='right', va='center', rotation=90) 
         
-    plt.savefig('Performance_curves.pdf',dpi=600)  
+    plt.savefig('Performance_curves_'+cost_type+'.pdf',dpi=600)  
     
 def plot_relative_performance_shelby(lambda_df,cost_type='Total',lambda_type='U'):    
     no_resources = lambda_df.no_resources.unique().tolist()
@@ -278,9 +278,11 @@ def plot_auction_allocation_shelby(df_res,ci=None):
 def plot_auction_allocation_synthetic(df_res,resource_type='resource',ci=None):    
     layer = df_res.layer.unique().tolist()
     auction_type = df_res.auction_type.unique().tolist()
-    auction_type.remove('')
+    if '' in auction_type:
+        auction_type.remove('')
     valuation_type = df_res.valuation_type.unique().tolist()
-    valuation_type.remove('')
+    if '' in valuation_type:
+        valuation_type.remove('')
     T = len(df_res.t.unique().tolist())
     
     hor_grid = auction_type
@@ -308,7 +310,7 @@ def plot_auction_allocation_synthetic(df_res,resource_type='resource',ci=None):
                     ax.get_legend().set_visible(False)
                     ax.set(xlabel=r'time step $t$', ylabel=resource_type)
                     if resource_type=="normalized_resource":
-                        ax.set(ylabel=r'\% resource')
+                        ax.set(ylabel=r'$\% R_c$')
                     ax.xaxis.set_ticks(np.arange(1, T+1, 1.0))   #ax.get_xlim()         
                     ax.grid(b=True, which='major', color='w', linewidth=1.0)    
                        
@@ -542,7 +544,7 @@ def plot_run_time_synthetic(df,ci=None):
         ax.annotate('Valuation: '+ver_grid[idx], xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - 5, 0),
             xycoords=ax.yaxis.label, textcoords='offset points', ha='right', va='center', rotation=90) 
         
-    plt.savefig('Performance_curves.pdf',dpi=600)  
+    plt.savefig('run_time.pdf',dpi=600)  
 
     
 def correct_legend_labels(labels):

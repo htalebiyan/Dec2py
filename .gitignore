@@ -107,3 +107,8 @@ venv.bak/
 results/
 *.pyc
 *.log
+*.spydata
+*.pkl
+/STAR_Model/models/
+*.json
+*.npz

@@ -199,12 +199,12 @@ def load_percolation_model(supply_net):
     return G
 
 def load_infrastructure_data(BASE_DIR="../data/INDP_7-20-2015/",external_interdependency_dir=None,magnitude=6,v=3,sim_number=1,cost_scale=1.0):
-    if "INDP_7-20-2015" in BASE_DIR:
+    if "../data/INDP_7-20-2015" in BASE_DIR:
 #        print "Loading a network.." #!!!
         G = load_infrastructure_array_format(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,magnitude=magnitude,v=v,sim_number=sim_number,cost_scale=cost_scale)
 #        print G #!!!
         return G
-    if "Extended_Shelby_County" in BASE_DIR:
+    if "../data/Extended_Shelby_County/" in BASE_DIR:
 #        print "Loading a network.." #!!!
         G = load_infrastructure_array_format_extended(BASE_DIR=BASE_DIR,v=v,sim_number=sim_number,cost_scale=cost_scale)
 #        print G #!!!
@@ -486,7 +486,7 @@ def add_failure_scenario(G,DAM_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim
 
 def add_random_failure_scenario(G,sample,config=0,DAM_DIR=""):
     import csv
-    print("Initialize Random Damage...")
+    # print("Initiallize Random Damage...")
     with open(DAM_DIR+'Initial_node.csv') as csvfile:
         data = csv.reader(csvfile, delimiter=',')
         for row in data:
@@ -498,22 +498,22 @@ def add_random_failure_scenario(G,sample,config=0,DAM_DIR=""):
             G.G.node[n]['data']['inf_data'].repaired=state
             
     with open(DAM_DIR+'Initial_links.csv') as csvfile:
-       data = csv.reader(csvfile, delimiter=',')
-       for row in data:
-           rawUV = row[0]
-           rawUV = rawUV.split(',')
-           u = (int(rawUV[0].strip(' )(')),int(rawUV[1].strip(' )(')))
-           v = (int(rawUV[2].strip(' )(')),int(rawUV[3].strip(' )(')))
-           state = float(row[sample+1])
-           if state==0.0:
-               G.G[u][v]['data']['inf_data'].functionality=state
-               G.G[u][v]['data']['inf_data'].repaired=state
+        data = csv.reader(csvfile, delimiter=',')
+        for row in data:
+            rawUV = row[0]
+            rawUV = rawUV.split(',')
+            u = (int(rawUV[0].strip(' )(')),int(rawUV[1].strip(' )(')))
+            v = (int(rawUV[2].strip(' )(')),int(rawUV[3].strip(' )(')))
+            state = float(row[sample+1])
+            if state==0.0:
+                G.G[u][v]['data']['inf_data'].functionality=state
+                G.G[u][v]['data']['inf_data'].repaired=state
             
-               G.G[v][u]['data']['inf_data'].functionality=state
-               G.G[v][u]['data']['inf_data'].repaired=state  
+                G.G[v][u]['data']['inf_data'].functionality=state
+                G.G[v][u]['data']['inf_data'].repaired=state  
                
 def add_Wu_failure_scenario(G,DAM_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
-    ("Initialize Wu failure scenarios...")
+    ("Initiallize Wu failure scenarios...")
     dam_nodes = {}
     dam_arcs = {}
     folderDir = DAM_DIR+'Set%d/Sce%d/' % (noSet,noSce)
@@ -770,8 +770,8 @@ def read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim
         return vars
 
 def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3",topology='Random',config=6,sample=0,cost_scale=1.0):
-    print("Initialize Damage...")
-    net_dir = BASE_DIR+'/'+topology+'Networks/'
+    print("Initiallize Damage...")
+    net_dir = BASE_DIR+'\\'+topology+'Networks\\'
     topo_initial = {'Random':'RN','ScaleFree':'SFN','Grid':'GN'}
     with open(net_dir+'List_of_Configurations.txt') as f:
         config_data = pd.read_csv(f, delimiter='\t')
@@ -779,7 +779,7 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3",topol
     noLayers = int(config_param.loc[' No. Layers'])    
     noResource = int(config_param.loc[' Resource Cap'])  
     
-    file_dir = net_dir+topo_initial[topology]+'Config_'+str(config)+'/Sample_'+str(sample)+'/'
+    file_dir = net_dir+topo_initial[topology]+'Config_'+str(config)+'\\Sample_'+str(sample)+'\\'
     G=InfrastructureNetwork("Test")
     global_index=0
     files = [f for f in os.listdir(file_dir) if os.path.isfile(os.path.join(file_dir, f))]
@@ -850,14 +850,14 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3",topol
     return G,noResource,range(1,noLayers+1)
 
 def add_synthetic_failure_scenario(G,DAM_DIR="../data/Generated_Network_Dataset_v3",topology='Random',config=0,sample=0):
-    net_dir = DAM_DIR+'/'+topology+'Networks/'
+    net_dir = DAM_DIR+'\\'+topology+'Networks\\'
     topo_initial = {'Random':'RN','ScaleFree':'SFN','Grid':'GN'}
     with open(net_dir+'List_of_Configurations.txt') as f:
         config_data = pd.read_csv(f, delimiter='\t')
     config_param = config_data.iloc[config] 
     noLayers = int(config_param.loc[' No. Layers']) 
     noResource = int(config_param.loc[' Resource Cap'])  
-    file_dir = net_dir+topo_initial[topology]+'Config_'+str(config)+'/Sample_'+str(sample)+'/'
+    file_dir = net_dir+topo_initial[topology]+'Config_'+str(config)+'\\Sample_'+str(sample)+'\\'
     files = [f for f in os.listdir(file_dir) if os.path.isfile(os.path.join(file_dir, f))]
     for k in range(1,noLayers+1):
         for file in files: 

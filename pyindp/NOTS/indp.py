@@ -459,11 +459,13 @@ def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependen
     layers_temp=[]
     v_temp = 0
     if shelby_data:
-    #    print "Loading Shelby County data..." #!!!
+        print "Loading Shelby County data..."
         InterdepNet=load_infrastructure_data(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,sim_number=sim_number,cost_scale=cost_scale,magnitude=magnitude,v=v)
-    #    print "Data loaded." #!!!
+        # print "Data loaded."
     else:
+        print "Loading Synthetic data..."
         InterdepNet,v_temp,layers_temp=load_synthetic_network(BASE_DIR=BASE_DIR,topology=topology,config=magnitude,sample=sample,cost_scale=cost_scale)
+        # print "Data loaded."
     return InterdepNet,v_temp,layers_temp
 
 
@@ -550,6 +552,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         print "Running INDP (T=1) or iterative INDP."
         if print_cmd_line:
             print "Num iters=",params["NUM_ITERATIONS"]
+            
         # Run INDP for 1 time step (original INDP).
         output_dir=params["OUTPUT_DIR"]+'_L'+`len(layers)`+'_m'+`params["MAGNITUDE"]`+"_v"+outDirSuffixRes
         # Initial calculations.
@@ -615,8 +618,6 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
     # Save results of INDP run.
     if save:
         make_dir(output_dir)	
-        # if not os.path.exists(output_dir):
-            # os.makedirs(output_dir)
         indp_results.to_csv(output_dir,params["SIM_NUMBER"],suffix=suffix)
     return indp_results
         
@@ -701,8 +702,6 @@ def run_inrg(params,layers=[1,2,3],validate=False,player_ordering=[3,1],suffix="
             else:
                 player_strategies[P].extend(results,t_offset=i+1,t_start=1,t_end=2)
     make_dir(output_dir)
-    # if not os.path.exists(output_dir):
-        # os.makedirs(output_dir)
     for P in layers:
         player_strategies[P].to_csv(output_dir,params["SIM_NUMBER"],suffix="P"+`P`+"_"+suffix)
     
@@ -754,8 +753,6 @@ def baseline_metrics(BASE_DIR="/Users/Andrew/Dropbox/iINDP",layers=[1,2,3]):
 
 def save_INDP_model_to_file(model,outModelDir,t,l=0,suffix=''):
     make_dir(outModelDir)
-    # if not os.path.exists(outModelDir):
-        # os.makedirs(outModelDir) 
     # Write models to file   
     lname = "/Model_t%d_l%d_%s.lp" % (t,l,suffix)
     model.write(outModelDir+lname)

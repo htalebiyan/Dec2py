@@ -459,13 +459,11 @@ def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependen
     layers_temp=[]
     v_temp = 0
     if shelby_data:
-        print "Loading Shelby County data..."
+    #    print "Loading Shelby County data..." #!!!
         InterdepNet=load_infrastructure_data(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,sim_number=sim_number,cost_scale=cost_scale,magnitude=magnitude,v=v)
-        # print "Data loaded."
+    #    print "Data loaded." #!!!
     else:
-        print "Loading Synthetic data..."
         InterdepNet,v_temp,layers_temp=load_synthetic_network(BASE_DIR=BASE_DIR,topology=topology,config=magnitude,sample=sample,cost_scale=cost_scale)
-        # print "Data loaded."
     return InterdepNet,v_temp,layers_temp
 
 
@@ -853,3 +851,199 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
     plt.tight_layout()   
     plt.savefig(output_dir+'/plot_net'+folderSuffix+'.png',dpi=600)
     
+def flow_problem(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],decision_vars={},print_cmd=True, time_limit=None):
+    start_time = time.time()
+    m=Model('indp')
+    m.setParam('OutputFlag',False)
+    if time_limit:
+        m.setParam('TimeLimit', time_limit)
+    G_prime_nodes = [n[0] for n in N.G.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in layers]
+    G_prime = N.G.subgraph(G_prime_nodes)
+    # Nodes in controlled network.
+    N_hat_nodes   = [n[0] for n in G_prime.nodes_iter(data=True) if n[1]['data']['inf_data'].net_id in controlled_layers]
+    N_hat = G_prime.subgraph(N_hat_nodes)
+    
+    S=N.S
+    
+    # Populate interdepencies. Add nodes to N' if they currently rely on a non-functional node.
+    interdep_nodes={}
+    for t in range(T):
+        interdep_nodes[t]={}
+        for u,v,a in G_prime.edges_iter(data=True):
+            if a['data']['inf_data'].is_interdep:
+                #print "Dependency edge goes from:",u,"to",v
+                if 'w_'+`v` not in interdep_nodes[t]:
+                    interdep_nodes[t]['w_'+`v`]=1
+                interdep_nodes[t]['w_'+`v`]*=decision_vars[t]['w_'+`u`]
+						
+    for t in range(T):
+        # # Add geographical space variables.
+        # for s in S:
+        #     m.addVar(name='z_'+`s.id`+","+`t`,vtype=GRB.BINARY) #!!!
+        # Add over/undersupply variables for each node.
+        for n,d in N_hat.nodes_iter(data=True):
+            m.addVar(name='delta+_'+`n`+","+`t`,lb=0.0)
+            m.addVar(name='delta-_'+`n`+","+`t`,lb=0.0)
+        # Add flow variables for each arc.
+        for u,v,a in N_hat.edges_iter(data=True):
+            m.addVar(name='x_'+`u`+","+`v`+","+`t`,lb=0.0)
+    m.update()
+
+    # Populate objective function.
+    objFunc=LinExpr()
+    for t in range(T):
+        # for s in S:
+        #     objFunc+=s.cost*m.getVarByName('z_'+`s.id`+","+`t`)#!!!
+        # for u,v,a in N_hat.edges_iter(data=True):
+        #     if not a['data']['inf_data'].is_interdep:
+        #         objFunc+=(float(a['data']['inf_data'].reconstruction_cost)/2.0)*decision_vars[t]['y_'+`u`+","+`v`] #!!!
+        # for n,d in N_hat.nodes_iter(data=True):
+        #     objFunc+=d['data']['inf_data'].reconstruction_cost*decision_vars[t]['w_'+`n`] #!!!
+        for n,d in N_hat.nodes_iter(data=True):
+            objFunc+=d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+`n`+","+`t`)
+            objFunc+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+`n`+","+`t`)
+        for u,v,a in N_hat.edges_iter(data=True):
+            objFunc+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+`u`+","+`v`+","+`t`)
+            
+            
+    m.setObjective(objFunc,GRB.MINIMIZE)
+    m.update()
+    
+    #Constraints.         
+    for t in range(T):
+        # Time-dependent constraint.
+        for n,d in N_hat.nodes_iter(data=True):
+            if t > 0:
+                wTildeSum=0
+                for t_prime in range(1,t):
+                    wTildeSum+=decision_vars[t_prime]['w_'+`n`]
+                if decision_vars[t]['w_'+`n`]>wTildeSum:
+                    sys.exit('Time dependent recovery constraint at node w_'+`n`+' at time '+`t`)
+        for u,v,a in N_hat.edges_iter(data=True):
+            if not a['data']['inf_data'].is_interdep:
+                if t > 0:
+                    yTildeSum=0
+                    for t_prime in range(1,t):
+                        yTildeSum+=decision_vars[t_prime]['y_'+`u`+","+`v`]
+                    if decision_vars[t]['y_'+`u`+","+`v`]>yTildeSum:
+                        sys.exit('Time dependent recovery constraint at arc y_'+`u`+','+`v`+' at time '+`t`)
+                    
+        # Enforce a_i,j to be fixed if a_j,i is fixed (and vice versa). 
+        decision_vars_keys = decision_vars[t].keys()        
+        for u,v,a in N_hat.edges_iter(data=True):
+            if not a['data']['inf_data'].is_interdep:
+                if 'y_'+`u`+","+`v` not in decision_vars_keys and 'y_'+`v`+","+`u` not in decision_vars_keys:
+                    sys.exit('y_'+`u`+','+`v`+' is missing from decisions at time'+`t`)
+                elif decision_vars[t]['y_'+`u`+","+`v`]!=decision_vars[t]['y_'+`v`+","+`u`]:
+                    sys.exit('y_'+`u`+','+`v`+' and y_'+`v`+','+`u`+' values mismatch at time'+`t`)		
+        # Conservation of flow constraint. (2) in INDP paper.
+        for n,d in N_hat.nodes_iter(data=True):
+            outFlowConstr=LinExpr()
+            inFlowConstr= LinExpr()
+            demandConstr= LinExpr()
+            for u,v,a in N_hat.out_edges(n,data=True):
+                outFlowConstr+=m.getVarByName('x_'+`u`+","+`v`+","+`t`)
+            for u,v,a in N_hat.in_edges(n,data=True):
+                inFlowConstr+= m.getVarByName('x_'+`u`+","+`v`+","+`t`)
+            demandConstr+=d['data']['inf_data'].demand - m.getVarByName('delta+_'+`n`+","+`t`) + m.getVarByName('delta-_'+`n`+","+`t`)
+            m.addConstr(outFlowConstr-inFlowConstr,GRB.EQUAL,demandConstr,"Flow conservation constraint "+`n`+","+`t`)
+            
+        # interdpendency constraints
+        for n,d in N_hat.nodes_iter(data=True): 
+            if 'w_'+`n` in interdep_nodes[t].keys() and interdep_nodes[t]['w_'+`n`]==0 :
+                decision_vars[t]['w_'+`n`]=0
+                # print('w_'+`n`+ ' is set to 0 at time '+`t`+' due to interdepndency')
+        # Flow functionality constraints.
+        for u,v,a in N_hat.edges_iter(data=True):
+            if not a['data']['inf_data'].is_interdep:           
+                if decision_vars[t]['w_'+`u`]:
+                    m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity,"Flow in functionality constraint("+`u`+","+`v`+","+`t`+")")
+                else:
+                    m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,0.0,"Flow in functionality constraint ("+`u`+","+`v`+","+`t`+")")
+                if decision_vars[t]['w_'+`v`]:
+                    m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity,"Flow out functionality constraint("+`u`+","+`v`+","+`t`+")")
+                else:
+                    m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,0.0,"Flow out functionality constraint ("+`u`+","+`v`+","+`t`+")")
+                    
+                m.addConstr(m.getVarByName('x_'+`u`+","+`v`+","+`t`),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*decision_vars[t]['y_'+`u`+","+`v`],"Flow arc functionality constraint ("+`u`+","+`v`+","+`t`+")")
+
+        # # Geographic space constraints #!!!
+        # for s in S:
+        #     for n,d in N_hat.nodes_iter(data=True):
+        #         m.addConstr(decision_vars[t]['w_'+`u`]*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+`s.id`+","+`t`),"Geographical space constraint for node "+`n`+","+`t`)
+        #     for u,v,a in N_hat.edges_iter(data=True):
+        #         if not a['data']['inf_data'].is_interdep:  
+        #             m.addConstr(decision_vars[t]['y_'+`u`+","+`v`]*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+`s.id`+","+`t`),"Geographical space constraint for arc ("+`u`+","+`v`+")")
+      
+    # print "Solving..."
+    m.update()
+    m.optimize()
+    indp_results=INDPResults()
+    # Save results.
+    if m.getAttr("Status")==GRB.OPTIMAL or m.status==9:
+        if m.status==9:
+            print ('\nOptimizer time limit, gap = %1.3f\n' % m.MIPGap)
+        # compute total demand of all layers
+        total_demand = 0.0
+        for n in G_prime.nodes_iter(data=True):
+            demand_value = n[1]['data']['inf_data'].demand
+            if demand_value<0:
+                total_demand+=demand_value
+            
+        for t in range(T):
+            nodeCost=0.0
+            arcCost=0.0
+            flowCost=0.0
+            overSuppCost=0.0
+            underSuppCost=0.0
+            underSupp=0.0
+            spacePrepCost=0.0
+            # # Record node recovery actions.
+            # for n,d in N_hat.nodes_iter(data=True):
+            #     if decision_vars[t]['w_'+`u`]==1:
+            #         action=`n[0]`+"."+`n[1]`
+            #         indp_results.add_action(t,action)
+            # # Record edge recovery actions.
+            # for u,v,a in N_hat.edges_iter(data=True):
+            #     if decision_vars[t]['y_'+`u`+","+`v`]==1:
+            #         action=`u[0]`+"."+`u[1]`+"/"+`v[0]`+"."+`v[1]`
+            #         indp_results.add_action(t,action)
+            # Calculate space preparation costs.
+            # for s in S:
+            #     spacePrepCost+=s.cost*m.getVarByName('z_'+`s.id`+","+`t`).x
+            # indp_results.add_cost(t,"Space Prep",spacePrepCost)
+            # Calculate arc preparation costs.
+            # for u,v,a in N_hat.edges_iter(data=True):
+            #     arcCost+=(a['data']['inf_data'].reconstruction_cost/2.0)*decision_vars[t]['y_'+`u`+","+`v`]
+            # indp_results.add_cost(t,"Arc",arcCost)
+            # # Calculate node preparation costs.
+            # for n,d in N_hat.nodes_iter(data=True):
+            #     nodeCost+=d['data']['inf_data'].reconstruction_cost*decision_vars[t]['w_'+`u`]
+            # indp_results.add_cost(t,"Node",nodeCost)
+
+            # Calculate under/oversupply costs.
+            for n,d in N_hat.nodes_iter(data=True):
+                overSuppCost+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+`n`+","+`t`).x
+                underSupp+= m.getVarByName('delta+_'+`n`+","+`t`).x
+                underSuppCost+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+`n`+","+`t`).x
+            indp_results.add_cost(t,"Over Supply",overSuppCost)
+            indp_results.add_cost(t,"Under Supply",underSuppCost)
+            indp_results.add_cost(t,"Under Supply Perc",underSupp/total_demand)
+            # Calculate flow costs.
+            for u,v,a in N_hat.edges_iter(data=True):
+                if not a['data']['inf_data'].is_interdep:
+                    flowCost+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+`u`+","+`v`+","+`t`).x
+            indp_results.add_cost(t,"Flow",flowCost)
+            # Calculate total costs.
+            indp_results.add_cost(t,"Total",flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost)
+            indp_results.add_cost(t,"Total no disconnection",spacePrepCost+arcCost+flowCost+nodeCost)
+            indp_results.add_run_time(t,time.time()-start_time)     
+        return [m,indp_results]
+    else:
+        print m.getAttr("Status"),": SOLUTION NOT FOUND. (Check data and/or violated constraints)."
+        m.computeIIS()
+        print ('\nThe following constraint(s) cannot be satisfied:')
+        for c in m.getConstrs():
+            if c.IISConstr:
+                print('%s' % c.constrName)
+        return None

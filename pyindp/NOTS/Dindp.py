@@ -74,6 +74,7 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
         for i in range(num_iterations):
             if print_cmd:
                 print "\n-Iteration "+`i`+"/"+`num_iterations-1`
+            
             res_alloc_time_start = time.time()
             v_r_applied = []
             if auction_type:
@@ -190,10 +191,6 @@ def run_judgment_call(params,layers,T=1,saveJC=True,print_cmd=True,saveJCModel=F
             output_dir_agents = output_dir + '/agents'
             make_dir(output_dir)
             make_dir(output_dir_agents)
-            # if not os.path.exists(output_dir):
-                # os.makedirs(output_dir)
-            # if not os.path.exists(output_dir_agents):
-                # os.makedirs(output_dir_agents)
             for P in layers:
                 Dindp_results[P].to_csv(output_dir_agents,params["SIM_NUMBER"],suffix=`P`)
                 Dindp_results_Real[P].to_csv(output_dir_agents,params["SIM_NUMBER"],suffix='Real_'+`P`)
@@ -596,8 +593,6 @@ def compute_valuations(v_r,InterdepNet,layers,T=1,print_cmd=True,judgment_type="
                 
 def write_auction_csv(outdir,res_allocate,res_alloc_time,PoA=None,valuations=None,sample_num=1,suffix=""):
     make_dir(outdir)
-    # if not os.path.exists(outdir):
-        # os.makedirs(outdir)        
     auction_file=outdir+"/auctions_"+`sample_num`+"_"+suffix+".csv"
     # Making header
     header = "t,"
@@ -730,9 +725,6 @@ def read_resourcec_allocation(df,combinations,optimal_combinations,ref_method='i
 
 def write_judgments_csv(outdir,realizations,sample_num=1,agent=1,time=0,suffix=""):
     make_dir(outdir)
-    # if not os.path.exists(outdir):
-        # os.makedirs(outdir)  
-        
     judge_file=outdir+'/judge_'+`sample_num`+"_agent"+`agent`+'_time'+`time`+'_'+suffix+".csv"
     header = "no.,src node,src layer,src judge,if src corr.,dest Names,dest init. funcs"
     with open(judge_file,'w') as f:
@@ -762,7 +754,6 @@ def read_and_aggregate_results(combinations,optimal_combinations,suffixes,root_r
             full_suffix = '_L'+`x[2]`+'_m'+`x[0]`+'_v'+`x[3]`+'_auction_'+x[5]+'_'+x[6] 
         
         result_dir = root_result_dir+x[4]+'_results'+full_suffix
-        # print result_dir
         if os.path.exists(result_dir):    
             # Save all results to Pandas dataframe
             sample_result = INDPResults()
@@ -1007,4 +998,4 @@ def make_dir(dir):
     except OSError, e:
         if e.errno != os.errno.EEXIST:
             raise  
-        pass 
+        pass
