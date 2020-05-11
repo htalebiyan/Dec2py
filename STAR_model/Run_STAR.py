@@ -12,17 +12,18 @@ from os.path import isfile, join
 # from plot_STAR import plot_correlation
 
 if __name__ == "__main__": 
-    # t_suf = '20200430'
-    # samples_all,costs_all,costs_local_all,initial_net = pickle.load(open('data'+t_suf+'/initial_data.pkl', "rb" ))     
-    # train_data,test_data = pickle.load(open('data'+t_suf+'/train_test_data.pkl', "rb" ))     
-            
+    t_suf = ''
+    root = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc/'
+    # samples_all,costs_all,costs_local_all,initial_net = pickle.load(open(root+'data'+t_suf+'/initial_data.pkl', "rb" ))     
+    # train_data,test_data = pickle.load(open(root+'data'+t_suf+'/train_test_data_arcs.pkl', "rb" ))     
+       
     plt.close('all')
     base_dir = "../data/Extended_Shelby_County/"
     damage_dir = "../data/random_disruption_shelby/"
     output_dir = 'C:/Users/ht20/Documents/Files/STAR_training_data/INDP_random_disruption/'   
     failSce_param = {"type":"random","sample_range":range(0,990),"mags":range(0,1),
                     'filtered_List':None,'Base_dir':base_dir,'Damage_dir':damage_dir}
-    v_r = [1,2,3,4,5,6,8,10,12,15,18,20,30,40,50,60,70,80,90,100]
+    v_r = [10]#[1,2,3,4,5,6,8,10,12,15,18,20,30,40,50,60,70,80,90,100]
     # 
     layers=[1,2,3,4]
  
@@ -40,8 +41,8 @@ if __name__ == "__main__":
     # save_initial_data(initial_net,samples_all,costs_all)
 
     ''' Prepare training and testing datsets '''    
-    # keys = ['y_(8, 2),(15, 2)','y_(15, 2),(8, 2)']
-    ##['w_(1, 4)']   #samples.keys()   #['y_(2, 2),(11, 2)','y_(11, 2),(2, 2)'] 
+    # keys = ['y_(1, 3),(60, 3)','y_(60, 3),(1, 3)']
+    # #['w_(1, 4)']   #samples.keys()   #['y_(2, 2),(11, 2)','y_(11, 2),(2, 2)'] 
     
     # node_data_all={key:pd.DataFrame() for key in keys}
     # arc_data_all={key:pd.DataFrame() for key in keys}
@@ -61,10 +62,10 @@ if __name__ == "__main__":
     # save_prepared_data(train_data,test_data)
     
     ''' train and test model'''
-    exclusions=['w_t_1','y_t_1','w_h_t_1','time','Total','Under_Supply_Perc','Over_Supply','Space_Prep'] 
+    exclusions=['w_t_1','y_t_1','y_a_t_1','w_h_t_1','time','Total','Under_Supply_Perc','Over_Supply','Space_Prep'] 
     ##,'y_t_1','w_n_t_1','w_a_t_1', 'w_d_t_1','time','w_h_t_1','Total','Flow','Under_Supply_layer'
     
-    mypath='parameters20200505/'
+    mypath='parameters20200509/'
     files = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f))]
     keys= [x for x in train_data.keys() if (x not in files)] 
     
@@ -73,7 +74,7 @@ if __name__ == "__main__":
         trace,model = train_model({key:train_data[key]},exclusions) 
         save_traces(trace)
         _,_ = test_model({key:train_data[key]},{key:test_data[key]},
-                          trace,model,exclusions,plot=False)
+                          trace,model,exclusions,plot=True)
     
     # plot_correlation(node_data_all,keys,['w_t_1'])
     
@@ -98,4 +99,3 @@ if __name__ == "__main__":
     #                                     initial_net,layers,real_results_dir,model_folder,param_folder) 
     #         else:
     #             print('\nThe scenatio does not exist in the data.')
-    

@@ -15,7 +15,6 @@ import indputils
 import flow
 import STAR_utils
 
-
 class NodeModel():
     """Stores information for a node model """
     def __init__(self, name, net_id):
@@ -36,7 +35,7 @@ class NodeModel():
         self.dependees = []
     def initialize_state_matrices(self, time_step, num_pred):
         """Initializes state and predictor matrices """
-        self.state_hist = -1*np.ones((time_step+1, num_pred))
+        self.state_hist = np.ones((time_step+1, num_pred))
         self.state_hist[0, :] = self.initial_state
         self.w_n_t_1 = np.zeros((time_step, num_pred))
         self.w_a_t_1 = np.zeros((time_step, num_pred))
@@ -76,7 +75,7 @@ class ArcModel():
         self.end_nodes = ['w_'+arc_id[0]+')', 'w_'+'('+arc_id[1]]
     def initialize_state_matrices(self, time_step, num_pred):
         """Initializes state and predictor matrices """
-        self.state_hist = -1*np.ones((time_step+1, num_pred))
+        self.state_hist = np.ones((time_step+1, num_pred))
         self.state_hist[0, :] = self.initial_state
         self.y_n_t_1 = np.zeros((time_step, num_pred))
     def check_model_exist(self, param_folder):
@@ -189,7 +188,7 @@ def predict_resotration(pred_dict, fail_sce_param, params):
         for c in list(costs[0].keys()):
             costs_normed[c] = STAR_utils.normalize_costs(costs[0][c], c)
         run_times[t+1][1] = predict_next_step(t, T, objs, pred_dict, costs_normed,
-                                              params['V'], layer_dict, print_cmd=False)
+                                              params['V'], layer_dict, print_cmd=True)
         run_times[t+1][0] = time.time()-start_time
         ### Calculate the cost of scenario ###
         for pred_s in range(num_pred):
@@ -237,15 +236,15 @@ def predict_next_step(t, T, objs, pred_dict, costs_normed, res, layer_dict, prin
     from_formula_calls = 0
     for key, val in objs.items():
         l = val.net_id
-        non_pred_idx = []
         ###initialize new predictions###
+        non_pred_idx = []
         pred_decision = np.zeros(num_pred)
         for pred_s in range(num_pred):
             if val.state_hist[t, pred_s] == 1:
                 pred_decision[pred_s] = 1
                 non_pred_idx.append(pred_s)
         pred_idx = [x for x in range(num_pred) if x not in non_pred_idx]
-        #if any pred_s needs prediction
+        ###if any pred_s needs prediction###
         if len(pred_idx):
             if val.model_status:
                 ###Making model formula###
@@ -272,9 +271,11 @@ def predict_next_step(t, T, objs, pred_dict, costs_normed, res, layer_dict, prin
                         special_feature = [val.y_n_t_1[t, pred_s],
                                            layer_dict[l]['w_c_t_1'][pred_s],
                                            layer_dict[l]['y_c_t_1'][pred_s]]
+                    else:
+                        sys.exit('Wrong element type: '+ key)
                     norm_cost_values = [costs_normed[x][t, pred_s] for x in cost_names]
                     basic_features = [val.state_hist[t+1, pred_s], val.state_hist[t, pred_s],
-                                      (t+1)/float(T-1), res/100.0]
+                                      (t+1)/float(T), res/100.0]
                     row = np.array(basic_features+special_feature+norm_cost_values)
                     data = data.append(pd.Series(row, index=cols), ignore_index=True)
                 ###Run models###
@@ -292,11 +293,13 @@ def predict_next_step(t, T, objs, pred_dict, costs_normed, res, layer_dict, prin
                         for psr in range(no_pred_itr):
                             sum_state += ppc_test['y'][psr][pred_idx.index(idx)]
                         pred_decision[idx] = round(sum_state/float(no_pred_itr))
+                pass
 
             elif val.model_status == 0:
                 for pred_s in pred_idx:
                     pred_decision[pred_s] = np.random.randint(2)
-                    print('Prediction for '+key+' (prediction sample: '+pred_s+') was made randomly')
+                    if print_cmd:
+                        print('Predicting '+str(key)+', sample: '+str(pred_s)+', randomly')
             else:
                 sys.exit('Wrong model status: '+key)
         val.state_hist[t+1, :] = pred_decision
@@ -304,7 +307,7 @@ def predict_next_step(t, T, objs, pred_dict, costs_normed, res, layer_dict, prin
 
 def extract_features(objs, net_obj, t, layers, num_pred):
     """Extratcs predictors from data"""
-    # element feature extraction
+    ### element feature extraction ###
     for pred_s in range(num_pred):
         for key, val in objs.items():
             if val.type == 'n':
@@ -320,7 +323,7 @@ def extract_features(objs, net_obj, t, layers, num_pred):
             elif val.type == 'a':
                 for n in val.end_nodes:
                     val.y_n_t_1[t, pred_s] += objs[n].state_hist[t, pred_s]/2.0
-    # layer feature extraction
+    ### layer feature extraction ###
     layer_dict = {x:{'w_c_t_1':np.zeros(num_pred),
                      'no_w_c':len([xx for xx in net_obj[0].G.nodes() if xx[1] == x]),
                      'y_c_t_1':np.zeros(num_pred),
@@ -344,12 +347,9 @@ def extract_features(objs, net_obj, t, layers, num_pred):
                 layer_dict[val.net_id]['w_h_t_1'][pred_s] += val.state_hist[t, pred_s]/no_high_nodes
     return layer_dict
 
-def plot_results(fail_sce_param, pred_dict, params, tc_df, opt_dir=None):
-    """Plots results"""
-    sns.set(context='notebook', style='darkgrid')
-    # plt.rc('text', usetex = True)
-    # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-    plt.close('all')
+def plot_df(fail_sce_param, pred_dict, params, tc_df, opt_dir=None):
+    """Prepares the dataframes to plot results"""
+
     ### Read data ###
     t_suf = ''
     folder_name = 'results'+t_suf
@@ -373,7 +373,7 @@ def plot_results(fail_sce_param, pred_dict, params, tc_df, opt_dir=None):
             tc_df = pd.concat([tc_df, temp])
         for l in params['L']:
             suffix = 'l'+str(l)+'_ps'+str(pred_s)
-            cost_file = folder_name+"/layers/costs_"+str(fail_sce_param["sample"])+"_"+suffix+".csv"
+            cost_file = folder_name+"/layer/costs_"+str(fail_sce_param["sample"])+"_"+suffix+".csv"
             temp = pd.read_csv(cost_file, delimiter=',')
             temp_dict = {'pred sample':pred_s, 'layer':l, 'cost scope':'Layer',
                          'sample':fail_sce_param["sample"], 'mag':fail_sce_param["mag"],
@@ -391,12 +391,6 @@ def plot_results(fail_sce_param, pred_dict, params, tc_df, opt_dir=None):
         for i, val in temp_dict.items():
             temp[i] = val
         tc_df = pd.concat([tc_df, temp])
-    # tc_df = tc_df.replace('predicted','Logistic Model Prediction')
-    # tc_df = tc_df.replace('data','Optimal Scenario')
-    figure_df = tc_df[tc_df['cost scope'] == 'Overall']
-    sns.lineplot(x="t", y="Total", style='type', hue='sample',
-                 data=figure_df, markers=True, ci=99)
-    # plt.savefig('Total_cost_vs_time.png',dpi = 600, bbox_inches='tight')
     return tc_df
 
 def check_folder(output_dir):
@@ -405,25 +399,8 @@ def check_folder(output_dir):
         os.makedirs(output_dir)
     return output_dir
 
-def run_parallel(sample):
-    """Runs models in parallel"""
-    mags = range(0, 1)
-    t_suf = ''
-    model_dir = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
-    fail_sce_param = {"type":"random", "sample":None, "mag":None, 'filtered_List':None,
-                      'Base_dir':"../data/Extended_Shelby_County/",
-                      'Damage_dir':"../data/random_disruption_shelby/"}
-    pred_dict = {'num_pred':5, 'model_dir':model_dir+'/traces'+t_suf,
-                 'param_folder':model_dir+'/parameters'+t_suf,
-                 'output_dir':'./results'}
-    params = {"NUM_ITERATIONS":10, "V":5, "ALGORITHM":"INDP", 'L':[1, 2, 3, 4]}
-    for mag in mags:
-        fail_sce_param['sample'] = sample
-        fail_sce_param['mag'] = mag
-        predict_resotration(pred_dict, fail_sce_param, params)
-
 if __name__ == '__main__':
-    SAMPLE_RANGE = [50, 70, 90]#range(50, 70)
+    SAMPLE_RANGE = [50]# range(50, 551, 100) #[50, 70, 90]
     MAGS = range(0, 1)
     T_SUF = ''
     MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
@@ -438,20 +415,37 @@ if __name__ == '__main__':
                  'param_folder':MODEL_DIR+'/parameters'+T_SUF,
                  'output_dir':'./results'}
     PARAMS = {"NUM_ITERATIONS":10, "V":5, "ALGORITHM":"INDP", 'L':[1, 2, 3, 4]}
-    ## Run models ###
-    # for mag_num in MAGS:
-    #     for sample_num in SAMPLE_RANGE:
-    #         FAIL_SCE_PARAM['sample'] = sample_num
-    #         FAIL_SCE_PARAM['mag'] = mag_num
-    #         predict_resotration(PRED_DICT, FAIL_SCE_PARAM, PARAMS)
-    with multiprocessing.Pool(len(SAMPLE_RANGE)) as p:
-        print(p.map(run_parallel, SAMPLE_RANGE))
-    ###Print results###
-    # COST_DF = pd.DataFrame()
-    # for mag_num in MAGS:
-    #     for sample_num in SAMPLE_RANGE:
-    #         FAIL_SCE_PARAM['sample'] = sample_num
-    #         FAIL_SCE_PARAM['mag'] = mag_num
-    #         COST_DF = plot_results(FAIL_SCE_PARAM, PRED_DICT, PARAMS, tc_df=COST_DF,
-    #                                opt_dir=OPT_DIR)
-            
+
+    ### Run models ###
+    for mag_num in MAGS:
+        for sample_num in SAMPLE_RANGE:
+            FAIL_SCE_PARAM['sample'] = sample_num
+            FAIL_SCE_PARAM['mag'] = mag_num
+            predict_resotration(PRED_DICT, FAIL_SCE_PARAM, PARAMS)
+
+    # ### Run models in parallel ###
+    # import run_parallel
+    # with multiprocessing.Pool(processes=len(SAMPLE_RANGE)) as p:
+    #     p.map(run_parallel.run_parallel, SAMPLE_RANGE)
+    #     p.join()
+
+    ###Plot results###
+    COST_DF = pd.DataFrame()
+    for mag_num in MAGS:
+        for sample_num in SAMPLE_RANGE:
+            FAIL_SCE_PARAM['sample'] = sample_num
+            FAIL_SCE_PARAM['mag'] = mag_num
+            COST_DF = plot_df(FAIL_SCE_PARAM, PRED_DICT, PARAMS, tc_df=COST_DF,
+                              opt_dir=OPT_DIR)
+
+    sns.set(context='notebook', style='darkgrid')
+    # plt.rc('text', usetex = True)
+    # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    plt.close('all')
+    # tc_df = tc_df.replace('predicted','Logistic Model Prediction')
+    # tc_df = tc_df.replace('data','Optimal Scenario')
+    FIGURE_DF = COST_DF#[COST_DF['sample'] == 550]
+    sns.lineplot(x="t", y="Total", style='layer', hue='type',
+                  data=FIGURE_DF, markers=True, ci=95)
+    # plt.savefig('Total_cost_vs_time.png',dpi = 600, bbox_inches='tight') 
+           

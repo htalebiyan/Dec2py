@@ -167,16 +167,16 @@ def prepare_data(samples,costs,initial_net,res,keys):
     noSamples = int(samples[names[0]].shape[1])
     T = int(samples[names[0]].shape[0])                
       
-    w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1=extract_features(samples,initial_net,keys)
+    w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1,y_a_t_1=extract_features(samples,initial_net,keys)
     
     print('\nBuilding Dataframes:') 
     cost_names=costs.keys()
     costs_normed={}
     for i in cost_names: 
-        costs_normed[i] = normalize_costs(costs[i],i,costs['Total'][0,:])
+        costs_normed[i] = normalize_costs(costs[i],i)
         
     node_cols=['w_t','w_t_1','sample','time','Rc','w_n_t_1','w_a_t_1','w_d_t_1','w_h_t_1','w_c_t_1','y_c_t_1']
-    arc_cols=['y_t','y_t_1','sample','time','Rc','y_n_t_1','w_c_t_1','y_c_t_1']
+    arc_cols=['y_t','y_t_1','sample','time','Rc','y_n_t_1','y_a_t_1','w_c_t_1','y_c_t_1']
     node_data={} 
     arc_data={}
     for key in keys:
@@ -200,7 +200,8 @@ def prepare_data(samples,costs,initial_net,res,keys):
                                         w_d_t_1[key][t,s],w_h_t_1[l][t,s],
                                         w_c_t_1[l][t,s],y_c_t_1[l][t,s]]
                     elif key[0]=='y':
-                        special_feature=[y_n_t_1[key][t,s],w_c_t_1[l][t,s],y_c_t_1[l][t,s]]
+                        special_feature=[y_n_t_1[key][t,s],y_a_t_1[key][t,s],
+                                         w_c_t_1[l][t,s],y_c_t_1[l][t,s]]
                     row = np.array(basic_features+special_feature+norm_cost_values)
                     temp = pd.Series(row,index=cols)
                     train_df=train_df.append(temp,ignore_index=True)
@@ -248,6 +249,7 @@ def extract_features(samples,initial_net,keys,prog_bar=True):
     y_t={}
     y_t_1={}
     y_n_t_1={}  # connected nodes
+    y_a_t_1={}  # connected arc to the connected nodes
     for key, val in selected_nodes.items():
         w_t[key]=selected_nodes[key][1:,:]
         w_t_1[key]=selected_nodes[key][:-1,:]   
@@ -323,12 +325,21 @@ def extract_features(samples,initial_net,keys,prog_bar=True):
             key = 'y_'+`u`+','+`v`               
             if key in arc_keys:
                 y_n_t_1[key] = np.zeros((T-1,noSamples))
+                y_a_t_1[key] = np.zeros((T-1,noSamples))
                 y_n_t_1[key]+=w_t_1['w_'+`v`]/2.0
                 y_n_t_1[key]+=w_t_1['w_'+`u`]/2.0
+                if no_w_n['w_'+`u`]==1:
+                    y_a_t_1[key]+=1.0/2.0
+                else:
+                    y_a_t_1[key]+=(w_a_t_1['w_'+`u`]*no_w_n['w_'+`u`]-y_t_1[key])/(no_w_n['w_'+`u`]-1.0)/2.0
+                if no_w_n['w_'+`v`]==1:
+                    y_a_t_1[key]+=1.0/2.0
+                else:
+                    y_a_t_1[key]+=(w_a_t_1['w_'+`v`]*no_w_n['w_'+`v`]-y_t_1[key])/(no_w_n['w_'+`v`]-1.0)/2.0
     if prog_bar:
         update_progress(7.0,7.0) 
     
-    return w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1
+    return w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1,y_a_t_1
 
 def train_model(train_data,exclusions):
     print('\nTraining models:')

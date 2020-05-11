@@ -66,8 +66,9 @@ def plot_results():
     # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     plt.close('all')
               
-    t_suf = '20200429'    
-    folder_name = 'results'+t_suf
+    t_suf = '20200429'   
+    root='C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc/results_nodes_only'
+    folder_name = root #'results'+t_suf
     
     cols_results=['sample','Time Step','resource_cap','pred_sample','Result Type','Total Cost',
                   'run_time','performance']    
@@ -87,7 +88,7 @@ def plot_results():
     ###############################################################################
     tc_df=tc_df.replace('predicted','Logistic Model Prediction')    
     tc_df=tc_df.replace('data','Optimal Scenario')               
-    figure_df = tc_df#[result_df['sample']==200]
+    figure_df = tc_df#[tc_df['resource_cap']==4]
     sns.lineplot(x="Time Step", y="Total Cost",style='Result Type',hue='Result Type',
                  data=figure_df,markers=True,ci=99)
     plt.savefig('Total_cost_vs_time.png',dpi=600,bbox_inches='tight')
@@ -212,3 +213,4 @@ def plot_coef(arc_params_filtered,node_params_filtered):
 
 # sns.pairplot(node_params_filtered.drop(columns=['hpd_2.5','hpd_97.5']),
 #     kind='reg', plot_kws={'line_kws':{'color':'red'}, 'scatter_kws': {'alpha': 0.1}})
+plot_results()
