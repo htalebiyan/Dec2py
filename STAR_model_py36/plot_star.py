@@ -60,12 +60,13 @@ def plot_correlation(node_data,keys,exclusions):
 
 def plot_results():   
     sns.set(context='notebook',style='darkgrid')
-    # plt.rc('text', usetex=True)
-    # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    plt.rc('text', usetex=True)
+    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     plt.close('all')
               
-    t_suf = '20200429'    
-    folder_name = 'results'+t_suf
+    t_suf = ''    
+    root = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc/'
+    folder_name = root+'results_nodes_only'+t_suf
     
     cols_results=['sample','Time Step','resource_cap','pred_sample','Result Type','Total Cost',
                   'run_time','performance']    
@@ -87,7 +88,7 @@ def plot_results():
     tc_df=tc_df.replace('data','Optimal Scenario')               
     figure_df = tc_df#[result_df['sample']==200]
     sns.lineplot(x="Time Step", y="Total Cost",style='Result Type',hue='Result Type',
-                 data=figure_df,markers=True,ci=99)
+                 data=figure_df,markers=True,ci=95)
     plt.savefig('Total_cost_vs_time.png',dpi=600,bbox_inches='tight')
     
     ###############################################################################
@@ -121,11 +122,33 @@ def plot_results():
     figure_df=figure_df.replace('real_repair_perc','Optimal Scenario') 
     figure_df=figure_df.rename(columns={'variable':'Result Type','value':'Repaired Percentage'})
     g=sns.lineplot(x="Time Step", y="Repaired Percentage",style='Result Type',hue='Result Type',
-                 data=figure_df,palette="muted",markers=True,ci=99)  
+                 data=figure_df,palette="muted",markers=True,ci=95)  
     g.legend(loc=2)
     plt.savefig('repaired_element.png',dpi=600,bbox_inches='tight')
     ###############################################################################
+'''R2''' 
+def plot_R2():
+    sns.set(context='notebook',style='darkgrid')
+    plt.rc('text', usetex=True)
+    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    plt.close('all')
     
+    t_suf = ''
+    root = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc/'
+    mypath=root+'parameters'+t_suf+'/R2.txt'
+    plt.figure() 
+    cols=['node','layer','type','i','j','$R^2$']
+    r2 = result_df=pd.read_csv(mypath,delimiter=' ',index_col=False, header=None,
+                               nrows=334, names=cols)
+    figure_data = r2[r2['type']=='Test']['$R^2$']
+    ax = sns.distplot(figure_data, kde=False, rug=True, norm_hist=True, color='#4a266a')    
+    ax.axvline(figure_data.mean(), color='#aacfd0', linestyle='--', label='Mean')
+    ax.axvline(figure_data.median(), color='#7f4a88', linestyle='-', label='Median')
+    ax.legend()
+    ax.set_ylabel('Probability')
+    plt.savefig('R2_node.png',dpi=600,bbox_inches='tight')
+    return figure_data
+    ###############################################################################
 '''Analyze the coefficients''' 
 def plot_coef():
     sns.set(context='notebook',style='darkgrid')
@@ -161,15 +184,15 @@ def plot_coef():
             except:
                 pass
     node_params['cov'] =abs(node_params['sd']/node_params['mean'])
-    # node_params_filtered=node_params[(node_params['mc_error']<0.1) & (abs(node_params['Rhat']-1)<0.005)]
-    # node_params_filtered=replace_labels(node_params_filtered, 'name')
-    # node_params_filtered=node_params_filtered.rename(columns={'name':'Predictors','mean':'Estimated Mean'})
+    node_params_filtered=node_params[(node_params['mc_error']<0.01) & (abs(node_params['Rhat']-1)<0.005)]
+    node_params_filtered=replace_labels(node_params_filtered, 'name')
+    node_params_filtered=node_params_filtered.rename(columns={'name':'Predictors','mean':'Estimated Mean'})
     
-    # ax=sns.boxplot(y="Predictors", x="Estimated Mean",data=node_params_filtered, whis=1,
-    #                linewidth=0.75, fliersize=3, palette=sns.cubehelix_palette(20))
-    # ax.set_xlim((-25,25))
-    # ax.set_xticks(np.arange(-25,25, 5.0))
-    # plt.savefig('Node_mean_predictors.png',dpi=600,bbox_inches='tight')
+    ax=sns.boxplot(y="Predictors", x="Estimated Mean",data=node_params_filtered, whis=1,
+                    linewidth=0.75, fliersize=3, palette=sns.cubehelix_palette(20))
+    ax.set_xlim((-25,25))
+    ax.set_xticks(np.arange(-25,25, 5.0))
+    plt.savefig('Node_mean_predictors.png',dpi=600,bbox_inches='tight')
     # # plt.figure()    
     arc_params['cov'] =abs(arc_params['sd']/arc_params['mean'])
     # # ax=sns.boxplot(y="name", x="mean",data=arc_params, whis=1,fliersize=1,linewidth=1,
@@ -179,10 +202,10 @@ def plot_coef():
     # # sns.pairplot(node_params_filtered.drop(columns=['hpd_2.5','hpd_97.5']),
     # #     kind='reg', plot_kws={'line_kws':{'color':'red'}, 'scatter_kws': {'alpha': 0.1}})
     return node_params,arc_params
-
-# node_params,arc_params=plot_coef()
-
-
+    ###############################################################################
+node_params,arc_params=plot_coef()
+# plot_results()
+# r2 = plot_R2()
 
 # rmv_key=arc_params[(abs(arc_params['Rhat']-1)>.005)|(arc_params['mc_error']>0.05)]['key'].unique()
 # keys=[x for x in train_data.keys() if x not in rmv_key]

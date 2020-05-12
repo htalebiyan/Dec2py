@@ -62,19 +62,19 @@ if __name__ == "__main__":
     # save_prepared_data(train_data,test_data)
     
     ''' train and test model'''
-    exclusions=['w_t_1','y_t_1','y_a_t_1','w_h_t_1','time','Total','Under_Supply_Perc','Over_Supply','Space_Prep'] 
-    ##,'y_t_1','w_n_t_1','w_a_t_1', 'w_d_t_1','time','w_h_t_1','Total','Flow','Under_Supply_layer'
+    # exclusions=['w_t_1','y_t_1','y_a_t_1','w_h_t_1','time','Total','Under_Supply_Perc','Over_Supply','Space_Prep'] 
+    # ##,'y_t_1','w_n_t_1','w_a_t_1', 'w_d_t_1','time','w_h_t_1','Total','Flow','Under_Supply_layer'
     
-    mypath='parameters20200509/'
-    files = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f))]
-    keys= [x for x in train_data.keys() if (x not in files)] 
+    # mypath='parameters20200509/'
+    # files = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f))]
+    # keys= [x for x in train_data.keys() if (x not in files)] 
     
-    for key in keys:  
-        print '\n'+key
-        trace,model = train_model({key:train_data[key]},exclusions) 
-        save_traces(trace)
-        _,_ = test_model({key:train_data[key]},{key:test_data[key]},
-                          trace,model,exclusions,plot=True)
+    # for key in keys:  
+    #     print '\n'+key
+    #     trace,model = train_model({key:train_data[key]},exclusions) 
+    #     save_traces(trace)
+    #     _,_ = test_model({key:train_data[key]},{key:test_data[key]},
+    #                       trace,model,exclusions,plot=True)
     
     # plot_correlation(node_data_all,keys,['w_t_1'])
     

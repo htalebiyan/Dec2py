@@ -128,7 +128,29 @@ def plot_results():
     g.legend(loc=2)
     plt.savefig('repaired_element.png',dpi=600,bbox_inches='tight')
     ###############################################################################
+'''R2''' 
+def plot_R2():
+    sns.set(context='notebook',style='darkgrid')
+    plt.rc('text', usetex=True)
+    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    plt.close('all')
     
+    t_suf = ''
+    root = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc/'
+    mypath=root+'parameters'+t_suf+'/R2.txt'
+    plt.figure() 
+    cols=['node','layer','type','i','j','$R^2$']
+    r2 = result_df=pd.read_csv(mypath,delimiter=' ',index_col=False, header=None,
+                               nrows=334, names=cols)
+    figure_data = r2[r2['type']=='Test']['$R^2$']
+    ax = sns.distplot(figure_data, kde=False, rug=True, norm_hist=True, color='#4a266a')    
+    ax.axvline(figure_data.mean(), color='#aacfd0', linestyle='--', label='Mean')
+    ax.axvline(figure_data.median(), color='#7f4a88', linestyle='-', label='Median')
+    ax.legend()
+    ax.set_ylabel('Probability')
+    plt.savefig('R2_node.png',dpi=600,bbox_inches='tight')
+    return figure_data
+    ###############################################################################    
 '''Analyze the coefficients''' 
 def read_coef():
     t_suf = ''#'20200505'
@@ -167,8 +189,8 @@ def read_coef():
 
 def plot_coef(arc_params_filtered,node_params_filtered):
     sns.set(context='notebook',style='darkgrid')
-    # plt.rc('text', usetex=True)
-    # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    plt.rc('text', usetex=True)
+    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     plt.close('all')
            
     f, axs = plt.subplots(2, 1,sharex=True,gridspec_kw={'height_ratios': [11/20.0,9/20.0]})
@@ -195,8 +217,8 @@ def plot_coef(arc_params_filtered,node_params_filtered):
     axs[1].set_xticks(np.arange(-0,1, 0.1))
     plt.savefig('cov_predictors.png',dpi=600,bbox_inches='tight')   
 
-# arc_params,arc_params_filtered,node_params,node_params_filtered=read_coef()
-# plot_coef(arc_params_filtered,node_params_filtered)
+arc_params,arc_params_filtered,node_params,node_params_filtered=read_coef()
+plot_coef(arc_params_filtered,node_params_filtered)
     
 # sns.set(style="white", color_codes=True)
 # g=sns.jointplot('Estimated Mean', 'CoV', data=arc_params_filtered,
@@ -213,4 +235,3 @@ def plot_coef(arc_params_filtered,node_params_filtered):
 
 # sns.pairplot(node_params_filtered.drop(columns=['hpd_2.5','hpd_97.5']),
 #     kind='reg', plot_kws={'line_kws':{'color':'red'}, 'scatter_kws': {'alpha': 0.1}})
-plot_results()
