@@ -366,12 +366,12 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
                     #print "Adding node",node[0][0],"in layer",node[0][1],"."
                     G.G.add_node((n.local_id,n.net_id),data={'inf_data':n})
                     global_index+=1                    
-                    G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].reconstruction_cost=float(v[1]['q (complete DS)'])*cost_scale
-                    G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].oversupply_penalty=float(v[1]['Mp'])*cost_scale
-                    G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].undersupply_penalty=float(v[1]['Mm'])*cost_scale
+                    G.G.nodes[(n.local_id,n.net_id)]['data']['inf_data'].reconstruction_cost=float(v[1]['q (complete DS)'])*cost_scale
+                    G.G.nodes[(n.local_id,n.net_id)]['data']['inf_data'].oversupply_penalty=float(v[1]['Mp'])*cost_scale
+                    G.G.nodes[(n.local_id,n.net_id)]['data']['inf_data'].undersupply_penalty=float(v[1]['Mm'])*cost_scale
                     # Assume only one kind of resource for now and one resource for each repaired element.
-                    G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].resource_usage=1
-                    G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].demand=float(v[1]['Demand'])
+                    G.G.nodes[(n.local_id,n.net_id)]['data']['inf_data'].resource_usage=1
+                    G.G.nodes[(n.local_id,n.net_id)]['data']['inf_data'].demand=float(v[1]['Demand'])
     for file in files:
         fname = file[0:-4] 
         if fname[-4:]=='Arcs':
@@ -494,8 +494,8 @@ def add_random_failure_scenario(G,sample,config=0,DAM_DIR=""):
             rawN = rawN.split(',')
             n = (int(rawN[0].strip(' )(')),int(rawN[1].strip(' )(')))
             state = float(row[sample+1])
-            G.G.node[n]['data']['inf_data'].functionality=state
-            G.G.node[n]['data']['inf_data'].repaired=state
+            G.G.nodes[n]['data']['inf_data'].functionality=state
+            G.G.nodes[n]['data']['inf_data'].repaired=state
             
     with open(DAM_DIR+'Initial_links.csv') as csvfile:
         data = csv.reader(csvfile, delimiter=',')

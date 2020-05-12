@@ -55,7 +55,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
     interdep_nodes={}
     for u,v,a in G_prime.edges(data=True):
         if not functionality:
-            if a['data']['inf_data'].is_interdep and G_prime.node[u]['data']['inf_data'].functionality == 0.0:
+            if a['data']['inf_data'].is_interdep and G_prime.nodes[u]['data']['inf_data'].functionality == 0.0:
                 #print "Dependency edge goes from:",u,"to",v
                 if v not in interdep_nodes:
                     interdep_nodes[v]=[]
@@ -170,11 +170,11 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
             if (u in [n for (n,d) in N_hat_prime]) | (u in interdep_nodes_list):
                 m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*m.getVarByName('w_'+str(u)+","+str(t)),"Flow in functionality constraint("+str(u)+","+str(v)+","+str(t)+")")
             else:
-                m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G.node[u]['data']['inf_data'].functionality,"Flow in functionality constraint ("+str(u)+","+str(v)+","+str(t)+")")
+                m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G.nodes[u]['data']['inf_data'].functionality,"Flow in functionality constraint ("+str(u)+","+str(v)+","+str(t)+")")
             if (v in [n for (n,d) in N_hat_prime]) | (v in interdep_nodes_list):
                 m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*m.getVarByName('w_'+str(v)+","+str(t)),"Flow out functionality constraint("+str(u)+","+str(v)+","+str(t)+")")
             else:
-                m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G.node[v]['data']['inf_data'].functionality,"Flow out functionality constraint ("+str(u)+","+str(v)+","+str(t)+")")
+                m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G.nodes[v]['data']['inf_data'].functionality,"Flow out functionality constraint ("+str(u)+","+str(v)+","+str(t)+")")
             if (u,v,a) in A_hat_prime:
                 m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*m.getVarByName('y_'+str(u)+","+str(v)+","+str(t)),"Flow arc functionality constraint ("+str(u)+","+str(v)+","+str(t)+")")
             else:
@@ -431,8 +431,8 @@ def apply_recovery(N,indp_results,t):
             # Node recovery action.
             node=tuple([int(x) for x in action.split(".")])
             #print "Applying recovery:",node
-            N.G.node[node]['data']['inf_data'].repaired=1.0
-            N.G.node[node]['data']['inf_data'].functionality=1.0
+            N.G.nodes[node]['data']['inf_data'].repaired=1.0
+            N.G.nodes[node]['data']['inf_data'].functionality=1.0
             
 #    for u,v,a in N.G.edges(data=True):
 #        if a['data']['inf_data'].is_interdep:

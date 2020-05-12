@@ -523,7 +523,7 @@ def plot_run_time_synthetic(df,ci=None):
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_legend_labels(labels)
     for idx,lab in enumerate(labels):
-        labels[idx] = value_vars[idx/3]+'('+lab[:7]+')'
+        labels[idx] = value_vars[int(idx/3)]+'('+lab[:7]+')'
     fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5)
     
     if len(ver_grid)==1 and len(hor_grid)==1:
