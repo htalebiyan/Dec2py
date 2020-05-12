@@ -621,7 +621,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
             num_time_windows=T
         output_dir=params["OUTPUT_DIR"]+'_L'+str(len(layers))+"_m"+str(params["MAGNITUDE"])+"_v"+outDirSuffixRes
         
-        print("Running td-INDP (T="+str(t)+", Window size="+str(time_window_length)+")")
+        print("Running td-INDP (T="+str(T)+", Window size="+str(time_window_length)+")")
         # Initial percolation calculations.
         results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers,functionality=functionality)
         indp_results=results[1]
