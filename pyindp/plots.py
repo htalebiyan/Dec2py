@@ -2,6 +2,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 sns.set(context='notebook',style='darkgrid')
 #plt.rc('text', usetex=True)
@@ -9,8 +10,8 @@ sns.set(context='notebook',style='darkgrid')
     
 def plot_performance_curves_shelby(df,x='t',y='cost',cost_type='Total',
                             decision_names=['tdindp_results'],
-                            auction_type=None,valuation_type=None,
-                            ci=None,normalize=False):
+                            auction_type=None, valuation_type=None,
+                            ci=None, normalize=False, deaggregate=False):
     no_resources = df.no_resources.unique().tolist()
     if not auction_type:
         auction_type = df.auction_type.unique().tolist()
@@ -31,20 +32,63 @@ def plot_performance_curves_shelby(df,x='t',y='cost',cost_type='Total',
                 ax = axs[idxvt]
             else:
                 ax = axs[idxvt,idxnr]
-                
+            selected_data=df[(df.cost_type==cost_type)&
+                            (df.decision_type.isin(decision_names))&
+                            (df.no_resources==nr)&
+                            ((df.valuation_type==vt)|(df.valuation_type==''))]
+            selected_data2=df[(df.cost_type=='Under Supply Perc')&
+                            (df.decision_type.isin(decision_names))&
+                            (df.no_resources==nr)&
+                            ((df.valuation_type==vt)|(df.valuation_type==''))]                
             with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
-                ax = sns.lineplot(x=x, y=y, hue="auction_type", style='decision_type',
-                    markers=False, ci=ci, ax=ax,legend='full',
-                    data=df[(df['cost_type']==cost_type)&
-                            (df['decision_type'].isin(decision_names))&
-                            (df['no_resources']==nr)&
-                            ((df['valuation_type']==vt)|(df['valuation_type']==''))]) 
+                sns.lineplot(x=x, y=y, hue="auction_type", style='decision_type',
+                             markers=True, ci=ci, ax=ax,legend='full',
+                             data=selected_data[selected_data.layer=='nan']) 
+                ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
+                if deaggregate:
+                    temp = selected_data[selected_data.layer!='nan']
+                    temp_pivot = temp.pivot_table(values='cost',
+                                     index=temp.columns.drop(['layer','cost','normalized_cost']).tolist(),
+                                     columns='layer')
+                    temp_pivot.reset_index(inplace=True)
+                    layers = temp['layer'].unique().tolist()
+                    for l in layers:
+                        if l!=1:
+                            temp_pivot[l]+=temp_pivot[l-1]
+                    layers.sort(reverse=True)
+                    for l in layers:
+                        sns.barplot(x=x, y=l, hue="auction_type", ax=ax, linewidth=0.5,
+                                    ci=None, data=temp_pivot, **{'alpha':0.4})
+                        
                 ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
                 ax.get_legend().set_visible(False)
-                ax.xaxis.set_ticks(np.arange(0,T+1,1.0))   #ax.get_xlim()                          
+                ax.xaxis.set_ticks([])
+                divider = make_axes_locatable(ax)
+                ax_2 = divider.append_axes("bottom", size="100%", pad=0.12, sharex=ax)
+                sns.lineplot(x=x, y=y, hue="auction_type", style='decision_type',
+                             markers=True, ci=ci, ax=ax_2,legend='full',
+                             data=selected_data2[selected_data2.layer=='nan'])
+                if deaggregate:
+                    temp = selected_data2[selected_data2.layer!='nan']
+                    temp_pivot = temp.pivot_table(values='cost',
+                                     index=temp.columns.drop(['layer','cost','normalized_cost']).tolist(),
+                                     columns='layer')
+                    temp_pivot.reset_index(inplace=True)
+                    layers = temp['layer'].unique().tolist()
+                    for l in layers:
+                        if l!=1:
+                            temp_pivot[l]+=temp_pivot[l-1]
+                    layers.sort(reverse=True)
+                    for l in layers:
+                        sns.barplot(x=x, y=l, hue="auction_type", ax=ax_2, linewidth=0.5,
+                                    ci=None, data=temp_pivot, **{'alpha':0.4})
+                ax_2.set(ylabel='% Unmet Demand')
+                ax_2.get_legend().set_visible(False)
+                ax_2.xaxis.set_ticks(np.arange(0,T,1.0))   #ax.get_xlim()
+                          
     handles, labels = ax.get_legend_handles_labels()
-    labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5)
+    labels = correct_legend_labels(labels[:-8])
+    fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.35)
     
     if len(valuation_type)==1 and len(no_resources)==1:
         axx=[axs]
@@ -61,8 +105,9 @@ def plot_performance_curves_shelby(df,x='t',y='cost',cost_type='Total',
     for idx, ax in enumerate(axx):
         ax.set_title(r'Total resources=%d'%(no_resources[idx]))
     for idx, ax in enumerate(axy):
-        ax.annotate('Valuation = '+valuation_type[idx], xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - 5, 0),
-            xycoords=ax.yaxis.label, textcoords='offset points', ha='right', va='center', rotation=90) 
+        ax.annotate('Valuation = '+valuation_type[idx], xy=(0, 0.5), 
+                    xytext=(-ax.yaxis.labelpad - 4, 0), xycoords=ax.yaxis.label,
+                    textcoords='offset points', ha='right', va='center', rotation=90) 
         
     plt.savefig('Performance_curves.pdf',dpi=600)  
 
@@ -89,10 +134,15 @@ def plot_performance_curves_synthetic(df,x='t',y='cost',cost_type='Total',ci=Non
                 ax = axs[idxvt,idxnr]
 
             selected_data=df[(df['cost_type']==cost_type)&
-                    ((df['valuation_type']==vt)|(df['valuation_type']==''))]              
+                    ((df['valuation_type']==vt)|(df['valuation_type']==''))]
+            selected_data2=df[(df['cost_type']=='Under Supply Perc')&
+                    ((df['valuation_type']==vt)|(df['valuation_type']==''))]             
             with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
                 ax = sns.lineplot(x=x, y=y, hue="auction_type", style='decision_type',
                     markers=False, ci=ci, ax=ax,legend='full',data=selected_data)
+                ax_2=ax.twinx()
+                ax_2 = sns.lineplot(x=x, y=y, hue="auction_type", style='decision_type',
+                    markers=False, ci=ci, ax=ax_2,legend='full',data=selected_data2)
                 ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
                 if cost_type=='Under Supply Perc':
                     ax.set(xlabel=r'time step $t$', ylabel='Unmet Demand Ratio')
@@ -140,15 +190,15 @@ def plot_relative_performance_shelby(lambda_df,cost_type='Total',lambda_type='U'
                 ax = axs[idxvt]
             else:
                 ax = axs[idxvt,idxnr]
-                                           
+            selected_data = lambda_df[(lambda_df['cost_type']==cost_type)&
+                                      (lambda_df['lambda_'+lambda_type]!='nan')&
+                                      ((lambda_df['auction_type']==nr)|(lambda_df['auction_type']==''))&
+                                      ((lambda_df['valuation_type']==vt)|(lambda_df['valuation_type']==''))]                                           
             with sns.color_palette("RdYlGn", 8):  #sns.color_palette("YlOrRd", 7)
-                ax=sns.barplot(x='no_resources',y='lambda_'+lambda_type,hue="decision_type",
-                            data=lambda_df[(lambda_df['cost_type']==cost_type)&
-                                                (lambda_df['lambda_'+lambda_type]!='nan')&
-                                                ((lambda_df['auction_type']==nr)|(lambda_df['auction_type']==''))&
-                                                ((lambda_df['valuation_type']==vt)|(lambda_df['valuation_type']==''))], 
-                                linewidth=0.5,edgecolor=[.25,.25,.25],
-                                capsize=.05,errcolor=[.25,.25,.25],errwidth=1,ax=ax) 
+                ax=sns.barplot(x='no_resources',y='lambda_'+lambda_type,
+                               hue="decision_type", data=selected_data,
+                               linewidth=0.5,edgecolor=[.25,.25,.25],
+                               capsize=.05,errcolor=[.25,.25,.25],errwidth=1,ax=ax) 
                 ax.get_legend().set_visible(False)
                 ax.grid(which='major', axis='y', color=[.75,.75,.75], linewidth=.75)
                 ax.set_xlabel(r'\# resources')

@@ -1,6 +1,6 @@
 """ Runs INDP, td-INDP, and Jidgment Call """
 import sys
-import pickle
+import _pickle as pickle
 import pandas as pd
 import matplotlib.pyplot as plt
 import indp
@@ -130,7 +130,7 @@ def batch_run(params, fail_sce_param, layers, player_ordering=[3, 1]):
 #     METHOD_NAMES=['sample_indp_12Node', 'sample_judgeCall_12Node_PESSIMISTIC']
 #     SUFFIXES=['', 'Real_sum']
 
-#     df = read_and_aggregate_results(mags=[0], METHOD_NAMES=METHOD_NAMES,
+#     df = read_results(mags=[0], METHOD_NAMES=METHOD_NAMES,
 #                     auction_type=auction_type, valuation_type=valuation_type,
 #                     SUFFIXES=SUFFIXES, L=2, sample_range=[0], no_resources=[2])
 #     LAMBDA_DF = relative_performance(df, sample_range=[0], REF_METHOD='sample_indp_12Node')
@@ -195,22 +195,22 @@ if __name__ == "__main__":
     ###     configurations: FAIL_SCE_PARAM['MAGS']
     FILTER_SCE = '../data/damagedElements_sliceQuantile_0.95.csv'
     BASE_DIR = "../data/Extended_Shelby_County/"
-    DAMAGE_DIR = "../data/random_disruption_shelby/"
-    OUTPUT_DIR = '../results/'
+    DAMAGE_DIR = "../data/Wu_Damage_scenarios/" #random_disruption_shelby/"
+    OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'#'../results/'
 
     # failSce = read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/", magnitude=8)
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    # FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(23, 24), 'MAGS':range(5, 6),
-    #                 'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    FAIL_SCE_PARAM = {'TYPE':"random", 'SAMPLE_RANGE':range(10, 11), 'MAGS':range(0, 1),
-                      'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
+    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(0, 50), 'MAGS':range(0, 95),
+                    'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
+    # FAIL_SCE_PARAM = {'TYPE':"random", 'SAMPLE_RANGE':range(10, 11), 'MAGS':range(0, 1),
+    #                   'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 5), 'MAGS':range(0, 100),
     #                   'FILTER_SCE':None, 'TOPO':'Grid'
     #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
 
     # No restriction on number of resources for each layer
-    RC = [8]
+    RC = [3,6,8,12]
     # Not necessary for synthetic nets
     # [3, 6, 8, 12]
     # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
@@ -218,21 +218,21 @@ if __name__ == "__main__":
     # Not necessary for synthetic nets
     JUDGE_TYPE = ['OPTIMISTIC']
     #["PESSIMISTIC", "OPTIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"]
-    AUC_TYPE = ['MCA']
+    AUC_TYPE = ["MDA", "MAA", "MCA"]
     #["MDA", "MAA", "MCA"]
-    VAL_TYPE = ['MDDN']
+    VAL_TYPE = ['DTC']
     #['DTC', 'DTC_uniform', 'MDDN']
 
-    ### Run different methods###
-    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP')
-    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
-    for jc in JUDGE_TYPE:
-        run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=jc,
-                    auction_type=None, valuation_type=None)
-        for at in AUC_TYPE:
-            for vt in VAL_TYPE:
-                run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC',
-                            judgment_type=jc, auction_type=at, valuation_type=vt)
+    # ### Run different methods###
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP')
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
+    # for jc in JUDGE_TYPE:
+    #     run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=jc,
+    #                 auction_type=None, valuation_type=None)
+    #     for at in AUC_TYPE:
+    #         for vt in VAL_TYPE:
+    #             run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC',
+    #                         judgment_type=jc, auction_type=at, valuation_type=vt)
 
     ### Compute metrics ###
     COST_TYPE = 'Total'
@@ -246,38 +246,41 @@ if __name__ == "__main__":
     SYNTH_DIR = None #BASE_DIR+FAIL_SCE_PARAM['TOPO']+'Networks/'
     COMBS, OPTIMAL_COMBS = Dindp.generate_combinations('shelby',
                 FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
-                RC, METHOD_NAMES, AUC_TYPE, VAL_TYPE, list_high_dam_add=None,
+                RC, METHOD_NAMES, AUC_TYPE, VAL_TYPE, 
+                list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
                 synthetic_dir=SYNTH_DIR)
 
     ROOT = OUTPUT_DIR #+FAIL_SCE_PARAM['TOPO']+'/results/'
-    BASE_DF = Dindp.read_and_aggregate_results(COMBS, OPTIMAL_COMBS, SUFFIXES, root_result_dir=ROOT)
+    BASE_DF = Dindp.read_results(COMBS, OPTIMAL_COMBS, SUFFIXES, root_result_dir=ROOT,
+                                  deaggregate=True)
 ##    BASE_DF = correct_tdindp_results(BASE_DF, OPTIMAL_COMBS)
 
     LAMBDA_DF = Dindp.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
-                                           ref_method=REF_METHOD, cost_type=COST_TYPE)
+                                            ref_method=REF_METHOD, cost_type=COST_TYPE)
     RES_ALLOC_DF, RES_ALLOC_REL_DF = Dindp.read_resourcec_allocation(BASE_DF, COMBS,
                 OPTIMAL_COMBS, root_result_dir=ROOT, ref_method=REF_METHOD)
     RUN_TIME_DF = Dindp.read_run_time(COMBS, OPTIMAL_COMBS, SUFFIXES,
                                       root_result_dir=ROOT)
 
-    ### Save Variables to file ###
-    # object_list = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
-    #                RES_ALLOC_DF, RES_ALLOC_REL_DF, COST_TYPE, RUN_TIME_DF]
-    # # Saving the objects:
-    # with open(OUTPUT_DIR+'objs.pkl', 'w') as f:
-    #     pickle.dump(object_list, f)
+    ## Save Variables to file ###
+    object_list = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
+                    RES_ALLOC_DF, RES_ALLOC_REL_DF, COST_TYPE, RUN_TIME_DF]
+    # Saving the objects:
+    with open(OUTPUT_DIR+'objs.pkl', 'wb') as f:
+        pickle.dump(object_list, f)
 
     # # Getting back the objects:
     # with open('./NOTS/objs.pkl') as f:  # Python 3: open(..., 'rb')
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
-    #      RES_ALLOC_REL_DF, COST_TYPE, RUN_TIME_DF] = pickle.load(f)
+    #       RES_ALLOC_REL_DF, COST_TYPE, RUN_TIME_DF] = pickle.load(f)
 
     ### Plot results ###
     plt.close('all')
 
-    plots.plot_performance_curves_shelby(BASE_DF, cost_type='Total', decision_names=METHOD_NAMES,
-                                         ci=None, normalize=True)
-    plots.plot_relative_performance_shelby(LAMBDA_DF, lambda_type='TC')
+    plots.plot_performance_curves_shelby(BASE_DF, cost_type='Total',
+                                          decision_names=METHOD_NAMES,
+                                          ci=None, normalize=True, deaggregate=True)
+    plots.plot_relative_performance_shelby(LAMBDA_DF, lambda_type='U')
     plots.plot_auction_allocation_shelby(RES_ALLOC_DF, ci=None)
     plots.plot_relative_allocation_shelby(RES_ALLOC_REL_DF)
     plots.plot_run_time_synthetic(RUN_TIME_DF, ci=None)

@@ -592,7 +592,7 @@ def read_resourcec_allocation(df, combinations, optimal_combinations, ref_method
             with open(action_file) as f:
                 lines = f.readlines()[1:]
                 for line in lines:
-                    data = line.strip().split(', ')
+                    data = line.strip().split(',')
                     t = int(data[0])
                     action = str.strip(data[1])
                     P = int(action[-1])
@@ -616,7 +616,7 @@ def read_resourcec_allocation(df, combinations, optimal_combinations, ref_method
             with open(auction_file) as f:
                 lines = f.readlines()[1:]
                 for line in lines:
-                    data = line.strip().split(', ')
+                    data = line.strip().split(',')
                     t = int(data[0])
                     for P in range(1, x[2]+1):
                         if x[5] in ['Uniform']:
@@ -677,10 +677,11 @@ def write_judgments_csv(outdir, realizations, sample_num=1, agent=1, time_step=0
                     f.write(row+'\n')
             else:
                 print( '<><><> No judgment by agent '+str(agent)+' t:'+str(time_step)+' step:'+str(t))
-def read_and_aggregate_results(combinations, optimal_combinations, suffixes, root_result_dir='../results/'):
-    columns = ['t', 'Magnitude', 'cost_type', 'decision_type', 'auction_type', 'valuation_type', 'no_resources', 'sample', 'cost', 'normalized_cost']
+def read_results(combinations, optimal_combinations, suffixes, root_result_dir='../results/',
+                 deaggregate=False, rslt_dir_lyr='/agents'):
+    columns = ['t', 'Magnitude', 'cost_type', 'decision_type', 'auction_type', 'valuation_type', 'no_resources', 'sample', 'cost', 'normalized_cost','layer']
     optimal_method = ['tdindp', 'indp', 'sample_indp_12Node']
-    agg_results = pd.DataFrame(columns=columns, dtype=int)
+    cmplt_results = pd.DataFrame(columns=columns, dtype=int)
     print( "\nAggregating Results")
     joinedlist = combinations + optimal_combinations
     for idx, x in enumerate(joinedlist):
@@ -694,9 +695,19 @@ def read_and_aggregate_results(combinations, optimal_combinations, suffixes, roo
         if os.path.exists(result_dir):
             # Save all results to Pandas dataframe
             sample_result = indputils.INDPResults()
+            sam_rslt_lyr = {l+1:indputils.INDPResults() for l in range(x[2])}
+            ### !!! Assume the layer name is l+1
             for suf in suffixes:
-                if os.path.exists(result_dir+"/costs_"  +str(x[1])+"_"+suf+".csv"):
+                file_dir = result_dir+"/costs_"+str(x[1])+"_"+suf+".csv"
+                if os.path.exists(file_dir):
                     sample_result = sample_result.from_csv(result_dir, x[1], suffix=suf)
+                if deaggregate:
+                    for l in range(x[2]):
+                        suffix_adj = suf.split('_')[0]+'_'+str(l+1)
+                        file_dir = result_dir+rslt_dir_lyr+"/costs_"+str(x[1])+"_"+suffix_adj+".csv"
+                        if os.path.exists(file_dir):
+                            sam_rslt_lyr[l+1] = sam_rslt_lyr[l+1].from_csv(result_dir+rslt_dir_lyr,
+                                                                           x[1], suffix=suffix_adj)
             initial_cost={}
             for c in sample_result.cost_types:
                 initial_cost[c] = sample_result[0]['costs'][c]
@@ -708,14 +719,31 @@ def read_and_aggregate_results(combinations, optimal_combinations, suffixes, roo
                     else:
                         norm_cost = -1.0
                     values = [t, x[0], c, x[4], x[5], x[6], x[3], x[1],
-                            float(sample_result[t]['costs'][c]), norm_cost]
-                    agg_results = agg_results.append(dict(zip(columns, values)),  ignore_index=True)
-            if idx%(len(joinedlist)/100+1)==0:
+                            float(sample_result[t]['costs'][c]), norm_cost,'nan']
+                    cmplt_results = cmplt_results.append(dict(zip(columns, values)),
+                                                     ignore_index=True)
+            if deaggregate and x[4] not in optimal_method: ### !!! relax the second condition later
+                for l in range(x[2]):        
+                    initial_cost={}
+                    for c in sam_rslt_lyr[l+1].cost_types:
+                        initial_cost[c] = sam_rslt_lyr[l+1][0]['costs'][c]
+                    norm_cost = 0
+                    for t in sam_rslt_lyr[l+1].results:
+                        for c in sam_rslt_lyr[l+1].cost_types:
+                            if initial_cost[c]!=0.0:
+                                norm_cost = sam_rslt_lyr[l+1][t]['costs'][c]/initial_cost[c]
+                            else:
+                                norm_cost = -1.0
+                            values = [t, x[0], c, x[4], x[5], x[6], x[3], x[1],
+                                    float(sam_rslt_lyr[l+1][t]['costs'][c]), norm_cost,l+1]
+                            cmplt_results = cmplt_results.append(dict(zip(columns, values)),
+                                                                 ignore_index=True)                    
+            if idx%(len(joinedlist)/10+1)==0:
                 update_progress(idx+1, len(joinedlist))
         else:
             sys.exit('Error: The combination or folder does not exist'+str(x))
-    update_progress(len(joinedlist)+1, len(joinedlist))
-    return agg_results
+    update_progress(len(joinedlist), len(joinedlist))
+    return cmplt_results
 def read_run_time(combinations, optimal_combinations, suffixes, root_result_dir='../results/'):
     columns = ['t', 'Magnitude', 'decision_type', 'auction_type', 'valuation_type', 'no_resources', 'sample', 'decision_time', 'auction_time', 'valuation_time']
     optimal_method = ['tdindp', 'indp', 'sample_indp_12Node']
@@ -739,7 +767,7 @@ def read_run_time(combinations, optimal_combinations, suffixes, root_result_dir=
                     with open(run_time_file) as f:
                         lines = f.readlines()[1:]
                         for line in lines:
-                            data = line.strip().split(', ')
+                            data = line.strip().split(',')
                             t = int(data[0])
                             run_time_all[t]=[float(data[1]), 0, 0]
                 if x[4] not in optimal_method and x[5]!='Uniform':
@@ -749,7 +777,7 @@ def read_run_time(combinations, optimal_combinations, suffixes, root_result_dir=
                         with open(auction_file) as f:
                             lines = f.readlines()[1:]
                             for line in lines:
-                                data = line.strip().split(', ')
+                                data = line.strip().split(',')
                                 t = int(data[0])
                                 auction_time = float(data[2*x[2]+5])
                                 decision_time = run_time_all[t][0]
@@ -765,8 +793,9 @@ def read_run_time(combinations, optimal_combinations, suffixes, root_result_dir=
                 update_progress(idx+1, len(joinedlist))
         else:
             sys.exit('Error: The combination or folder does not exist')
-    update_progress(len(joinedlist)+1, len(joinedlist))
+    update_progress(len(joinedlist), len(joinedlist))
     return run_time_results
+
 def correct_tdindp_results(df, optimal_combinations):
     # correct total cost of td-indp
     print('\nCorrecting td-INDP Results\n',  end='')
@@ -803,6 +832,7 @@ def relative_performance(df, combinations, optimal_combinations, ref_method='ind
                          ref_at='', ref_vt='', cost_type='Total'):
     columns = ['Magnitude', 'cost_type', 'decision_type', 'auction_type', 'valuation_type', 'no_resources', 'sample',
                'Area_TC', 'Area_P', 'lambda_TC', 'lambda_P', 'lambda_U']
+    T = len(df['t'].unique())
     lambda_df = pd.DataFrame(columns=columns, dtype=int)
     # Computing reference area for lambda
     # Check if the method in optimal combination is the reference method #!!!
@@ -813,13 +843,16 @@ def relative_performance(df, combinations, optimal_combinations, ref_method='ind
                      (df['sample']==x[1])&(df['auction_type']==ref_at)&
                      (df['valuation_type']==ref_vt)&(df['no_resources']==x[3])]
             if not rows.empty:
-                area_TC = np.trapz(rows[rows['cost_type']==cost_type].cost[:20], dx=1)
-                area_P = np.trapz(rows[rows['cost_type']=='Under Supply Perc'].cost[:20], dx=1)
-                values = [x[0], cost_type, x[4], ref_at, ref_vt, x[3], x[1], area_TC, area_P, 'nan', 'nan', 'nan']
+                area_TC = trapz_int(y=list(rows[rows['cost_type']==cost_type].cost[:T]),
+                                    x=list(rows[rows['cost_type']==cost_type].t[:T]))
+                area_P = -trapz_int(y=list(rows[rows['cost_type']=='Under Supply Perc'].cost[:T]),
+                                    x=list(rows[rows['cost_type']=='Under Supply Perc'].t[:T]))
+                values = [x[0], cost_type, x[4], ref_at, ref_vt, x[3], x[1], area_TC, area_P,
+                          'nan', 'nan', 'nan']
                 lambda_df = lambda_df.append(dict(zip(columns, values)),  ignore_index=True)
             if idx%(len(optimal_combinations)/100+1)==0:
                 update_progress(idx+1, len(optimal_combinations))
-    update_progress(len(optimal_combinations)+1, len(optimal_combinations))
+    update_progress(len(optimal_combinations), len(optimal_combinations))
     # Computing areaa and lambda
     print('\nLambda calculation\n',  end='')
     for idx, x in enumerate(combinations+optimal_combinations):
@@ -836,8 +869,10 @@ def relative_performance(df, combinations, optimal_combinations, ref_method='ind
             rows = df[(df['Magnitude']==x[0])&(df['decision_type']==x[4])&(df['sample']==x[1])&
                       (df['auction_type']==x[5])&(df['valuation_type']==x[6])&(df['no_resources']==x[3])]
             if not rows.empty:
-                area_TC = np.trapz(rows[rows['cost_type']==cost_type].cost[:20], dx=1)
-                area_P = np.trapz(rows[rows['cost_type']=='Under Supply Perc'].cost[:20], dx=1)
+                area_TC = trapz_int(y=list(rows[rows['cost_type']==cost_type].cost[:T]),
+                                    x=list(rows[rows['cost_type']==cost_type].t[:T]))
+                area_P = -trapz_int(y=list(rows[rows['cost_type']=='Under Supply Perc'].cost[:T]),
+                                    x=list(rows[rows['cost_type']=='Under Supply Perc'].t[:T]))
                 lambda_TC = 'nan'
                 lambda_P = 'nan'
                 if ref_area_TC != 0.0 and area_TC != 'nan':
@@ -911,3 +946,10 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
 def update_progress(progress, total):
     print('\r[%s] %1.1f%%' % ('#'*int(progress/float(total)*20),  (progress/float(total)*100)), end='')
     sys.stdout.flush()
+
+def trapz_int(x,y):
+    if np.all([i<j for i,j in zip(x[:-1],x[1:])]):
+        return np.trapz(y,x)
+    else:
+        x, y = (list(t) for t in zip(*sorted(zip(x, y))))
+        return np.trapz(y,x)
