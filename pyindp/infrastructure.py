@@ -531,8 +531,8 @@ def add_Wu_failure_scenario(G,DAM_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
                 if dam_nodes[k].size==1:
                     dam_nodes[k] = [dam_nodes[k]]
                 for v in dam_nodes[k]:
-                    G.G.node[(v+ofst,k)]['data']['inf_data'].functionality=0.0
-                    G.G.node[(v+ofst,k)]['data']['inf_data'].repaired=0.0
+                    G.G.nodes[(v+ofst,k)]['data']['inf_data'].functionality=0.0
+                    G.G.nodes[(v+ofst,k)]['data']['inf_data'].repaired=0.0
 #                    print "Node (",`v+ofst`+","+`k`+") broken."
             if dam_arcs[k].size!=0:
                 if dam_arcs[k].size==2:
