@@ -561,22 +561,22 @@ def auction_resources(v_r, params, layers, judgment_type="OPTIMISTIC", auction_t
         all_valuations.sort()
         Q = {0:v_r*len(layers)}
         q = {p:{0:v_r} for p in layers}
-        p = {0: 0.0}
+        prc = {0: 0.0}
         t = 0
         while Q[t] > v_r:
             t += 1
-            p[t] = all_valuations[t-1]
+            prc[t] = all_valuations[t-1]
             Q[t] = 0.0
             for p in layers:
                 q[p][t] = 0
                 for i in range(len(valuation[p])):
-                    if valuation[p][i] > p[t]:
+                    if valuation[p][i] > prc[t]:
                         q[p][t] += 1
                     else:
                         break
                 Q[t] += q[p][t]
-        sum_valuation = p[t]*Q[t]
-        poa['winner'] = [p[t] for v in range(int(Q[t]))]
+        sum_valuation = prc[t]*Q[t]
+        poa['winner'] = [prc[t] for v in range(int(Q[t]))]
         if Q[t] < v_r:
             for v in range(int(v_r-Q[t])):
                 poa['winner'].append(0.0)
@@ -1289,7 +1289,7 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
 def generate_combinations(database, mags, sample, layers, no_resources, decision_type,
                           auction_type, valuation_type, list_high_dam_add=None, synthetic_dir=None):
     '''
-    
+
     Parameters
     ----------
     database : TYPE

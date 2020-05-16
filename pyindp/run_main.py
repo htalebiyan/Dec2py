@@ -17,18 +17,16 @@ try:
 except OSError:
     print("Can't change the Current Working Directory")
 
-def batch_run(params, fail_sce_param, layers, player_ordering=[3, 1]):
+def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
     '''
     Batch run different methods for a given list of damage scenarios,
         given global parameters.
 
     Parameters
     ----------
-    params : dit
+    params : dict
         DESCRIPTION.
     fail_sce_param : dict
-        DESCRIPTION.
-    layers : list
         DESCRIPTION.
     player_ordering : list, optional
         DESCRIPTION. The default is [3, 1].
@@ -41,6 +39,7 @@ def batch_run(params, fail_sce_param, layers, player_ordering=[3, 1]):
     # Set root directories
     base_dir = fail_sce_param['BASE_DIR']
     damage_dir = fail_sce_param['DAMAGE_DIR']
+    layers = params['L']
     topology = None
     shelby_data = True
     ext_interdependency = None
@@ -97,7 +96,7 @@ def batch_run(params, fail_sce_param, layers, player_ordering=[3, 1]):
 
             if params["ALGORITHM"] == "INDP":
                 indp.run_indp(params, validate=False, T=params["T"], layers=layers,
-                              controlled_layers=layers, saveModel=True, print_cmd_line=True)
+                              controlled_layers=layers, saveModel=False, print_cmd_line=True)
             elif params["ALGORITHM"] == "INFO_SHARE":
                 indp.run_info_share(params, layers=layers, T=params["T"])
             elif params["ALGORITHM"] == "INRG":
@@ -108,7 +107,7 @@ def batch_run(params, fail_sce_param, layers, player_ordering=[3, 1]):
                                                  T=params["T"], outdir=params["OUTPUT_DIR"])
             elif params["ALGORITHM"] == "JC":
                 dindp.run_judgment_call(params, layers=layers, T=params["T"],
-                                        save_jc_model=True, print_cmd=True)
+                                        save_jc_model=False, print_cmd=True)
 
 # def run_indp_sample():
 #     import warnings
@@ -159,7 +158,7 @@ def batch_run(params, fail_sce_param, layers, player_ordering=[3, 1]):
 #     plot_relative_allocation(resource_allocation)
 
 def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
-               auction_type=None, valuation_type=None):
+               auction_type=None, valuation_type=None, output_dir='..'):
     '''
     This function runs a given method for different numbers of resources,
     and a given judge, auction, and valuation type in the case of JC.
@@ -187,7 +186,8 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
         of float when auction_type == None. The default is None.
     valuation_type : str, optional
         Type of valuation in auction.. The default is None.
-
+    output_dir : str, optional
+        DESCRIPTION. The default is '..'.
     Returns
     -------
     None.  Writes to file
@@ -195,20 +195,20 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
     '''
     for v in v_r:
         if method == 'INDP':
-            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":'../results/indp_results',
-                      "V":v, "T":1, "ALGORITHM":"INDP"}
+            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'/results/indp_results',
+                      "V":v, "T":1, 'L':layers, "ALGORITHM":"INDP"}
         elif method == 'JC':
             params = {"NUM_ITERATIONS":10,
-                      "OUTPUT_DIR":'../results/judgeCall_'+judgment_type+'_results',
-                      "V":v, "T":1, "ALGORITHM":"JC",
+                      "OUTPUT_DIR":output_dir+'/results/judgeCall_'+judgment_type+'_results',
+                      "V":v, "T":1, 'L':layers, "ALGORITHM":"JC",
                       "JUDGMENT_TYPE":judgment_type, "AUCTION_TYPE":auction_type,
                       "VALUATION_TYPE":valuation_type}
         elif method == 'TD_INDP':
-            params = {"NUM_ITERATIONS":1, "OUTPUT_DIR":'../results/tdindp_results',
-                      "V":v, "T":10, "WINDOW_LENGTH":3, "ALGORITHM":"INDP"}
+            params = {"NUM_ITERATIONS":1, "OUTPUT_DIR":output_dir+'/results/tdindp_results',
+                      "V":v, "T":10, "WINDOW_LENGTH":3, 'L':layers, "ALGORITHM":"INDP"}
         else:
             sys.exit('Wrong method name: '+method)
-        batch_run(params, fail_sce_param, layers=layers)
+        batch_run(params, fail_sce_param)
 
 if __name__ == "__main__":
     ### Run a toy example for different methods ###
@@ -220,6 +220,9 @@ if __name__ == "__main__":
     BASE_DIR = "../data/Extended_Shelby_County/"
     #: The address to damge scenario data.
     DAMAGE_DIR = "../data/Wu_Damage_scenarios/" #random_disruption_shelby/"
+    #: The address to where output are stored.
+    OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
+    ###############'../results/'#+FAIL_SCE_PARAM['TOPO']+'/results/'
 
     #: Informatiom on the ype of the failure scenario (Andres or Wu)
     #: and network dataset (shelby or synthetic)
@@ -230,7 +233,7 @@ if __name__ == "__main__":
     #:     sce range: FAIL_SCE_PARAM['MAGS']
     #: For Synthetic nets: sample range: FAIL_SCE_PARAM['SAMPLE_RANGE'],
     #:     configurations: FAIL_SCE_PARAM['MAGS']
-    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(0, 50), 'MAGS':range(0, 3),
+    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(47, 48), 'MAGS':range(64, 65),
                       'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
@@ -249,26 +252,23 @@ if __name__ == "__main__":
     # Not necessary for synthetic nets
     JUDGE_TYPE = ['OPTIMISTIC']
     #["PESSIMISTIC", "OPTIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"]
-    AUC_TYPE = ["MDA", "MAA", "MCA"]
+    AUC_TYPE = ['MDA',"MAA", "MCA"]
     #["MDA", "MAA", "MCA"]
     VAL_TYPE = ['DTC']
     #['DTC', 'DTC_uniform', 'MDDN']
 
     ## Run different methods###
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP')
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
-    for jc in JUDGE_TYPE:
-        run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=jc,
-                   auction_type=None, valuation_type=None)
-        for at in AUC_TYPE:
-            for vt in VAL_TYPE:
-                run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC',
-                           judgment_type=jc, auction_type=at, valuation_type=vt)
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP')
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
+    # for jc in JUDGE_TYPE:
+    #     run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=jc,
+    #                 auction_type=None, valuation_type=None)
+    #     for at in AUC_TYPE:
+    #         for vt in VAL_TYPE:
+    #             run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC',
+    #                        judgment_type=jc, auction_type=at, valuation_type=vt)
 
     ### Compute metrics ###
-    #: The address to where output are stored.
-    OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
-    ###############'../results/'#+FAIL_SCE_PARAM['TOPO']+'/results/'
     COST_TYPE = 'Total'
     REF_METHOD = 'indp'
     METHOD_NAMES = ['indp']

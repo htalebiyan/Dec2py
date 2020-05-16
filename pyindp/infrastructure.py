@@ -199,12 +199,12 @@ def load_percolation_model(supply_net):
     return G
 
 def load_infrastructure_data(BASE_DIR="../data/INDP_7-20-2015/",external_interdependency_dir=None,magnitude=6,v=3,sim_number=1,cost_scale=1.0):
-    if "../data/INDP_7-20-2015" in BASE_DIR:
+    if "INDP_7-20-2015" in BASE_DIR:
 #        print "Loading a network.." #!!!
         G = load_infrastructure_array_format(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,magnitude=magnitude,v=v,sim_number=sim_number,cost_scale=cost_scale)
 #        print G #!!!
         return G
-    if "../data/Extended_Shelby_County/" in BASE_DIR:
+    if "Extended_Shelby_County" in BASE_DIR:
 #        print "Loading a network.." #!!!
         G = load_infrastructure_array_format_extended(BASE_DIR=BASE_DIR,v=v,sim_number=sim_number,cost_scale=cost_scale)
 #        print G #!!!
@@ -513,7 +513,7 @@ def add_random_failure_scenario(G,sample,config=0,DAM_DIR=""):
                 G.G[v][u]['data']['inf_data'].repaired=state  
                
 def add_Wu_failure_scenario(G,DAM_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
-    ("Initiallize Wu failure scenarios...")
+    print("Initiallize Wu failure scenarios...")
     dam_nodes = {}
     dam_arcs = {}
     folderDir = DAM_DIR+'Set%d/Sce%d/' % (noSet,noSce)

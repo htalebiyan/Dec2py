@@ -16,7 +16,7 @@ class INDPComponents:
             comp=c[0]
             supp=c[1]
             comp_string="/".join(c[0])
-            comp_string+=":"+`c[1]`
+            comp_string+=":"+str(c[1])
             comp_strings.append(comp_string)
         return ",".join(comp_strings)
     @classmethod
@@ -29,10 +29,10 @@ class INDPComponents:
             total_excess_supply=0.0
             members=[]
             for n in c:
-                members.append(`n[0]`+"."+`n[1]`)
+                members.append(str(n[0])+"."+str(n[1]))
                 excess_supply=0.0
-                excess_supply+=m.getVarByName('delta+_'+`n`+","+`t`).x
-                excess_supply+=-m.getVarByName('delta-_'+`n`+","+`t`).x
+                excess_supply+=m.getVarByName('delta+_'+str(n)+","+str(t)).x
+                excess_supply+=-m.getVarByName('delta-_'+str(n)+","+str(t)).x
                 total_excess_supply+=excess_supply
             indp_components.add_component(members,total_excess_supply)
         return indp_components
@@ -49,8 +49,10 @@ class INDPComponents:
 
 class INDPResults:
     cost_types=["Space Prep","Arc","Node","Over Supply","Under Supply","Flow","Total","Under Supply Perc"]
-    def __init__(self):
+    def __init__(self,layers=[]):
         self.results={}
+        self.layers=layers
+        self.results_layer={l:{} for l in layers}
     def __len__(self):
         return len(self.results)
     def __getitem__(self,index):
@@ -59,19 +61,40 @@ class INDPResults:
         if t_end == 0: 
             t_end = len(indp_result)
         for new_t,t in zip([x+t_offset for x in range(t_end-t_start)],[y+t_start for y in range(t_end-t_start)]):
-            self.results[new_t]=indp_result[t]
-    def add_cost(self,t,cost_type,cost):
+            self.results[new_t]=indp_result.results[t]
+        if self.layers:
+            if t_end == 0: 
+                t_end = len(indp_result[self.layers[0]])
+            for l in self.layers:
+                for new_t,t in zip([x+t_offset for x in range(t_end-t_start)],[y+t_start for y in range(t_end-t_start)]):
+                    self.results_layer[l][new_t]=indp_result.results_layer[l][t]
+    def add_cost(self,t,cost_type,cost,cost_layer={}):
         if t not in self.results:
             self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
         self.results[t]['costs'][cost_type]=cost
+        if self.layers:
+            for l in self.layers:
+                if t not in self.results_layer[l]:
+                    self.results_layer[l][t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
+                self.results_layer[l][t]['costs'][cost_type]=cost_layer[l]
     def add_run_time(self,t,run_time):
         if t not in self.results:
             self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
         self.results[t]['run_time']=run_time
+        if self.layers:
+            for l in self.layers:
+                if t not in self.results_layer[l]:
+                    self.results_layer[l][t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
+                self.results_layer[l][t]['run_time']=run_time
     def add_action(self,t,action):
         if t not in self.results:
             self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
         self.results[t]['actions'].append(action)
+        if self.layers:
+            action_layer = int(action[-1])
+            if t not in self.results_layer[action_layer]:
+                self.results_layer[action_layer][t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
+            self.results_layer[action_layer][t]['actions'].append(action)
     def add_gc_size(self,t,gc_size):
         if t not in self.results:
             self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
@@ -87,57 +110,84 @@ class INDPResults:
         self.add_num_components(t,components.num_components)
         self.add_gc_size(t,components.gc_size)
     def to_csv(self,outdir,sample_num=1,suffix=""):
-        action_file =outdir+"/actions_"+`sample_num`+"_"+suffix+".csv"
-        costs_file =outdir+"/costs_"  +`sample_num`+"_"+suffix+".csv"
-        run_time_file =outdir+"/run_time_"  +`sample_num`+"_"+suffix+".csv"
-        perc_file  =outdir+"/percolation_"+`sample_num`+"_"+suffix+".csv"
-        comp_file  =outdir+"/components_"+`sample_num`+"_"+suffix+".csv"
+        action_file =outdir+"/actions_"+str(sample_num)+"_"+suffix+".csv"
+        costs_file =outdir+"/costs_"  +str(sample_num)+"_"+suffix+".csv"
+        run_time_file =outdir+"/run_time_"  +str(sample_num)+"_"+suffix+".csv"
+        perc_file  =outdir+"/percolation_"+str(sample_num)+"_"+suffix+".csv"
+        comp_file  =outdir+"/components_"+str(sample_num)+"_"+suffix+".csv"
         with open(action_file,'w') as f:
             f.write("t,action\n")
             for t in self.results:
                 for a in self.results[t]['actions']:
-                    f.write(`t`+","+a+"\n")
+                    f.write(str(t)+","+a+"\n")
         with open(run_time_file,'w') as f:
             f.write("t,run_time\n")
             for t in self.results:
-                f.write(`t`+","+`self.results[t]['run_time']`+"\n")
+                f.write(str(t)+","+str(self.results[t]['run_time'])+"\n")
         with open(costs_file,'w') as f:
             f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Under Supply Perc\n")
             for t in self.results:
                 costs=self.results[t]['costs']
-                f.write(`t`+","+`costs["Space Prep"]`+","+`costs["Arc"]`+","+`costs["Node"]`+","+`costs["Over Supply"]`+","+`costs["Under Supply"]`+","+`costs["Flow"]`+","+`costs["Total"]`+","+`costs["Under Supply Perc"]`+"\n")
+                f.write(str(t)+","+str(costs["Space Prep"])+","+str(costs["Arc"])+","+str(costs["Node"])+","+str(costs["Over Supply"])+","+str(costs["Under Supply"])+","+str(costs["Flow"])+","+str(costs["Total"])+","+str(costs["Under Supply Perc"])+"\n")
 #        with open(perc_file,'w') as f:
 #            f.write("t,gc_size,num_components\n")
 #            for t in self.results:
-#                f.write(`t`+","+`self.results[t]['gc_size']`+","+`self.results[t]['num_components']`+"\n")
+#                f.write(str(t)+","+`self.results[t]['gc_size']`+","+`self.results[t]['num_components']`+"\n")
 #        with open(comp_file,'w') as f:
 #            f.write("t,components\n")
 #            for t in self.results:
-#                f.write(`t`+","+self.results[t]['components'].to_csv_string()+"\n")
+#                f.write(str(t)+","+self.results[t]['components'].to_csv_string()+"\n")
+    def to_csv_layer(self,outdir,sample_num=1,suffix=""):
+        for l in self.layers:
+            action_file =outdir+"/actions_"+str(sample_num)+"_l"+str(l)+"_"+suffix+".csv"
+            costs_file =outdir+"/costs_"  +str(sample_num)+"_l"+str(l)+"_"+suffix+".csv"
+            run_time_file =outdir+"/run_time_"  +str(sample_num)+"_l"+str(l)+"_"+suffix+".csv"
+            with open(action_file,'w') as f:
+                f.write("t,action\n")
+                for t in self.results_layer[l]:
+                    for a in self.results_layer[l][t]['actions']:
+                        f.write(str(t)+","+a+"\n")
+            with open(run_time_file,'w') as f:
+                f.write("t,run_time\n")
+                for t in self.results_layer[l]:
+                    f.write(str(t)+","+str(self.results_layer[l][t]['run_time'])+"\n")
+            with open(costs_file,'w') as f:
+                f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Under Supply Perc\n")
+                for t in self.results_layer[l]:
+                    costs=self.results_layer[l][t]['costs']
+                    f.write(str(t)+","+str(costs["Space Prep"])+","+str(costs["Arc"])+","+str(costs["Node"])+","+str(costs["Over Supply"])+","+str(costs["Under Supply"])+","+str(costs["Flow"])+","+str(costs["Total"])+","+str(costs["Under Supply Perc"])+"\n")
     @classmethod
     def from_csv(clss,outdir,sample_num=1,suffix=""):
-        action_file=outdir+"/actions_"+`sample_num`+"_"+suffix+".csv"
-        costs_file =outdir+"/costs_"  +`sample_num`+"_"+suffix+".csv"
-        perc_file  =outdir+"/percolation_"+`sample_num`+"_"+suffix+".csv"
-        comp_file  =outdir+"/components_" +`sample_num`+"_"+suffix+".csv"
+        action_file=outdir+"/actions_"+str(sample_num)+"_"+suffix+".csv"
+        costs_file =outdir+"/costs_"  +str(sample_num)+"_"+suffix+".csv"
+        perc_file  =outdir+"/percolation_"+str(sample_num)+"_"+suffix+".csv"
+        comp_file  =outdir+"/components_" +str(sample_num)+"_"+suffix+".csv"
+        run_time_file  =outdir+"/run_time_" +str(sample_num)+"_"+suffix+".csv"
         indp_result=INDPResults()
         if os.path.isfile(action_file): #!!!
             with open(action_file) as f:
                 lines=f.readlines()[1:]
                 for line in lines:
-                    data=string.split(str.strip(line),",")
+                    data=line.strip().split(',')
                     t=int(data[0])
                     action=str.strip(data[1])
                     indp_result.add_action(t,action)
             with open(costs_file) as f:
                 lines=f.readlines()
-                cost_types=string.split(str.strip(lines[0]),",")[1:]
+                cost_types=lines[0].strip().split(',')[1:]
                 for line in lines[1:]:
-                    data=string.split(str.strip(line),",")
+                    data=line.strip().split(',')
                     t=int(data[0])
                     costs=data[1:]
                     for ct in range(len(cost_types)):
                         indp_result.add_cost(t,cost_types[ct],float(costs[ct]))
+            with open(run_time_file) as f:
+                lines=f.readlines()
+                for line in lines[1:]:
+                    data=line.strip().split(',')
+                    t=int(data[0])
+                    run_time=data[1]
+                    indp_result.add_run_time(t,run_time)
 #            with open(perc_file) as f:
 #                lines=f.readlines()[1:]
 #                for line in lines:
@@ -164,9 +214,9 @@ class INDPResults:
         orig_suffix=suffix
         suffix=suffix
         if player > -1 and iteration > -1:
-            suffix="P"+`player`+"_i"+`iteration`
+            suffix="P"+str(player)+"_i"+str(iteration)
         elif player > -1:
-            suffix="P"+`player`
+            suffix="P"+str(player)
         else:
             suffix=""
         if not flip:
@@ -178,9 +228,9 @@ class INDPResults:
                 sample_result=clss.from_csv(outdir,s,suffix=suffix)
             else:
                 if suffix == "":
-                    this_suffix=`s`
+                    this_suffix=str(s)
                 else:
-                    this_suffix=suffix+"_"+`s`
+                    this_suffix=suffix+"_"+str(s)
                 sample_result=clss.from_csv(outdir,int(orig_suffix),suffix=this_suffix)
             for t in sample_result.results:
                 if t not in avg_results.results:

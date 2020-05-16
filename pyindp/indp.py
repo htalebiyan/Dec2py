@@ -71,7 +71,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                         if v not in interdep_nodes[t]:
                             interdep_nodes[t][v]=[]
                         interdep_nodes[t][v].append((u,a['data']['inf_data'].gamma))
-                    
+
     #print "N'=",[n for (n,d) in N_prime]
     for t in range(T):
         # Add geographical space variables.
@@ -116,11 +116,11 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
             objFunc+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t))
         for u,v,a in N_hat.edges(data=True):
             objFunc+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+str(u)+","+str(v)+","+str(t))
-            
-            
+
+
     m.setObjective(objFunc,GRB.MINIMIZE)
     m.update()
-    
+
     #Constraints.
     # Time-dependent constraints.
     if T > 1:
@@ -128,8 +128,8 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
             m.addConstr(m.getVarByName('w_'+str(n)+",0"),GRB.EQUAL,0)
         for u,v,a in A_hat_prime:
             m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+",0"),GRB.EQUAL,0)
-        
-        
+
+
     for t in range(T):
         # Time-dependent constraint.
         for n,d in N_hat.nodes(data=True):
@@ -144,7 +144,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                 for t_prime in range(1,t):
                     yTildeSum+=m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t_prime))
                 m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,yTildeSum,"Time dependent recovery constraint at arc "+str(u)+","+str(v)+","+str(t))
-        # Enforce a_i,j to be fixed if a_j,i is fixed (and vice versa). 
+        # Enforce a_i,j to be fixed if a_j,i is fixed (and vice versa).
         for u,v,a in A_hat_prime:
             #print u,",",v
             m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+","+str(t)),GRB.EQUAL,m.getVarByName('y_'+str(v)+","+str(u)+","+str(t)),"Arc reconstruction equality ("+str(u)+","+str(v)+","+str(t)+")")
@@ -163,9 +163,9 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
             m.addConstr(outFlowConstr-inFlowConstr,GRB.EQUAL,demandConstr,"Flow conservation constraint "+str(n)+","+str(t))
         # Flow functionality constraints.
         if not functionality:
-            interdep_nodes_list = interdep_nodes.keys() #Interdepndent nodes with a damaged dependee node 
+            interdep_nodes_list = interdep_nodes.keys() #Interdepndent nodes with a damaged dependee node
         else:
-            interdep_nodes_list = interdep_nodes[t].keys() #Interdepndent nodes with a damaged dependee node 
+            interdep_nodes_list = interdep_nodes[t].keys() #Interdepndent nodes with a damaged dependee node
         for u,v,a in N_hat.edges(data=True):
             if (u in [n for (n,d) in N_hat_prime]) | (u in interdep_nodes_list):
                 m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*m.getVarByName('w_'+str(u)+","+str(t)),"Flow in functionality constraint("+str(u)+","+str(v)+","+str(t)+")")
@@ -193,11 +193,11 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                     sys.exit()
             else:
                 totalResource = v_r[0]
-            
+
         resourceLeftConstr=LinExpr()
         if isSepResource:
             resourceLeftConstrSep = [LinExpr() for i in range(len(v_r))]
-                                     
+
         for u,v,a in A_hat_prime:
             indexLayer = a['data']['inf_data'].layer - 1
             if T == 1:
@@ -263,7 +263,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
         # Forced actions (if applicable)
         if forced_actions:
             recovery_sum=LinExpr()
-            feasible_nodes=[(n,d) for n,d in N_hat_prime if n not in infeasible_actions] 
+            feasible_nodes=[(n,d) for n,d in N_hat_prime if n not in infeasible_actions]
             if len(feasible_nodes) + len(A_hat_prime) > 0:
                 for n,d in feasible_nodes:
                     if T == 1:
@@ -276,7 +276,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                     else:
                         recovery_sum+=m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))
                 m.addConstr(recovery_sum,GRB.GREATER_EQUAL,1,"Forced action constraint")
-                                
+
         # Geographic space constraints
         for s in S:
             for n,d in N_hat_prime:
@@ -289,24 +289,18 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                     m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
                 else:
                     m.addConstr(m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
-      
+
 #    print "Solving..."
     m.update()
     m.optimize()
-    indp_results=INDPResults()
     run_time = time.time()-start_time
     # Save results.
     if m.getAttr("Status")==GRB.OPTIMAL or m.status==9:
         if m.status==9:
             print ('\nOptimizer time limit, gap = %1.3f\n' % m.MIPGap)
-
         results=collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S)
-
-        results[0].add_run_time(t,run_time)  
-        for l in controlled_layers:
-            results[1][l].add_run_time(t,run_time) 
-            
-        return [m,results[0],results[1]]
+        results.add_run_time(t,run_time)
+        return [m,results]
     else:
         print(m.getAttr("Status"),": SOLUTION NOT FOUND. (Check data and/or violated constraints).")
         m.computeIIS()
@@ -318,8 +312,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
 
 def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
     layers = controlled_layers
-    indp_results=INDPResults()
-    layer_results={l:INDPResults() for l in layers}
+    indp_results=INDPResults(layers)
     # compute total demand of all layers and each layer
     total_demand = 0.0
     total_demand_layer={l:0.0 for l in layers}
@@ -342,7 +335,7 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
         overSuppCost_layer={l:0.0 for l in layers}
         underSuppCost_layer={l:0.0 for l in layers}
         underSupp_layer={l:0.0 for l in layers}
-        spacePrepCost_layer={l:0.0 for l in layers}
+        spacePrepCost_layer={l:0.0 for l in layers} #!!! populate this for each layer
         # Record node recovery actions.
         for n,d in N_hat_prime:
             nodeVar='w_tilde_'+str(n)+","+str(t)
@@ -351,7 +344,6 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
             if round(m.getVarByName(nodeVar).x)==1:
                 action=str(n[0])+"."+str(n[1])
                 indp_results.add_action(t,action)
-                layer_results[n[1]].add_action(t,action)
                     #if T == 1:
                     #N.G.node[n]['data']['inf_data'].functionality=1.0
         # Record edge recovery actions.
@@ -362,13 +354,12 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
             if round(m.getVarByName(arcVar).x)==1:
                 action=str(u[0])+"."+str(u[1])+"/"+str(v[0])+"."+str(v[1])
                 indp_results.add_action(t,action)
-                layer_results[u[1]].add_action(t,action)
                 #if T == 1:
                 #N.G[u][v]['data']['inf_data'].functionality=1.0
         # Calculate space preparation costs.
         for s in S:
             spacePrepCost+=s.cost*m.getVarByName('z_'+str(s.id)+","+str(t)).x
-        indp_results.add_cost(t,"Space Prep",spacePrepCost)
+        indp_results.add_cost(t,"Space Prep",spacePrepCost,spacePrepCost_layer)
         # Calculate arc preparation costs.
         for u,v,a in A_hat_prime:
             arcVar='y_tilde_'+str(u)+","+str(v)+","+str(t)
@@ -376,9 +367,7 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
                 arcVar='y_'+str(u)+","+str(v)+","+str(t)
             arcCost+=(a['data']['inf_data'].reconstruction_cost/2.0)*m.getVarByName(arcVar).x
             arcCost_layer[u[1]]+=(a['data']['inf_data'].reconstruction_cost/2.0)*m.getVarByName(arcVar).x
-        indp_results.add_cost(t,"Arc",arcCost)
-        for l in layers:
-            layer_results[l].add_cost(t,"Arc", arcCost_layer[l])
+        indp_results.add_cost(t,"Arc",arcCost,arcCost_layer)
         # Calculate node preparation costs.
         for n,d in N_hat_prime:
             nodeVar = 'w_tilde_'+str(n)+","+str(t)
@@ -386,38 +375,35 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
                 nodeVar = 'w_'+str(n)+","+str(t)
             nodeCost+=d['data']['inf_data'].reconstruction_cost*m.getVarByName(nodeVar).x
             nodeCost_layer[n[1]]+=d['data']['inf_data'].reconstruction_cost*m.getVarByName(nodeVar).x
-        indp_results.add_cost(t,"Node",nodeCost)
-        for l in layers:
-            layer_results[l].add_cost(t,"Node",nodeCost_layer[l])
+        indp_results.add_cost(t,"Node",nodeCost,nodeCost_layer)
         # Calculate under/oversupply costs.
         for n,d in N_hat.nodes(data=True):
             overSuppCost+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t)).x
             overSuppCost_layer[n[1]]+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t)).x
             underSupp+= m.getVarByName('delta+_'+str(n)+","+str(t)).x
-            underSupp_layer[n[1]]+= m.getVarByName('delta+_'+str(n)+","+str(t)).x
+            underSupp_layer[n[1]]+= m.getVarByName('delta+_'+str(n)+","+str(t)).x/total_demand_layer[n[1]]
             underSuppCost+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t)).x
             underSuppCost_layer[n[1]]+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t)).x
-        indp_results.add_cost(t,"Over Supply",overSuppCost)
-        indp_results.add_cost(t,"Under Supply",underSuppCost)
-        indp_results.add_cost(t,"Under Supply Perc",underSupp/total_demand)
-        for l in layers:
-            layer_results[l].add_cost(t,"Over Supply",overSuppCost_layer[l])
-            layer_results[l].add_cost(t,"Under Supply",underSuppCost_layer[l])
-            layer_results[l].add_cost(t,"Under Supply Perc",underSupp_layer[l]/total_demand_layer[l])
+        indp_results.add_cost(t,"Over Supply",overSuppCost,overSuppCost_layer)
+        indp_results.add_cost(t,"Under Supply",underSuppCost,underSuppCost_layer)
+        indp_results.add_cost(t,"Under Supply Perc",underSupp/total_demand,underSupp_layer)
         # Calculate flow costs.
         for u,v,a in N_hat.edges(data=True):
             flowCost+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)).x
             flowCost_layer[u[1]]+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)).x
-        indp_results.add_cost(t,"Flow",flowCost)
-        for l in layers:
-            layer_results[l].add_cost(t,"Flow",flowCost_layer[l])
+        indp_results.add_cost(t,"Flow",flowCost,flowCost_layer)
         # Calculate total costs.
-        indp_results.add_cost(t,"Total",flowCost+arcCost+nodeCost+overSuppCost+underSuppCost+spacePrepCost)
-        indp_results.add_cost(t,"Total no disconnection",spacePrepCost+arcCost+flowCost+nodeCost)           
+        total_lyr={}
+        total_nd_lyr={}
         for l in layers:
-            layer_results[l].add_cost(t,"Total",flowCost_layer[l]+arcCost_layer[l]+nodeCost_layer[l]+overSuppCost_layer[l]+underSuppCost_layer[l]+spacePrepCost_layer[l])
-            layer_results[l].add_cost(t,"Total no disconnection",spacePrepCost_layer[l]+arcCost_layer[l]+flowCost+nodeCost_layer[l])
-    return [indp_results,layer_results]
+            total_lyr[l] = flowCost_layer[l]+arcCost_layer[l]+nodeCost_layer[l]+\
+                overSuppCost_layer[l]+underSuppCost_layer[l]+spacePrepCost_layer[l]
+            total_nd_lyr[l] = spacePrepCost_layer[l]+arcCost_layer[l]+flowCost+nodeCost_layer[l]
+        indp_results.add_cost(t,"Total",flowCost+arcCost+nodeCost+overSuppCost+\
+                              underSuppCost+spacePrepCost,total_lyr)
+        indp_results.add_cost(t,"Total no disconnection",spacePrepCost+arcCost+\
+                              flowCost+nodeCost,total_nd_lyr)
+    return indp_results
 
 def apply_recovery(N,indp_results,t):
     for action in indp_results[t]['actions']:
@@ -433,14 +419,14 @@ def apply_recovery(N,indp_results,t):
             #print "Applying recovery:",node
             N.G.nodes[node]['data']['inf_data'].repaired=1.0
             N.G.nodes[node]['data']['inf_data'].functionality=1.0
-            
+
 #    for u,v,a in N.G.edges(data=True):
 #        if a['data']['inf_data'].is_interdep:
 #            if N.G.node[u]['data']['inf_data'].functionality == 0.0 and N.G.node[v]['data']['inf_data'].functionality==1.0:
 #                N.G.node[v]['data']['inf_data'].functionality = 0.0
 #            if N.G.node[u]['data']['inf_data'].functionality == 1.0 and N.G.node[v]['data']['inf_data'].repaired==1.0 and N.G.node[v]['data']['inf_data'].functionality==0.0:
 #                N.G.node[v]['data']['inf_data'].functionality = 1.0
-                        
+
 def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
     """Creates a functionality map for input into the functionality parameter in the indp function.
     :param N: An InfrastructureNetwork instance (created in infrastructure.py)
@@ -486,7 +472,7 @@ def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
                         if not n in functionality[t]:
                             functionality[t][n]=0.0
     return functionality
-            
+
 
 def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependency_dir=None,sim_number=1,cost_scale=1,magnitude=6,sample=0,v=3,shelby_data=True,topology='Random'):
     """ Initializes an InfrastructureNetwork from Shelby County data.
@@ -509,7 +495,7 @@ def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependen
 
 
 def initialize_sample_network(params={},layers=[1,2]):
-    """ Initializes sample 2x6 network 
+    """ Initializes sample 2x6 network
     :param params: (Currently not used).
     :param layers: (Currently not used).
     :returns: An interdependent InfrastructureNetwork.
@@ -550,7 +536,7 @@ def initialize_sample_network(params={},layers=[1,2]):
         aa=InfrastructureInterdepArc(g[0][0],g[1][0],g[0][1],g[1][1],1.0)
         InterdepNet.G.add_edge((aa.source,aa.source_layer),(aa.dest,aa.dest_layer),data={'inf_data':aa})
     return InterdepNet
-        
+
 def run_sample(params):
     """ Runs the sample network generated in initialize_sample_network through indp.
     :param params: Global parameters.
@@ -574,10 +560,10 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
     else:
         InterdepNet=params["N"]
     if "NUM_ITERATIONS" not in params:
-        params["NUM_ITERATIONS"]=1
+        params["NUM_ITERATIONS"] = 1
     if not controlled_layers:
         controlled_layers = layers
-        
+
     v_r=params["V"]
     if isinstance(v_r, (int)):
         outDirSuffixRes = str(v_r)
@@ -585,20 +571,19 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         outDirSuffixRes = str(v_r[0])
     else:
         outDirSuffixRes = str(sum(v_r))+'_fixed_layer_Cap'
-            
-    indp_results=INDPResults()
+
+    indp_results=INDPResults(params["L"])
     if T == 1:
         print("Running INDP (T=1) or iterative INDP.")
         if print_cmd_line:
             print("Num iters=",params["NUM_ITERATIONS"])
-            
+
         # Run INDP for 1 time step (original INDP).
         output_dir=params["OUTPUT_DIR"]+'_L'+str(len(layers))+'_m'+str(params["MAGNITUDE"])+"_v"+outDirSuffixRes
         # Initial calculations.
         results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers)
         indp_results=results[1]
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
-
         for i in range(params["NUM_ITERATIONS"]):
             print("Time Step (iINDP)=",i,"/",params["NUM_ITERATIONS"])
             results=indp(InterdepNet,v_r,T,layers,controlled_layers=controlled_layers,forced_actions=forced_actions)
@@ -620,7 +605,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
             time_window_length=params["WINDOW_LENGTH"]
             num_time_windows=T
         output_dir=params["OUTPUT_DIR"]+'_L'+str(len(layers))+"_m"+str(params["MAGNITUDE"])+"_v"+outDirSuffixRes
-        
+
         print("Running td-INDP (T="+str(T)+", Window size="+str(time_window_length)+")")
         # Initial percolation calculations.
         results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers,functionality=functionality)
@@ -658,8 +643,11 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         indp_results.to_csv(output_dir,params["SIM_NUMBER"],suffix=suffix)
+        if not os.path.exists(output_dir+'/agents'):
+            os.makedirs(output_dir+'/agents')
+        indp_results.to_csv_layer(output_dir+'/agents',params["SIM_NUMBER"],suffix=suffix)
     return indp_results
-        
+
 
 def run_info_share(params,layers=[1,2,3],T=1,validate=False,suffix=""):
     """Applies rounds of information sharing between INDP runs. Assumes each layer is controlled by a separate player.
@@ -685,7 +673,7 @@ def run_info_share(params,layers=[1,2,3],T=1,validate=False,suffix=""):
     player_strategies={}
     for P in layers:
         player_strategies[P]=INDPResults()
-    
+
     # Begin Sharing Process.
     for i in range(num_iterations):
         results={}
@@ -744,7 +732,7 @@ def run_inrg(params,layers=[1,2,3],validate=False,player_ordering=[3,1],suffix="
         os.makedirs(output_dir)
     for P in layers:
         player_strategies[P].to_csv(output_dir,params["SIM_NUMBER"],suffix="P"+str(P)+"_"+suffix)
-    
+
 
 def run_seqeq(params,layers=[1,2,3],validate=False,player_ordering=[3,1],suffix=""):
     InterdepNet=None
@@ -755,9 +743,9 @@ def run_seqeq(params,layers=[1,2,3],validate=False,player_ordering=[3,1],suffix=
     else:
         InterdepNet=params["N"]
     v_r=params["V"]
-    
-                            
-    
+
+
+
 def baseline_metrics(BASE_DIR="/Users/Andrew/Dropbox/iINDP",layers=[1,2,3]):
     """ Calculate and print baseline metrics of undamaged network.
     :param BASE_DIR: Base directory for INDP/Shelby County data.
@@ -793,8 +781,8 @@ def baseline_metrics(BASE_DIR="/Users/Andrew/Dropbox/iINDP",layers=[1,2,3]):
 
 def save_INDP_model_to_file(model,outModelDir,t,l=0,suffix=''):
     if not os.path.exists(outModelDir):
-        os.makedirs(outModelDir) 
-    # Write models to file   
+        os.makedirs(outModelDir)
+    # Write models to file
     lname = "/Model_t%d_l%d_%s.lp" % (t,l,suffix)
     model.write(outModelDir+lname)
     model.update()
@@ -805,7 +793,7 @@ def save_INDP_model_to_file(model,outModelDir,t,l=0,suffix=''):
         fileID.write('%s %g\n' % (vv.varName, vv.x))
     fileID.write('Obj: %g' % model.objVal)
     fileID.close()
-    
+
 def plot_indp_sample(params,folderSuffix="",suffix=""):
     plt.figure(figsize=(16,8))
     InterdepNet=initialize_sample_network()
@@ -836,10 +824,10 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
          pos[(3,1)][1] =  3.0
          pos[(5,1)][1] =  3.0
 
-    node_dict={1:[(1,1),(2,1),(3,1),(4,1),(5,1),(6,1)], 11:[(4,1)], 12:[(1,1),(2,1),(3,1),(5,1),(6,1)], 
+    node_dict={1:[(1,1),(2,1),(3,1),(4,1),(5,1),(6,1)], 11:[(4,1)], 12:[(1,1),(2,1),(3,1),(5,1),(6,1)],
                2:[(7,2),(8,2),(9,2),(10,2),(11,2),(12,2)], 21:[(10,2)], 22:[(7,2),(8,2),(9,2),(11,2),(12,2)]}
-    arc_dict= {1: [((1,1),(2,1)),((1,1),(3,1)),((1,1),(4,1)),((6,1),(4,1)),((6,1),(5,1))], 
-                   2: [((8,2),(7,2)),((8,2),(10,2)),((9,2),(7,2)),((9,2),(10,2)),((9,2),(12,2)),((11,2),(12,2))]} 
+    arc_dict= {1: [((1,1),(2,1)),((1,1),(3,1)),((1,1),(4,1)),((6,1),(4,1)),((6,1),(5,1))],
+                   2: [((8,2),(7,2)),((8,2),(10,2)),((9,2),(7,2)),((9,2),(10,2)),((9,2),(12,2)),((11,2),(12,2))]}
     labels = {}
     for n,d in InterdepNet.G.nodes(data=True):
         labels[n]= "%d[%d]" % (n[0],d['data']['inf_data'].demand)
@@ -848,7 +836,7 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
         pos_moved[key] = [0,0]
         pos_moved[key][0] = pos[key][0]-0.2
         pos_moved[key][1] = pos[key][1]+0.2
-        
+
     v_r = params["V"]
     if isinstance(v_r, (int, long)):
         totalResource = v_r
@@ -857,7 +845,7 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
             totalResource = sum(v_r)
         else:
             totalResource = v_r[0]
-            
+
     output_dir=params["OUTPUT_DIR"]+'_m'+str(params["MAGNITUDE"])+"_v"+str(totalResource)+folderSuffix
     action_file =output_dir+"/actions_"+str(params["SIM_NUMBER"])+"_"+suffix+".csv"
     actions = {0:[]}
@@ -871,10 +859,10 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
                 if t not in actions:
                     actions[t]=[]
                 actions[t].append(action)
-                
-    T = max(actions.keys())  
+
+    T = max(actions.keys())
     for t, value in actions.items():
-        plt.subplot(2, (T+1)/2+1 ,t+1, aspect='equal') 
+        plt.subplot(2, (T+1)/2+1 ,t+1, aspect='equal')
         plt.title('Time = %d' % t)
         for a in value:
             data=string.split(str.strip(a),".")
@@ -889,5 +877,5 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
         nx.draw_networkx_nodes(InterdepNet.G,pos_moved,nodelist=node_dict[22],node_color='k',node_shape="X",node_size=150)
         nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[1],width=1,alpha=0.9,edge_color='r')
         nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[2],width=1,alpha=0.9,edge_color='b')
-    plt.tight_layout()   
+    plt.tight_layout()
     plt.savefig(output_dir+'/plot_net'+folderSuffix+'.png',dpi=600)

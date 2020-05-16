@@ -111,7 +111,7 @@ def run_backwards_induction(N,sample=1,players=[1,3],player_ordering=[1,3],T=50,
         indp_results[p]=INDPResults()
     for t in range(1,T+1):
         gt=INRGGameTree(N,players=players,player_ordering=player_ordering)
-        print "T=",t,":",len(gt.terminal_nodes)
+        print( "T=",t,":",len(gt.terminal_nodes))
         if len(gt.root.succs) > 0:
             strategy=gt.backwards_induction(gt.root)
             utility=strategy[0]
@@ -125,18 +125,18 @@ def run_backwards_induction(N,sample=1,players=[1,3],player_ordering=[1,3],T=50,
                         if not isinstance(repair[0],tuple):
                             owner = repair[1]
                             if owner == p:
-                                action=`repair[0]`+"."+`repair[1]`
+                                action=str(repair[0])+"."+str(repair[1])
                                 indp_results[p].add_action(t,action)
                         else:
                             owner= repair[0][1]
                             if owner == p:
-                                action=`repair[0][0]`+"."+`repair[0][1]`+"/"+`repair[1][0]`+"."+`repair[1][1]`
+                                action=str(repair[0][0])+"."+str(repair[0][1])+"/"+str(repair[1][0])+"."+str(repair[1][1])
                                 indp_results[p].add_action(t,action)
-                                action=`repair[1][0]`+"."+`repair[1][1]`+"/"+`repair[0][0]`+"."+`repair[0][1]`
+                                action=str(repair[1][0])+"."+str(repair[1][1])+"/"+str(repair[0][0])+"."+str(repair[0][1])
                                 indp_results[p].add_action(t,action)
                         apply_repairs(N,[r for r in repairs if r])
             for p in players:
-                indp_results[p].to_csv(outdir,1,suffix=`p`)
+                indp_results[p].to_csv(outdir,1,suffix=str(p))
         else:
             break
         

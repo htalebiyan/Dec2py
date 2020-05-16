@@ -1,6 +1,6 @@
 Run INDP and Judgment Call
 =======================================================
-.. automodule:: run_indp
+.. automodule:: run_main
 	:members: run_method, batch_run 
 .. toctree::
    :maxdepth: 2

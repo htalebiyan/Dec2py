@@ -61,25 +61,40 @@ class INDPResults:
         if t_end == 0: 
             t_end = len(indp_result)
         for new_t,t in zip([x+t_offset for x in range(t_end-t_start)],[y+t_start for y in range(t_end-t_start)]):
-            self.results[new_t]=indp_result[t]
-    def extend_layer(self,indp_result,t_offset=0,t_start=0,t_end=0):
-        if t_end == 0: 
-            t_end = len(indp_result[self.layers[0]])
-        for l in self.layers:
-            for new_t,t in zip([x+t_offset for x in range(t_end-t_start)],[y+t_start for y in range(t_end-t_start)]):
-                self.results_layer[l][new_t]=indp_result[l][t]
-    def add_cost(self,t,cost_type,cost):
+            self.results[new_t]=indp_result.results[t]
+        if self.layers:
+            if t_end == 0: 
+                t_end = len(indp_result[self.layers[0]])
+            for l in self.layers:
+                for new_t,t in zip([x+t_offset for x in range(t_end-t_start)],[y+t_start for y in range(t_end-t_start)]):
+                    self.results_layer[l][new_t]=indp_result.results_layer[l][t]
+    def add_cost(self,t,cost_type,cost,cost_layer={}):
         if t not in self.results:
             self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
         self.results[t]['costs'][cost_type]=cost
+        if self.layers:
+            for l in self.layers:
+                if t not in self.results_layer[l]:
+                    self.results_layer[l][t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
+                self.results_layer[l][t]['costs'][cost_type]=cost_layer[l]
     def add_run_time(self,t,run_time):
         if t not in self.results:
             self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
         self.results[t]['run_time']=run_time
+        if self.layers:
+            for l in self.layers:
+                if t not in self.results_layer[l]:
+                    self.results_layer[l][t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
+                self.results_layer[l][t]['run_time']=run_time
     def add_action(self,t,action):
         if t not in self.results:
             self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
         self.results[t]['actions'].append(action)
+        if self.layers:
+            action_layer = int(action[-1])
+            if t not in self.results_layer[action_layer]:
+                self.results_layer[action_layer][t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
+            self.results_layer[action_layer][t]['actions'].append(action)
     def add_gc_size(self,t,gc_size):
         if t not in self.results:
             self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
