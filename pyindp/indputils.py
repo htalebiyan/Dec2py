@@ -111,8 +111,8 @@ class INDPResults:
         self.add_gc_size(t,components.gc_size)
     def to_csv(self,outdir,sample_num=1,suffix=""):
         action_file =outdir+"/actions_"+str(sample_num)+"_"+suffix+".csv"
-        costs_file =outdir+"/costs_"  +str(sample_num)+"_"+suffix+".csv"
-        run_time_file =outdir+"/run_time_"  +str(sample_num)+"_"+suffix+".csv"
+        costs_file =outdir+"/costs_"+str(sample_num)+"_"+suffix+".csv"
+        run_time_file =outdir+"/run_time_"+str(sample_num)+"_"+suffix+".csv"
         perc_file  =outdir+"/percolation_"+str(sample_num)+"_"+suffix+".csv"
         comp_file  =outdir+"/components_"+str(sample_num)+"_"+suffix+".csv"
         with open(action_file,'w') as f:
@@ -139,9 +139,9 @@ class INDPResults:
 #                f.write(str(t)+","+self.results[t]['components'].to_csv_string()+"\n")
     def to_csv_layer(self,outdir,sample_num=1,suffix=""):
         for l in self.layers:
-            action_file =outdir+"/actions_"+str(sample_num)+"_l"+str(l)+"_"+suffix+".csv"
-            costs_file =outdir+"/costs_"  +str(sample_num)+"_l"+str(l)+"_"+suffix+".csv"
-            run_time_file =outdir+"/run_time_"  +str(sample_num)+"_l"+str(l)+"_"+suffix+".csv"
+            action_file =outdir+"/actions_"+str(sample_num)+"_"+str(l)+"_"+suffix+".csv"
+            costs_file =outdir+"/costs_"+str(sample_num)+"_"+str(l)+"_"+suffix+".csv"
+            run_time_file =outdir+"/run_time_"+str(sample_num)+"_"+str(l)+"_"+suffix+".csv"
             with open(action_file,'w') as f:
                 f.write("t,action\n")
                 for t in self.results_layer[l]:

@@ -9,9 +9,40 @@ plt.rc('text', usetex=True)
 plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 def plot_performance_curves_shelby(df, x='t', y='cost', cost_type='Total',
-                                   decision_names=['tdindp_results'],
-                                   auction_type=None, valuation_type=None,
-                                   ci=None, normalize=False, deaggregate=False):
+                                   decision_names=['indp'], auction_type=None, valuation_type=None,
+                                   ci=None, normalize=False, deaggregate=False, plot_resilience=False):
+    '''
+
+    Parameters
+    ----------
+    df : TYPE
+        DESCRIPTION.
+    x : TYPE, optional
+        DESCRIPTION. The default is 't'.
+    y : TYPE, optional
+        DESCRIPTION. The default is 'cost'.
+    cost_type : TYPE, optional
+        DESCRIPTION. The default is 'Total'.
+    decision_names : TYPE
+        DESCRIPTION.
+    auction_type : TYPE, optional
+        DESCRIPTION. The default is None.
+    valuation_type : TYPE, optional
+        DESCRIPTION. The default is None.
+    ci : TYPE, optional
+        DESCRIPTION. The default is None.
+    normalize : TYPE, optional
+        DESCRIPTION. The default is False.
+    deaggregate : TYPE, optional
+        DESCRIPTION. The default is False.
+    plot_resilience : TYPE, optional
+        DESCRIPTION. The default is False.
+
+    Returns
+    -------
+    None.
+
+    '''
     no_resources = df.no_resources.unique().tolist()
     if not auction_type:
         auction_type = df.auction_type.unique().tolist()
@@ -36,11 +67,8 @@ def plot_performance_curves_shelby(df, x='t', y='cost', cost_type='Total',
                            (df.decision_type.isin(decision_names))&
                            (df.no_resources == nr)&
                            ((df.valuation_type == vt)|(df.valuation_type == ''))]
-            resilience_data = df[(df.cost_type == 'Under Supply Perc')&
-                                 (df.decision_type.isin(decision_names))&
-                                 (df.no_resources == nr)&
-                                 ((df.valuation_type == vt)|(df.valuation_type == ''))]
-            pal = sns.color_palette(['#154352', '#007268', '#5d9c51', '#dbb539', 'k'])
+            colors=['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
+            pal = sns.color_palette(colors[:len(auction_type)+1])
             #sns.color_palette("husl", len(auction_type)+1)
             sns.lineplot(x=x, y=y, hue="auction_type", style='decision_type',
                          markers=True, ci=ci, ax=ax, palette=pal,
@@ -60,35 +88,42 @@ def plot_performance_curves_shelby(df, x='t', y='cost', cost_type='Total',
                 for l in layers:
                     pal_adj = sns.color_palette([[xx*l/len(layers) for xx in x] for x in pal])
                     sns.barplot(x=x, y=l, hue="auction_type", ax=ax, linewidth=0.5,
-                                ci=None, data=temp_pivot, hue_order=auction_type,
+                                ci=None, data=temp_pivot, hue_order=auction_type+[''],
                                 palette=pal_adj, **{'alpha':0.35})
             ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
             ax.get_legend().set_visible(False)
             ax.xaxis.set_ticks([])
-            divider = make_axes_locatable(ax)
-            ax_2 = divider.append_axes("bottom", size="100%", pad=0.12, sharex=ax)
-            sns.lineplot(x=x, y=y, hue="auction_type", style='decision_type',
-                          markers=True, ci=ci, ax=ax_2, legend='full', palette=pal,
-                          data=resilience_data[resilience_data.layer == 'nan'])
-            if deaggregate:
-                temp = resilience_data[resilience_data.layer!='nan']
-                temp_pivot = temp.pivot_table(values='cost',
-                    index=temp.columns.drop(['layer', 'cost', 'normalized_cost']).tolist(),
-                    columns='layer')
-                temp_pivot.reset_index(inplace=True)
-                layers = temp['layer'].unique().tolist()
-                for l in layers:
-                    if l!=1:
-                        temp_pivot[l]+=temp_pivot[l-1]
-                layers.sort(reverse=True)
-                for l in layers:
-                    pal_adj = sns.color_palette([[xx*l/len(layers) for xx in x] for x in pal])
-                    barplot = sns.barplot(x=x, y=l, hue="auction_type", ax=ax_2, linewidth=0.5,
-                                          ci=None, data=temp_pivot, hue_order=auction_type,
-                                          palette=pal_adj, **{'alpha':0.35})
-            ax_2.set(ylabel='% Unmet Demand')
-            ax_2.get_legend().set_visible(False)
-            ax_2.xaxis.set_ticks(np.arange(0, T, 1.0))   #ax.get_xlim()
+            
+            if plot_resilience:
+                resilience_data = df[(df.cost_type == 'Under Supply Perc')&
+                                     (df.decision_type.isin(decision_names))&
+                                     (df.no_resources == nr)&
+                                     ((df.valuation_type == vt)|(df.valuation_type == ''))]
+                divider = make_axes_locatable(ax)
+                ax_2 = divider.append_axes("bottom", size="100%", pad=0.12, sharex=ax)
+                sns.lineplot(x=x, y=y, hue="auction_type", style='decision_type',
+                              markers=True, ci=ci, ax=ax_2, legend='full', palette=pal,
+                              data=resilience_data[resilience_data.layer == 'nan'])
+                if deaggregate:
+                    temp = resilience_data[resilience_data.layer!='nan']
+                    temp_pivot = temp.pivot_table(values='cost',
+                        index=temp.columns.drop(['layer', 'cost', 'normalized_cost']).tolist(),
+                        columns='layer')
+                    temp_pivot.reset_index(inplace=True)
+                    layers = temp['layer'].unique().tolist()
+                    for l in layers:
+                        if l!=1:
+                            temp_pivot[l]+=temp_pivot[l-1]
+                    layers.sort(reverse=True)
+                    for l in layers:
+                        pal_adj = sns.color_palette([[xx*l/len(layers) for xx in x] for x in pal])
+                        barplot = sns.barplot(x=x, y=l, hue="auction_type", ax=ax_2, linewidth=0.5,
+                                              ci=None, data=temp_pivot, hue_order=auction_type+[''],
+                                              palette=pal_adj, **{'alpha':0.35})
+                ax_2.set(ylabel='% Unmet Demand')
+                ax_2.get_legend().set_visible(False)
+                ax_2.xaxis.set_ticks(np.arange(0, T, 1.0))   #ax.get_xlim()
+
     handles, labels = ax.get_legend_handles_labels()
     handles = [x for x in handles if type(x) is mplt.lines.Line2D]
     labels = correct_legend_labels(labels)
@@ -112,6 +147,7 @@ def plot_performance_curves_shelby(df, x='t', y='cost', cost_type='Total',
                     xytext=(-ax.yaxis.labelpad - 4, 0), xycoords=ax.yaxis.label,
                     textcoords='offset points', ha='right', va='center', rotation=90)
     plt.savefig('Performance_curves.pdf', dpi=600)
+
 def plot_performance_curves_synthetic(df, x='t', y='cost', cost_type='Total', ci=None):
     no_resources = df.no_resources.unique().tolist()
     auction_type = df.auction_type.unique().tolist()
@@ -569,3 +605,42 @@ def correct_legend_labels(labels):
     labels = ['Decision Type' if x == 'decision_type' else x for x in labels]
     labels = ['MCA' if x == 'EC' else x for x in labels]
     return labels
+
+def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
+                                   ci=None, normalize=False):
+    res_caps= df.no_resources.unique().tolist()
+    valuation_type = df.valuation_type.unique().tolist()
+    auction_type = df.auction_type.unique().tolist()
+    layers = df.layer.unique().tolist()
+    layers.remove('nan')
+    layer_names={1:'Water', 2:'Gas', 3:'Power', 4:'Telecom.'}
+    colors=['#154352', '#dbb539', '#007268', '#5d9c51']
+    pal = sns.color_palette(colors[:len(auction_type)-1]+['k'])
+    fig, axs = plt.subplots(2, 2, sharex=True, sharey=True, tight_layout=False)
+    cost_data=df[df.cost_type==cost_type]
+    for idx, lyr in enumerate(layers):
+        ax = axs[idx//2, idx%2]
+        sns.lineplot(x=x, y=y, hue="auction_type", style='decision_type',
+                      markers=True, ci=ci, ax=ax, palette=pal,
+                      data=cost_data[cost_data.layer==lyr], **{'markersize':5})
+        ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
+        ax.set_title(r'Layer: %s'%(layer_names[lyr]))
+        ax.get_legend().set_visible(False)
+        ax.xaxis.set_ticks(np.arange(0, 10, 1.0))   #ax.get_xlim()
+
+    ax = fig.add_subplot(3,2,6)
+    sns.lineplot(x=x, y=y, hue="auction_type", style='decision_type',
+                  markers=True, ci=ci, palette=pal, ax=ax,
+                  data=cost_data[cost_data.layer=='nan'], **{'markersize':5})
+    ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
+    ax.set_title(r'Overall')
+    ax.get_legend().set_visible(False)
+    ax.xaxis.set_ticks(np.arange(0, 10, 1.0))   #ax.get_xlim()
+    
+    valuation_type.remove('')
+    head = 'Resource Cap: '+str(res_caps).strip('[]')+', Valuation: '+str(valuation_type).strip('[]')
+    fig.suptitle(head)
+    handles, labels = ax.get_legend_handles_labels()
+    labels = correct_legend_labels(labels)
+    fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5)
+    plt.savefig('sep_perf.png', dpi=600, bbox_inches='tight')

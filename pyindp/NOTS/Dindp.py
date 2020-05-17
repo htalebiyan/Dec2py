@@ -71,16 +71,16 @@ def run_judgment_call(params, layers, T=1, save_jc=True, print_cmd=True, save_jc
             print("Num iters=", params["NUM_ITERATIONS"])
         # Initial calculations.
         indp_results_initial = indp.indp(interdep_net, 0, 1, layers, controlled_layers=layers)
-        #  !!! Initial costs are just saved to cost_#_sum.csv not to cost_#_P.csv (to be corrected)
         #  !!!Initial components are not saved (to be corrected)!!!
         #  !!!Components of all layers are not saved to components_#_sum.csv(to be corrected)!!!
         #  !!!Actions of all layers are not saved to actions_#_sum.csv(to be corrected)!!!
         #  !!!Percolation of all layers are not saved to percolation_#_sum.csv(to be corrected)!!!
-        for p in layers:
-            dindp_results[p].add_cost(0, 'Total', 0.0)
-            #Add a zero entry for t = 0 for each layer
-            dindp_results_real[p].add_cost(0, 'Total', 0.0)
-            #Add a zero entry for t = 0 for each layer
+        for c in indp_results_initial[1].cost_types:
+            for p in layers:
+                dindp_results[p].add_cost(0, c,
+                                          indp_results_initial[1].results_layer[p][0]['costs'][c])
+                dindp_results_real[p].add_cost(0, c,
+                                               indp_results_initial[1].results_layer[p][0]['costs'][c])
         res_allocate = {}
         poa = {}
         valuations = {}
@@ -1020,7 +1020,10 @@ def read_results(combinations, optimal_combinations, suffixes, root_result_dir='
                     sample_result = sample_result.from_csv(result_dir, x[1], suffix=suf)
                 if deaggregate:
                     for l in range(x[2]):
-                        suffix_adj = suf.split('_')[0]+'_'+str(l+1)
+                        if x[4]=='indp':#!!!remove this
+                            suffix_adj = suf.split('_')[0]+str(l+1)+'_'
+                        else:
+                            suffix_adj = suf.split('_')[0]+'_'+str(l+1)
                         file_dir = result_dir+rslt_dir_lyr+"/costs_"+str(x[1])+"_"+suffix_adj+".csv"
                         if os.path.exists(file_dir):
                             sam_rslt_lyr[l+1] = sam_rslt_lyr[l+1].from_csv(result_dir+rslt_dir_lyr,
@@ -1039,7 +1042,7 @@ def read_results(combinations, optimal_combinations, suffixes, root_result_dir='
                               float(sample_result[t]['costs'][c]), norm_cost, 'nan']
                     cmplt_results = cmplt_results.append(dict(zip(columns, values)),
                                                          ignore_index=True)
-            if deaggregate and x[4] not in optimal_method: ### !!! relax the second condition later
+            if deaggregate:
                 for l in range(x[2]):
                     initial_cost = {}
                     for c in sam_rslt_lyr[l+1].cost_types:
@@ -1289,7 +1292,7 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
 def generate_combinations(database, mags, sample, layers, no_resources, decision_type,
                           auction_type, valuation_type, list_high_dam_add=None, synthetic_dir=None):
     '''
-    
+
     Parameters
     ----------
     database : TYPE
