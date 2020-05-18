@@ -104,6 +104,13 @@ class auction_model():
         self.valuation_time = {t+1:{x:0.0 for x in params['L']} for t in range(time_steps)}
         self.auction_time = {t+1:0.0 for t in range(time_steps)}
         self.poa = {t+1:0.0 for t in range(time_steps)}
+        
+    def bidding(self):
+        for i, ival in self.valuations.items():
+            for l, lval in ival:
+                for v, vval in lval:
+                    if self.bidder_type == 'truthful':
+                        self.bids[i][l][v] = self.valuations[i][l][v]
 
 def run_judgment_call(params, layers, T=1, save_jc=True, print_cmd=True, save_jc_model=False):
     '''
@@ -713,9 +720,6 @@ def compute_valuations(obj, iteration, print_cmd=True, compute_optimal_valuation
                     current_total_cost[l] = new_total_cost
                 else:
                     auct_model.valuations[iteration+1][l][v+1] = 0.0
-
-                if auct_model.bidder_type == 'truthful':
-                    auct_model.bids[iteration+1][l][v+1] = auct_model.valuations[iteration+1][l][v+1]
         elif auct_model.valuation_type == 'DTC_uniform':
             for v in range(obj.resource.sum_resource):
                 total_cost_bounds = []
@@ -733,23 +737,26 @@ def compute_valuations(obj, iteration, print_cmd=True, compute_optimal_valuation
                     current_total_cost[l] = new_total_cost
                 else:
                     auct_model.valuations[iteration+1][l][v+1] = 0.0
+        elif auct_model.valuation_type == 'MDDN':
+            g_prime_nodes = [n[0] for n in obj.net.G.nodes(data=True) if n[1]['data']['inf_data'].net_id == l]
+            g_prime = obj.net.G.subgraph(g_prime_nodes)
+            penalty_dmgd_nodes = []
+            for n in g_prime.nodes(data=True):
+                if n[1]['data']['inf_data'].functionality == 0.0:
+                    if n[1]['data']['inf_data'].demand > 0:
+                        penalty_dmgd_nodes.append(abs(n[1]['data']['inf_data'].demand*\
+                                                      n[1]['data']['inf_data'].oversupply_penalty))
+                    else:
+                        penalty_dmgd_nodes.append(abs(n[1]['data']['inf_data'].demand*\
+                                                      n[1]['data']['inf_data'].undersupply_penalty))
+            penalty_rsorted = np.sort(penalty_dmgd_nodes)[::-1]
+            for v in range(obj.resource.sum_resource):
+                if v >= len(penalty_rsorted):
+                    auct_model.valuations[iteration+1][l][v+1] = 0.0
+                else:
+                    auct_model.valuations[iteration+1][l][v+1] = penalty_rsorted[v]
+        auct_model.valuation_time[iteration+1][l] = time.time()-start_time_val
 
-                if auct_model.bidder_type == 'truthful':
-                    auct_model.bids[iteration+1][l][v+1] = auct_model.valuations[iteration+1][l][v+1]
-        # elif valuation_type == 'MDDN':
-        #     g_prime_nodes = [n[0] for n in interdep_net.G.nodes(data=True) if n[1]['data']['inf_data'].net_id == l]
-        #     g_prime = interdep_net.G.subgraph(g_prime_nodes)
-        #     dem_damaged_nodes = [abs(n[1]['data']['inf_data'].demand) for n in g_prime.nodes(data=True) if n[1]['data']['inf_data'].repaired == 0.0]
-        #     dem_damaged_nodes_reverse_sorted = np.sort(dem_damaged_nodes)[::-1]
-        #     if len(dem_damaged_nodes) >= v_r:
-        #         valuation[l] = dem_damaged_nodes_reverse_sorted[0:v_r].tolist()
-        #     if len(dem_damaged_nodes) < v_r:
-        #         valuation[l] = dem_damaged_nodes_reverse_sorted[:].tolist()
-        #         for _ in range(v_r-len(dem_damaged_nodes)):
-        #             valuation[l].append(0.0)
-        # else:
-        #     sys.exit("Wrong valuation type: "+valuation_type)
-        # valuation_time.append(time.time()-start_time_val)
 
 def write_auction_csv(outdir, res_allocate, res_alloc_time, poa=None, valuations=None,
                       sample_num=1, suffix=""):

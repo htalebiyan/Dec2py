@@ -255,7 +255,7 @@ if __name__ == "__main__":
     #["PESSIMISTIC", "OPTIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"]
     RES_ALLOC_TYPE = ["MCA",'UNIFORM']
     #["MDA", "MAA", "MCA"]
-    VAL_TYPE = ['DTC_uniform']
+    VAL_TYPE = ['MDDN']
     #['DTC', 'DTC_uniform', 'MDDN']
 
     ### Run different methods###
