@@ -7,6 +7,7 @@ Welcome to Decenalized Decision Making's documentation
    main_vars.rst
    run_main.rst
    dindp.rst
+   dindp_classed.rst
    
 Indices and tables
 ==================

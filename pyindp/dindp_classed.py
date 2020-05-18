@@ -10,6 +10,100 @@ import numpy as np
 import gurobipy
 import indp
 import indputils
+import copy
+
+class JC_model():
+    def __init__(self,id,params):
+        #: Basic attributes
+        self.id = id
+        self.algo = self.set_id(params['ALGORITHM'])
+        self.layers = params['L']
+        self.judge_type = params['JUDGMENT_TYPE']
+        self.net = self.set_network(params)
+        self.time_steps = self.set_time_steps(params['T'],params['NUM_ITERATIONS'])
+        #: Resource allocation attributes
+        self.resource = resource_model(params, self.time_steps)
+        self.res_alloc_type = self.resource.type
+        self.v_r = self.resource.v_r
+        #: Results attributes
+        self.ouput_dir = params["OUTPUT_DIR"]+'_L'+str(len(self.layers))+\
+            '_m'+str(params["MAGNITUDE"])+"_v"+str(self.resource.sum_resource)+\
+            '_'+self.res_alloc_type
+        if self.res_alloc_type == 'auction':
+            self.ouput_dir += '_'+self.resource.auction_model.auction_type+\
+                '_'+self.resource.auction_model.valuation_type
+        self.results = indputils.INDPResults(self.layers)
+        self.results_real = indputils.INDPResults(self.layers)
+    def set_id(self,algorithm):
+        if algorithm == 'JC':
+            return 'JC'
+        else:
+            sys.exit('Wrong Algorithm. It should be JC.')
+    def set_network(self,params):
+        if "N" in params:
+            return copy.deepcopy(params["N"]) #!!! deepcopy
+        else:
+            sys.exit('No initial network object for: '+self.judge_type+', '+\
+                     self.res_alloc_type+', '+self.valuation_type)
+    def set_time_steps(self,T,num_iter):
+        if T == 1:
+            return num_iter
+        else: #!!! to be modified in futher expansions
+            sys.exit('JC currently only supports iINDP, not td_INDP.')
+
+class resource_model():
+    def __init__(self,params, time_steps):
+        self.t_steps = time_steps
+        self.time = {t+1:0.0 for t in range(self.t_steps)}
+        self.v_r = {t+1:{} for t in range(self.t_steps)}
+        if params['RES_ALLOC_TYPE'] in ["MDA", "MAA", "MCA"]:
+            self.type = 'auction'
+            self.auction_model = auction_model(params, self.t_steps)
+            self.sum_resource = params['V']
+        elif params['RES_ALLOC_TYPE'] == "UNIFORM":
+            self.type = 'uniform'
+            self.set_uniform_res(params)
+        elif params['RES_ALLOC_TYPE'] == "LAYER_FIXED":
+            self.type = 'uniform_lf'
+            self.set_lf_res(params)
+        else:
+            sys.exit('Unsupported resource allocation type: '+params['RES_ALLOC_TYPE'])
+    def set_uniform_res(self,params):
+        if isinstance(params['V'], (int)):
+            self.sum_resource = params['V']
+            for t in range(self.t_steps):
+                for l in params['L']:
+                    v_r_uni = {x:self.sum_resource//len(params['L']) for x in params['L']}
+                    rnd_idx = np.random.choice(params['L'], self.sum_resource%len(params['L']),
+                                               replace=False)
+                    for x in rnd_idx:
+                        v_r_uni[x] += 1
+                    self.v_r[t+1] = v_r_uni
+        else:
+            sys.exit('Number of resources is an integer for the resource allocation type UNIFORM.')
+    def set_lf_res(self,params):
+        try: 
+            len(params['V']) == len(params['L'])
+        except:
+            sys.exit('Length of resource vector and layer vector should be the same for '+\
+                     'the resource allocation type FIXED_LAYER.')
+        self.sum_resource = sum(params['V'])
+        for t in range(self.t_steps):
+            for l in params['L']:
+                self.v_r[t+1][l] = params['V'][params['L'].index(l)]
+
+class auction_model():
+    def __init__(self,params, time_steps):
+        self.auction_type = params['RES_ALLOC_TYPE']
+        self.valuation_type = params['VALUATION_TYPE']
+        self.bidder_type = 'truthful'
+        self.winners = {t+1:{} for t in range(time_steps)}
+        self.win_bids = {t+1:{} for t in range(time_steps)}
+        self.bids = {t+1:{x:{} for x in params['L']} for t in range(time_steps)}
+        self.valuations = {t+1:{x:{} for x in params['L']} for t in range(time_steps)}
+        self.valuation_time = {t+1:{x:0.0 for x in params['L']} for t in range(time_steps)}
+        self.auction_time = {t+1:0.0 for t in range(time_steps)}
+        self.poa = {t+1:0.0 for t in range(time_steps)}
 
 def run_judgment_call(params, layers, T=1, save_jc=True, print_cmd=True, save_jc_model=False):
     '''
@@ -36,150 +130,135 @@ def run_judgment_call(params, layers, T=1, save_jc=True, print_cmd=True, save_jc
     None :
 
     '''
-    judgment_type = params["JUDGMENT_TYPE"]
-    auction_type = params["AUCTION_TYPE"]
-    valuation_type = params["VALUATION_TYPE"]
-    # Initialize failure scenario.
-    interdep_net = None
-    if "N" in params:
-        interdep_net = params["N"]
-    else:
-        sys.exit('No network object for: '+str(judgment_type, auction_type, valuation_type,
-                                               params["MAGNITUDE"], params["SIM_NUMBER"]))
     if "NUM_ITERATIONS" not in params:
         params["NUM_ITERATIONS"] = 1
     num_iterations = params["NUM_ITERATIONS"]
-    v_r = params["V"]
-    if isinstance(v_r, (int)):
-        v_r = [v_r]
-    if auction_type:
-        output_dir = params["OUTPUT_DIR"]+'_L'+str(len(layers))+'_m'+str(params["MAGNITUDE"])+\
-            "_v"+str(sum(v_r))+'_auction_'+auction_type+'_'+valuation_type
-    else:
-        output_dir = params["OUTPUT_DIR"]+'_L'+str(len(layers))+'_m'+str(params["MAGNITUDE"])+\
-            "_v"+str(sum(v_r))+'_uniform_alloc'
-    dindp_results = {p:indputils.INDPResults() for p in layers}
-    dindp_results_real = {p:indputils.INDPResults() for p in layers}
+    ### Creating JC objects
+    c = 0
+    objs = {}
+    params_copy = copy.deepcopy(params)  #!!! deepcopy
+    for jc in params["JUDGMENT_TYPE"]:
+        params_copy['JUDGMENT_TYPE'] = jc
+        for rst in params["RES_ALLOC_TYPE"]:
+            params_copy['RES_ALLOC_TYPE'] = rst
+            if rst not in ["MDA", "MAA", "MCA"]:
+                objs[c]=JC_model(c,params_copy)
+                c+=1
+            else:
+                for vt in params["VALUATION_TYPE"]:
+                    params_copy['VALUATION_TYPE'] = vt
+                    objs[c]=JC_model(c,params_copy)
+                    c+=1
+    # Initial calculations.
+    indp_results_initial = indp.indp(objs[0].net, 0, 1, objs[0].layers,
+                                     controlled_layers=objs[0].layers)
+
+    # Initialize failure scenario.
     if T == 1:
-        if auction_type:
-            print("\n--Running Judgment Call with type "+judgment_type +" with auction "+\
-                  auction_type+ ' & valuation '+ valuation_type)
-        else:
-            print("\n--Running Judgment Call with type "+judgment_type +" with uniform allocation ")
-        if print_cmd:
-            print("Num iters=", params["NUM_ITERATIONS"])
-        # Initial calculations.
-        indp_results_initial = indp.indp(interdep_net, 0, 1, layers, controlled_layers=layers)
-        #  !!!Initial components are not saved (to be corrected)!!!
-        #  !!!Components of all layers are not saved to components_#_sum.csv(to be corrected)!!!
-        #  !!!Actions of all layers are not saved to actions_#_sum.csv(to be corrected)!!!
-        #  !!!Percolation of all layers are not saved to percolation_#_sum.csv(to be corrected)!!!
-        for c in indp_results_initial[1].cost_types:
-            for p in layers:
-                dindp_results[p].add_cost(0, c,
-                                          indp_results_initial[1].results_layer[p][0]['costs'][c])
-                dindp_results_real[p].add_cost(0, c,
-                                               indp_results_initial[1].results_layer[p][0]['costs'][c])
-        res_allocate = {}
-        poa = {}
-        valuations = {}
-        res_alloc_time = {}
-        for i in range(num_iterations):
-            print("\n-Iteration "+str(i)+"/"+str(num_iterations-1))
-            res_alloc_time_start = time.time()
-            v_r_applied = []
-            if auction_type:
-                res_allocate[i], poa[i], valuations[i], auction_time, valuation_time = auction_resources(sum(v_r),
-                            params, layers=layers, print_cmd=print_cmd, judgment_type=judgment_type,
-                            auction_type=auction_type, valuation_type=valuation_type)
-                for _, value in res_allocate[i].items():
-                    v_r_applied.append(len(value))
-            elif len(v_r) != len(layers):
-                v_r_applied = [int(v_r[0]/len(layers)) for x in layers]
-                for x in range(v_r[0]%len(layers)):
-                    v_r_applied[x] += 1
-                res_allocate[i] = {p:[] for p in layers}
-                for p in layers:
-                    res_allocate[i][p] = range(1, 1+v_r_applied[p-1])
-            else:
-                v_r_applied = v_r
-                res_allocate[i] = {p:[] for p in layers}
-                for p in layers:
-                    res_allocate[i][p] = range(1, 1+v_r_applied[p-1])
-            if auction_type:
-                res_alloc_time[i] = [time.time()-res_alloc_time_start, auction_time, valuation_time]
-            else:
-                res_alloc_time[i] = [time.time()-res_alloc_time_start, 0, 0]
-            functionality = {p:{} for p in layers}
-            uncorrected_results = {}
+        for idx, obj in objs.items():
+            print('\n--Running JC: '+obj.judge_type+', resource allocation: '+obj.res_alloc_type)
+            if obj.res_alloc_type == 'auction':
+                print('auction type: '+obj.resource.auction_model.auction_type+\
+                      ', valuation: '+obj.resource.auction_model.valuation_type)
             if print_cmd:
-                print("Judgment: ")
-            for p in layers:
-                if print_cmd:
-                    print("Layer-%d"%(p))
-                neg_p = [x for x in layers if x != p]
-                functionality[p] = create_judgment_matrix(interdep_net, T, neg_p, v_r_applied,
-                                                          judgment_type=judgment_type)
-                # Make decision based on judgments before communication
-                indp_results = indp.indp(interdep_net, v_r_applied[p-1], 1, layers=layers,
-                                controlled_layers=[p], functionality=functionality[p],
-                                print_cmd=print_cmd, time_limit=10*60)
-                # Save models for re-evaluation after communication
-                uncorrected_results[p] = indp_results[1]
-                # Save results of decisions based on judgments
-                dindp_results[p].extend(indp_results[1], t_offset=i+1)
-                # Save models to file
-                if save_jc_model:
-                    indp.save_INDP_model_to_file(indp_results[0], output_dir+"/Model", i+1, p)
-                # Modify network to account for recovery and calculate components.
-                indp.apply_recovery(interdep_net, dindp_results[p], i+1)
-                dindp_results[p].add_components(i+1, indputils.INDPComponents.calculate_components(indp_results[0], interdep_net, layers=[p]))
-            # Re-evaluate judgments based on other agents' decisions
-            if print_cmd:
-                print("Re-evaluation: ")
-            for p in layers:
-                if print_cmd:
-                    print("Layer-%d"%(p))
-                indp_results_real, realizations = realized_performance(interdep_net,
-                                uncorrected_results[p], functionality=functionality[p],
-                                T=1, layers=layers, controlled_layers=[p], print_cmd=print_cmd)
-                dindp_results_real[p].extend(indp_results_real[1], t_offset=i+1)
-                if save_jc_model:
-                    indp.save_INDP_model_to_file(indp_results_real[0], output_dir+"/Model",
-                                                 i+1, p, suffix='Real')
-                    output_dir_judgments = output_dir + '/judgments'
-                    write_judgments_csv(output_dir_judgments, realizations,
-                                        sample_num=params["SIM_NUMBER"],
-                                        agent=p, time_step=i+1, suffix="")
-        # Calculate sum of costs
-        dindp_sum, dindp_real_sum = compute_cost_sum(dindp_results, dindp_results_real,
-                                                     interdep_net, indp_results_initial,
-                                                     num_iterations, layers)
-        output_dir_auction = output_dir + '/auctions'
-        if auction_type:
-            write_auction_csv(output_dir_auction, res_allocate, res_alloc_time,
-                              poa, valuations, sample_num=params["SIM_NUMBER"], suffix="")
-        else:
-            write_auction_csv(output_dir_auction, res_allocate, res_alloc_time,
-                              sample_num=params["SIM_NUMBER"], suffix="")
-        # Save results of D-iINDP run to file.
-        if save_jc:
-            output_dir_agents = output_dir + '/agents'
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
-            if not os.path.exists(output_dir_agents):
-                os.makedirs(output_dir_agents)
-            for p in layers:
-                dindp_results[p].to_csv(output_dir_agents, params["SIM_NUMBER"],
-                                        suffix=str(p))
-                dindp_results_real[p].to_csv(output_dir_agents, params["SIM_NUMBER"],
-                                             suffix='Real_'+str(p))
-            dindp_sum.to_csv(output_dir, params["SIM_NUMBER"], suffix='sum')
-            dindp_real_sum.to_csv(output_dir, params["SIM_NUMBER"], suffix='Real_sum')
-    else:
-        # td-INDP formulations. Includes "DELTA_T" parameter for sliding windows to increase
-        # efficiency. (to be added)
-        print('hahahaha')
+                print("Num iters=", params["NUM_ITERATIONS"])
+            # t=0 results.
+            obj.results = indp_results_initial[1]
+            obj.results_real = indp_results_initial[1]
+            num_iterations=1 #!!!
+            for i in range(num_iterations):
+                print("-Iteration "+str(i+1)+"/"+str(num_iterations))
+                res_alloc_time_start = time.time()
+                if obj.resource.type == 'auction':
+                    auction_resources(obj, i, print_cmd=print_cmd)
+    #             for _, value in res_allocate[i].items():
+    #                 v_r_applied.append(len(value))
+    #         elif len(v_r) != len(layers):
+    #             v_r_applied = [int(v_r[0]/len(layers)) for x in layers]
+    #             for x in range(v_r[0]%len(layers)):
+    #                 v_r_applied[x] += 1
+    #             res_allocate[i] = {p:[] for p in layers}
+    #             for p in layers:
+    #                 res_allocate[i][p] = range(1, 1+v_r_applied[p-1])
+    #         else:
+    #             v_r_applied = v_r
+    #             res_allocate[i] = {p:[] for p in layers}
+    #             for p in layers:
+    #                 res_allocate[i][p] = range(1, 1+v_r_applied[p-1])
+    #         if auction_type:
+    #             res_alloc_time[i] = [time.time()-res_alloc_time_start, auction_time, valuation_time]
+    #         else:
+    #             res_alloc_time[i] = [time.time()-res_alloc_time_start, 0, 0]
+    #         functionality = {p:{} for p in layers}
+    #         uncorrected_results = {}
+    #         if print_cmd:
+    #             print("Judgment: ")
+    #         for p in layers:
+    #             if print_cmd:
+    #                 print("Layer-%d"%(p))
+    #             neg_p = [x for x in layers if x != p]
+    #             functionality[p] = create_judgment_matrix(interdep_net, T, neg_p, v_r_applied,
+    #                                                       judgment_type=judgment_type)
+    #             # Make decision based on judgments before communication
+    #             indp_results = indp.indp(interdep_net, v_r_applied[p-1], 1, layers=layers,
+    #                             controlled_layers=[p], functionality=functionality[p],
+    #                             print_cmd=print_cmd, time_limit=10*60)
+    #             # Save models for re-evaluation after communication
+    #             uncorrected_results[p] = indp_results[1]
+    #             # Save results of decisions based on judgments
+    #             dindp_results[p].extend(indp_results[1], t_offset=i+1)
+    #             # Save models to file
+    #             if save_jc_model:
+    #                 indp.save_INDP_model_to_file(indp_results[0], output_dir+"/Model", i+1, p)
+    #             # Modify network to account for recovery and calculate components.
+    #             indp.apply_recovery(interdep_net, dindp_results[p], i+1)
+    #             dindp_results[p].add_components(i+1, indputils.INDPComponents.calculate_components(indp_results[0], interdep_net, layers=[p]))
+    #         # Re-evaluate judgments based on other agents' decisions
+    #         if print_cmd:
+    #             print("Re-evaluation: ")
+    #         for p in layers:
+    #             if print_cmd:
+    #                 print("Layer-%d"%(p))
+    #             indp_results_real, realizations = realized_performance(interdep_net,
+    #                             uncorrected_results[p], functionality=functionality[p],
+    #                             T=1, layers=layers, controlled_layers=[p], print_cmd=print_cmd)
+    #             dindp_results_real[p].extend(indp_results_real[1], t_offset=i+1)
+    #             if save_jc_model:
+    #                 indp.save_INDP_model_to_file(indp_results_real[0], output_dir+"/Model",
+    #                                              i+1, p, suffix='Real')
+    #                 output_dir_judgments = output_dir + '/judgments'
+    #                 write_judgments_csv(output_dir_judgments, realizations,
+    #                                     sample_num=params["SIM_NUMBER"],
+    #                                     agent=p, time_step=i+1, suffix="")
+    #     # Calculate sum of costs
+    #     dindp_sum, dindp_real_sum = compute_cost_sum(dindp_results, dindp_results_real,
+    #                                                  interdep_net, indp_results_initial,
+    #                                                  num_iterations, layers)
+    #     output_dir_auction = output_dir + '/auctions'
+    #     if auction_type:
+    #         write_auction_csv(output_dir_auction, res_allocate, res_alloc_time,
+    #                           poa, valuations, sample_num=params["SIM_NUMBER"], suffix="")
+    #     else:
+    #         write_auction_csv(output_dir_auction, res_allocate, res_alloc_time,
+    #                           sample_num=params["SIM_NUMBER"], suffix="")
+    #     # Save results of D-iINDP run to file.
+    #     if save_jc:
+    #         output_dir_agents = output_dir + '/agents'
+    #         if not os.path.exists(output_dir):
+    #             os.makedirs(output_dir)
+    #         if not os.path.exists(output_dir_agents):
+    #             os.makedirs(output_dir_agents)
+    #         for p in layers:
+    #             dindp_results[p].to_csv(output_dir_agents, params["SIM_NUMBER"],
+    #                                     suffix=str(p))
+    #             dindp_results_real[p].to_csv(output_dir_agents, params["SIM_NUMBER"],
+    #                                          suffix='Real_'+str(p))
+    #         dindp_sum.to_csv(output_dir, params["SIM_NUMBER"], suffix='sum')
+    #         dindp_real_sum.to_csv(output_dir, params["SIM_NUMBER"], suffix='Real_sum')
+    # else:
+    #     # td-INDP formulations. Includes "DELTA_T" parameter for sliding windows to increase
+    #     # efficiency. (to be added)
+    #     print('hahahaha')
 
 def compute_cost_sum(dindp_results, dindp_results_real, interdep_net,
                      indp_results_initial, num_iterations, layers):
@@ -330,34 +409,32 @@ def realized_performance(N, indp_results, functionality, layers, T=1,
             flow_cost+node_cost
     return indp_results_real, realizations
 
-def create_judgment_matrix(N, T, layers, v_r=[], judgment_type="OPTIMISTIC"):
+def create_judgment_matrix(obj, layers_tbj, T=1, judge_type_forced=None):
     '''
     Creates a functionality map for input into the functionality parameter in the indp function.
 
     Parameters
     ----------
-    N : InfrastructureNetwork
-         An InfrastructureNetwork instance (created in infrastructure.py).
-    T : int
-        Number of timesteps to optimize over..
-    layers : list
-        Layer IDs of N included in the optimization..
-    v_r : TYPE, optional
-        DESCRIPTION. The default is [].
-    judgment_type : str, optional
-        If no actions are provided, assigns a default functionality.
-        Options are: "OPTIMISTIC",  "PESSIMISTIC", etc.
-        The default is "OPTIMISTIC".
+    obj : JC_model instance
+        DESCRIPTION.
+    layers_tbj : list
+        List of layers to be judged, which can be different 
+        from all layers of the network or controlled layers.
+    T : int, optional
+        DESCRIPTION. The default is 1
 
     Returns
     -------
-    functionality : dict
-        A functionality dictionary used for input into indp.
+    functionality : TYPE
+        DESCRIPTION.
 
     '''
+    judge_type = obj.judge_type
+    if judge_type_forced:
+        judge_type = judge_type_forced
     functionality = {}
-    g_prime_nodes = [n[0] for n in N.G.nodes(data=True) if n[1]['data']['inf_data'].net_id in layers]
-    g_prime = N.G.subgraph(g_prime_nodes)
+    g_prime_nodes = [n[0] for n in obj.net.G.nodes(data=True) if n[1]['data']['inf_data'].net_id in layers_tbj]
+    g_prime = obj.net.G.subgraph(g_prime_nodes)
     N_prime = [n for n in g_prime.nodes(data=True) if n[1]['data']['inf_data'].functionality == 0.0]
     N_prime_nodes = [n[0] for n in g_prime.nodes(data=True) if n[1]['data']['inf_data'].functionality == 0.0]
     for t in range(T):
@@ -368,21 +445,19 @@ def create_judgment_matrix(N, T, layers, v_r=[], judgment_type="OPTIMISTIC"):
         # Updates the bernoulli experiments (not the resoration probabilities) for each t
         interdep_src = []
         det_priority = []
-        if judgment_type in ['DEMAND', 'DET-DEMAND']:
-            priority_list = demand_based_priority_list(N, layers)
-            if judgment_type == 'DET-DEMAND':
+        if judge_type in ['DEMAND', 'DET-DEMAND']:
+            priority_list = demand_based_priority_list(obj.net, layers_tbj)
+            if judge_type == 'DET-DEMAND':
                 sorted_priority_list = sorted(priority_list.items(), key=operator.itemgetter(1),
                                               reverse=True)
-                num_layers = 1 #len(layers)
-                if isinstance(v_r, (int)):
-                    res_cap = int(v_r/num_layers)
-                else:
-                    res_cap = int(sum(v_r)/num_layers)
-                for u, _, a in N.G.edges(data=True):
-                    if a['data']['inf_data'].is_interdep and u[1] in layers:
+                num_layers = 1 #len(obj.layers)+1
+                res_cap = obj.resource.sum_resource//num_layers
+                for u, _, a in obj.net.G.edges(data=True):
+                    if a['data']['inf_data'].is_interdep and u[1] in layers_tbj:
                         interdep_src.append(u)
                 for i in sorted_priority_list:
-                    if (i[0] in N_prime_nodes) and (len(det_priority) < (t+1)*res_cap) and (i[0] in interdep_src):
+                    if (i[0] in N_prime_nodes) and (len(det_priority) < (t+1)*res_cap) and\
+                        (i[0] in interdep_src):
                         det_priority.append(i[0])
         # Nodes that are judged/known to be functional for t_p<t
         for t_p in range(t):
@@ -391,51 +466,52 @@ def create_judgment_matrix(N, T, layers, v_r=[], judgment_type="OPTIMISTIC"):
                     functional_nodes.append(key)
         for n, d in g_prime.nodes(data=True):
             #print "layers=", layers, "n=", n
-            if d['data']['inf_data'].net_id in layers:
-                # Undamged Nodes
+            if d['data']['inf_data'].net_id in layers_tbj:
+                # Undamged Nodes don't get judged
                 if g_prime.has_node(n) and (n, d) not in N_prime:
                     functionality[t][n] = 1.0
-                # Nodes that are judged/known to be functional for t_p<t
+                # Nodes in functional nodes don't get judged
                 elif n in functional_nodes:
                     functionality[t][n] = 1.0
                 # Judgments
                 else:
-                    if judgment_type == "OPTIMISTIC":
+                    if judge_type == "OPTIMISTIC":
                         functionality[t][n] = 1.0
-                    elif judgment_type == "PESSIMISTIC":
+                    elif judge_type == "PESSIMISTIC":
                         functionality[t][n] = 0.0
-                    elif judgment_type == "DEMAND":
+                    elif judge_type == "DEMAND":
                         functionality[t][n] = priority_list[n][1]
-                    elif judgment_type == "DET-DEMAND":
+                    elif judge_type == "DET-DEMAND":
                         if n in det_priority:
-                            functionality[t][n] = 1.0
+                            functionality[t][n] = 1
                         else:
                             functionality[t][n] = 0.0
-                    elif judgment_type == "RANDOM":
+                    elif judge_type == "RANDOM":
                         functionality[t][n] = np.random.choice([0, 1], p=[0.5, 0.5])
-                    elif judgment_type == "REALISTIC":
+                    elif judge_type == "REALISTIC":
                         functionality[t][n] = d['data']['inf_data'].functionality
+                    elif judge_type == "BHM":
+                        pass #!!! Add BHM Judgment
                     else:
                         if not n in functionality[t]:
                             functionality[t][n] = 0.0
     return functionality
 
-def demand_based_priority_list(N, layers):
+def demand_based_priority_list(N, layers_tbj):
     '''
-    This function generates the prioirt list for the demand-based guess
-    Here, an agent guesses that the (dependee) node in the
-    other network is repaired until the next time step with the probability that
-    is equal to the demand/supply value of the node divided by the maximum value
-    of demand/supply in the other network
-    Also, based on the above probability, a guess is generated for the node in the
-    other network.
+    This function generates the prioirt list for the demand-based judgment
+    Here, an agent judges that the dependee node in the dependee network is repaired
+    until the next time step with the probability that is equal to the demand/supply
+    value of the dependee node divided by the maximum demand/supply value in the dependee
+    network. Also, based on the probability, a judgment is generated for the dependee node.
 
     Parameters
     ----------
-    N : TYPE
+    N : InfrastructureNetwork instance
         DESCRIPTION.
-    layers : TYPE
-        DESCRIPTION.
+    layers_tbj : list
+        List of layers to be judged, which can be different 
+        from all layers of the network or controlled layers.
 
     Returns
     -------
@@ -443,292 +519,237 @@ def demand_based_priority_list(N, layers):
         DESCRIPTION.
 
     '''
-    g_prime_nodes = {}
-    g_prime = {}
-    com = {}
     max_values = {}
     prob = {}
-    for p in layers:
-        com[p] = [0] #assuming single commodity for all layers
-        for l in com[p]:
-            g_prime_nodes[p] = [n[0] for n in N.G.nodes(data=True) if n[1]['data']['inf_data'].net_id == p]
-            g_prime[p] = N.G.subgraph(g_prime_nodes[p])
-            max_values[p, l, 'Demand'] = min([n[1]['data']['inf_data'].demand for n in g_prime[p].nodes(data=True)])
-            max_values[p, l, 'Supply'] = max([n[1]['data']['inf_data'].demand for n in g_prime[p].nodes(data=True)])
-            for n in g_prime[p].nodes(data=True):
-                if not n[0] in prob.keys():
-                    p = []
-                    for ll in com[p]:
-                        value = n[1]['data']['inf_data'].demand
-                        if value > 0:
-                            p.append(value/max_values[p, ll, 'Supply'])
-                        elif value <= 0:
-                            p.append(value/max_values[p, ll, 'Demand'])
-                        else:
-                            print('Are you kidding me???')
-                    prob[n[0]] = [max(p), np.random.choice([0, 1], p=[1-max(p), max(p)])]
+    for l in layers_tbj:
+        g_lyr_nodes = [n[0] for n in N.G.nodes(data=True) if n[1]['data']['inf_data'].net_id == l]
+        g_lyr = N.G.subgraph(g_lyr_nodes)
+        max_values[l, 'Demand'] = min([n[1]['data']['inf_data'].demand for n in g_lyr.nodes(data=True)])
+        max_values[l, 'Supply'] = max([n[1]['data']['inf_data'].demand for n in g_lyr.nodes(data=True)])
+        for n in g_lyr.nodes(data=True):
+            prob_node = 0.5
+            if not n[0] in prob.keys():
+                value = n[1]['data']['inf_data'].demand
+                if value > 0:
+                    prob_node = value/max_values[l, 'Supply']
+                elif value <= 0:
+                    prob_node = value/max_values[l, 'Demand']
+            prob[n[0]] = [prob_node, np.random.choice([0, 1], p=[1-prob_node, prob_node])]
     return prob
 
-def auction_resources(v_r, params, layers, judgment_type="OPTIMISTIC", auction_type="MDA",
-                      valuation_type='DTC', print_cmd=True):
+def auction_resources(obj, itr, print_cmd=True):
     '''
-    allocate resources based on different types of auction and valuatoin.
-    :param auction_type: Type of the auction: MDA(Multiunit Descending (First-price, Dutch) auction),
-    MAA(Multiunit Ascending (Second-price, English) auction),  MCA(Multiunit Combinatorial auction).
+    allocate resources based on given types of auction and valuatoin.
 
     Parameters
     ----------
-    v_r : TYPE
+    obj : JC_model instance
         DESCRIPTION.
-    params : TYPE
-        DESCRIPTION.
-    layers : TYPE
-        DESCRIPTION.
-    judgment_type : TYPE, optional
-        DESCRIPTION. The default is "OPTIMISTIC".
-    auction_type : str, optional
-        Type of the auction: MDA (Multi-unit Descending Auction),
-        MAA (Multi-unit Ascending Auction), and MCA (Multi-unit Combinattorial Auction).
-        The default is "MDA".
-    valuation_type : str, optional
-        Type of the valuation: DTC (Differential Total Cost),
-        DTC_unifrom (DTC with uniform distribution), and MDDN (Max Demand Damaged Nodes).
-        The default is 'DTC'.
     print_cmd : bool, optional
-        If true, the results are printed to console. The default is True.
+        DESCRIPTION. The default is True.
 
     Returns
     -------
     None.
 
     '''
-    # Initialize failure scenario.
-    interdep_net = None
-    if "N" not in params:
-        interdep_net = indp.initialize_network(BASE_DIR="../data/INDP_7-20-2015/",
-                                               sim_number=params['SIM_NUMBER'],
-                                               magnitude=params["MAGNITUDE"])
-    else:
-        interdep_net = params["N"]
-    if "NUM_ITERATIONS" not in params:
-        params["NUM_ITERATIONS"] = 1
+    # Make a reference to the current auction_model instance
+    auc_model = obj.resource.auction_model
     #Compute Valuations
     if print_cmd:
-        print("Compute Valuations (" + valuation_type + ")")
-    valuation, optimal_valuation, valuation_time = compute_valuations(v_r, interdep_net,
-                                layers=layers, T=1, print_cmd=print_cmd,
-                                judgment_type=judgment_type, valuation_type=valuation_type)
-    #Auctioning
-    if print_cmd:
-        print("Auction (" + auction_type + ")")
-    start_time_auction = time.time()
-    resource_allocation = {p:[] for p in layers}
-    poa = {}
-    poa['optimal'] = optimal_valuation
-    poa['winner'] = []
-    sum_valuation = 0
-    if auction_type == "MDA":
-        cur_valuation = {v+1:{} for v in range(v_r)}
-        for v in range(v_r):
-            if print_cmd:
-                print("Resource-%d"%(v+1), end='')
-            for p in layers:
-                cur_valuation[v+1][p] = valuation[p][len(resource_allocation[p])]
-            winner = max(cur_valuation[v+1].items(), key=operator.itemgetter(1))[0]
-            poa['winner'].append(cur_valuation[v+1][winner])
-#            if cur_valuation[v+1][winner]==0:
-#                for x in layers:
-#                    if len(resource_allocation[x])==0:
-#                        winner = x
-#                        break
-##                if print_cmd:
-#                print "Player %d wins (generously)!" % winner
-#                sum_valuation += cur_valuation[v+1][winner]
-#                resource_allocation[winner].append(v+1)
-            if cur_valuation[v+1][winner] > 0:
-                if print_cmd:
-                    print("Player %d wins!" % winner)
-                sum_valuation += cur_valuation[v+1][winner]
-                resource_allocation[winner].append(v+1)
-            else:
-                if print_cmd:
-                    print("No auction winner!")
-    if auction_type == "MAA":
-        all_valuations = []
-        for p, value in valuation.items():
-            all_valuations.extend(value)
-        all_valuations.sort()
-        Q = {0:v_r*len(layers)}
-        q = {p:{0:v_r} for p in layers}
-        prc = {0: 0.0}
-        t = 0
-        while Q[t] > v_r:
-            t += 1
-            prc[t] = all_valuations[t-1]
-            Q[t] = 0.0
-            for p in layers:
-                q[p][t] = 0
-                for i in range(len(valuation[p])):
-                    if valuation[p][i] > prc[t]:
-                        q[p][t] += 1
-                    else:
-                        break
-                Q[t] += q[p][t]
-        sum_valuation = prc[t]*Q[t]
-        poa['winner'] = [prc[t] for v in range(int(Q[t]))]
-        if Q[t] < v_r:
-            for v in range(int(v_r-Q[t])):
-                poa['winner'].append(0.0)
-                if print_cmd:
-                    print("No auction winner for resource %d!" %(Q[t]+v+1))
-        for p in layers:
-            resource_allocation[p] = range(1, q[p][t]+1)
-    if auction_type == "MCA":
-        m = gurobipy.Model('auction')
-        m.setParam('OutputFlag', False)
-        # Add allocation variables and populate objective function.
-        for p in layers:
-            for v in range(v_r):
-                m.addVar(name='y_'+str(v+1)+", "+str(p), vtype=gurobipy.GRB.BINARY,
-                         obj=sum([-valuation[p][vv] for vv in range(v+1)]))
-        m.update()
-        # Add constraints
-        num_alloc_res = gurobipy.LinExpr()
-        for p in layers:
-            each_bidder_alloc = gurobipy.LinExpr()
-            for v in range(v_r):
-                num_alloc_res += m.getVarByName('y_'+str(v+1)+", "+str(p))*(v+1)
-                each_bidder_alloc += m.getVarByName('y_'+str(v+1)+", "+str(p))
-            m.addConstr(each_bidder_alloc, gurobipy.GRB.LESS_EQUAL, 1.0,
-                        "Bidder "+str(p)+" allocation")
-        m.addConstr(num_alloc_res, gurobipy.GRB.LESS_EQUAL, v_r,
-                    "Total number of resources")
-        #    print "Solving..."
-        m.update()
-        m.optimize()
-        for p in layers:
-            for v in range(v_r):
-                if m.getVarByName('y_'+str(v+1)+", "+str(p)).x == 1:
-                    resource_allocation[p] = range(1, v+2)
-                    for vv in range(v+1):
-                        poa['winner'].append(valuation[p][vv])
-        sum_valuation = sum(poa['winner'])
-#        m.write('model.lp')
-#        m.write('model.sol')
-    auction_time = time.time()-start_time_auction
-    if sum_valuation != 0:
-        poa['poa'] = optimal_valuation/sum_valuation
-    else:
-        poa['poa'] = -10
-    return resource_allocation, poa, valuation, auction_time, valuation_time
+        print('Compute Valuations: '+auc_model.valuation_type)
+    compute_valuations(obj, itr, print_cmd=print_cmd)
+#     #Auctioning
+#     if print_cmd:
+#         print("Auction (" + auction_type + ")")
+#     start_time_auction = time.time()
+#     resource_allocation = {p:[] for p in layers}
+#     poa = {}
+#     poa['optimal'] = optimal_valuation
+#     poa['winner'] = []
+#     sum_valuation = 0
+#     if auction_type == "MDA":
+#         cur_valuation = {v+1:{} for v in range(v_r)}
+#         for v in range(v_r):
+#             if print_cmd:
+#                 print("Resource-%d"%(v+1), end='')
+#             for p in layers:
+#                 cur_valuation[v+1][p] = valuation[p][len(resource_allocation[p])]
+#             winner = max(cur_valuation[v+1].items(), key=operator.itemgetter(1))[0]
+#             poa['winner'].append(cur_valuation[v+1][winner])
+# #            if cur_valuation[v+1][winner]==0:
+# #                for x in layers:
+# #                    if len(resource_allocation[x])==0:
+# #                        winner = x
+# #                        break
+# ##                if print_cmd:
+# #                print "Player %d wins (generously)!" % winner
+# #                sum_valuation += cur_valuation[v+1][winner]
+# #                resource_allocation[winner].append(v+1)
+#             if cur_valuation[v+1][winner] > 0:
+#                 if print_cmd:
+#                     print("Player %d wins!" % winner)
+#                 sum_valuation += cur_valuation[v+1][winner]
+#                 resource_allocation[winner].append(v+1)
+#             else:
+#                 if print_cmd:
+#                     print("No auction winner!")
+#     if auction_type == "MAA":
+#         all_valuations = []
+#         for p, value in valuation.items():
+#             all_valuations.extend(value)
+#         all_valuations.sort()
+#         Q = {0:v_r*len(layers)}
+#         q = {p:{0:v_r} for p in layers}
+#         prc = {0: 0.0}
+#         t = 0
+#         while Q[t] > v_r:
+#             t += 1
+#             prc[t] = all_valuations[t-1]
+#             Q[t] = 0.0
+#             for p in layers:
+#                 q[p][t] = 0
+#                 for i in range(len(valuation[p])):
+#                     if valuation[p][i] > prc[t]:
+#                         q[p][t] += 1
+#                     else:
+#                         break
+#                 Q[t] += q[p][t]
+#         sum_valuation = prc[t]*Q[t]
+#         poa['winner'] = [prc[t] for v in range(int(Q[t]))]
+#         if Q[t] < v_r:
+#             for v in range(int(v_r-Q[t])):
+#                 poa['winner'].append(0.0)
+#                 if print_cmd:
+#                     print("No auction winner for resource %d!" %(Q[t]+v+1))
+#         for p in layers:
+#             resource_allocation[p] = range(1, q[p][t]+1)
+#     if auction_type == "MCA":
+#         m = gurobipy.Model('auction')
+#         m.setParam('OutputFlag', False)
+#         # Add allocation variables and populate objective function.
+#         for p in layers:
+#             for v in range(v_r):
+#                 m.addVar(name='y_'+str(v+1)+", "+str(p), vtype=gurobipy.GRB.BINARY,
+#                          obj=sum([-valuation[p][vv] for vv in range(v+1)]))
+#         m.update()
+#         # Add constraints
+#         num_alloc_res = gurobipy.LinExpr()
+#         for p in layers:
+#             each_bidder_alloc = gurobipy.LinExpr()
+#             for v in range(v_r):
+#                 num_alloc_res += m.getVarByName('y_'+str(v+1)+", "+str(p))*(v+1)
+#                 each_bidder_alloc += m.getVarByName('y_'+str(v+1)+", "+str(p))
+#             m.addConstr(each_bidder_alloc, gurobipy.GRB.LESS_EQUAL, 1.0,
+#                         "Bidder "+str(p)+" allocation")
+#         m.addConstr(num_alloc_res, gurobipy.GRB.LESS_EQUAL, v_r,
+#                     "Total number of resources")
+#         #    print "Solving..."
+#         m.update()
+#         m.optimize()
+#         for p in layers:
+#             for v in range(v_r):
+#                 if m.getVarByName('y_'+str(v+1)+", "+str(p)).x == 1:
+#                     resource_allocation[p] = range(1, v+2)
+#                     for vv in range(v+1):
+#                         poa['winner'].append(valuation[p][vv])
+#         sum_valuation = sum(poa['winner'])
+# #        m.write('model.lp')
+# #        m.write('model.sol')
+#     auction_time = time.time()-start_time_auction
+#     if sum_valuation != 0:
+#         poa['poa'] = optimal_valuation/sum_valuation
+#     else:
+#         poa['poa'] = -10
+#     return resource_allocation, poa, valuation, auction_time, valuation_time
 
-def compute_valuations(v_r, interdep_net, layers, T=1, print_cmd=True, judgment_type="OPTIMISTIC",
-                       valuation_type='DTC', compute_optimal_valuation=False):
+def compute_valuations(obj, iteration, print_cmd=True, compute_optimal_valuation=False):
     '''
-    computes bidders' valuations for different number of resources
+    Computes bidders' valuations and bids for different number of resources
 
     Parameters
     ----------
-    v_r : TYPE
+    obj : JC_model instance
         DESCRIPTION.
-    interdep_net : TYPE
-        DESCRIPTION.
-    layers : TYPE
-        DESCRIPTION.
-    T : TYPE, optional
-        DESCRIPTION. The default is 1.
-    print_cmd : TYPE, optional
+    print_cmd : bool, optional
         DESCRIPTION. The default is True.
-    judgment_type : TYPE, optional
-        DESCRIPTION. The default is "OPTIMISTIC".
-    valuation_type : TYPE, optional
-        Type of the valuation: DTC (Differential Total Cost),
-        DTC_unifrom (DTC with uniform distribution), and MDDN (Max Demand Damaged Nodes).
-        The default is 'DTC'.
-    compute_optimal_valuation : TYPE, optional
+    compute_optimal_valuation : bool, optional
         DESCRIPTION. The default is False.
 
     Returns
     -------
-    valuation : TYPE
-        DESCRIPTION.
-    optimal_valuation : TYPE
-        DESCRIPTION.
-    valuation_time : TYPE
-        DESCRIPTION.
+    None.
 
     '''
     ### Calculating current total cost ###
+    time_limit = 2*60 #!!! Maybe adjusted
+    # Make a reference to the current auction_model instance
+    auct_model = obj.resource.auction_model
     current_total_cost = {}
-    for p in layers:
-        ###!!! check what v_r must be for det demand JC###
-        indp_results = indp.indp(interdep_net, v_r=0, T=1, layers=layers, controlled_layers=[p])
-        current_total_cost[p] = indp_results[1][0]['costs']['Total']
-    ### Optimal Valuation ###
+    for l in obj.layers:
+        current_total_cost[l] = obj.results_real.results_layer[l][iteration]['costs']['Total']
+    ### Optimal Valuation, which the optimal walfare value. Used to compute POA ###
     optimal_valuation = 1.0
     if compute_optimal_valuation:
-        indp_results = indp.indp(interdep_net, v_r=0, T=1, layers=layers, controlled_layers=layers)
-        optimal_total_cost_current = indp_results[1][0]['costs']['Total']
-        indp_results = indp.indp(interdep_net, v_r=v_r, T=1, layers=layers, controlled_layers=layers)
-        optimal_total_cost = indp_results[1][0]['costs']['Total']
-        optimal_valuation = optimal_total_cost_current - optimal_total_cost
-    valuation = {p:[] for p in layers}
-    valuation_time = []
-    if T == 1: # For iterative INDP formulation
-        for p in layers:
-            start_time_val = time.time()
-            if print_cmd:
-                print("Bidder-%d"%(p))
-            if valuation_type == 'DTC':
-                for v in range(v_r):
-                    indp_results = {}
-                    neg_p = [x for x in layers if x != p]
-                    functionality = create_judgment_matrix(interdep_net, T, neg_p, v_r,
-                                                           judgment_type=judgment_type)
-                    ###!!! check what v_r must be for det demand JC###
-                    indp_results = indp.indp(interdep_net, v_r=v+1, T=1, layers=layers,
-                                             controlled_layers=[p], functionality=functionality,
-                                             print_cmd=print_cmd, time_limit=2*60)
-                    new_total_cost = indp_results[1][0]['costs']['Total']
-                    if indp_results[1][0]['actions'] != []:
-                        valuation[p].append(current_total_cost[p]-new_total_cost)
-                        current_total_cost[p] = new_total_cost
-                    else:
-                        valuation[p].append(0.0)
-            elif valuation_type == 'DTC_uniform':
-                for v in range(v_r):
-                    indp_results = {}
-                    total_cost_bounds = []
-                    for jt in ["PESSIMISTIC", "OPTIMISTIC"]:
-                        neg_p = [x for x in layers if x != p]
-                        functionality = create_judgment_matrix(interdep_net, T, neg_p, v_r,
-                                                               judgment_type=jt)
-                        ###!!! check what v_r must be for det demand JC###
-                        indp_results = indp.indp(interdep_net, v_r=v+1, T=1, layers=layers,
-                                                 controlled_layers=[p], functionality=functionality,
-                                                 print_cmd=print_cmd, time_limit=2*60)
-                        total_cost_bounds.append(indp_results[1][0]['costs']['Total'])
-                    new_total_cost = np.random.uniform(min(total_cost_bounds),
-                                                       max(total_cost_bounds), 1)[0]
-                    if indp_results[1][0]['actions'] != []:
-                        valuation[p].append(current_total_cost[p]-new_total_cost)
-                    else:
-                        valuation[p].append(0.0)
-            elif valuation_type == 'MDDN':
-                g_prime_nodes = [n[0] for n in interdep_net.G.nodes(data=True) if n[1]['data']['inf_data'].net_id == p]
-                g_prime = interdep_net.G.subgraph(g_prime_nodes)
-                dem_damaged_nodes = [abs(n[1]['data']['inf_data'].demand) for n in g_prime.nodes(data=True) if n[1]['data']['inf_data'].repaired == 0.0]
-                dem_damaged_nodes_reverse_sorted = np.sort(dem_damaged_nodes)[::-1]
-                if len(dem_damaged_nodes) >= v_r:
-                    valuation[p] = dem_damaged_nodes_reverse_sorted[0:v_r].tolist()
-                if len(dem_damaged_nodes) < v_r:
-                    valuation[p] = dem_damaged_nodes_reverse_sorted[:].tolist()
-                    for _ in range(v_r-len(dem_damaged_nodes)):
-                        valuation[p].append(0.0)
-            else:
-                sys.exit("Wrong valuation type: "+valuation_type)
-            valuation_time.append(time.time()-start_time_val)
-    return valuation, optimal_valuation, valuation_time
+        current_optimal_tc = obj.results_real.results[iteration]['costs']['Total']
+        indp_results = indp.indp(obj.net, v_r=obj.resource.sum_resource, T=1,
+                                 layers=obj.layers, controlled_layers=obj.layers)
+        optimal_tc = indp_results[1][0]['costs']['Total']
+        optimal_valuation = current_optimal_tc - optimal_tc
+    for l in obj.layers:
+        start_time_val = time.time()
+        if print_cmd:
+            print("Bidder-%d"%(l))
+        if auct_model.valuation_type == 'DTC':
+            for v in range(obj.resource.sum_resource):
+                neg_p = [x for x in obj.layers if x != l]
+                functionality = create_judgment_matrix(obj, neg_p)
+                indp_results = indp.indp(obj.net, v_r=v+1, T=1, layers=obj.layers,
+                                         controlled_layers=[l], functionality=functionality,
+                                         print_cmd=print_cmd, time_limit=time_limit)
+                new_total_cost = indp_results[1][0]['costs']['Total']
+                if indp_results[1][0]['actions'] != []:
+                    auct_model.valuations[iteration+1][l][v+1] = current_total_cost[l]-new_total_cost
+                    current_total_cost[l] = new_total_cost
+                else:
+                    auct_model.valuations[iteration+1][l][v+1] = 0.0
+
+                if auct_model.bidder_type == 'truthful':
+                    auct_model.bids[iteration+1][l][v+1] = auct_model.valuations[iteration+1][l][v+1]
+        elif auct_model.valuation_type == 'DTC_uniform':
+            for v in range(obj.resource.sum_resource):
+                total_cost_bounds = []
+                for jt in ["PESSIMISTIC", "OPTIMISTIC"]:
+                    neg_p = [x for x in obj.layers if x != l]
+                    functionality = create_judgment_matrix(obj, neg_p, judge_type_forced=jt)
+                    indp_results = indp.indp(obj.net, v_r=v+1, T=1, layers=obj.layers,
+                                             controlled_layers=[l], functionality=functionality,
+                                             print_cmd=print_cmd, time_limit=time_limit)
+                    total_cost_bounds.append(indp_results[1][0]['costs']['Total'])
+                new_total_cost = np.random.uniform(min(total_cost_bounds),
+                                                   max(total_cost_bounds), 1)[0]
+                if current_total_cost[l]-new_total_cost > 0:
+                    auct_model.valuations[iteration+1][l][v+1] = current_total_cost[l]-new_total_cost
+                    current_total_cost[l] = new_total_cost
+                else:
+                    auct_model.valuations[iteration+1][l][v+1] = 0.0
+
+                if auct_model.bidder_type == 'truthful':
+                    auct_model.bids[iteration+1][l][v+1] = auct_model.valuations[iteration+1][l][v+1]
+        # elif valuation_type == 'MDDN':
+        #     g_prime_nodes = [n[0] for n in interdep_net.G.nodes(data=True) if n[1]['data']['inf_data'].net_id == l]
+        #     g_prime = interdep_net.G.subgraph(g_prime_nodes)
+        #     dem_damaged_nodes = [abs(n[1]['data']['inf_data'].demand) for n in g_prime.nodes(data=True) if n[1]['data']['inf_data'].repaired == 0.0]
+        #     dem_damaged_nodes_reverse_sorted = np.sort(dem_damaged_nodes)[::-1]
+        #     if len(dem_damaged_nodes) >= v_r:
+        #         valuation[l] = dem_damaged_nodes_reverse_sorted[0:v_r].tolist()
+        #     if len(dem_damaged_nodes) < v_r:
+        #         valuation[l] = dem_damaged_nodes_reverse_sorted[:].tolist()
+        #         for _ in range(v_r-len(dem_damaged_nodes)):
+        #             valuation[l].append(0.0)
+        # else:
+        #     sys.exit("Wrong valuation type: "+valuation_type)
+        # valuation_time.append(time.time()-start_time_val)
 
 def write_auction_csv(outdir, res_allocate, res_alloc_time, poa=None, valuations=None,
                       sample_num=1, suffix=""):
