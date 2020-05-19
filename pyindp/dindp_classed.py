@@ -10,55 +10,120 @@ import numpy as np
 import gurobipy
 import indp
 import indputils
-import copy
 
-class JC_model():
-    def __init__(self,id,params):
+class JcModel:
+    '''
+    Description
+    '''
+    def __init__(self, ide, params):
         #: Basic attributes
-        self.id = id
-        self.algo = self.set_id(params['ALGORITHM'])
+        self.id = ide
+        self.algo = self.set_algo(params['ALGORITHM'])
         self.layers = params['L']
         self.judge_type = params['JUDGMENT_TYPE']
         self.net = self.set_network(params)
-        self.time_steps = self.set_time_steps(params['T'],params['NUM_ITERATIONS'])
+        self.time_steps = self.set_time_steps(params['T'], params['NUM_ITERATIONS'])
         #: Resource allocation attributes
-        self.resource = resource_model(params, self.time_steps)
+        self.resource = ResourceModel(params, self.time_steps)
         self.res_alloc_type = self.resource.type
         self.v_r = self.resource.v_r
         #: Results attributes
-        self.ouput_dir = params["OUTPUT_DIR"]+'_L'+str(len(self.layers))+\
-            '_m'+str(params["MAGNITUDE"])+"_v"+str(self.resource.sum_resource)+\
-            '_'+self.res_alloc_type
-        if self.res_alloc_type == 'auction':
-            self.ouput_dir += '_'+self.resource.auction_model.auction_type+\
-                '_'+self.resource.auction_model.valuation_type
+        self.ouput_dir = self.set_out_dir(params['OUTPUT_DIR'], params['MAGNITUDE'])
         self.results = indputils.INDPResults(self.layers)
         self.results_real = indputils.INDPResults(self.layers)
-    def set_id(self,algorithm):
+    def set_out_dir(self, root, mag):
+        '''
+        
+        Parameters
+        ----------
+        root : TYPE
+            DESCRIPTION.
+        mag : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        ouput_dir : TYPE
+            DESCRIPTION.
+
+        '''
+        ouput_dir = root+'_L'+str(len(self.layers))+'_m'+str(mag)+"_v"+\
+            str(self.resource.sum_resource)+'_'+self.res_alloc_type
+        if self.res_alloc_type == 'auction':
+            ouput_dir += '_'+self.resource.auction_model.auction_type+\
+                '_'+self.resource.auction_model.valuation_type
+        return ouput_dir
+    @staticmethod
+    def set_algo(algorithm):
+        '''
+
+        Parameters
+        ----------
+        algorithm : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        str
+            DESCRIPTION.
+
+        '''
         if algorithm == 'JC':
             return 'JC'
         else:
             sys.exit('Wrong Algorithm. It should be JC.')
-    def set_network(self,params):
+    def set_network(self, params):
+        '''
+
+        Parameters
+        ----------
+        params : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        '''
         if "N" in params:
             return copy.deepcopy(params["N"]) #!!! deepcopy
         else:
             sys.exit('No initial network object for: '+self.judge_type+', '+\
-                     self.res_alloc_type+', '+self.valuation_type)
-    def set_time_steps(self,T,num_iter):
+                     self.res_alloc_type)
+    @staticmethod
+    def set_time_steps(T, num_iter):
+        '''
+
+        Parameters
+        ----------
+        T : TYPE
+            DESCRIPTION.
+        num_iter : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        num_iter : TYPE
+            DESCRIPTION.
+
+        '''
         if T == 1:
             return num_iter
         else: #!!! to be modified in futher expansions
             sys.exit('JC currently only supports iINDP, not td_INDP.')
 
-class resource_model():
+class ResourceModel:
+    '''
+    DESCRIPTION
+    '''
     def __init__(self, params, time_steps):
         self.t_steps = time_steps
-        self.time = {t+1:0.0 for t in range(self.t_steps)}
-        self.v_r = {t+1:{} for t in range(self.t_steps)}
+        # self.time = {t+1:0.0 for t in range(self.t_steps)}
+        self.v_r = {t+1:{l:0.0 for l in params['L']} for t in range(self.t_steps)}
         if params['RES_ALLOC_TYPE'] in ["MDA", "MAA", "MCA"]:
             self.type = 'auction'
-            self.auction_model = auction_model(params, self.t_steps)
+            self.auction_model = AuctionModel(params, self.t_steps)
             self.sum_resource = params['V']
         elif params['RES_ALLOC_TYPE'] == "UNIFORM":
             self.type = 'uniform'
@@ -68,21 +133,44 @@ class resource_model():
             self.set_lf_res(params)
         else:
             sys.exit('Unsupported resource allocation type: '+params['RES_ALLOC_TYPE'])
-    def set_uniform_res(self,params):
+    def set_uniform_res(self, params):
+        '''
+
+        Parameters
+        ----------
+        params : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
         if isinstance(params['V'], (int)):
             self.sum_resource = params['V']
             for t in range(self.t_steps):
-                for l in params['L']:
-                    v_r_uni = {x:self.sum_resource//len(params['L']) for x in params['L']}
-                    rnd_idx = np.random.choice(params['L'], self.sum_resource%len(params['L']),
-                                               replace=False)
-                    for x in rnd_idx:
-                        v_r_uni[x] += 1
-                    self.v_r[t+1] = v_r_uni
+                v_r_uni = {x:self.sum_resource//len(params['L']) for x in params['L']}
+                rnd_idx = np.random.choice(params['L'], self.sum_resource%len(params['L']),
+                                           replace=False)
+                for x in rnd_idx:
+                    v_r_uni[x] += 1
+                self.v_r[t+1] = v_r_uni
         else:
             sys.exit('Number of resources is an integer for the resource allocation type UNIFORM.')
-    def set_lf_res(self,params):
-        try: 
+    def set_lf_res(self, params):
+        '''
+
+        Parameters
+        ----------
+        params : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+        try:
             len(params['V']) == len(params['L'])
         except:
             sys.exit('Length of resource vector and layer vector should be the same for '+\
@@ -92,174 +180,204 @@ class resource_model():
             for l in params['L']:
                 self.v_r[t+1][l] = params['V'][params['L'].index(l)]
 
-class auction_model():
-    def __init__(self,params, time_steps):
+class AuctionModel():
+    '''
+    DESCRIPTION
+    '''
+    def __init__(self, params, time_steps):
         self.auction_type = params['RES_ALLOC_TYPE']
         self.valuation_type = params['VALUATION_TYPE']
         self.bidder_type = 'truthful'
         self.winners = {t+1:{} for t in range(time_steps)}
         self.win_bids = {t+1:{} for t in range(time_steps)}
-        self.bids = {t+1:{x:{} for x in params['L']} for t in range(time_steps)}
-        self.valuations = {t+1:{x:{} for x in params['L']} for t in range(time_steps)}
-        self.valuation_time = {t+1:{x:0.0 for x in params['L']} for t in range(time_steps)}
+        self.win_prices = {t+1:{} for t in range(time_steps)}
+        self.bids = {t+1:{l:{} for l in params['L']} for t in range(time_steps)}
+        self.valuations = {t+1:{l:{} for l in params['L']} for t in range(time_steps)}
+        self.valuation_time = {t+1:{l:0.0 for l in params['L']} for t in range(time_steps)}
         self.auction_time = {t+1:0.0 for t in range(time_steps)}
         self.poa = {t+1:0.0 for t in range(time_steps)}
-
     def bidding(self, time_step):
-        for l, lval in self.valuations[time_step].items():
-            for v, vval in lval.items():
-                if self.bidder_type == 'truthful':
-                    self.bids[time_step][l][v] = self.valuations[time_step][l][v]
-
-    def auction_resources(self, obj, time_step, print_cmd=True, compute_poa=False):
         '''
-        allocate resources based on given types of auction and valuatoin.
-    
+
         Parameters
         ----------
-        obj : JC_model instance
+        time_step : TYPE
             DESCRIPTION.
-        print_cmd : bool, optional
-            DESCRIPTION. The default is True.
-    
+
         Returns
         -------
         None.
-    
+
+        '''
+        for l, lval in self.valuations[time_step].items():
+            for v, vval in lval.items():
+                if self.bidder_type == 'truthful':
+                    self.bids[time_step][l][v] = vval
+    def auction_resources(self, obj, time_step, print_cmd=True, compute_poa=False):
+        '''
+        allocate resources based on given types of auction and valuatoin.
+
+        Parameters
+        ----------
+        obj : JcModel
+            DESCRIPTION.
+        time_step : int
+            DESCRIPTION.
+        print_cmd : bool, optional
+            DESCRIPTION. The default is True.
+        compute_poa : bool, optional
+            DESCRIPTION. The default is False.
+
+        Returns
+        -------
+        None.
+
         '''
         #: Compute Valuations
         if print_cmd:
             print('Compute Valuations: '+self.valuation_type)
         self.compute_valuations(obj, time_step, print_cmd=print_cmd,
                                 compute_optimal_valuation=compute_poa)
+        #: Bidding
+        self.bidding(time_step)
         #: Auctioning
         if print_cmd:
-            print("Auction:" +self.auction_type+", Resource ", end='')
+            print("Auction: " +self.auction_type)
         start_time_auction = time.time()
         if self.auction_type == "MDA":
-            for v in range(self.sum_resource):
+            for v in range(obj.resource.sum_resource):
                 if print_cmd:
-                    print(str(v+1), end='')
-                cur_valuation = {l:self.valuations[time_step][l][v+1] for l in self.layers}
-                winner = max(cur_valuation.items(), key=operator.itemgetter(1))[0]
-                self.winners[time_step][v+1] = cur_valuation[winner]
-    #            if cur_valuation[v+1][winner]==0:
-    #                for x in layers:
-    #                    if len(resource_allocation[x])==0:
-    #                        winner = x
-    #                        break
-    ##                if print_cmd:
-    #                print "Player %d wins (generously)!" % winner
-    #                sum_valuation += cur_valuation[v+1][winner]
-    #                resource_allocation[winner].append(v+1)
-                if cur_valuation[winner] > 0:
+                    print('Resource '+str(v+1)+': ', end='')
+                cur_bid = {l:self.bids[time_step][l][obj.resource.v_r[time_step][l]+1]\
+                           for l in obj.layers}
+                winner = max(cur_bid.items(), key=operator.itemgetter(1))[0]
+                self.winners[time_step][v+1] = winner
+                self.win_bids[time_step][v+1] = cur_bid[winner]
+                self.win_prices[time_step][v+1] = cur_bid[winner]
+                if cur_bid[winner] > 0:
                     if print_cmd:
                         print("Player %d wins!" % winner)
-                    sum_valuation += cur_valuation[v+1][winner]
-                    resource_allocation[winner].append(v+1)
+                    obj.resource.v_r[time_step][winner] += 1
                 else:
                     if print_cmd:
                         print("No auction winner!")
-    #     if auction_type == "MAA":
-    #         all_valuations = []
-    #         for p, value in valuation.items():
-    #             all_valuations.extend(value)
-    #         all_valuations.sort()
-    #         Q = {0:v_r*len(layers)}
-    #         q = {p:{0:v_r} for p in layers}
-    #         prc = {0: 0.0}
-    #         t = 0
-    #         while Q[t] > v_r:
-    #             t += 1
-    #             prc[t] = all_valuations[t-1]
-    #             Q[t] = 0.0
-    #             for p in layers:
-    #                 q[p][t] = 0
-    #                 for i in range(len(valuation[p])):
-    #                     if valuation[p][i] > prc[t]:
-    #                         q[p][t] += 1
-    #                     else:
-    #                         break
-    #                 Q[t] += q[p][t]
-    #         sum_valuation = prc[t]*Q[t]
-    #         poa['winner'] = [prc[t] for v in range(int(Q[t]))]
-    #         if Q[t] < v_r:
-    #             for v in range(int(v_r-Q[t])):
-    #                 poa['winner'].append(0.0)
-    #                 if print_cmd:
-    #                     print("No auction winner for resource %d!" %(Q[t]+v+1))
-    #         for p in layers:
-    #             resource_allocation[p] = range(1, q[p][t]+1)
-    #     if auction_type == "MCA":
-    #         m = gurobipy.Model('auction')
-    #         m.setParam('OutputFlag', False)
-    #         # Add allocation variables and populate objective function.
-    #         for p in layers:
-    #             for v in range(v_r):
-    #                 m.addVar(name='y_'+str(v+1)+", "+str(p), vtype=gurobipy.GRB.BINARY,
-    #                          obj=sum([-valuation[p][vv] for vv in range(v+1)]))
-    #         m.update()
-    #         # Add constraints
-    #         num_alloc_res = gurobipy.LinExpr()
-    #         for p in layers:
-    #             each_bidder_alloc = gurobipy.LinExpr()
-    #             for v in range(v_r):
-    #                 num_alloc_res += m.getVarByName('y_'+str(v+1)+", "+str(p))*(v+1)
-    #                 each_bidder_alloc += m.getVarByName('y_'+str(v+1)+", "+str(p))
-    #             m.addConstr(each_bidder_alloc, gurobipy.GRB.LESS_EQUAL, 1.0,
-    #                         "Bidder "+str(p)+" allocation")
-    #         m.addConstr(num_alloc_res, gurobipy.GRB.LESS_EQUAL, v_r,
-    #                     "Total number of resources")
-    #         #    print "Solving..."
-    #         m.update()
-    #         m.optimize()
-    #         for p in layers:
-    #             for v in range(v_r):
-    #                 if m.getVarByName('y_'+str(v+1)+", "+str(p)).x == 1:
-    #                     resource_allocation[p] = range(1, v+2)
-    #                     for vv in range(v+1):
-    #                         poa['winner'].append(valuation[p][vv])
-    #         sum_valuation = sum(poa['winner'])
-    # #        m.write('model.lp')
-    # #        m.write('model.sol')
-    #     auction_time = time.time()-start_time_auction
-    #     if sum_valuation != 0:
-    #         poa['poa'] = optimal_valuation/sum_valuation
-    #     else:
-    #         poa['poa'] = -10
-    #     return resource_allocation, poa, valuation, auction_time, valuation_time
-    
+        if self.auction_type == "MAA":
+            all_bids = []
+            for l, lval in self.bids[time_step].items():
+                for v, vval in lval.items():
+                    all_bids.append(vval)
+            all_bids.sort()
+            Q = obj.resource.sum_resource*len(obj.layers)
+            q = {l:obj.resource.sum_resource for l in obj.layers}
+            price = 0.0
+            while Q > obj.resource.sum_resource:
+                price = all_bids[0]
+                Q = 0
+                for l in obj.layers:
+                    q[l] = 0
+                    for x, val in self.bids[time_step][l].items():
+                        if val > price:
+                            q[l] += 1
+                        else:
+                            break
+                    Q += q[l]
+                all_bids = [x for x in all_bids if x != price]
+            num_assigned_res = 0
+            for l in obj.layers:
+                obj.resource.v_r[time_step][l] = q[l]
+                for v in range(q[l]):
+                    if print_cmd:
+                        print('Resource '+str(num_assigned_res+1)+': Player '+\
+                              str(l)+' wins!')
+                    self.winners[time_step][num_assigned_res+1] = l
+                    self.win_bids[time_step][num_assigned_res+1] = self.bids[time_step][l][v+1]
+                    self.win_prices[time_step][num_assigned_res+1] = price
+                    num_assigned_res += 1
+            if Q < obj.resource.sum_resource:
+                for v in range(int(obj.resource.sum_resource-Q)):
+                    if print_cmd:
+                        print('Resource '+str(Q+v+1)+': No auction winner!')
+        if self.auction_type == "MCA":
+            m = gurobipy.Model('auction')
+            m.setParam('OutputFlag', False)
+            # Add allocation variables and populate objective function.
+            for l in obj.layers:
+                for v in range(obj.resource.sum_resource):
+                    m.addVar(name='y_'+str(v+1)+", "+str(l), vtype=gurobipy.GRB.BINARY,
+                             obj=sum([-self.bids[time_step][l][vv] for vv in range(1, v+2)]))
+            m.update()
+            # Add constraints
+            num_alloc_res = gurobipy.LinExpr()
+            for l in obj.layers:
+                each_bidder_alloc = gurobipy.LinExpr()
+                for v in range(obj.resource.sum_resource):
+                    num_alloc_res += m.getVarByName('y_'+str(v+1)+", "+str(l))*(v+1)
+                    each_bidder_alloc += m.getVarByName('y_'+str(v+1)+", "+str(l))
+                m.addConstr(each_bidder_alloc, gurobipy.GRB.LESS_EQUAL, 1.0,
+                            "Bidder "+str(l)+" allocation")
+            m.addConstr(num_alloc_res, gurobipy.GRB.LESS_EQUAL, obj.resource.sum_resource,
+                        "Total number of resources")
+            m.update()
+            m.optimize()
+            # m.write('model.lp')
+            # m.write('model.sol')
+            num_assigned_res = 0
+            for l in obj.layers:
+                for v in range(obj.resource.sum_resource):
+                    if m.getVarByName('y_'+str(v+1)+", "+str(l)).x == 1:
+                        obj.resource.v_r[time_step][l] = v+1
+                        for vv in range(v+1):
+                            if print_cmd:
+                                print('Resource '+str(num_assigned_res+1)+': Player '+\
+                                      str(l)+' wins!')
+                            self.winners[time_step][num_assigned_res+1] = l
+                            self.win_bids[time_step][num_assigned_res+1] = \
+                                self.bids[time_step][l][vv+1]
+                            self.win_prices[time_step][num_assigned_res+1] = \
+                                self.bids[time_step][l][vv+1]
+                            num_assigned_res += 1
+        self.auction_time[time_step] = time.time()-start_time_auction
+        if compute_poa:
+            winners_valuations = []
+            for v, winner in self.winners[time_step].items():
+                winners_valuations.append(self.valuations[time_step][winner][v])
+            if sum(winners_valuations) != 0:
+                self.poa[time_step] = self.poa[time_step]/sum(winners_valuations)
+            else:
+                self.poa[time_step] = 'nan'
     def compute_valuations(self, obj, t_step, print_cmd=True, compute_optimal_valuation=False):
         '''
         Computes bidders' valuations and bids for different number of resources
-    
+
         Parameters
         ----------
-        obj : JC_model instance
+        obj : JcModel instance
+            DESCRIPTION.
+        t_step : int
             DESCRIPTION.
         print_cmd : bool, optional
             DESCRIPTION. The default is True.
         compute_optimal_valuation : bool, optional
             DESCRIPTION. The default is False.
-    
+
         Returns
         -------
         None.
-    
+
         '''
-        ### Calculating current total cost ###
+        #: Calculating current total cost ###
         time_limit = 2*60 #!!! Maybe adjusted
         current_total_cost = {}
         for l in obj.layers:
             current_total_cost[l] = obj.results_real.results_layer[l][t_step-1]['costs']['Total']
-        ### Optimal Valuation, which the optimal walfare value. Used to compute POA ###
-        optimal_valuation = 1.0
+        #: Optimal Valuation, which the optimal walfare value. Used to compute POA ###
         if compute_optimal_valuation:
             current_optimal_tc = obj.results_real.results[t_step-1]['costs']['Total']
             indp_results = indp.indp(obj.net, v_r=obj.resource.sum_resource, T=1,
                                      layers=obj.layers, controlled_layers=obj.layers)
             optimal_tc = indp_results[1][0]['costs']['Total']
             self.poa[t_step] = current_optimal_tc - optimal_tc
+        #: Compute valuations
         for l in obj.layers:
             start_time_val = time.time()
             if print_cmd:
@@ -295,7 +413,8 @@ class auction_model():
                     else:
                         self.valuations[t_step][l][v+1] = 0.0
             elif self.valuation_type == 'MDDN':
-                g_prime_nodes = [n[0] for n in obj.net.G.nodes(data=True) if n[1]['data']['inf_data'].net_id == l]
+                g_prime_nodes = [n[0] for n in obj.net.G.nodes(data=True)\
+                                 if n[1]['data']['inf_data'].net_id == l]
                 g_prime = obj.net.G.subgraph(g_prime_nodes)
                 penalty_dmgd_nodes = []
                 for n in g_prime.nodes(data=True):
@@ -314,7 +433,7 @@ class auction_model():
                         self.valuations[t_step][l][v+1] = penalty_rsorted[v]
             self.valuation_time[t_step][l] = time.time()-start_time_val
 
-def run_judgment_call(params, layers, T=1, save_jc=True, print_cmd=True, save_jc_model=False):
+def run_judgment_call(params, T=1, save_jc=True, print_cmd=True, save_jc_model=False):
     '''
     Solves an INDP problem with specified parameters using a decentralized hueristic.
     Judgment Call
@@ -323,8 +442,6 @@ def run_judgment_call(params, layers, T=1, save_jc=True, print_cmd=True, save_jc
     ----------
     params : dict
          Global parameters.
-    layers : list
-        Layers to consider in the infrastructure network.
     T : int, optional
          Number of time steps per analyses (1 for D-iINDP and T>1 for D-tdINDP). The default is 1.
     save_jc : bool, optional
@@ -351,13 +468,13 @@ def run_judgment_call(params, layers, T=1, save_jc=True, print_cmd=True, save_jc
         for rst in params["RES_ALLOC_TYPE"]:
             params_copy['RES_ALLOC_TYPE'] = rst
             if rst not in ["MDA", "MAA", "MCA"]:
-                objs[c]=JC_model(c,params_copy)
-                c+=1
+                objs[c] = JcModel(c,params_copy)
+                c += 1
             else:
                 for vt in params["VALUATION_TYPE"]:
                     params_copy['VALUATION_TYPE'] = vt
-                    objs[c]=JC_model(c,params_copy)
-                    c+=1
+                    objs[c] = JcModel(c,params_copy)
+                    c += 1
     # Initial calculations.
     indp_results_initial = indp.indp(objs[0].net, 0, 1, objs[0].layers,
                                      controlled_layers=objs[0].layers)
@@ -365,7 +482,7 @@ def run_judgment_call(params, layers, T=1, save_jc=True, print_cmd=True, save_jc
     # Initialize failure scenario.
     if T == 1:
         for idx, obj in objs.items():
-            print('\n--Running JC: '+obj.judge_type+', resource allocation: '+obj.res_alloc_type)
+            print('--Running JC: '+obj.judge_type+', resource allocation: '+obj.res_alloc_type)
             if obj.res_alloc_type == 'auction':
                 print('auction type: '+obj.resource.auction_model.auction_type+\
                       ', valuation: '+obj.resource.auction_model.valuation_type)
@@ -374,14 +491,12 @@ def run_judgment_call(params, layers, T=1, save_jc=True, print_cmd=True, save_jc
             # t=0 results.
             obj.results = indp_results_initial[1]
             obj.results_real = indp_results_initial[1]
-            num_iterations=1 #!!!
             for i in range(num_iterations):
                 print("-Iteration "+str(i+1)+"/"+str(num_iterations))
                 res_alloc_time_start = time.time()
                 if obj.resource.type == 'auction':
                     obj.resource.auction_model.auction_resources(obj, i+1, print_cmd=print_cmd,
                                                                  compute_poa=False)
-                    obj.resource.auction_model.bidding(i+1)
     #             for _, value in res_allocate[i].items():
     #                 v_r_applied.append(len(value))
     #         elif len(v_r) != len(layers):
@@ -466,10 +581,6 @@ def run_judgment_call(params, layers, T=1, save_jc=True, print_cmd=True, save_jc
     #                                          suffix='Real_'+str(p))
     #         dindp_sum.to_csv(output_dir, params["SIM_NUMBER"], suffix='sum')
     #         dindp_real_sum.to_csv(output_dir, params["SIM_NUMBER"], suffix='Real_sum')
-    # else:
-    #     # td-INDP formulations. Includes "DELTA_T" parameter for sliding windows to increase
-    #     # efficiency. (to be added)
-    #     print('hahahaha')
     return objs
 
 def compute_cost_sum(dindp_results, dindp_results_real, interdep_net,
@@ -627,10 +738,10 @@ def create_judgment_matrix(obj, layers_tbj, T=1, judge_type_forced=None):
 
     Parameters
     ----------
-    obj : JC_model instance
+    obj : JcModel instance
         DESCRIPTION.
     layers_tbj : list
-        List of layers to be judged, which can be different 
+        List of layers to be judged, which can be different
         from all layers of the network or controlled layers.
     T : int, optional
         DESCRIPTION. The default is 1
@@ -722,7 +833,7 @@ def demand_based_priority_list(N, layers_tbj):
     N : InfrastructureNetwork instance
         DESCRIPTION.
     layers_tbj : list
-        List of layers to be judged, which can be different 
+        List of layers to be judged, which can be different
         from all layers of the network or controlled layers.
 
     Returns

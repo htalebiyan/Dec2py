@@ -39,7 +39,6 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
     # Set root directories
     base_dir = fail_sce_param['BASE_DIR']
     damage_dir = fail_sce_param['DAMAGE_DIR']
-    layers = params['L']
     topology = None
     shelby_data = True
     ext_interdependency = None
@@ -54,7 +53,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
         shelby_data = False
         topology = fail_sce_param['TOPO']
         
-    print('\n----Running for resources: '+str(params['V']))
+    print('----Running for resources: '+str(params['V']))
     for m in fail_sce_param['MAGS']:
         for i in fail_sce_param['SAMPLE_RANGE']:
             try:
@@ -65,7 +64,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             except NameError:
                 pass
 
-            print('\n---Running Magnitude '+str(m)+' sample '+str(i)+'...')
+            print('---Running Magnitude '+str(m)+' sample '+str(i)+'...')
             print("Initializing network...")
             if shelby_data:
                 interdep_net, _, _ = indp.initialize_network(BASE_DIR=base_dir,
@@ -73,7 +72,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                             sim_number=0, magnitude=6, sample=0, v=params["V"],
                             shelby_data=shelby_data)
             else:
-                interdep_net, no_resource, layers = indp.initialize_network(BASE_DIR=base_dir,
+                interdep_net, no_resource, lyrs = indp.initialize_network(BASE_DIR=base_dir,
                             external_interdependency_dir=ext_interdependency,
                             magnitude=m, sample=i, shelby_data=shelby_data,
                             topology=topology)
@@ -82,6 +81,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             params["N"] = interdep_net
             params["SIM_NUMBER"] = i
             params["MAGNITUDE"] = m
+            params['L'] = lyrs
 
             if fail_sce_param['TYPE'] == 'WU':
                 indp.add_Wu_failure_scenario(interdep_net, DAM_DIR=damage_dir,
@@ -97,19 +97,19 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                                                     topology=topology, config=m, sample=i)
 
             if params["ALGORITHM"] == "INDP":
-                indp.run_indp(params, validate=False, T=params["T"], layers=layers,
-                              controlled_layers=layers, saveModel=False, print_cmd_line=True)
+                indp.run_indp(params, validate=False, T=params["T"], layers=params['L'],
+                              controlled_layers=params['L'], saveModel=False, print_cmd_line=True)
             elif params["ALGORITHM"] == "INFO_SHARE":
-                indp.run_info_share(params, layers=layers, T=params["T"])
+                indp.run_info_share(params, layers=params['L'], T=params["T"])
             elif params["ALGORITHM"] == "INRG":
-                indp.run_inrg(params, layers=layers, player_ordering=player_ordering)
+                indp.run_inrg(params, layers=params['L'], player_ordering=player_ordering)
             elif params["ALGORITHM"] == "BACKWARDS_INDUCTION":
-                gametree.run_backwards_induction(interdep_net, i, players=layers,
+                gametree.run_backwards_induction(interdep_net, i, players=params['L'],
                                                  player_ordering=player_ordering,
                                                  T=params["T"], outdir=params["OUTPUT_DIR"])
             elif params["ALGORITHM"] == "JC":
-                dindp.run_judgment_call(params, layers=layers, T=params["T"],
-                                        save_jc_model=False, print_cmd=True)
+                dindp.run_judgment_call(params, T=params["T"], save_jc_model=False,
+                                        print_cmd=True)
 
 # def run_indp_sample():
 #     import warnings
@@ -245,7 +245,7 @@ if __name__ == "__main__":
     #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
 
     # No restriction on number of resources for each layer
-    RC = [3, 6, 8, 12]
+    RC = [3, 6]
     # Not necessary for synthetic nets
     # [3, 6, 8, 12]
     # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
@@ -253,8 +253,8 @@ if __name__ == "__main__":
     # Not necessary for synthetic nets
     JUDGE_TYPE = ["PESSIMISTIC", "OPTIMISTIC"]
     #["PESSIMISTIC", "OPTIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"]
-    RES_ALLOC_TYPE = ["MCA",'UNIFORM']
-    #["MDA", "MAA", "MCA"]
+    RES_ALLOC_TYPE = ["MCA", 'UNIFORM']
+    #["MDA", "MAA", "MCA", 'UNIFORM']
     VAL_TYPE = ['MDDN']
     #['DTC', 'DTC_uniform', 'MDDN']
 
