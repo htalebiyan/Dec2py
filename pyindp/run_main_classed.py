@@ -67,33 +67,30 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             print('---Running Magnitude '+str(m)+' sample '+str(i)+'...')
             print("Initializing network...")
             if shelby_data:
-                interdep_net, _, _ = indp.initialize_network(BASE_DIR=base_dir,
+                params["N"], _, _ = indp.initialize_network(BASE_DIR=base_dir,
                             external_interdependency_dir=ext_interdependency,
                             sim_number=0, magnitude=6, sample=0, v=params["V"],
                             shelby_data=shelby_data)
             else:
-                interdep_net, no_resource, lyrs = indp.initialize_network(BASE_DIR=base_dir,
+                params["N"], params["V"], params['L'] = indp.initialize_network(BASE_DIR=base_dir,
                             external_interdependency_dir=ext_interdependency,
                             magnitude=m, sample=i, shelby_data=shelby_data,
                             topology=topology)
-                params["V"] = no_resource
 
-            params["N"] = interdep_net
             params["SIM_NUMBER"] = i
             params["MAGNITUDE"] = m
-            params['L'] = lyrs
 
             if fail_sce_param['TYPE'] == 'WU':
-                indp.add_Wu_failure_scenario(interdep_net, DAM_DIR=damage_dir,
+                indp.add_Wu_failure_scenario(params["N"], DAM_DIR=damage_dir,
                                              noSet=i, noSce=m)
             elif fail_sce_param['TYPE'] == 'ANDRES':
-                indp.add_failure_scenario(interdep_net, DAM_DIR=damage_dir,
+                indp.add_failure_scenario(params["N"], DAM_DIR=damage_dir,
                                           magnitude=m, v=params["V"], sim_number=i)
             elif fail_sce_param['TYPE'] == 'random':
-                indp.add_random_failure_scenario(interdep_net, DAM_DIR=damage_dir,
+                indp.add_random_failure_scenario(params["N"], DAM_DIR=damage_dir,
                                                  sample=i)
             elif fail_sce_param['TYPE'] == 'synthetic':
-                indp.add_synthetic_failure_scenario(interdep_net, DAM_DIR=base_dir,
+                indp.add_synthetic_failure_scenario(params["N"], DAM_DIR=base_dir,
                                                     topology=topology, config=m, sample=i)
 
             if params["ALGORITHM"] == "INDP":
@@ -104,7 +101,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             elif params["ALGORITHM"] == "INRG":
                 indp.run_inrg(params, layers=params['L'], player_ordering=player_ordering)
             elif params["ALGORITHM"] == "BACKWARDS_INDUCTION":
-                gametree.run_backwards_induction(interdep_net, i, players=params['L'],
+                gametree.run_backwards_induction(params["N"], i, players=params['L'],
                                                  player_ordering=player_ordering,
                                                  T=params["T"], outdir=params["OUTPUT_DIR"])
             elif params["ALGORITHM"] == "JC":
