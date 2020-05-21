@@ -50,8 +50,8 @@ class JcModel:
 
         '''
         output_dir = root+'_L'+str(len(self.layers))+'_m'+str(mag)+"_v"+\
-            str(self.resource.sum_resource)+'_'+self.res_alloc_type
-        if self.res_alloc_type == 'auction':
+            str(self.resource.sum_resource)+'_'+self.judge_type+'_'+self.res_alloc_type
+        if self.res_alloc_type == 'AUCTION':
             output_dir += '_'+self.resource.auction_model.auction_type+\
                 '_'+self.resource.auction_model.valuation_type
         return output_dir
@@ -397,14 +397,14 @@ class ResourceModel:
         self.time = {t+1:0.0 for t in range(self.t_steps)}
         self.v_r = {t+1:{l:0 for l in params['L']} for t in range(self.t_steps)}
         if params['RES_ALLOC_TYPE'] in ["MDA", "MAA", "MCA"]:
-            self.type = 'auction'
+            self.type = 'AUCTION'
             self.auction_model = AuctionModel(params, self.t_steps)
             self.sum_resource = params['V']
         elif params['RES_ALLOC_TYPE'] == "UNIFORM":
-            self.type = 'uniform'
+            self.type = 'UNIFORM'
             self.set_uniform_res(params)
         elif params['RES_ALLOC_TYPE'] == "LAYER_FIXED":
-            self.type = 'uniform_lf'
+            self.type = 'LAYER_FIXED'
             self.set_lf_res(params)
         else:
             sys.exit('Unsupported resource allocation type: '+params['RES_ALLOC_TYPE'])

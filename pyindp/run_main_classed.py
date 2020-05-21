@@ -255,36 +255,32 @@ if __name__ == "__main__":
     VAL_TYPE = ['MDDN']
     #['DTC', 'DTC_uniform', 'MDDN']
 
-    ### Run different methods###
-    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP')
-    # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
-    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
-               res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE)
+    # ### Run different methods###
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP')
+    # # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
+    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE)
 
     # ### Post-processing ###
-    # COST_TYPE = 'Total'
-    # REF_METHOD = 'indp'
-    # METHOD_NAMES = ['indp']
-    # for jc in JUDGE_TYPE:
-    #     METHOD_NAMES.append('judgeCall_'+jc)
-    # AUC_TYPE.append('Uniform')
-    # SUFFIXES = ['Real_sum', '']
+    COST_TYPES = ['Total']
+    REF_METHOD = 'indp'
+    METHOD_NAMES = ['indp','jc']
+    SUFFIXES = ['real']
 
-    # SYNTH_DIR = None #BASE_DIR+FAIL_SCE_PARAM['TOPO']+'Networks/'
+    SYNTH_DIR = None #BASE_DIR+FAIL_SCE_PARAM['TOPO']+'Networks/'
     # COMBS, OPTIMAL_COMBS = dindp.generate_combinations('shelby',
     #             FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
-    #             RC, METHOD_NAMES, AUC_TYPE, VAL_TYPE,
+    #             RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE, SUFFIXES,
     #             list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
     #             synthetic_dir=SYNTH_DIR)
 
-    # BASE_DF = dindp.read_results(COMBS, OPTIMAL_COMBS, SUFFIXES, root_result_dir=OUTPUT_DIR,
-    #                               deaggregate=True)
-    # ##    BASE_DF = correct_tdindp_results(BASE_DF, OPTIMAL_COMBS)
+    # BASE_DF, objs = dindp.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
+    #                                    root_result_dir=OUTPUT_DIR, deaggregate=True)
 
     # LAMBDA_DF = dindp.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
-    #                                         ref_method=REF_METHOD, cost_type=COST_TYPE)
-    # RES_ALLOC_DF, RES_ALLOC_REL_DF = dindp.read_resourcec_allocation(BASE_DF, COMBS,
-    #             OPTIMAL_COMBS, root_result_dir=OUTPUT_DIR, ref_method=REF_METHOD)
+    #                                         ref_method=REF_METHOD, cost_type=COST_TYPES[0])
+    RES_ALLOC_DF, RES_ALLOC_REL_DF = dindp.read_resourcec_allocation(BASE_DF, COMBS,
+                OPTIMAL_COMBS, root_result_dir=OUTPUT_DIR, ref_method=REF_METHOD)
     # RUN_TIME_DF = dindp.read_run_time(COMBS, OPTIMAL_COMBS, SUFFIXES,
     #                                   root_result_dir=OUTPUT_DIR)
 

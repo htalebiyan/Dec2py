@@ -206,6 +206,8 @@ class INDPResults:
 #                    else:
 ##                        print "Caution: No component."
 #                        pass
+        else:
+            sys.exit('File does not exist: '+action_file)
         return indp_result
 
     @classmethod

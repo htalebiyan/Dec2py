@@ -60,7 +60,7 @@ def run_judgment_call(params, T=1, save_jc=True, print_cmd=True, save_jc_model=F
                                      controlled_layers=objs[0].layers)
     for idx, obj in objs.items():
         print('--Running JC: '+obj.judge_type+', resource allocation: '+obj.res_alloc_type)
-        if obj.res_alloc_type == 'auction':
+        if obj.resource.type == 'AUCTION':
             print('auction type: '+obj.resource.auction_model.auction_type+\
                   ', valuation: '+obj.resource.auction_model.valuation_type)
         if print_cmd:
@@ -74,7 +74,7 @@ def run_judgment_call(params, T=1, save_jc=True, print_cmd=True, save_jc_model=F
             print("-Time Step (JC)",i+1,"/",num_iterations)
             #: Resource Allocation
             res_alloc_time_start = time.time()
-            if obj.resource.type == 'auction':
+            if obj.resource.type == 'AUCTION':
                 obj.resource.auction_model.auction_resources(obj, i+1, print_cmd=print_cmd,
                                                              compute_poa=False)
             obj.resource.time[i+1] = time.time()-res_alloc_time_start
@@ -173,68 +173,6 @@ def realized_performance(obj, t_step, functionality, judger_layer, print_cmd=Fal
         val.append(indp_results_real[0].getVarByName(nodeVar).x)
     return indp_results_real
 
-def write_auction_csv(outdir, res_allocate, res_alloc_time, poa=None, valuations=None,
-                      sample_num=1, suffix=""):
-    '''
-    This function write full results of auctions to file
-    Parameters
-    ----------
-    outdir : str
-        Where to write the file.
-    res_allocate : TYPE
-        DESCRIPTION.
-    res_alloc_time : TYPE
-        DESCRIPTION.
-    poa : TYPE, optional
-        DESCRIPTION. The default is None.
-    valuations : TYPE, optional
-        DESCRIPTION. The default is None.
-    sample_num : TYPE, optional
-        DESCRIPTION. The default is 1.
-    suffix : TYPE, optional
-        DESCRIPTION. The default is "".
-
-    Returns
-    -------
-    None.
-
-    '''
-    if not os.path.exists(outdir):
-        os.makedirs(outdir)
-    auction_file = outdir+"/auctions_"+str(sample_num)+"_"+suffix+".csv"
-    # Making header
-    header = "t, "
-    for key, value in res_allocate[0].items():
-        header += "p"+str(key)+", "
-    if valuations:
-        header += "poa, optimal_val, winner_val, "
-        for p, value in valuations[0].items():
-            header += "bidder_"+str(p)+"_valuation, "
-    header += "Res Alloc Time, Auction Time, "
-    if valuations:
-        for key, value in res_allocate[0].items():
-            header += "Val. Time p"+str(key)+", "
-    # Write to file
-    with open(auction_file, 'w') as f:
-        f.write(header+"\n")
-        for t, value in res_allocate.items():
-            row = str(t+1)+", "
-            for p, pvalue in value.items():
-                row += str(len(pvalue))+', '
-            if valuations:
-                row += str(poa[t]['poa'])+', '+str(poa[t]['optimal'])+', '
-                for pitem in poa[t]['winner']:
-                    row += str(pitem)+"|"
-                row += ', '
-                for p, pvalue in valuations[t].items():
-                    for pitem in pvalue:
-                        row += str(pitem)+"|"
-                    row += ', '
-            row += str(res_alloc_time[t][0])+', '+str(res_alloc_time[t][1])+', '
-            if valuations:
-                for titem in res_alloc_time[t][2]:
-                    row += str(titem)+', '
-            f.write(row+"\n")
 
 def read_resourcec_allocation(result_df, combinations, optimal_combinations, ref_method='indp',
                               suffix="", root_result_dir='../results/'):
@@ -371,48 +309,7 @@ def read_resourcec_allocation(result_df, combinations, optimal_combinations, ref
     update_progress(idx+1, len(combinations+optimal_combinations))
     return df_res, df_res_rel
 
-def write_judgments_csv(outdir, realizations, sample_num=1, agent=1, time_step=0, suffix=""):
-    '''
-
-    Parameters
-    ----------
-    outdir : TYPE
-        DESCRIPTION.
-    realizations : TYPE
-        DESCRIPTION.
-    sample_num : TYPE, optional
-        DESCRIPTION. The default is 1.
-    agent : TYPE, optional
-        DESCRIPTION. The default is 1.
-    time_step : TYPE, optional
-        DESCRIPTION. The default is 0.
-    suffix : TYPE, optional
-        DESCRIPTION. The default is "".
-
-    Returns
-    -------
-    None.
-
-    '''
-    if not os.path.exists(outdir):
-        os.makedirs(outdir)
-    judge_file = outdir+'/judge_'+str(sample_num)+"_agent"+str(agent)+'_time'+\
-    str(time_step)+'_'+suffix+".csv"
-    header = "no., src node, src layer, src judge, if src corr., dest Names, dest init. funcs"
-    with open(judge_file, 'w') as f:
-        f.write(header+"\n")
-        for t, timeValue in realizations.items():
-            if timeValue:
-                for c, Value in timeValue.items():
-                    row = str(c)+', '+str(Value['uName'])+', '+str(Value['uJudge'])+\
-                        ', '+str(Value['uCorrected'])+', '\
-                        +str(Value['vNames'])+', '+str(Value['v_values'])
-                    f.write(row+'\n')
-            else:
-                print('<><><> No judgment by agent '+str(agent)+' t:'+str(time_step)+\
-                      ' step:'+str(t))
-
-def read_results(combinations, optimal_combinations, suffixes, root_result_dir='../results/',
+def read_results(combinations, optimal_combinations, cost_types, root_result_dir='../results/',
                  deaggregate=False, rslt_dir_lyr='/agents'):
     '''
 
@@ -437,75 +334,75 @@ def read_results(combinations, optimal_combinations, suffixes, root_result_dir='
         DESCRIPTION.
 
     '''
-    columns = ['t', 'Magnitude', 'cost_type', 'decision_type', 'auction_type', 'valuation_type',
-               'no_resources', 'sample', 'cost', 'normalized_cost', 'layer']
+    columns = ['t', 'Magnitude', 'cost_type', 'decision_type', 'judgment_type',
+               'auction_type', 'valuation_type', 'no_resources', 'sample',
+               'cost', 'normalized_cost', 'layer']
     optimal_method = ['tdindp', 'indp', 'sample_indp_12Node']
+    cost_types += ['Under Supply Perc']
     cmplt_results = pd.DataFrame(columns=columns, dtype=int)
+    objs = {}
     print("\nAggregating Results")
     joinedlist = combinations + optimal_combinations
     for idx, x in enumerate(joinedlist):
-        if x[4] in optimal_method:
-            full_suffix = '_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])
-        elif x[5] == 'Uniform':
-            full_suffix = '_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])+'_uniform_alloc'
-        else:
-            full_suffix = '_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])+'_auction_'+x[5]+'_'+x[6]
+        #: Make the directory
+        full_suffix = '_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])
+        if x[4] == 'jc':
+            full_suffix += '_'+x[5]
+            if x[6] in ["MDA", "MAA", "MCA"]:
+                full_suffix += '_AUCTION_'+x[6]+'_'+x[7]
+            else:
+                full_suffix += '_'+x[6]
         result_dir = root_result_dir+x[4]+'_results'+full_suffix
         if os.path.exists(result_dir):
             # Save all results to Pandas dataframe
             sample_result = indputils.INDPResults()
             sam_rslt_lyr = {l+1:indputils.INDPResults() for l in range(x[2])}
             ### !!! Assume the layer name is l+1
-            for suf in suffixes:
-                file_dir = result_dir+"/costs_"+str(x[1])+"_"+suf+".csv"
-                if os.path.exists(file_dir):
-                    sample_result = sample_result.from_csv(result_dir, x[1], suffix=suf)
-                if deaggregate:
-                    for l in range(x[2]):
-                        if x[4]=='indp':#!!!remove this
-                            suffix_adj = suf.split('_')[0]+'l'+str(l+1)+'_'
-                        else:
-                            suffix_adj = suf.split('_')[0]+'_'+str(l+1)
-                        file_dir = result_dir+rslt_dir_lyr+"/costs_"+str(x[1])+"_"+suffix_adj+".csv"
-                        if os.path.exists(file_dir):
-                            sam_rslt_lyr[l+1] = sam_rslt_lyr[l+1].from_csv(result_dir+rslt_dir_lyr,
-                                                                           x[1], suffix=suffix_adj)
+            sample_result = sample_result.from_csv(result_dir, x[1], suffix=x[8])
+            if deaggregate:
+                for l in range(x[2]):
+                    sam_rslt_lyr[l+1] = sam_rslt_lyr[l+1].from_csv(result_dir+rslt_dir_lyr, x[1],
+                                                                   suffix='L'+str(l+1)+'_'+x[8])
             initial_cost = {}
-            for c in sample_result.cost_types:
+            for c in cost_types:
                 initial_cost[c] = sample_result[0]['costs'][c]
             norm_cost = 0
             for t in sample_result.results:
-                for c in sample_result.cost_types:
+                for c in cost_types:
                     if initial_cost[c] != 0.0:
                         norm_cost = sample_result[t]['costs'][c]/initial_cost[c]
                     else:
                         norm_cost = -1.0
-                    values = [t, x[0], c, x[4], x[5], x[6], x[3], x[1],
+                    values = [t, x[0], c, x[4], x[5], x[6], x[7], x[3], x[1],
                               float(sample_result[t]['costs'][c]), norm_cost, 'nan']
                     cmplt_results = cmplt_results.append(dict(zip(columns, values)),
                                                          ignore_index=True)
             if deaggregate:
                 for l in range(x[2]):
                     initial_cost = {}
-                    for c in sam_rslt_lyr[l+1].cost_types:
+                    for c in cost_types:
                         initial_cost[c] = sam_rslt_lyr[l+1][0]['costs'][c]
                     norm_cost = 0
                     for t in sam_rslt_lyr[l+1].results:
-                        for c in sam_rslt_lyr[l+1].cost_types:
+                        for c in cost_types:
                             if initial_cost[c] != 0.0:
                                 norm_cost = sam_rslt_lyr[l+1][t]['costs'][c]/initial_cost[c]
                             else:
                                 norm_cost = -1.0
-                            values = [t, x[0], c, x[4], x[5], x[6], x[3], x[1],
+                            values = [t, x[0], c, x[4], x[5], x[6], x[7], x[3], x[1],
                                       float(sam_rslt_lyr[l+1][t]['costs'][c]), norm_cost, l+1]
                             cmplt_results = cmplt_results.append(dict(zip(columns, values)),
                                                                  ignore_index=True)
+            #: Getting back the JuCModel objects:
+            if x[4] == 'jc':
+                with open(result_dir+'/objs_'+str(x[1])+'.pkl', 'rb') as f:
+                    objs[str(x)] = pickle.load(f)
             if idx%(len(joinedlist)/10+1) == 0:
                 update_progress(idx+1, len(joinedlist))
         else:
             sys.exit('Error: The combination or folder does not exist'+str(x))
     update_progress(len(joinedlist), len(joinedlist))
-    return cmplt_results
+    return cmplt_results, objs
 
 def read_run_time(combinations, optimal_combinations, suffixes, root_result_dir='../results/'):
     '''
@@ -580,66 +477,8 @@ def read_run_time(combinations, optimal_combinations, suffixes, root_result_dir=
     update_progress(len(joinedlist), len(joinedlist))
     return run_time_results
 
-def correct_tdindp_results(r_df, optimal_combinations):
-    '''
-
-    Parameters
-    ----------
-    r_df : TYPE
-        DESCRIPTION.
-    optimal_combinations : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    r_df : TYPE
-        DESCRIPTION.
-
-    '''
-    # correct total cost of td-indp
-    print('\nCorrecting td-INDP Results\n', end='')
-    tVector = r_df['t'].unique().tolist()
-    for t in tVector:
-        for _, x in enumerate(optimal_combinations):
-            if x[4] == 'tdindp':
-                rows = r_df[(r_df['t'] == t)&(r_df['Magnitude'] == x[0])&
-                            (r_df['decision_type'] == 'tdindp')&(r_df['no_resources'] == x[3])&
-                            (r_df['sample'] == x[1])]
-                if t != int(tVector[-1]) and t != 0:
-                    rowsNext = r_df[(r_df['t'] == t+1)&(r_df['Magnitude'] == x[0])&
-                                    (r_df['decision_type'] == 'tdindp')&
-                                    (r_df['no_resources'] == x[3])&
-                                    (r_df['sample'] == x[1])]
-                    node_cost = rows[rows['cost_type'] == 'Node']['cost'].values
-                    arc_cost = rows[rows['cost_type'] == 'Arc']['cost'].values
-                    flow_cost = rowsNext[rowsNext['cost_type'] == 'Flow']['cost'].values
-                    over_supp_cost = rowsNext[rowsNext['cost_type'] == 'Over Supply']['cost'].values
-                    under_supp_cost = rowsNext[rowsNext['cost_type'] == 'Under Supply']['cost'].values
-                    space_prep_cost = rows[rows['cost_type'] == 'Space Prep']['cost'].values
-                    totalCost = flow_cost+arc_cost+node_cost+over_supp_cost+under_supp_cost+space_prep_cost
-                    r_df.loc[(r_df['t'] == t)&(r_df['Magnitude'] == x[0])&
-                             (r_df['decision_type'] == 'tdindp')&
-                             (r_df['no_resources'] == x[3])&
-                             (r_df['sample'] == x[1])&
-                             (r_df['cost_type'] == 'Total'), 'cost'] = totalCost
-                    initial_cost = r_df[(r_df['t'] == 0)&
-                                        (r_df['Magnitude'] == x[0])&
-                                        (r_df['decision_type'] == 'tdindp')&
-                                        (r_df['no_resources'] == x[3])&
-                                        (r_df['sample'] == x[1])&
-                                        (r_df['cost_type'] == 'Total')]['cost'].values
-                    r_df.loc[(r_df['t'] == t)&
-                             (r_df['Magnitude'] == x[0])&
-                             (r_df['decision_type'] == 'tdindp')&
-                             (r_df['no_resources'] == x[3])&
-                             (r_df['sample'] == x[1])&
-                             (r_df['cost_type'] == 'Total'),
-                             'normalized_cost'] = totalCost/initial_cost
-        update_progress(t+1, len(tVector))
-    return r_df
-
 def relative_performance(r_df, combinations, optimal_combinations, ref_method='indp',
-                         ref_at='', ref_vt='', cost_type='Total'):
+                         ref_jt='nan', ref_at='nan', ref_vt='nan', cost_type='Total'):
     '''
 
     Parameters
@@ -656,6 +495,8 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
         DESCRIPTION. The default is ''.
     ref_vt : TYPE, optional
         DESCRIPTION. The default is ''.
+    ref_vt : TYPE, optional
+        DESCRIPTION. The default is ''.
     cost_type : TYPE, optional
         DESCRIPTION. The default is 'Total'.
 
@@ -665,8 +506,9 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
         DESCRIPTION.
 
     '''
-    columns = ['Magnitude', 'cost_type', 'decision_type', 'auction_type', 'valuation_type',
-               'no_resources', 'sample', 'Area_TC', 'Area_P', 'lambda_tc', 'lambda_p', 'lambda_U']
+    columns = ['Magnitude', 'cost_type', 'decision_type', 'judgment_type', 'auction_type',
+               'valuation_type', 'no_resources', 'sample',
+               'Area_TC', 'Area_P', 'lambda_tc', 'lambda_p', 'lambda_U']
     T = len(r_df['t'].unique())
     lambda_df = pd.DataFrame(columns=columns, dtype=int)
     # Computing reference area for lambda
@@ -676,19 +518,20 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
         if x[4] == ref_method:
             rows = r_df[(r_df['Magnitude'] == x[0])&(r_df['decision_type'] == ref_method)&
                         (r_df['sample'] == x[1])&(r_df['auction_type'] == ref_at)&
-                        (r_df['valuation_type'] == ref_vt)&(r_df['no_resources'] == x[3])]
+                        (r_df['valuation_type'] == ref_vt)&(r_df['no_resources'] == x[3])&
+                        (r_df['judgment_type'] == ref_jt)]
             if not rows.empty:
                 area_tc = trapz_int(y=list(rows[rows['cost_type'] == cost_type].cost[:T]),
                                     x=list(rows[rows['cost_type'] == cost_type].t[:T]))
                 area_p = -trapz_int(y=list(rows[rows['cost_type'] == 'Under Supply Perc'].cost[:T]),
                                     x=list(rows[rows['cost_type'] == 'Under Supply Perc'].t[:T]))
-                values = [x[0], cost_type, x[4], ref_at, ref_vt, x[3], x[1], area_tc, area_p,
-                          'nan', 'nan', 'nan']
+                values = [x[0], cost_type, x[4], ref_jt, ref_at, ref_vt, x[3], x[1],
+                          area_tc, area_p, 'nan', 'nan', 'nan']
                 lambda_df = lambda_df.append(dict(zip(columns, values)), ignore_index=True)
             if idx%(len(optimal_combinations)/10+1) == 0:
                 update_progress(idx+1, len(optimal_combinations))
     update_progress(len(optimal_combinations), len(optimal_combinations))
-    # Computing areaa and lambda
+    # Computing areas and lambdas
     print('\nLambda calculation\n', end='')
     for idx, x in enumerate(combinations+optimal_combinations):
         if x[4] != ref_method:
@@ -696,14 +539,16 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
             cond = ((lambda_df['Magnitude'] == x[0])&(lambda_df['decision_type'] == ref_method)&
                     (lambda_df['auction_type'] == ref_at)&(lambda_df['valuation_type'] == ref_vt)&
                     (lambda_df['cost_type'] == cost_type)&(lambda_df['sample'] == x[1])&
-                    (lambda_df['no_resources'] == x[3]))
+                    (lambda_df['no_resources'] == x[3])&(lambda_df['judgment_type'] == ref_jt))
             if not cond.any():
-                sys.exit('Error:Reference type is not here! for %s m %d|resource %d' %(x[4], x[0], x[3]))
+                sys.exit('Error:Reference type is not here! for %s,%s, m %d, resource %d'\
+                         %(x[4], x[5], x[0], x[3]))
             ref_area_tc = float(lambda_df.loc[cond, 'Area_TC'])
             ref_area_P = float(lambda_df.loc[cond, 'Area_P'])
             rows = r_df[(r_df['Magnitude'] == x[0])&(r_df['decision_type'] == x[4])&
-                        (r_df['sample'] == x[1])&(r_df['auction_type'] == x[5])&
-                        (r_df['valuation_type'] == x[6])&(r_df['no_resources'] == x[3])]
+                        (r_df['judgment_type'] == x[5])&(r_df['auction_type'] == x[6])&
+                        (r_df['valuation_type'] == x[7])&(r_df['sample'] == x[1])&
+                        (r_df['no_resources'] == x[3])]
             if not rows.empty:
                 area_tc = trapz_int(y=list(rows[rows['cost_type'] == cost_type].cost[:T]),
                                     x=list(rows[rows['cost_type'] == cost_type].t[:T]))
@@ -721,18 +566,20 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
                     lambda_p = 0.0
                 else:
                     pass
-                values = [x[0], cost_type, x[4], x[5], x[6], x[3], x[1], area_tc,
+                values = [x[0], cost_type, x[4], x[5], x[6], x[7], x[3], x[1], area_tc,
                           area_p, lambda_tc, lambda_p, (lambda_tc+lambda_p)/2]
                 lambda_df = lambda_df.append(dict(zip(columns, values)), ignore_index=True)
             else:
-                sys.exit('Error: No entry for %s %s %s m %d|resource %d, ...' %(x[4], x[5], x[6], x[0], x[3]))
+                sys.exit('Error: No entry for %s %s %s m %d|resource %d, ...'\
+                         %(x[4], x[5], x[6], x[0], x[3]))
         if idx%(len(combinations+optimal_combinations)/10+1) == 0:
             update_progress(idx+1, len(combinations+optimal_combinations))
     update_progress(idx+1, len(combinations+optimal_combinations))
     return lambda_df
 
 def generate_combinations(database, mags, sample, layers, no_resources, decision_type,
-                          auction_type, valuation_type, list_high_dam_add=None, synthetic_dir=None):
+                          judgment_type, res_alloc_type, valuation_type, suffixes='',
+                          list_high_dam_add=None, synthetic_dir=None):
     '''
 
     Parameters
@@ -749,10 +596,12 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
         DESCRIPTION.
     decision_type : TYPE
         DESCRIPTION.
-    auction_type : TYPE
+    res_alloc_type : TYPE
         DESCRIPTION.
     valuation_type : TYPE
         DESCRIPTION.
+    suffixes : TYPE, optional
+        DESCRIPTION. The default is ''.
     list_high_dam_add : TYPE, optional
         DESCRIPTION. The default is None.
     synthetic_dir : TYPE, optional
@@ -777,15 +626,21 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
             list_high_dam = pd.read_csv(list_high_dam_add)
         L = len(layers)
         for m, s in itertools.product(mags, sample):
-            if list_high_dam_add is None or len(list_high_dam.loc[(list_high_dam.set == s) & (list_high_dam.sce == m)].index):
+            if list_high_dam_add is None or len(list_high_dam.loc[(list_high_dam.set == s)&\
+                                                                  (list_high_dam.sce == m)].index):
                 for rc in no_resources:
-                    for dt, at, vt in itertools.product(decision_type, auction_type, valuation_type):
-                        if (dt in optimal_method) and [m, s, L, rc, dt, '', ''] not in optimal_combinations:
-                            optimal_combinations.append([m, s, L, rc, dt, '', ''])
-                        elif (dt not in optimal_method) and (at not in ['Uniform']):
-                            combinations.append([m, s, L, rc, dt, at, vt])
-                        elif (dt not in optimal_method) and (at in ['Uniform']):
-                            combinations.append([m, s, L, rc, dt, at, ''])
+                    for dt, jt, at, vt in itertools.product(decision_type, judgment_type,
+                                                            res_alloc_type, valuation_type):
+                        if (dt in optimal_method) and [m, s, L, rc, dt, 'nan', 'nan', 'nan', '']\
+                            not in optimal_combinations:
+                            optimal_combinations.append([m, s, L, rc, dt, 'nan',
+                                                         'nan', 'nan', ''])
+                        elif (dt not in optimal_method) and (at not in ['UNIFORM']):
+                            for sf in suffixes:
+                                combinations.append([m, s, L, rc, dt, jt, at, vt, sf])
+                        elif (dt not in optimal_method) and (at in ['UNIFORM']):
+                            for sf in suffixes:
+                                combinations.append([m, s, L, rc, dt, jt, at, 'nan', sf])
             idx += 1
             update_progress(idx, no_total)
     elif database == 'synthetic':
@@ -799,13 +654,17 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
             L = int(config_param.loc[' No. Layers'])
             no_resources = int(config_param.loc[' Resource Cap'])
             for rc in [no_resources]:
-                for dt, at, vt in itertools.product(decision_type, auction_type, valuation_type):
-                    if (dt in optimal_method) and [m, s, L, rc, dt, '', ''] not in optimal_combinations:
-                        optimal_combinations.append([m, s, L, rc, dt, '', ''])
-                    elif (dt not in optimal_method) and (at not in ['Uniform']):
-                        combinations.append([m, s, L, rc, dt, at, vt])
-                    elif (dt not in optimal_method) and (at in ['Uniform']):
-                        combinations.append([m, s, L, rc, dt, at, ''])
+                for dt, jt, at, vt in itertools.product(decision_type, judgment_type,
+                                                    res_alloc_type, valuation_type):
+                    if (dt in optimal_method) and [m, s, L, rc, dt] not in optimal_combinations:
+                        optimal_combinations.append([m, s, L, rc, dt, 'nan',
+                                                         'nan', 'nan', ''])
+                    elif (dt not in optimal_method) and (at not in ['UNIFORM']):
+                        for sf in suffixes:
+                            combinations.append([m, s, L, rc, dt, jt, at, vt, sf])
+                    elif (dt not in optimal_method) and (at in ['UNIFORM']):
+                        for sf in suffixes:
+                            combinations.append([m, s, L, rc, dt, jt, 'nan', at, sf])
             idx += 1
             update_progress(idx, no_total)
     else:
