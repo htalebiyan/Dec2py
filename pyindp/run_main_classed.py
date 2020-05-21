@@ -95,7 +95,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
 
             if params["ALGORITHM"] == "INDP":
                 indp.run_indp(params, validate=False, T=params["T"], layers=params['L'],
-                              controlled_layers=params['L'], saveModel=False, print_cmd_line=True)
+                              controlled_layers=params['L'], saveModel=False, print_cmd_line=False)
             elif params["ALGORITHM"] == "INFO_SHARE":
                 indp.run_info_share(params, layers=params['L'], T=params["T"])
             elif params["ALGORITHM"] == "INRG":
@@ -106,7 +106,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                                                  T=params["T"], outdir=params["OUTPUT_DIR"])
             elif params["ALGORITHM"] == "JC":
                 dindp.run_judgment_call(params, T=params["T"], save_jc_model=False,
-                                        print_cmd=True)
+                                        print_cmd=False)
 
 # def run_indp_sample():
 #     import warnings
@@ -248,7 +248,7 @@ if __name__ == "__main__":
     # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
     LAYERS = [1, 2, 3, 4]
     # Not necessary for synthetic nets
-    JUDGE_TYPE = ["PESSIMISTIC", "OPTIMISTIC"]
+    JUDGE_TYPE = ["OPTIMISTIC"]
     #["PESSIMISTIC", "OPTIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"]
     RES_ALLOC_TYPE = ["MCA", 'UNIFORM']
     #["MDA", "MAA", "MCA", 'UNIFORM']
@@ -256,12 +256,12 @@ if __name__ == "__main__":
     #['DTC', 'DTC_uniform', 'MDDN']
 
     ### Run different methods###
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP')
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP')
     # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
     run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
                res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE)
 
-    # ### Compute metrics ###
+    # ### Post-processing ###
     # COST_TYPE = 'Total'
     # REF_METHOD = 'indp'
     # METHOD_NAMES = ['indp']

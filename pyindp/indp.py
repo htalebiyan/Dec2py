@@ -189,8 +189,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                 isSepResource = 1
                 totalResource = sum(v_r)
                 if len(v_r) != len(layers):
-                    print("\n***ERROR: The number of resource cap values does not match the number of layers.***\n")
-                    sys.exit()
+                    sys.exit("The number of resource cap values does not match the number of layers.\n")
             else:
                 totalResource = v_r[0]
 
@@ -574,7 +573,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
 
     indp_results=INDPResults(params["L"])
     if T == 1:
-        print("Running INDP (T=1) or iterative INDP.")
+        print("--Running INDP (T=1) or iterative INDP.")
         if print_cmd_line:
             print("Num iters=",params["NUM_ITERATIONS"])
 
@@ -585,7 +584,7 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         indp_results=results[1]
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
         for i in range(params["NUM_ITERATIONS"]):
-            print("Time Step (iINDP)=",i,"/",params["NUM_ITERATIONS"])
+            print("-Time Step (iINDP)",i+1,"/",params["NUM_ITERATIONS"])
             results=indp(InterdepNet,v_r,T,layers,controlled_layers=controlled_layers,forced_actions=forced_actions)
             indp_results.extend(results[1],t_offset=i+1)
             if saveModel:

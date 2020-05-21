@@ -7,6 +7,7 @@ import time
 import sys
 import pandas as pd
 import numpy as np
+import pickle
 import gurobipy
 import indp
 import indputils
@@ -29,8 +30,8 @@ class JcModel:
         self.res_alloc_type = self.resource.type
         self.v_r = self.resource.v_r
         #: Results attributes
-        self.ouptut_dir = self.set_out_dir(params['OUTPUT_DIR'], params['MAGNITUDE'])
-        self.results = indputils.INDPResults(self.layers)
+        self.output_dir = self.set_out_dir(params['OUTPUT_DIR'], params['MAGNITUDE'])
+        self.results_judge = indputils.INDPResults(self.layers)
         self.results_real = indputils.INDPResults(self.layers)
     def set_out_dir(self, root, mag):
         '''
@@ -44,16 +45,16 @@ class JcModel:
 
         Returns
         -------
-        ouput_dir : TYPE
+        output_dir : TYPE
             DESCRIPTION.
 
         '''
-        ouput_dir = root+'_L'+str(len(self.layers))+'_m'+str(mag)+"_v"+\
+        output_dir = root+'_L'+str(len(self.layers))+'_m'+str(mag)+"_v"+\
             str(self.resource.sum_resource)+'_'+self.res_alloc_type
         if self.res_alloc_type == 'auction':
-            ouput_dir += '_'+self.resource.auction_model.auction_type+\
+            output_dir += '_'+self.resource.auction_model.auction_type+\
                 '_'+self.resource.auction_model.valuation_type
-        return ouput_dir
+        return output_dir
     @staticmethod
     def set_algo(algorithm):
         '''
@@ -114,24 +115,151 @@ class JcModel:
         else: #!!! to be modified in futher expansions
             sys.exit('JC currently only supports iINDP, not td_INDP.')
 
+    def recal_result_sum(self, t_step):
+        '''
+
+        Parameters
+        ----------
+        t_step : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+        # compute total demand of all layers and each layer
+        total_demand = 0.0
+        total_demand_layer = {l:0.0 for l in self.layers}
+        for n, d in self.net.G.nodes(data=True):
+            demand_value = d['data']['inf_data'].demand
+            if demand_value < 0:
+                total_demand += demand_value
+                total_demand_layer[n[1]] += demand_value
+
+        max_run_time = 0.0
+        max_rtime_r = 0.0
+        for cost_type in self.results_judge.cost_types:
+            sum_temp = 0.0
+            sum_temp_r = 0.0
+            for l in self.layers:
+                if cost_type != 'Under Supply Perc':
+                    sum_temp += self.results_judge.results_layer[l][t_step]['costs'][cost_type]
+                    sum_temp_r += self.results_real.results_layer[l][t_step]['costs'][cost_type]
+                else:
+                    factor = total_demand_layer[l]/total_demand
+                    sum_temp += self.results_judge.results_layer[l][t_step]['costs'][cost_type]*factor
+                    sum_temp_r += self.results_real.results_layer[l][t_step]['costs'][cost_type]*factor
+            self.results_judge.add_cost(t_step, cost_type, sum_temp)
+            self.results_real.add_cost(t_step, cost_type, sum_temp)
+        for l in self.layers:
+            if self.results_judge.results_layer[l][t_step]['run_time'] > max_run_time:
+                max_run_time = self.results_judge.results_layer[l][t_step]['run_time']
+            if self.results_judge.results_layer[l][t_step]['run_time'] > max_rtime_r:
+                max_rtime_r = self.results_judge.results_layer[l][t_step]['run_time']
+            for a in self.results_judge.results_layer[l][t_step]['actions']:
+                self.results_judge.add_action(t_step, a, save_layer=False)
+        self.results_judge.add_run_time(t_step, max_run_time)
+        self.results_real.add_run_time(t_step, max_rtime_r)
+
+    def save_results_to_file(self, sample):
+        '''
+
+        Parameters
+        ----------
+        sample : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+        output_dir_agents = self.output_dir+'/agents'
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+        if not os.path.exists(output_dir_agents):
+            os.makedirs(output_dir_agents)
+        self.results_judge.to_csv(self.output_dir, sample)
+        self.results_real.to_csv(self.output_dir, sample, suffix='real')
+        self.results_judge.to_csv_layer(output_dir_agents, sample)
+        self.results_real.to_csv_layer(output_dir_agents, sample, suffix='real')
+
+    def save_object_to_file(self, sample):
+        '''
+
+        Parameters
+        ----------
+        sample : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+        with open(self.output_dir+'/objs_'+str(sample)+'.pkl', 'wb') as output:
+            pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
+
+    def correct_results_real(self, lyr, t_step):
+        '''
+
+        Parameters
+        ----------
+        lyr : TYPE
+            DESCRIPTION.
+        t_step : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+        rslts = self.results_judge.results_layer[lyr][t_step]
+        rslts_real = self.results_real.results_layer[lyr][t_step]
+        rslts_real['costs']["Node"] = rslts['costs']["Node"]
+        rslts_real['costs']["Arc"] = rslts['costs']["Arc"]
+        rslts_real['costs']["Space Prep"] = rslts['costs']["Space Prep"]
+        rslts_real['actions'] = [x for x in rslts['actions']]
+
 class JudgmentModel:
     '''
     Description
     '''
     def __init__(self, params, t_steps):
         self.judgment_type = params['JUDGMENT_TYPE']
-        self.judgment = {t+1:{l:{} for l in params['L']} for t in range(t_steps)}
-        self.realized = {t+1:{l:{} for l in params['L']} for t in range(t_steps)}
+        self.judged_nodes = {t+1:{l:{} for l in params['L']} for t in range(t_steps)}
+        self.dest_nodes = {t+1:{l:{} for l in params['L']} for t in range(t_steps)}
 
-    def save_judgments(self, obj, func_dict, lyr, t_step):
-        interdep_src = []
-        for u, _, a in obj.net.G.edges(data=True):
-            if a['data']['inf_data'].is_interdep and u[1] != lyr:
-                interdep_src.append(u)
-        for n in interdep_src:
-            if (n in func_dict.keys()) and (obj.net.G.nodes[n]['data']['inf_data'].functionality == 0.0):
-                self.judgment[t_step][lyr][n] = func_dict[n]
-                
+    def save_judgments(self, obj, judge_dict, lyr, t_step):
+        '''
+        only for damage dependee nodes and their depndents
+        Parameters
+        ----------
+        obj : TYPE
+            DESCRIPTION.
+        judge_dict : TYPE
+            DESCRIPTION.
+        lyr : TYPE
+            DESCRIPTION.
+        t_step : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+        for u, v, a in obj.net.G.edges(data=True):
+            if a['data']['inf_data'].is_interdep and u[1] != lyr and v[1] == lyr:
+                if obj.net.G.nodes[u]['data']['inf_data'].functionality == 0.0:
+                    self.judged_nodes[t_step][lyr][u] = [judge_dict[0][u]]
+                    #!!! td-INDP: 0 in judge_dict[0] should be replaced
+                    self.dest_nodes[t_step][lyr][v] = [u]
+
     def create_judgment_dict(self, obj, layers_tbj, T=1, judge_type_forced=None):
         '''
         Creates a functionality map for input into the functionality parameter in the indp function.
@@ -266,8 +394,8 @@ class ResourceModel:
     '''
     def __init__(self, params, time_steps):
         self.t_steps = time_steps
-        # self.time = {t+1:0.0 for t in range(self.t_steps)}
-        self.v_r = {t+1:{l:0.0 for l in params['L']} for t in range(self.t_steps)}
+        self.time = {t+1:0.0 for t in range(self.t_steps)}
+        self.v_r = {t+1:{l:0 for l in params['L']} for t in range(self.t_steps)}
         if params['RES_ALLOC_TYPE'] in ["MDA", "MAA", "MCA"]:
             self.type = 'auction'
             self.auction_model = AuctionModel(params, self.t_steps)
@@ -325,7 +453,7 @@ class ResourceModel:
         self.sum_resource = sum(params['V'])
         for t in range(self.t_steps):
             for l in params['L']:
-                self.v_r[t+1][l] = params['V'][params['L'].index(l)]
+                self.v_r[t+1][l] = int(params['V'][params['L'].index(l)])
 
 class AuctionModel():
     '''
@@ -431,7 +559,7 @@ class AuctionModel():
                 all_bids = [x for x in all_bids if x != price]
             num_assigned_res = 0
             for l in obj.layers:
-                obj.resource.v_r[time_step][l] = q[l]
+                obj.resource.v_r[time_step][l] = int(q[l])
                 for v in range(q[l]):
                     if print_cmd:
                         print('Resource '+str(num_assigned_res+1)+': Player '+\
@@ -472,7 +600,7 @@ class AuctionModel():
             for l in obj.layers:
                 for v in range(obj.resource.sum_resource):
                     if m.getVarByName('y_'+str(v+1)+", "+str(l)).x == 1:
-                        obj.resource.v_r[time_step][l] = v+1
+                        obj.resource.v_r[time_step][l] = int(v+1)
                         for vv in range(v+1):
                             if print_cmd:
                                 print('Resource '+str(num_assigned_res+1)+': Player '+\

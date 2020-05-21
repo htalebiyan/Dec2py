@@ -38,7 +38,8 @@ def run_judgment_call(params, T=1, save_jc=True, print_cmd=True, save_jc_model=F
     if "NUM_ITERATIONS" not in params:
         params["NUM_ITERATIONS"] = 1
     num_iterations = params["NUM_ITERATIONS"]
-    ### Creating JC objects
+    time_limit = 10*60 #!!! Might be adjusted later
+    # Creating JC objects
     c = 0
     objs = {}
     params_copy = copy.deepcopy(params)  #!!! deepcopy
@@ -54,174 +55,77 @@ def run_judgment_call(params, T=1, save_jc=True, print_cmd=True, save_jc_model=F
                     params_copy['VALUATION_TYPE'] = vt
                     objs[c] = JcModel(c,params_copy)
                     c += 1
-    # Initial calculations.
+    # t=0 costs and performance.
     indp_results_initial = indp.indp(objs[0].net, 0, 1, objs[0].layers,
                                      controlled_layers=objs[0].layers)
-
-    # Initialize failure scenario.
-    if T == 1:
-        for idx, obj in objs.items():
-            print('--Running JC: '+obj.judge_type+', resource allocation: '+obj.res_alloc_type)
-            if obj.res_alloc_type == 'auction':
-                print('auction type: '+obj.resource.auction_model.auction_type+\
-                      ', valuation: '+obj.resource.auction_model.valuation_type)
+    for idx, obj in objs.items():
+        print('--Running JC: '+obj.judge_type+', resource allocation: '+obj.res_alloc_type)
+        if obj.res_alloc_type == 'auction':
+            print('auction type: '+obj.resource.auction_model.auction_type+\
+                  ', valuation: '+obj.resource.auction_model.valuation_type)
+        if print_cmd:
+            print("Num iters=", params["NUM_ITERATIONS"])
+        # t=0 results.
+        obj.results_judge = copy.deepcopy(indp_results_initial[1]) #!!! deepcopy
+        obj.results_real = copy.deepcopy(indp_results_initial[1]) #!!! deepcopy
+        temp_judge = obj.results_judge
+        temp_real = obj.results_real
+        for i in range(num_iterations):
+            print("-Time Step (JC)",i+1,"/",num_iterations)
+            #: Resource Allocation
+            res_alloc_time_start = time.time()
+            if obj.resource.type == 'auction':
+                obj.resource.auction_model.auction_resources(obj, i+1, print_cmd=print_cmd,
+                                                             compute_poa=False)
+            obj.resource.time[i+1] = time.time()-res_alloc_time_start
+            # Judgment-based Decisions
             if print_cmd:
-                print("Num iters=", params["NUM_ITERATIONS"])
-            # t=0 results.
-            obj.results = indp_results_initial[1]
-            obj.results_real = indp_results_initial[1]
-            for i in range(num_iterations):
-                print("-Iteration "+str(i+1)+"/"+str(num_iterations))
-                res_alloc_time_start = time.time()
-                if obj.resource.type == 'auction':
-                    obj.resource.auction_model.auction_resources(obj, i+1, print_cmd=print_cmd,
-                                                                 compute_poa=False)
-                functionality = {l:{} for l in obj.layers}
-                uncorrected_results = {}
+                print("Judge-based decisions: ")
+            functionality = {l:{} for l in obj.layers}
+            for l in obj.layers:
                 if print_cmd:
-                    print("Judgment: ")
-                for l in obj.layers:
-                    if print_cmd:
-                        print("Layer-%d"%(l))
-                    neg_layer = [x for x in obj.layers if x != l]
-                    functionality[l] = obj.judgments.create_judgment_dict(obj, neg_layer)
-                    obj.judgments.save_judgments(obj, functionality[l], l, i+1)
+                    print("Layer-%d"%(l))
+                neg_layer = [x for x in obj.layers if x != l]
+                functionality[l] = obj.judgments.create_judgment_dict(obj, neg_layer)
+                obj.judgments.save_judgments(obj, functionality[l], l, i+1)
                 # Make decision based on judgments before communication
-                # indp_results = indp.indp(interdep_net, v_r_applied[l-1], 1, layers=layers,
-                #                 controlled_layers=[l], functionality=functionality[l],
-                #                 print_cmd=print_cmd, time_limit=10*60)
-                # # Save models for re-evaluation after communication
-                # uncorrected_results[l] = indp_results[1]
-                # # Save results of decisions based on judgments
-                # dindp_results[l].extend(indp_results[1], t_offset=i+1)
-                # # Save models to file
-                # if save_jc_model:
-                #     indp.save_INDP_model_to_file(indp_results[0], output_dir+"/Model", i+1, l)
-                # # Modify network to account for recovery and calculate components.
-                # indp.apply_recovery(interdep_net, dindp_results[l], i+1)
-                # dindp_results[l].add_components(i+1, indputils.INDPComponents.calculate_components(indp_results[0], interdep_net, layers=[l]))
-    #         # Re-evaluate judgments based on other agents' decisions
-    #         if print_cmd:
-    #             print("Re-evaluation: ")
-    #         for l in layers:
-    #             if print_cmd:
-    #                 print("Layer-%d"%(l))
-    #             indp_results_real, realizations = realized_performance(interdep_net,
-    #                             uncorrected_results[l], functionality=functionality[l],
-    #                             T=1, layers=layers, controlled_layers=[l], print_cmd=print_cmd)
-    #             dindp_results_real[l].extend(indp_results_real[1], t_offset=i+1)
-    #             if save_jc_model:
-    #                 indp.save_INDP_model_to_file(indp_results_real[0], output_dir+"/Model",
-    #                                              i+1, l, suffix='Real')
-    #                 output_dir_judgments = output_dir + '/judgments'
-    #                 write_judgments_csv(output_dir_judgments, realizations,
-    #                                     sample_num=params["SIM_NUMBER"],
-    #                                     agent=l, time_step=i+1, suffix="")
-    #     # Calculate sum of costs
-    #     dindp_sum, dindp_real_sum = compute_cost_sum(dindp_results, dindp_results_real,
-    #                                                  interdep_net, indp_results_initial,
-    #                                                  num_iterations, layers)
-    #     output_dir_auction = output_dir + '/auctions'
-    #     if auction_type:
-    #         write_auction_csv(output_dir_auction, res_allocate, res_alloc_time,
-    #                           poa, valuations, sample_num=params["SIM_NUMBER"], suffix="")
-    #     else:
-    #         write_auction_csv(output_dir_auction, res_allocate, res_alloc_time,
-    #                           sample_num=params["SIM_NUMBER"], suffix="")
-    #     # Save results of D-iINDP run to file.
-    #     if save_jc:
-    #         output_dir_agents = output_dir + '/agents'
-    #         if not os.path.exists(output_dir):
-    #             os.makedirs(output_dir)
-    #         if not os.path.exists(output_dir_agents):
-    #             os.makedirs(output_dir_agents)
-    #         for l in layers:
-    #             dindp_results[l].to_csv(output_dir_agents, params["SIM_NUMBER"],
-    #                                     suffix=str(l))
-    #             dindp_results_real[l].to_csv(output_dir_agents, params["SIM_NUMBER"],
-    #                                          suffix='Real_'+str(l))
-    #         dindp_sum.to_csv(output_dir, params["SIM_NUMBER"], suffix='sum')
-    #         dindp_real_sum.to_csv(output_dir, params["SIM_NUMBER"], suffix='Real_sum')
-    return objs
+                indp_results = indp.indp(obj.net, obj.v_r[i+1][l], 1, layers=obj.layers,
+                                controlled_layers=[l], functionality=functionality[l],
+                                print_cmd=print_cmd, time_limit=time_limit)
+                obj.results_judge.extend(indp_results[1],t_offset=i+1)
+                # Save models to file
+                if save_jc_model:
+                    indp.save_INDP_model_to_file(indp_results[0], output_dir+"/Model", i+1, l)
+                # Modify network to account for recovery and calculate components.
+                indp.apply_recovery(obj.net, obj.results_judge, i+1)
+                obj.results_judge.add_components(i+1, indputils.INDPComponents.\
+                                           calculate_components(indp_results[0],
+                                                                obj.net, layers=[l]))
+            # Re-evaluate judgments based on other agents' decisions
+            if print_cmd:
+                print("Re-evaluation: ")
+            for l in obj.layers:
+                if print_cmd:
+                    print("Layer-%d"%(l))
+                indp_results_real = realized_performance(obj, i+1, functionality=functionality[l],
+                                                         judger_layer=l, print_cmd=print_cmd)
+                obj.results_real.extend(indp_results_real[1],t_offset=i+1)
+                obj.correct_results_real(l, i+1)
+                if save_jc_model:
+                    indp.save_INDP_model_to_file(indp_results_real[0], output_dir+"/Model",
+                                                  i+1, l, suffix='real')
+            #Calculate sum of costs
+            obj.recal_result_sum(i+1)
+        # Save results of D-iINDP run to file.
+        if save_jc:
+            obj.save_results_to_file(params["SIM_NUMBER"])
+            obj.save_object_to_file(params["SIM_NUMBER"])
 
-def compute_cost_sum(dindp_results, dindp_results_real, interdep_net,
-                     indp_results_initial, num_iterations, layers):
-    '''
-    computes sum of all costs from the cost of individual layers
-
-    Parameters
-    ----------
-    dindp_results : TYPE
-        DESCRIPTION.
-    dindp_results_real : TYPE
-        DESCRIPTION.
-    interdep_net : TYPE
-        DESCRIPTION.
-    indp_results_initial : TYPE
-        DESCRIPTION.
-    num_iterations : TYPE
-        DESCRIPTION.
-    layers : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    dindp_results_sum : TYPE
-        DESCRIPTION.
-    dindp_results_real_sum : TYPE
-        DESCRIPTION.
-
-    '''
-    dindp_results_sum = indputils.INDPResults()
-    dindp_results_real_sum = indputils.INDPResults()
-    cost_types = dindp_results[1][0]['costs'].keys()
-    # compute total demand of all layers and each layer
-    total_demand = 0.0
-    total_demand_layer = {l:0.0 for l in layers}
-    for n, d in interdep_net.G.nodes(data=True):
-        demand_value = d['data']['inf_data'].demand
-        if demand_value < 0:
-            total_demand += demand_value
-            total_demand_layer[n[1]] += demand_value
-
-    for i in range(num_iterations+1):
-        sum_run_time = 0.0
-        sum_run_time_real = 0.0
-        for cost_type in cost_types:
-            sum_temp = 0.0
-            sum_temp_real = 0.0
-            if i == 0:
-                sum_temp = indp_results_initial[1][0]['costs'][cost_type]
-                sum_temp_real = indp_results_initial[1][0]['costs'][cost_type]
-            else:
-                for p in layers:
-                    if cost_type != 'Under Supply Perc':
-                        sum_temp += dindp_results[p][i]['costs'][cost_type]
-                        sum_temp_real += dindp_results_real[p][i]['costs'][cost_type]
-                    else:
-                        factor = total_demand_layer[p]/total_demand
-                        sum_temp += dindp_results[p][i]['costs'][cost_type]*factor
-                        sum_temp_real += dindp_results_real[p][i]['costs'][cost_type]*factor
-
-            dindp_results_sum.add_cost(i, cost_type, sum_temp)
-            dindp_results_real_sum.add_cost(i, cost_type, sum_temp_real)
-        for p in layers:
-            if dindp_results[p][i]['run_time'] > sum_run_time:
-                sum_run_time = dindp_results[p][i]['run_time']
-            if dindp_results_real[p][i]['run_time'] > sum_run_time_real:
-                sum_run_time_real = dindp_results_real[p][i]['run_time']
-            for a in dindp_results[p][i]['actions']:
-                dindp_results_sum.add_action(i, a)
-        dindp_results_sum.add_run_time(i, sum_run_time)
-        dindp_results_real_sum.add_run_time(i, sum_run_time_real)
-    return dindp_results_sum, dindp_results_real_sum
-
-def realized_performance(N, indp_results, functionality, layers, T=1,
-                         controlled_layers=[1], print_cmd=False):
+def realized_performance(obj, t_step, functionality, judger_layer, print_cmd=False):
     '''
     This function computes the realized values of flow cost, unbalanced cost, and
     demand deficit at the end of each step according to the what the other agent
-    actually decides (as opposed to according to the guess).
+    actually decides (as opposed to according to the judgment-based decisions).
 
     Parameters
     ----------
@@ -235,7 +139,7 @@ def realized_performance(N, indp_results, functionality, layers, T=1,
         DESCRIPTION.
     T : TYPE, optional
         DESCRIPTION. The default is 1.
-    controlled_layers : TYPE, optional
+    judger_layer : TYPE, optional
         DESCRIPTION. The default is [1].
     print_cmd : TYPE, optional
         DESCRIPTION. The default is False.
@@ -248,52 +152,26 @@ def realized_performance(N, indp_results, functionality, layers, T=1,
         DESCRIPTION.
 
     '''
-    g_prime_nodes = [n[0] for n in N.G.nodes(data=True) if n[1]['data']['inf_data'].net_id in layers]
-    g_prime = N.G.subgraph(g_prime_nodes)
-    interdep_nodes = {}
-    for u, v, a in g_prime.edges(data=True):
-        if a['data']['inf_data'].is_interdep and g_prime.nodes[v]['data']['inf_data'].net_id in controlled_layers:
-            if u not in interdep_nodes:
-                interdep_nodes[u] = []
-            interdep_nodes[u].append(v)
-    list_interdep_nodes = interdep_nodes.keys()
-    functionality_realized = copy.deepcopy(functionality)
-    realizations = {t:{} for t in range(T)}
-    for t in range(T):
-        real_count = 0
-        for u, _ in functionality[t].items():
-            if u in list_interdep_nodes:
-                real_count += 1
-                v_values = [g_prime.nodes[x]['data']['inf_data'].functionality for x in interdep_nodes[u]]
-                realizations[t][real_count] = {'vNames':interdep_nodes[u], 'uName':u,
-                            'uJudge':functionality[t][u], 'uCorrected':False, 'v_values':v_values}
-                if functionality[t][u] == 1.0 and g_prime.nodes[u]['data']['inf_data'].functionality == 0.0:
-                    functionality_realized[t][u] = 0.0
-                    realizations[t][real_count]['uCorrected'] = True
-                    if print_cmd:
-                        print('Correct '+str(u)+' to 0 (affect. '+str(v_values)+')')
-    indp_results_real = indp.indp(N, v_r=0, T=1, layers=layers, controlled_layers=controlled_layers,
+    time_limit = 10*60 #!!! Might be adjusted later
+    functionality_realized = copy.deepcopy(functionality) #!!! deepcopy
+    dest_nodes = obj.judgments.dest_nodes[t_step][judger_layer]
+    for v, val in dest_nodes.items():
+        val.append(obj.net.G.nodes[v]['data']['inf_data'].functionality)
+    judged_nodes = obj.judgments.judged_nodes[t_step][judger_layer]
+    for u, val in judged_nodes.items():
+        if functionality[0][u] == 1.0 and obj.net.G.nodes[u]['data']['inf_data'].functionality == 0.0:
+            functionality_realized[0][u] = 0.0
+            if print_cmd:
+                print('Correct judgment: '+str(u)+'<-0')
+        val.append(obj.net.G.nodes[u]['data']['inf_data'].functionality)
+    indp_results_real = indp.indp(obj.net, v_r=0, T=1, layers=obj.layers,
+                                  controlled_layers=[judger_layer],
                                   functionality=functionality_realized,
-                                  print_cmd=print_cmd, time_limit=10*60)
-    for t in range(T):
-        costs = indp_results.results[t]['costs']
-        node_cost = costs["Node"]
-        indp_results_real[1][t]['costs']["Node"] = node_cost
-        arc_cost = costs["Arc"]
-        indp_results_real[1][t]['costs']["Arc"] = arc_cost
-        space_prep_cost = costs["Space Prep"]
-        indp_results_real[1][t]['costs']["Space Prep"] = space_prep_cost
-        flow_cost = indp_results_real[1][t]['costs']["Flow"]
-        over_supp_cost = indp_results_real[1][t]['costs']["Over Supply"]
-        under_supp_cost = indp_results_real[1][t]['costs']["Under Supply"]
-        # Calculate total costs.
-        indp_results_real[1][t]['costs']["Total"] = flow_cost+arc_cost+node_cost+\
-            over_supp_cost+under_supp_cost+space_prep_cost
-        indp_results_real[1][t]["Total no disconnection"] = space_prep_cost+arc_cost+\
-            flow_cost+node_cost
-    return indp_results_real, realizations
-
-
+                                  print_cmd=print_cmd, time_limit=time_limit)
+    for v, val in dest_nodes.items():
+        nodeVar='w_'+str(v)+","+str(0)
+        val.append(indp_results_real[0].getVarByName(nodeVar).x)
+    return indp_results_real
 
 def write_auction_csv(outdir, res_allocate, res_alloc_time, poa=None, valuations=None,
                       sample_num=1, suffix=""):
