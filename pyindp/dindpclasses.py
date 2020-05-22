@@ -2,12 +2,10 @@
 import os.path
 import operator
 import copy
-import itertools
 import time
 import sys
-import pandas as pd
-import numpy as np
 import pickle
+import numpy as np
 import gurobipy
 import indp
 import indputils
@@ -35,7 +33,6 @@ class JcModel:
         self.results_real = indputils.INDPResults(self.layers)
     def set_out_dir(self, root, mag):
         '''
-        
         Parameters
         ----------
         root : TYPE
@@ -70,10 +67,10 @@ class JcModel:
             DESCRIPTION.
 
         '''
-        if algorithm == 'JC':
-            return 'JC'
-        else:
+        if algorithm != 'JC':
             sys.exit('Wrong Algorithm. It should be JC.')
+        else:
+            return 'JC'
     def set_network(self, params):
         '''
 
@@ -88,11 +85,12 @@ class JcModel:
             DESCRIPTION.
 
         '''
-        if "N" in params:
-            return copy.deepcopy(params["N"]) #!!! deepcopy
-        else:
+        if "N" not in params:
             sys.exit('No initial network object for: '+self.judge_type+', '+\
                      self.res_alloc_type)
+        else:
+            return copy.deepcopy(params["N"]) #!!! deepcopy
+
     @staticmethod
     def set_time_steps(T, num_iter):
         '''
@@ -110,10 +108,10 @@ class JcModel:
             DESCRIPTION.
 
         '''
-        if T == 1:
+        if T != 1:#!!! to be modified in futher expansions
+            sys.exit('ERROR: T!=1, JC currently only supports iINDP, not td_INDP.')
+        else:
             return num_iter
-        else: #!!! to be modified in futher expansions
-            sys.exit('JC currently only supports iINDP, not td_INDP.')
 
     def recal_result_sum(self, t_step):
         '''
@@ -155,8 +153,8 @@ class JcModel:
         for l in self.layers:
             if self.results_judge.results_layer[l][t_step]['run_time'] > max_run_time:
                 max_run_time = self.results_judge.results_layer[l][t_step]['run_time']
-            if self.results_judge.results_layer[l][t_step]['run_time'] > max_rtime_r:
-                max_rtime_r = self.results_judge.results_layer[l][t_step]['run_time']
+            if self.results_real.results_layer[l][t_step]['run_time'] > max_rtime_r:
+                max_rtime_r = self.results_real.results_layer[l][t_step]['run_time']
             for a in self.results_judge.results_layer[l][t_step]['actions']:
                 self.results_judge.add_action(t_step, a, save_layer=False)
         self.results_judge.add_run_time(t_step, max_run_time)
@@ -263,7 +261,7 @@ class JudgmentModel:
     def create_judgment_dict(self, obj, layers_tbj, T=1, judge_type_forced=None):
         '''
         Creates a functionality map for input into the functionality parameter in the indp function.
-    
+
         Parameters
         ----------
         obj : JcModel instance
@@ -273,21 +271,24 @@ class JudgmentModel:
             from all layers of the network or controlled layers.
         T : int, optional
             DESCRIPTION. The default is 1
-    
+
         Returns
         -------
         functionality : TYPE
             DESCRIPTION.
-    
+
         '''
         judge_type = self.judgment_type
         if judge_type_forced:
             judge_type = judge_type_forced
         functionality = {}
-        g_prime_nodes = [n[0] for n in obj.net.G.nodes(data=True) if n[1]['data']['inf_data'].net_id in layers_tbj]
+        g_prime_nodes = [n[0] for n in obj.net.G.nodes(data=True)\
+                         if n[1]['data']['inf_data'].net_id in layers_tbj]
         g_prime = obj.net.G.subgraph(g_prime_nodes)
-        N_prime = [n for n in g_prime.nodes(data=True) if n[1]['data']['inf_data'].functionality == 0.0]
-        N_prime_nodes = [n[0] for n in g_prime.nodes(data=True) if n[1]['data']['inf_data'].functionality == 0.0]
+        N_prime = [n for n in g_prime.nodes(data=True)\
+                   if n[1]['data']['inf_data'].functionality == 0.0]
+        N_prime_nodes = [n[0] for n in g_prime.nodes(data=True)\
+                         if n[1]['data']['inf_data'].functionality == 0.0]
         for t in range(T):
             functionality[t] = {}
             functional_nodes = []
@@ -355,7 +356,7 @@ class JudgmentModel:
         until the next time step with the probability that is equal to the demand/supply
         value of the dependee node divided by the maximum demand/supply value in the dependee
         network. Also, based on the probability, a judgment is generated for the dependee node.
-    
+
         Parameters
         ----------
         N : InfrastructureNetwork instance
@@ -363,20 +364,23 @@ class JudgmentModel:
         layers_tbj : list
             List of layers to be judged, which can be different
             from all layers of the network or controlled layers.
-    
+
         Returns
         -------
         prob : TYPE
             DESCRIPTION.
-    
+
         '''
         max_values = {}
         prob = {}
         for l in layers_tbj:
-            g_lyr_nodes = [n[0] for n in N.G.nodes(data=True) if n[1]['data']['inf_data'].net_id == l]
+            g_lyr_nodes = [n[0] for n in N.G.nodes(data=True)\
+                           if n[1]['data']['inf_data'].net_id == l]
             g_lyr = N.G.subgraph(g_lyr_nodes)
-            max_values[l, 'Demand'] = min([n[1]['data']['inf_data'].demand for n in g_lyr.nodes(data=True)])
-            max_values[l, 'Supply'] = max([n[1]['data']['inf_data'].demand for n in g_lyr.nodes(data=True)])
+            max_values[l, 'Demand'] = min([n[1]['data']['inf_data'].demand\
+                                           for n in g_lyr.nodes(data=True)])
+            max_values[l, 'Supply'] = max([n[1]['data']['inf_data'].demand\
+                                           for n in g_lyr.nodes(data=True)])
             for n in g_lyr.nodes(data=True):
                 prob_node = 0.5
                 if not n[0] in prob.keys():
