@@ -65,7 +65,7 @@ class INDPResults:
         if self.layers:
             if t_end == 0: 
                 t_end = len(indp_result[self.layers[0]])
-            for l in self.layers:
+            for l in indp_result.results_layer.keys():
                 for new_t,t in zip([x+t_offset for x in range(t_end-t_start)],[y+t_start for y in range(t_end-t_start)]):
                     self.results_layer[l][new_t]=indp_result.results_layer[l][t]
     def add_cost(self,t,cost_type,cost,cost_layer={}):
@@ -73,7 +73,7 @@ class INDPResults:
             self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
         self.results[t]['costs'][cost_type]=cost
         if self.layers:
-            for l in self.layers:
+            for l in cost_layer.keys():
                 if t not in self.results_layer[l]:
                     self.results_layer[l][t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
                 self.results_layer[l][t]['costs'][cost_type]=cost_layer[l]
@@ -86,11 +86,11 @@ class INDPResults:
                 if t not in self.results_layer[l]:
                     self.results_layer[l][t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
                 self.results_layer[l][t]['run_time']=run_time
-    def add_action(self,t,action):
+    def add_action(self, t, action, save_layer=True):
         if t not in self.results:
             self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
         self.results[t]['actions'].append(action)
-        if self.layers:
+        if self.layers and save_layer:
             action_layer = int(action[-1])
             if t not in self.results_layer[action_layer]:
                 self.results_layer[action_layer][t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
@@ -111,8 +111,8 @@ class INDPResults:
         self.add_gc_size(t,components.gc_size)
     def to_csv(self,outdir,sample_num=1,suffix=""):
         action_file =outdir+"/actions_"+str(sample_num)+"_"+suffix+".csv"
-        costs_file =outdir+"/costs_"  +str(sample_num)+"_"+suffix+".csv"
-        run_time_file =outdir+"/run_time_"  +str(sample_num)+"_"+suffix+".csv"
+        costs_file =outdir+"/costs_"+str(sample_num)+"_"+suffix+".csv"
+        run_time_file =outdir+"/run_time_"+str(sample_num)+"_"+suffix+".csv"
         perc_file  =outdir+"/percolation_"+str(sample_num)+"_"+suffix+".csv"
         comp_file  =outdir+"/components_"+str(sample_num)+"_"+suffix+".csv"
         with open(action_file,'w') as f:
@@ -139,9 +139,9 @@ class INDPResults:
 #                f.write(str(t)+","+self.results[t]['components'].to_csv_string()+"\n")
     def to_csv_layer(self,outdir,sample_num=1,suffix=""):
         for l in self.layers:
-            action_file =outdir+"/actions_"+str(sample_num)+"_"+str(l)+"_"+suffix+".csv"
-            costs_file =outdir+"/costs_"+str(sample_num)+"_"+str(l)+"_"+suffix+".csv"
-            run_time_file =outdir+"/run_time_"+str(sample_num)+"_"+str(l)+"_"+suffix+".csv"
+            action_file =outdir+"/actions_"+str(sample_num)+"_L"+str(l)+"_"+suffix+".csv"
+            costs_file =outdir+"/costs_"+str(sample_num)+"_L"+str(l)+"_"+suffix+".csv"
+            run_time_file =outdir+"/run_time_"+str(sample_num)+"_L"+str(l)+"_"+suffix+".csv"
             with open(action_file,'w') as f:
                 f.write("t,action\n")
                 for t in self.results_layer[l]:
@@ -206,6 +206,8 @@ class INDPResults:
 #                    else:
 ##                        print "Caution: No component."
 #                        pass
+        else:
+            sys.exit('File does not exist: '+action_file)
         return indp_result
 
     @classmethod

@@ -55,7 +55,8 @@ def plot_performance_curves_shelby(df, x='t', y='cost', cost_type='Total',
         auction_type = df.auction_type.unique().tolist()
     if not valuation_type:
         valuation_type = df.valuation_type.unique().tolist()
-    valuation_type.remove('nan')
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
     #sns.color_palette("husl", len(auction_type)+1)
     row_plot = [valuation_type, 'valuation_type']
@@ -238,9 +239,11 @@ def plot_relative_performance_shelby(lambda_df, cost_type='Total', lambda_type='
     # decision_type = lambda_df.decision_type.unique().tolist()
     judgment_type = lambda_df.judgment_type.unique().tolist()
     auction_type = lambda_df.auction_type.unique().tolist()
-    auction_type.remove('nan')
+    if 'nan' in auction_type:
+        auction_type.remove('nan')
     valuation_type = lambda_df.valuation_type.unique().tolist()
-    valuation_type.remove('nan')
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
     row_plot = [valuation_type, 'valuation_type']
     col_plot = [auction_type, 'auction_type']
     hue_type = [judgment_type, 'judgment_type']
@@ -344,9 +347,11 @@ def plot_auction_allocation_shelby(df_res, ci=None):
     decision_type = df_res.decision_type.unique().tolist()
     # judgment_type = df_res.judgment_type.unique().tolist()
     auction_type = df_res.auction_type.unique().tolist()
-    auction_type.remove('nan')
+    if 'nan' in auction_type:
+        auction_type.remove('nan')
     valuation_type = df_res.valuation_type.unique().tolist()
-    valuation_type.remove('nan')
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
     figs = [valuation_type, 'valuation_type']
     row_plot = [layer, 'layer']
     col_plot = [no_resources, 'no_resources']
@@ -472,7 +477,8 @@ def plot_relative_allocation_shelby(gap_res, distance_type='gap'):
     judgment_type = gap_res.judgment_type.unique().tolist()
     auction_type = gap_res.auction_type.unique().tolist()
     valuation_type = gap_res.valuation_type.unique().tolist()
-    valuation_type.remove('nan')
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
     row_plot = [valuation_type, 'valuation_type']
     col_plot = [auction_type, 'auction_type']
     hue_type = [judgment_type, 'judgment_type']
@@ -618,9 +624,11 @@ def plot_run_time(df, ci=None):
     # decision_type = df.decision_type.unique().tolist()
     judgment_type = df.judgment_type.unique().tolist()
     auction_type = df.auction_type.unique().tolist()
-    auction_type.remove('nan')
+    if 'nan' in auction_type:
+        auction_type.remove('nan')
     valuation_type = df.valuation_type.unique().tolist()
-    valuation_type.remove('nan')
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
     T = len(df['t'].unique().tolist())
     value_vars = ['valuation_time', 'auction_time', 'decision_time']
     row_plot = [valuation_type, 'valuation_type']
@@ -698,7 +706,8 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
     valuation_type = df.valuation_type.unique().tolist()
     auction_type = df.auction_type.unique().tolist()
     layers = df.layer.unique().tolist()
-    layers.remove('nan')
+    if 'nan' in layers:
+        layers.remove('nan')
     layer_names = {1:'Water', 2:'Gas', 3:'Power', 4:'Telecom.'}
     colors = ['#154352', '#dbb539', '#007268', '#5d9c51']
     pal = sns.color_palette(colors[:len(auction_type)-1]+['k'])
@@ -724,8 +733,8 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
     ax.set_title(r'Overall')
     ax.get_legend().set_visible(False)
     ax.xaxis.set_ticks(np.arange(0, 10, 1.0))   #ax.get_xlim()
-
-    valuation_type.remove('nan')
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
     head = 'Resource Cap: '+str(res_caps).strip('[]')+', Valuation: '+\
         str(valuation_type).strip('[]')
     fig.suptitle(head)

@@ -14,7 +14,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
 
     Parameters
     ----------
-    params : dit
+    params : dict
         DESCRIPTION.
     fail_sce_param : dict
         DESCRIPTION.
@@ -29,7 +29,6 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
     # Set root directories
     base_dir = fail_sce_param['BASE_DIR']
     damage_dir = fail_sce_param['DAMAGE_DIR']
-    layers = params['L']
     topology = None
     shelby_data = True
     ext_interdependency = None
@@ -48,75 +47,73 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
         for i in fail_sce_param['SAMPLE_RANGE']:
             try:
                 list_high_dam
-                if len(list_high_dam.loc[(list_high_dam.set == i)&(list_high_dam.sce == m)].index) == 0:
+                if len(list_high_dam.loc[(list_high_dam.set == i)&\
+                                         (list_high_dam.sce == m)].index) == 0:
                     continue
             except NameError:
                 pass
 
-            print('\n---Running Magnitude '+str(m)+' sample '+str(i)+'...')
+            print('---Running Magnitude '+str(m)+' sample '+str(i)+'...')
             print("Initializing network...")
             if shelby_data:
-                interdep_net, _, _ = indp.initialize_network(BASE_DIR=base_dir,
+                params["N"], _, _ = indp.initialize_network(BASE_DIR=base_dir,
                             external_interdependency_dir=ext_interdependency,
                             sim_number=0, magnitude=6, sample=0, v=params["V"],
                             shelby_data=shelby_data)
             else:
-                interdep_net, no_resource, layers = indp.initialize_network(BASE_DIR=base_dir,
+                params["N"], params["V"], params['L'] = indp.initialize_network(BASE_DIR=base_dir,
                             external_interdependency_dir=ext_interdependency,
                             magnitude=m, sample=i, shelby_data=shelby_data,
                             topology=topology)
-                params["V"] = no_resource
-            if interdep_net is None:
-                print('no network '+str((m,i)))
-            params["N"] = interdep_net
             params["SIM_NUMBER"] = i
             params["MAGNITUDE"] = m
 
             output_dir_full = ''
-            if params["ALGORITHM"] == "JUDGMENT_CALL" and params["AUCTION_TYPE"]:
-                output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(layers))+'_m'+\
-                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'_auction_'+params["AUCTION_TYPE"]+\
-                        '_'+params["VALUATION_TYPE"]+'/actions_'+str(i)+'_sum.csv'
-            elif params["ALGORITHM"] == "JUDGMENT_CALL" and not params["AUCTION_TYPE"]:
-                output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(layers))+'_m'+\
-                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'_uniform_alloc/actions_'+str(i)+'_sum.csv'
+            if params["ALGORITHM"] == "JC" and params["RES_ALLOC_TYPE"] in ["MDA", "MAA", "MCA"]:
+                output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
+                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'_AUCTION_'+\
+                    params["RES_ALLOC_TYPE"]+'_'+params["VALUATION_TYPE"]+\
+                    '/actions_'+str(i)+'_real.csv'
+            elif params["ALGORITHM"] == "JC" and not params["RES_ALLOC_TYPE"] == 'UNIFORM':
+                output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
+                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'_UNIFORM/actions_'+\
+                    str(i)+'_real.csv'
             else:
-                output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(layers))+'_m'+\
+                output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
                     str(params["MAGNITUDE"])+"_v"+str(params["V"])+'/actions_'+str(i)+'_.csv'
             if os.path.exists(output_dir_full):
                 print('results are already there\n')
                 continue
 
             if fail_sce_param['TYPE'] == 'WU':
-                indp.add_Wu_failure_scenario(interdep_net, DAM_DIR=damage_dir,
+                indp.add_Wu_failure_scenario(params["N"], DAM_DIR=damage_dir,
                                              noSet=i, noSce=m)
             elif fail_sce_param['TYPE'] == 'ANDRES':
-                indp.add_failure_scenario(interdep_net, DAM_DIR=damage_dir,
+                indp.add_failure_scenario(params["N"], DAM_DIR=damage_dir,
                                           magnitude=m, v=params["V"], sim_number=i)
             elif fail_sce_param['TYPE'] == 'random':
-                indp.add_random_failure_scenario(interdep_net, DAM_DIR=damage_dir,
+                indp.add_random_failure_scenario(params["N"], DAM_DIR=damage_dir,
                                                  sample=i)
             elif fail_sce_param['TYPE'] == 'synthetic':
-                indp.add_synthetic_failure_scenario(interdep_net, DAM_DIR=base_dir,
+                indp.add_synthetic_failure_scenario(params["N"], DAM_DIR=base_dir,
                                                     topology=topology, config=m, sample=i)
 
             if params["ALGORITHM"] == "INDP":
-                indp.run_indp(params, validate=False, T=params["T"], layers=layers,
-                              controlled_layers=layers, saveModel=False, print_cmd_line=False)
+                indp.run_indp(params, validate=False, T=params["T"], layers=params["L"],
+                              controlled_layers=params["L"], saveModel=False, print_cmd_line=False)
             elif params["ALGORITHM"] == "INFO_SHARE":
-                indp.run_info_share(params, layers=layers, T=params["T"])
+                indp.run_info_share(params, layers=params["L"], T=params["T"])
             elif params["ALGORITHM"] == "INRG":
-                indp.run_inrg(params, layers=layers, player_ordering=player_ordering)
+                indp.run_inrg(params, layers=params["L"], player_ordering=player_ordering)
             elif params["ALGORITHM"] == "BACKWARDS_INDUCTION":
-                gametree.run_backwards_induction(interdep_net, i, players=layers,
+                gametree.run_backwards_induction(params["N"], i, players=params["L"],
                                                  player_ordering=player_ordering,
                                                  T=params["T"], outdir=params["OUTPUT_DIR"])
             elif params["ALGORITHM"] == "JC":
-                dindp.run_judgment_call(params, layers=layers, T=params["T"],
-                                        save_jc_model=False, print_cmd=False)
+                dindp.run_judgment_call(params, save_jc_model=False, print_cmd=False)
 
 def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
-               auction_type=None, valuation_type=None, output_dir='..'):
+               res_alloc_type=None, valuation_type=None, output_dir='..'):
     '''
     This function runs a given method for different numbers of resources,
     and a given judge, auction, and valuation type in the case of JC.
@@ -138,12 +135,10 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
         DESCRIPTION.
     judgment_type : str, optional
         Type of Judgments in Judfment Call Method. The default is None.
-    auction_type : str, optional
-        Type of auction for resource allocation. If None,
-        fixed number of resources is allocated based on v_r, which MUST be a list
-        of float when auction_type == None. The default is None.
+    res_alloc_type : str, optional
+        Type of resource allocation method  for resource allocation. The default is None.
     valuation_type : str, optional
-        Type of valuation in auction.. The default is None.
+        Type of valuation in auction. The default is None.
     output_dir : str, optional
         DESCRIPTION. The default is '..'.
     Returns
@@ -157,9 +152,9 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
                       "V":v, "T":1, 'L':layers, "ALGORITHM":"INDP"}
         elif method == 'JC':
             params = {"NUM_ITERATIONS":10,
-                      "OUTPUT_DIR":output_dir+'/results/judgeCall_'+judgment_type+'_results',
+                      "OUTPUT_DIR":output_dir+'/results/jc_results',
                       "V":v, "T":1, 'L':layers, "ALGORITHM":"JC",
-                      "JUDGMENT_TYPE":judgment_type, "AUCTION_TYPE":auction_type,
+                      "JUDGMENT_TYPE":judgment_type, "RES_ALLOC_TYPE":res_alloc_type,
                       "VALUATION_TYPE":valuation_type}
         elif method == 'TD_INDP':
             params = {"NUM_ITERATIONS":1, "OUTPUT_DIR":output_dir+'/results/tdindp_results',
@@ -198,18 +193,13 @@ def run_parallel(i):
     rc = [3, 6, 8, 12]
     layers = [1, 2, 3, 4]
     judge_type = ['OPTIMISTIC']
-    auc_type = ["MDA", "MAA", "MCA"]
+    res_alloc_type = ["MDA", "MAA", "MCA"]
     val_type = ['DTC']
-    run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir)
+
+    run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir,)
     # run_method(fail_sce_param, rc, layers, method='TD_INDP')
-    for jc in judge_type:
-        run_method(fail_sce_param, rc, layers, method='JC', judgment_type=jc,
-                   auction_type=None, valuation_type=None, output_dir=output_dir)
-        for at in auc_type:
-            for vt in val_type:
-                run_method(fail_sce_param, rc, layers, method='JC',
-                           judgment_type=jc, auction_type=at, valuation_type=vt,
-                           output_dir=output_dir)
+    run_method(fail_sce_param, rc, layers, method='JC', judgment_type=judge_type,
+               res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,)
 
 if __name__ == "__main__":
     NUM_CORES = multiprocessing.cpu_count()

@@ -1,8 +1,7 @@
-Judgment Call functions
+Judgment Call Classes
 =======================================================
-.. automodule:: dindp_classed
+.. automodule:: dindpclasses
     :members:
-.. autoclass:: JC_model
 
 .. toctree::
    :maxdepth: 2
