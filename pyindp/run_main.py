@@ -217,7 +217,8 @@ if __name__ == "__main__":
     #: The address to damge scenario data.
     DAMAGE_DIR = "../data/Wu_Damage_scenarios/" #random_disruption_shelby/"
     #: The address to where output are stored.
-    OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
+    OUTPUT_DIR = '../results/'
+    #'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
     #'../results/'
     ###############'../results/'#+FAIL_SCE_PARAM['TOPO']+'/results/'
 
@@ -230,7 +231,7 @@ if __name__ == "__main__":
     #:     sce range: FAIL_SCE_PARAM['MAGS']
     #: For Synthetic nets: sample range: FAIL_SCE_PARAM['SAMPLE_RANGE'],
     #:     configurations: FAIL_SCE_PARAM['MAGS']
-    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(0, 50), 'MAGS':range(0, 95),
+    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(12, 15), 'MAGS':range(0, 95),
                       'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
@@ -241,7 +242,7 @@ if __name__ == "__main__":
     #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
 
     # No restriction on number of resources for each layer
-    RC = [3, 6, 8, 12]
+    RC = [3]
     # Not necessary for synthetic nets
     # [3, 6, 8, 12]
     # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
@@ -249,16 +250,16 @@ if __name__ == "__main__":
     # Not necessary for synthetic nets
     JUDGE_TYPE = ["OPTIMISTIC"]
     #["PESSIMISTIC", "OPTIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"]
-    RES_ALLOC_TYPE = ["MDA", "MAA", "MCA"]
+    RES_ALLOC_TYPE = ["MCA", 'UNIFORM']
     #["MDA", "MAA", "MCA", 'UNIFORM']
     VAL_TYPE = ['DTC']
     #['DTC', 'DTC_uniform', 'MDDN']
 
-    # ### Run different methods###
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP')
+    # # ### Run different methods###
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP')
     # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
-    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE)
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
+                res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE)
 
     # ### Post-processing ###
     COST_TYPES = ['Total']

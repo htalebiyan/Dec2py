@@ -149,7 +149,7 @@ class JcModel:
                     sum_temp += self.results_judge.results_layer[l][t_step]['costs'][cost_type]*factor
                     sum_temp_r += self.results_real.results_layer[l][t_step]['costs'][cost_type]*factor
             self.results_judge.add_cost(t_step, cost_type, sum_temp)
-            self.results_real.add_cost(t_step, cost_type, sum_temp)
+            self.results_real.add_cost(t_step, cost_type, sum_temp_r)
         for l in self.layers:
             if self.results_judge.results_layer[l][t_step]['run_time'] > max_run_time:
                 max_run_time = self.results_judge.results_layer[l][t_step]['run_time']
