@@ -261,7 +261,7 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
             if x[4] == 'jc':
                 with open(result_dir+'/objs_'+str(x[1])+'.pkl', 'rb') as f:
                     objs[str(x)] = pickle.load(f)
-            if idx%(len(joinedlist)/10*0+1) == 0:
+            if idx%(len(joinedlist)//100+1) == 0:
                 update_progress(idx+1, len(joinedlist))
         else:
             sys.exit('Error: The combination or folder does not exist'+str(x))

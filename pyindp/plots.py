@@ -127,6 +127,9 @@ def plot_performance_curves_shelby(df, x='t', y='cost', cost_type='Total',
                                     palette=pal_adj, **{'alpha':0.35})
                 ax_2.set(ylabel='% Unmet Demand')
                 ax_2.get_legend().set_visible(False)
+                if idx_c != 0.0:
+                    ax_2.set_ylabel('')
+                    ax_2.set_yticklabels([])
                 ax_2.xaxis.set_ticks(np.arange(0, T, 1.0))#ax.get_xlim()
     # Rebuild legend
     handles, labels = ax.get_legend_handles_labels()

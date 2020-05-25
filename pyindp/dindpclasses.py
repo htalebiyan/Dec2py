@@ -9,6 +9,7 @@ import numpy as np
 import gurobipy
 import indp
 import indputils
+import stm
 
 class JcModel:
     '''
@@ -475,6 +476,8 @@ class AuctionModel():
         self.valuation_time = {t+1:{l:0.0 for l in params['L']} for t in range(time_steps)}
         self.auction_time = {t+1:0.0 for t in range(time_steps)}
         self.poa = {t+1:0.0 for t in range(time_steps)}
+        if self.valuation_type == 'STM':
+            self.stm_pred_dict = params['STM_MODEL_DICT']
     def bidding(self, time_step):
         '''
 
@@ -711,4 +714,18 @@ class AuctionModel():
                         self.valuations[t_step][l][v+1] = 0.0
                     else:
                         self.valuations[t_step][l][v+1] = penalty_rsorted[v]
+            elif self.valuation_type == 'STM':
+                pred_dict = obj.resource.auction_model.stm_pred_dict
+                for v in range(obj.resource.sum_resource):
+                    pred_dict['V'] = v+1
+                    pred_results = stm.predict_resotration(obj, t_step, pred_dict)
+                    new_total_cost = 0.0
+                    for pred_s, val in pred_results.items():
+                        new_total_cost += val.results[pred_dict['pred_t_step']]['costs']['Total']
+                    new_total_cost /= pred_dict['num_pred']
+                    if current_total_cost[l]-new_total_cost > 0:
+                        self.valuations[t_step+1][l][v+1] = current_total_cost[l]-new_total_cost
+                        current_total_cost[l] = new_total_cost
+                    else:
+                        self.valuations[t_step][l][v+1] = 0.0
             self.valuation_time[t_step][l] = time.time()-start_time_val
