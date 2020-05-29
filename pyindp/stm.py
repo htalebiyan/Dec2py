@@ -89,71 +89,65 @@ class ArcModel():
                 self.model_status = 2
                 self.model_params = pd.read_csv(param_file_new, delimiter=' ')
 
-def predict_resotration(obj, t_step, pred_dict):
-    """ Predicts restoration plans and writes to file"""
+def predict_resotration(obj, lyr, t_step, pred_dict):
+    """ Predicts restoration plans for a given time step and layer"""
     ### Define a few vars and lists ###
     num_pred = pred_dict['num_pred']
-    T = pred_dict['pred_t_step']
     pred_results = {x:indputils.INDPResults(obj.layers) for x in range(num_pred)}
-    run_times = {x:[0, 0] for x in range(T+1)}
+    run_times = [0, 0]
     ### Initialize element and network objects ###
-    model_objs = initialize_model_objs(obj.net)
-    net_obj = {x:copy.deepcopy(obj.net) for x in range(num_pred)}
+    model_objs = initialize_model_objs(obj.net, lyr)
     for key, val in model_objs.items():
-        val.initialize_state_matrices(T, num_pred)
+        val.initialize_state_matrices(1, num_pred)
         val.check_model_exist(pred_dict['param_folder'])
 
-    costs = {x:{} for x in obj.layers+[0]}
+    costs = {}
     for h in obj.results_real.cost_types:
-        costs[0][h.replace(' ', '_')] = np.zeros((T+1, num_pred))
-        costs[0][h.replace(' ', '_')][0, :] = obj.results_real.results[t_step-1]['costs'][h]
-        for l in obj.layers:
-            costs[l][h.replace(' ', '_')] = np.zeros((T+1, num_pred))
-            costs[l][h.replace(' ', '_')][0, :] = obj.results_real.results_layer[l][t_step-1]['costs'][h]
-    ###Predict restoration plans###
-    for t in range(T): # t is the time index for previous time step
+        costs[h.replace(' ', '_')] = np.zeros((t_step, num_pred))
+        for t in range(t_step):
+            costs[h.replace(' ', '_')][t, :] = obj.results_real.results[t]['costs'][h]
+    ###Predict restoration plans for next time step###
+    start_time = time.time()
+    ### Feature extraction###
+    layer_dict = extract_features(model_objs, obj.net, 0, obj.layers, num_pred)
+    ###  Cost normalization ###
+    costs_normed = {}
+    for c in list(costs.keys()):
+        costs_normed[c] = normalize_costs(costs[c], c)
+    run_times[1] = predict_next_step(t_step, obj.time_steps, model_objs, pred_dict, lyr,
+                                     costs_normed, pred_dict['V'], layer_dict, print_cmd=False)
+    run_times[0] = time.time()-start_time
+    ### Calculate the cost of scenario ###
+    for pred_s in range(num_pred):
         start_time = time.time()
-        ### Feature extraction###
-        layer_dict = extract_features(model_objs, net_obj, t, obj.layers, num_pred)
-        ###  Cost normalization ###
-        costs_normed = {}
-        for c in list(costs[0].keys()):
-            # Only normalize overall costs b/c layer costs are not in the model
-            costs_normed[c] = normalize_costs(costs[0][c], c)
-        run_times[t+1][1] = predict_next_step(t, T, model_objs, pred_dict, costs_normed,
-                                              pred_dict['V'], layer_dict, print_cmd=True)
-        run_times[t+1][0] = time.time()-start_time
-        ### Calculate the cost of scenario ###
-        for pred_s in range(num_pred):
-            start_time = time.time()
-            decision_vars = {0:{}} #0 becasue iINDP
-            for key, val in model_objs.items():
-                decision_vars[0][val.name] = val.state_hist[t+1, pred_s]
+        #: Make the dict that used to fix the states of elements (only for the current layer)
+        decision_vars = {0:{}} #0 becasue iINDP
+        for key, val in model_objs.items():
+            if val.net_id == lyr:
+                decision_vars[0][val.name] = val.state_hist[1, pred_s]
                 if val.type == 'a':
-                    decision_vars[0][val.dupl_name] = val.state_hist[t+1, pred_s]
-            flow_results = flow.flow_problem(net_obj[pred_s], v_r=0, layers=obj.layers,
-                                             controlled_layers=obj.layers,
-                                             decision_vars=decision_vars,
-                                             print_cmd=True, time_limit=None)
-            pred_results[pred_s].extend(flow_results[1], t_offset=t+1)
-            # pred_results[pred_s].extend_layer(flow_results[2], t_offset=t+1)#!!! adopt new extend format
-            indp.apply_recovery(net_obj[pred_s], flow_results[1], 0)
-            ### Update the cost dict for the next time step and run times ###
-            if run_times[t+1][1] > 0:
-                equiv_run_time = run_times[t+1][0]/run_times[t+1][1]+(time.time()-start_time)
-            else:
-                equiv_run_time = run_times[t+1][0]+(time.time()-start_time)
-            for h in list(costs[0].keys()):
-                costs[0][h][t+1, pred_s] = flow_results[1][0]['costs'][h.replace('_', ' ')]
-                pred_results[pred_s].results[t+1]['run_time'] = equiv_run_time
-                # for l in obj.layers:
-                #     costs[l][h][t+1, pred_s] = flow_results[2][l][0]['costs'][h.replace('_', ' ')]
-                #     pred_results[pred_s].results_layer[l][t+1]['run_time'] = equiv_run_time
-            ####Write models to file###
-            # indp.save_INDP_model_to_file(flow_results[0], './models',t, l = 0)
+                    decision_vars[0][val.dupl_name] = val.state_hist[1, pred_s]
+        #: Make functionality dic: each agent evaluates the performance seperatly
+        neg_layer = [x for x in obj.layers if x != lyr] 
+        functionality = obj.judgments.create_judgment_dict(obj, neg_layer)
+        #: evaluates the performance
+        flow_results = flow.flow_problem(obj.net, v_r=0, layers=obj.layers,
+                                         controlled_layers=[lyr],
+                                         decision_vars=decision_vars,
+                                         functionality = functionality,
+                                         print_cmd=True, time_limit=None)
+        pred_results[pred_s].extend(flow_results[1], t_offset=1)
+        #: Update the cost dict and run times ###
+        if run_times[1] > 0:
+            equiv_run_time = run_times[0]/run_times[1]+(time.time()-start_time)
+        else:
+            equiv_run_time = run_times[0]+(time.time()-start_time)
+        pred_results[pred_s].results[1]['run_time'] = equiv_run_time
+        ####Write models to file###
+        # indp.save_INDP_model_to_file(flow_results[0], './models',t, l = 0)
     return pred_results
 
-def initialize_model_objs(interdep_net):
+def initialize_model_objs(interdep_net, layer):
     """Imports initial data and initializes element objects"""
     model_objs = {}
     for v in interdep_net.G.nodes():
@@ -166,26 +160,29 @@ def initialize_model_objs(interdep_net):
                 model_objs['y_'+str(u)+','+str(v)].initial_state = interdep_net.G[u][v]['data']['inf_data'].functionality
                 model_objs['w_'+str(u)].add_neighbor('w_'+str(v))
                 model_objs['w_'+str(v)].add_neighbor('w_'+str(u))
-        else:
+        elif v[1] == layer:
             model_objs['w_'+str(v)].add_dependee('w_'+str(u))
     return model_objs
 
-def predict_next_step(t, T, objs, pred_dict, costs_normed, res, layer_dict, print_cmd=True):
+def predict_next_step(time_step, T, objs, pred_dict, lyr, costs_normed, res,
+                      layer_dict, print_cmd=True):
     """define vars and lists"""
     cost_names = list(costs_normed.keys())
     num_pred = pred_dict['num_pred']
     no_pred_itr = 10
+    res_unused = {x:pred_dict['V'] for x in range(num_pred)}
     node_cols = ['w_t', 'w_t_1', 'time', 'Rc', 'w_n_t_1', 'w_a_t_1', 'w_d_t_1',
                  'w_h_t_1', 'w_c_t_1', 'y_c_t_1']
     arc_cols = ['y_t', 'y_t_1', 'time', 'Rc', 'y_n_t_1', 'w_c_t_1', 'y_c_t_1']
     from_formula_calls = 0
     for key, val in objs.items():
-        l = val.net_id
+        if val.net_id != lyr:
+            continue
         ###initialize new predictions###
         non_pred_idx = []
         pred_decision = np.zeros(num_pred)
         for pred_s in range(num_pred):
-            if val.state_hist[t, pred_s] == 1:
+            if val.state_hist[0, pred_s] == 1:
                 pred_decision[pred_s] = 1
                 non_pred_idx.append(pred_s)
         pred_idx = [x for x in range(num_pred) if x not in non_pred_idx]
@@ -205,22 +202,22 @@ def predict_next_step(t, T, objs, pred_dict, costs_normed, res, layer_dict, prin
                 for pred_s in pred_idx:
                     if val.type == 'n':
                         cols = node_cols+cost_names
-                        special_feature = [val.w_n_t_1[t, pred_s],
-                                           val.w_a_t_1[t, pred_s],
-                                           val.w_d_t_1[t, pred_s],
-                                           layer_dict[l]['w_h_t_1'][pred_s],
-                                           layer_dict[l]['w_c_t_1'][pred_s],
-                                           layer_dict[l]['y_c_t_1'][pred_s]]
+                        special_feature = [val.w_n_t_1[0, pred_s],
+                                           val.w_a_t_1[0, pred_s],
+                                           val.w_d_t_1[0, pred_s],
+                                           layer_dict[val.net_id]['w_h_t_1'][pred_s],
+                                           layer_dict[val.net_id]['w_c_t_1'][pred_s],
+                                           layer_dict[val.net_id]['y_c_t_1'][pred_s]]
                     elif val.type == 'a':
                         cols = arc_cols+cost_names
-                        special_feature = [val.y_n_t_1[t, pred_s],
-                                           layer_dict[l]['w_c_t_1'][pred_s],
-                                           layer_dict[l]['y_c_t_1'][pred_s]]
+                        special_feature = [val.y_n_t_1[0, pred_s],
+                                           layer_dict[val.net_id]['w_c_t_1'][pred_s],
+                                           layer_dict[val.net_id]['y_c_t_1'][pred_s]]
                     else:
                         sys.exit('Wrong element type: '+ key)
-                    norm_cost_values = [costs_normed[x][t, pred_s] for x in cost_names]
-                    basic_features = [val.state_hist[t+1, pred_s], val.state_hist[t, pred_s],
-                                      (t+1)/float(T), res/100.0]
+                    norm_cost_values = [costs_normed[x][time_step-1, pred_s] for x in cost_names]
+                    basic_features = [val.state_hist[1, pred_s], val.state_hist[0, pred_s],
+                                      time_step/float(T), res/100.0]
                     row = np.array(basic_features+special_feature+norm_cost_values)
                     data = data.append(pd.Series(row, index=cols), ignore_index=True)
                 ###Run models###
@@ -238,16 +235,24 @@ def predict_next_step(t, T, objs, pred_dict, costs_normed, res, layer_dict, prin
                         for psr in range(no_pred_itr):
                             sum_state += ppc_test['y'][psr][pred_idx.index(idx)]
                         pred_decision[idx] = round(sum_state/float(no_pred_itr))
+                        if pred_decision[idx] == 1:
+                            if print_cmd:
+                                print('Repaired')
+                            res_unused[idx] -= 1
                 pass
-
             elif val.model_status == 0:
                 for pred_s in pred_idx:
-                    pred_decision[pred_s] = np.random.randint(2)
-                    if False:#!!!print_cmd:
-                        print('Predicting '+str(key)+', sample: '+str(pred_s)+', randomly')
+                    if res_unused[pred_s] > 0:
+                        pred_decision[pred_s] = np.random.randint(2)
+                        if pred_decision[pred_s] == 1:
+                            res_unused[pred_s] -= 1
+                            if print_cmd:
+                                print('Repaired',str(key),'P_sample:'+str(pred_s),'randomly')
+                    else:
+                        pred_decision[pred_s] = 0
             else:
                 sys.exit('Wrong model status: '+key)
-        val.state_hist[t+1, :] = pred_decision
+        val.state_hist[1, :] = pred_decision
     return from_formula_calls
 
 def extract_features(objs, net_obj, t, layers, num_pred):
@@ -264,20 +269,20 @@ def extract_features(objs, net_obj, t, layers, num_pred):
                     except:
                         pass
                 for n in val.dependees:
-                    val.w_d_t_1[t, pred_s] += objs[n].state_hist[t, pred_s]/val.num_dependee
+                    val.w_d_t_1[t, pred_s] += (1-objs[n].state_hist[t, pred_s])/val.num_dependee
             elif val.type == 'a':
                 for n in val.end_nodes:
                     val.y_n_t_1[t, pred_s] += objs[n].state_hist[t, pred_s]/2.0
     ### layer feature extraction ###
     layer_dict = {x:{'w_c_t_1':np.zeros(num_pred),
-                     'no_w_c':len([xx for xx in net_obj[0].G.nodes() if xx[1] == x]),
+                     'no_w_c':len([xx for xx in net_obj.G.nodes() if xx[1] == x]),
                      'y_c_t_1':np.zeros(num_pred),
-                     'no_y_c':len([xx for xx in net_obj[0].G.edges() if xx[0][1] == x and xx[1][1] == x])//2,
+                     'no_y_c':len([xx for xx in net_obj.G.edges() if xx[0][1] == x and xx[1][1] == x])//2,
                      'w_h_t_1':np.zeros(num_pred)} for x in layers}
     node_demand = {x:{} for x in layers}
     node_demand_highest = {}
     no_high_nodes = 5
-    for n, d in net_obj[pred_s].G.nodes(data=True):
+    for n, d in net_obj.G.nodes(data=True):
         node_demand[n[1]]['w_'+str(n)] = abs(d['data']['inf_data'].demand)
     for l in list(node_demand.keys()):
         node_demand_highest[l] = dict(sorted(node_demand[l].items(), key=itemgetter(1),
@@ -365,54 +370,3 @@ def check_folder(output_dir):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     return output_dir
-
-# if __name__ == '__main__':
-#     SAMPLE_RANGE = [50]# range(50, 551, 100) #[50, 70, 90]
-#     MAGS = range(0, 1)
-#     T_SUF = ''
-#     MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
-#     OPT_DIR = 'C:/Users/ht20/Documents/Files/STAR_training_data/INDP_random_disruption/results/indp_results_L4_m0_v5'
-#     # FAIL_SCE_PARAM = {"type":"WU", "sample":1, "mag":52,
-#     #                   'Base_dir':"../data/Extended_Shelby_County/",
-#     #                   'Damage_dir':"../data/Wu_Damage_scenarios/", 'topology':None}
-#     FAIL_SCE_PARAM = {"type":"random", "sample":None, "mag":None, 'filtered_List':None,
-#                       'Base_dir':"../data/Extended_Shelby_County/",
-#                       'Damage_dir':"../data/random_disruption_shelby/"}
-#     PRED_DICT = {'num_pred':5, 'model_dir':MODEL_DIR+'/traces',
-#                  'param_folder':MODEL_DIR+'/parameters',
-#                  'output_dir':'./results'}
-#     PARAMS = {"NUM_ITERATIONS":10, "V":5, "ALGORITHM":"INDP", 'L':[1, 2, 3, 4]}
-
-#     ### Run models ###
-#     for mag_num in MAGS:
-#         for sample_num in SAMPLE_RANGE:
-#             FAIL_SCE_PARAM['sample'] = sample_num
-#             FAIL_SCE_PARAM['mag'] = mag_num
-#             predict_resotration(PRED_DICT, FAIL_SCE_PARAM, PARAMS)
-
-#     # ### Run models in parallel ###
-#     # import run_parallel
-#     # with multiprocessing.Pool(processes=len(SAMPLE_RANGE)) as p:
-#     #     p.map(run_parallel.run_parallel, SAMPLE_RANGE)
-#     #     p.join()
-
-#     ###Plot results###
-#     COST_DF = pd.DataFrame()
-#     for mag_num in MAGS:
-#         for sample_num in SAMPLE_RANGE:
-#             FAIL_SCE_PARAM['sample'] = sample_num
-#             FAIL_SCE_PARAM['mag'] = mag_num
-#             COST_DF = plot_df(FAIL_SCE_PARAM, PRED_DICT, PARAMS, tc_df=COST_DF,
-#                               opt_dir=OPT_DIR)
-
-#     sns.set(context='notebook', style='darkgrid')
-#     # plt.rc('text', usetex = True)
-#     # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-#     plt.close('all')
-#     # tc_df = tc_df.replace('predicted','Logistic Model Prediction')
-#     # tc_df = tc_df.replace('data','Optimal Scenario')
-#     FIGURE_DF = COST_DF#[COST_DF['sample'] == 550]
-#     sns.lineplot(x="t", y="Total", style='layer', hue='type',
-#                   data=FIGURE_DF, markers=True, ci=95)
-#     # plt.savefig('Total_cost_vs_time.png',dpi = 600, bbox_inches='tight') 
-           

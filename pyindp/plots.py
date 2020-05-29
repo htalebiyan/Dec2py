@@ -97,8 +97,7 @@ def plot_performance_curves_shelby(df, x='t', y='cost', cost_type='Total',
                                 palette=pal_adj, **{'alpha':0.35})
             ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
             ax.get_legend().set_visible(False)
-            ax.xaxis.set_ticks([])
-
+            ax.xaxis.set_ticks(np.arange(0, T, 1.0))#ax.get_xlim()
             if plot_resilience:
                 resilience_data = df[(df.cost_type == 'Under Supply Perc')&
                                      (df.decision_type.isin(decision_type))&
@@ -130,6 +129,7 @@ def plot_performance_curves_shelby(df, x='t', y='cost', cost_type='Total',
                 if idx_c != 0.0:
                     ax_2.set_ylabel('')
                     ax_2.set_yticklabels([])
+                ax.xaxis.set_ticks([])
                 ax_2.xaxis.set_ticks(np.arange(0, T, 1.0))#ax.get_xlim()
     # Rebuild legend
     handles, labels = ax.get_legend_handles_labels()

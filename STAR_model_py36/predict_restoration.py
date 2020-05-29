@@ -319,7 +319,7 @@ def extract_features(objs, net_obj, t, layers, num_pred):
                     except:
                         pass
                 for n in val.dependees:
-                    val.w_d_t_1[t, pred_s] += objs[n].state_hist[t, pred_s]/val.num_dependee
+                    val.w_d_t_1[t, pred_s] += (1-objs[n].state_hist[t, pred_s])/val.num_dependee
             elif val.type == 'a':
                 for n in val.end_nodes:
                     val.y_n_t_1[t, pred_s] += objs[n].state_hist[t, pred_s]/2.0

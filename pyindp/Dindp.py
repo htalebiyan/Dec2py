@@ -53,8 +53,16 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
             else:
                 for vt in params["VALUATION_TYPE"]:
                     params_copy['VALUATION_TYPE'] = vt
-                    objs[c] = JcModel(c, params_copy)
-                    c += 1
+                    output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
+                                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'_'+jc+'_AUCTION_'+\
+                                    rst+'_'+vt+'/actions_'+str(params["SIM_NUMBER"])+'_real.csv'
+                    if False:#os.path.exists(output_dir_full):
+                        print('results are already there\n')
+                    else:
+                        objs[c] = JcModel(c, params_copy)
+                        c += 1
+    if not objs:
+        return 0
     # t=0 costs and performance.
     indp_results_initial = indp.indp(objs[0].net, 0, 1, objs[0].layers,
                                      controlled_layers=objs[0].layers)
