@@ -77,11 +77,11 @@ class INDPResults:
                 if t not in self.results_layer[l]:
                     self.results_layer[l][t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
                 self.results_layer[l][t]['costs'][cost_type]=cost_layer[l]
-    def add_run_time(self,t,run_time):
+    def add_run_time(self,t,run_time, save_layer=True):
         if t not in self.results:
             self.results[t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}
         self.results[t]['run_time']=run_time
-        if self.layers:
+        if self.layers and save_layer:
             for l in self.layers:
                 if t not in self.results_layer[l]:
                     self.results_layer[l][t]={'costs':{"Space Prep":0.0,"Arc":0.0,"Node":0.0,"Over Supply":0.0,"Under Supply":0.0,"Under Supply Perc":0.0,"Flow":0.0,"Total":0.0},'actions':[],'gc_size':0,'num_components':0,'components':INDPComponents(),'run_time':0.0}

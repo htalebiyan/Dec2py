@@ -43,6 +43,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
         shelby_data = False
         topology = fail_sce_param['TOPO']
 
+    print('----Running for resources: '+str(params['V']))
     for m in fail_sce_param['MAGS']:
         for i in fail_sce_param['SAMPLE_RANGE']:
             try:
@@ -69,16 +70,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             params["MAGNITUDE"] = m
 
             output_dir_full = ''
-            if params["ALGORITHM"] == "JC" and params["RES_ALLOC_TYPE"] in ["MDA", "MAA", "MCA"]:
-                output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
-                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'_AUCTION_'+\
-                    params["RES_ALLOC_TYPE"]+'_'+params["VALUATION_TYPE"]+\
-                    '/actions_'+str(i)+'_real.csv'
-            elif params["ALGORITHM"] == "JC" and not params["RES_ALLOC_TYPE"] == 'UNIFORM':
-                output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
-                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'_UNIFORM/actions_'+\
-                    str(i)+'_real.csv'
-            else:
+            if params["ALGORITHM"] != "JC":
                 output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
                     str(params["MAGNITUDE"])+"_v"+str(params["V"])+'/actions_'+str(i)+'_.csv'
             if os.path.exists(output_dir_full):
@@ -113,7 +105,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                 dindp.run_judgment_call(params, save_jc_model=False, print_cmd=False)
 
 def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
-               res_alloc_type=None, valuation_type=None, output_dir='..'):
+               res_alloc_type=None, valuation_type=None, output_dir='..', misc =None):
     '''
     This function runs a given method for different numbers of resources,
     and a given judge, auction, and valuation type in the case of JC.
@@ -136,7 +128,7 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
     judgment_type : str, optional
         Type of Judgments in Judfment Call Method. The default is None.
     res_alloc_type : str, optional
-        Type of resource allocation method  for resource allocation. The default is None.
+        Type of resource allocation method for resource allocation. The default is None.
     valuation_type : str, optional
         Type of valuation in auction. The default is None.
     output_dir : str, optional
@@ -156,6 +148,8 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
                       "V":v, "T":1, 'L':layers, "ALGORITHM":"JC",
                       "JUDGMENT_TYPE":judgment_type, "RES_ALLOC_TYPE":res_alloc_type,
                       "VALUATION_TYPE":valuation_type}
+            if 'STM' in valuation_type:
+                params['STM_MODEL_DICT'] = misc['STM_MODEL_DICT']
         elif method == 'TD_INDP':
             params = {"NUM_ITERATIONS":1, "OUTPUT_DIR":output_dir+'/results/tdindp_results',
                       "V":v, "T":10, "WINDOW_LENGTH":3, 'L':layers, "ALGORITHM":"INDP"}
@@ -193,13 +187,17 @@ def run_parallel(i):
     rc = [3, 6, 8, 12]
     layers = [1, 2, 3, 4]
     judge_type = ['OPTIMISTIC']
-    res_alloc_type = ["MDA", "MAA", "MCA"]
-    val_type = ['DTC']
+    res_alloc_type = ["MCA"]
+    val_type = ['STM']
+    model_dir = '/scratch/ht20/ST_models'
+    stm_model_dict = {'num_pred':1, 'model_dir':model_dir+'/traces',
+                      'param_folder':model_dir+'/parameters'}
 
     run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir,)
     # run_method(fail_sce_param, rc, layers, method='TD_INDP')
     run_method(fail_sce_param, rc, layers, method='JC', judgment_type=judge_type,
-               res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,)
+               res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
+               misc = {'STM_MODEL_DICT':stm_model_dict})
 
 if __name__ == "__main__":
     NUM_CORES = multiprocessing.cpu_count()
