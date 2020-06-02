@@ -191,18 +191,18 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
     '''
     for v in v_r:
         if method == 'INDP':
-            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'/results/indp_results',
+            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'/indp_results',
                       "V":v, "T":1, 'L':layers, "ALGORITHM":"INDP"}
         elif method == 'JC':
             params = {"NUM_ITERATIONS":10,
-                      "OUTPUT_DIR":output_dir+'/results/jc_results',
+                      "OUTPUT_DIR":output_dir+'/jc_results',
                       "V":v, "T":1, 'L':layers, "ALGORITHM":"JC",
                       "JUDGMENT_TYPE":judgment_type, "RES_ALLOC_TYPE":res_alloc_type,
                       "VALUATION_TYPE":valuation_type}
             if 'STM' in valuation_type:
                 params['STM_MODEL_DICT'] = misc['STM_MODEL_DICT']
         elif method == 'TD_INDP':
-            params = {"NUM_ITERATIONS":1, "OUTPUT_DIR":output_dir+'/results/tdindp_results',
+            params = {"NUM_ITERATIONS":1, "OUTPUT_DIR":output_dir+'/tdindp_results',
                       "V":v, "T":10, "WINDOW_LENGTH":3, 'L':layers, "ALGORITHM":"INDP"}
         else:
             sys.exit('Wrong method name: '+method)
@@ -219,8 +219,8 @@ if __name__ == "__main__":
     #: The address to damge scenario data.
     DAMAGE_DIR = "../data/Wu_Damage_scenarios/" #random_disruption_shelby/"
     #: The address to where output are stored.
-    OUTPUT_DIR = '../results/'
-    #'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
+    OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
+    #'../results/'
     ###############'../results/'#+FAIL_SCE_PARAM['TOPO']+'/results/'
 
     #: Informatiom on the ype of the failure scenario (Andres or Wu)
@@ -232,7 +232,7 @@ if __name__ == "__main__":
     #:     sce range: FAIL_SCE_PARAM['MAGS']
     #: For Synthetic nets: sample range: FAIL_SCE_PARAM['SAMPLE_RANGE'],
     #:     configurations: FAIL_SCE_PARAM['MAGS']
-    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(0, 2), 'MAGS':range(0, 95),
+    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(0, 50), 'MAGS':range(0, 95),
                       'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
@@ -243,7 +243,7 @@ if __name__ == "__main__":
     #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
 
     # No restriction on number of resources for each layer
-    RC = [3,6]
+    RC = [3, 6, 8]
     # Not necessary for synthetic nets
     # [3, 6, 8, 12]
     # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
@@ -253,17 +253,18 @@ if __name__ == "__main__":
     #["PESSIMISTIC", "OPTIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"]
     RES_ALLOC_TYPE = ["MCA", 'UNIFORM']
     #["MDA", "MAA", "MCA", 'UNIFORM']
-    VAL_TYPE = ['DTC','STM']
+    VAL_TYPE = ['STM']
     #['DTC', 'DTC_uniform', 'MDDN', 'STM']
-    MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
-    STM_MODEL_DICT = {'num_pred':1, 'model_dir':MODEL_DIR+'/traces',
-                      'param_folder':MODEL_DIR+'/parameters'}
+    # MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
+    # STM_MODEL_DICT = {'num_pred':1, 'model_dir':MODEL_DIR+'/traces',
+    #                   'param_folder':MODEL_DIR+'/parameters'}
 
     # # ### Run different methods###
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP')
     # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
     #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
+    #             output_dir = OUTPUT_DIR,
     #             misc = {'STM_MODEL_DICT':STM_MODEL_DICT})
 
     ### Post-processing ###
@@ -297,10 +298,10 @@ if __name__ == "__main__":
     with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
         pickle.dump(OBJ_LIST, f)
 
-    # ### Getting back the objects ###
-    with open(OUTPUT_DIR+'/postprocess_dicts.pkl', 'rb') as f:
-        [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
-          ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE] = pickle.load(f)
+    # # ### Getting back the objects ###
+    # with open(OUTPUT_DIR+'/postprocess_dicts.pkl', 'rb') as f:
+    #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
+    #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE] = pickle.load(f)
 
     ### Plot results ###
     plt.close('all')
@@ -317,13 +318,13 @@ if __name__ == "__main__":
     plots.plot_relative_allocation_shelby(ALLOC_GAP_DF)
     plots.plot_run_time(RUN_TIME_DF, ci=95)
 
-    # plots.plot_performance_curves_synthetic(BASE_DF, ci=None, x='t', y='cost',
-    #                                         cost_type='Total')
-    # plots.plot_performance_curves_synthetic(BASE_DF, ci=None, x='t', y='cost',
-    #                                         cost_type='Under Supply Perc')
-    # plots.plot_relative_performance_synthetic(LAMBDA_DF, cost_type='Total',
-    #                                           lambda_type='U')
-    # plots.plot_auction_allocation_synthetic(RES_ALLOC_DF, ci=None,
-    #                                         resource_type='normalized_resource')
-    # plots.plot_relative_allocation_synthetic(ALLOC_GAP_DF)
-    # plots.plot_run_time(RUN_TIME_DF, ci=None)
+    # # plots.plot_performance_curves_synthetic(BASE_DF, ci=None, x='t', y='cost',
+    # #                                         cost_type='Total')
+    # # plots.plot_performance_curves_synthetic(BASE_DF, ci=None, x='t', y='cost',
+    # #                                         cost_type='Under Supply Perc')
+    # # plots.plot_relative_performance_synthetic(LAMBDA_DF, cost_type='Total',
+    # #                                           lambda_type='U')
+    # # plots.plot_auction_allocation_synthetic(RES_ALLOC_DF, ci=None,
+    # #                                         resource_type='normalized_resource')
+    # # plots.plot_relative_allocation_synthetic(ALLOC_GAP_DF)
+    # # plots.plot_run_time(RUN_TIME_DF, ci=None)
