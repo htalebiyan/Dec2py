@@ -10,6 +10,7 @@ import gurobipy
 import indp
 import indputils
 import stm
+import indpalt
 
 class JcModel:
     '''
@@ -735,7 +736,20 @@ class AuctionModel():
                         
                     if equiv_run_time/pred_dict['num_pred'] > max_equiv_rtime:
                         max_equiv_rtime = equiv_run_time/pred_dict['num_pred']
+            elif self.valuation_type == 'DTC-LP':
+                for v in range(obj.resource.sum_resource):
+                    neg_layer = [x for x in obj.layers if x != l]
+                    functionality = obj.judgments.create_judgment_dict(obj, neg_layer)
+                    indp_results = indpalt.indp_relax(obj.net, v_r=v+1, T=1, layers=obj.layers,
+                                             controlled_layers=[l], functionality=functionality,
+                                             print_cmd=print_cmd, time_limit=time_limit)
+                    new_total_cost = indp_results[1][0]['costs']['Total']
+                    if indp_results[1][0]['actions'] != []:
+                        self.valuations[t_step][l][v+1] = current_total_cost[l]-new_total_cost
+                        current_total_cost[l] = new_total_cost
+                    else:
+                        self.valuations[t_step][l][v+1] = 0.0
             if self.valuation_type != 'STM':
-                self.valuation_time[t_step][l] = time.time()-start_time_val
+                self.valuation_time[t_step][l] = (time.time()-start_time_val)/obj.resource.sum_resource
             else:
                 self.valuation_time[t_step][l] = max_equiv_rtime

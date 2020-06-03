@@ -219,8 +219,8 @@ if __name__ == "__main__":
     #: The address to damge scenario data.
     DAMAGE_DIR = "../data/Wu_Damage_scenarios/" #random_disruption_shelby/"
     #: The address to where output are stored.
-    OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
-    #'../results/'
+    OUTPUT_DIR = '../results/'
+    # 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
     ###############'../results/'#+FAIL_SCE_PARAM['TOPO']+'/results/'
 
     #: Informatiom on the ype of the failure scenario (Andres or Wu)
@@ -232,7 +232,7 @@ if __name__ == "__main__":
     #:     sce range: FAIL_SCE_PARAM['MAGS']
     #: For Synthetic nets: sample range: FAIL_SCE_PARAM['SAMPLE_RANGE'],
     #:     configurations: FAIL_SCE_PARAM['MAGS']
-    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(0, 50), 'MAGS':range(0, 95),
+    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(0, 10), 'MAGS':range(0, 95),
                       'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
@@ -243,7 +243,7 @@ if __name__ == "__main__":
     #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
 
     # No restriction on number of resources for each layer
-    RC = [3, 6, 8]
+    RC = [3, 6]
     # Not necessary for synthetic nets
     # [3, 6, 8, 12]
     # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
@@ -251,21 +251,20 @@ if __name__ == "__main__":
     # Not necessary for synthetic nets
     JUDGE_TYPE = ["OPTIMISTIC"]
     #["PESSIMISTIC", "OPTIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"]
-    RES_ALLOC_TYPE = ["MCA", 'UNIFORM']
+    RES_ALLOC_TYPE = ["MCA"]
     #["MDA", "MAA", "MCA", 'UNIFORM']
-    VAL_TYPE = ['STM']
-    #['DTC', 'DTC_uniform', 'MDDN', 'STM']
+    VAL_TYPE = ['DTC', 'DTC-LP']
+    #['DTC', 'DTC_uniform', 'MDDN', 'STM', 'DTC-LP']
     # MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
     # STM_MODEL_DICT = {'num_pred':1, 'model_dir':MODEL_DIR+'/traces',
     #                   'param_folder':MODEL_DIR+'/parameters'}
 
     # # ### Run different methods###
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP')
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR)
     # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
-    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
-    #             output_dir = OUTPUT_DIR,
-    #             misc = {'STM_MODEL_DICT':STM_MODEL_DICT})
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
+                res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
+                output_dir=OUTPUT_DIR)#, misc = {'STM_MODEL_DICT':STM_MODEL_DICT})
 
     ### Post-processing ###
     COST_TYPES = ['Total']
