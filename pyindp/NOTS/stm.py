@@ -10,7 +10,7 @@ import pandas as pd
 import pymc3 as pm
 import indp
 import indputils
-import flow
+import indpalt
 
 class NodeModel():
     """Stores information for a node model """
@@ -129,7 +129,7 @@ def predict_resotration(obj, lyr, t_step, pred_dict):
         neg_layer = [x for x in obj.layers if x != lyr] 
         functionality = obj.judgments.create_judgment_dict(obj, neg_layer)
         #: evaluates the performance
-        flow_results = flow.flow_problem(obj.net, v_r=0, layers=obj.layers,
+        flow_results = indpalt.flow_problem(obj.net, v_r=0, layers=obj.layers,
                                          controlled_layers=[lyr],
                                          decision_vars=decision_vars,
                                          functionality = functionality,

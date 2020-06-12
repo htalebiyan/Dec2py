@@ -3,12 +3,13 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib as mplt
 import numpy as np
+import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-sns.set(context='notebook', style='darkgrid')
-# plt.rc('text', usetex=True)
-# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+sns.set(context='notebook', style='darkgrid', font_scale=1.4)
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
-def plot_performance_curves_shelby(df, x='t', y='cost', cost_type='Total',
+def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                    decision_type=None, judgment_type=None,
                                    auction_type=None, valuation_type=None,
                                    ci=None, normalize=False, deaggregate=False,
@@ -146,82 +147,7 @@ def plot_performance_curves_shelby(df, x='t', y='cost', cost_type='Total',
                     textcoords='offset points', ha='right', va='center', rotation=90)
     plt.savefig('Performance_curves.png', dpi=dpi)
 
-def plot_performance_curves_synthetic(df, x='t', y='cost', cost_type='Total', ci=None):
-    '''
-    Parameters
-    ----------
-    df : TYPE
-        DESCRIPTION.
-    x : TYPE, optional
-        DESCRIPTION. The default is 't'.
-    y : TYPE, optional
-        DESCRIPTION. The default is 'cost'.
-    cost_type : TYPE, optional
-        DESCRIPTION. The default is 'Total'.
-    ci : TYPE, optional
-        DESCRIPTION. The default is None.
-
-    Returns
-    -------
-    None.
-
-    '''
-    no_resources = df.no_resources.unique().tolist()
-    auction_type = df.auction_type.unique().tolist()
-    auction_type.remove('')
-    valuation_type = df.valuation_type.unique().tolist()
-    valuation_type.remove('')
-    T = len(df[x].unique().tolist())
-    hor_grid = [0]
-    ver_grid = valuation_type
-    fig, axs = plt.subplots(len(ver_grid), len(hor_grid), sharex=True, sharey=True,
-                            tight_layout=False)
-    for idx_c, _ in enumerate(hor_grid):
-        for idx_r, vt in enumerate(ver_grid):
-            ax, _, _ = find_ax(axs, hor_grid, ver_grid, idx_r, idx_c)
-            selected_data = df[(df['cost_type'] == cost_type)&
-                               ((df['valuation_type'] == vt)|\
-                                (df['valuation_type'] == ''))]
-            selected_data2 = df[(df['cost_type'] == 'Under Supply Perc')&
-                                ((df['valuation_type'] == vt)|\
-                                 (df['valuation_type'] == ''))]
-            with sns.xkcd_palette(['black', "windows blue", 'red', "green"]):
-                ax = sns.lineplot(x=x, y=y, hue="auction_type", style='decision_type',
-                                  markers=False, ci=ci, ax=ax, legend='full',
-                                  data=selected_data)
-                ax_2 = ax.twinx()
-                ax_2 = sns.lineplot(x=x, y=y, hue="auction_type", style='decision_type',
-                                    markers=False, ci=ci, ax=ax_2, legend='full',
-                                    data=selected_data2)
-                ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
-                if cost_type == 'Under Supply Perc':
-                    ax.set(xlabel=r'time step $t$', ylabel='Unmet Demand Ratio')
-                ax.get_legend().set_visible(False)
-                ax.xaxis.set_ticks(np.arange(0, T+1, 1.0))   #ax.get_xlim()
-    handles, labels = ax.get_legend_handles_labels()
-    labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5)
-    if len(ver_grid) == 1 and len(hor_grid) == 1:
-        axs_c = [axs]
-        axs_r = [axs]
-    elif len(hor_grid) == 1:
-        axs_r = [axs[0]]
-        axs_c = axs
-    elif len(no_resources) == 1:
-        axs_r = axs
-        axs_c = [axs[0]]
-    else:
-        axs_c = axs[0, :]
-        axs_r = axs[:, 0]
-    for idx, ax in enumerate(axs_c):
-        ax.set_title(r'%d'%(hor_grid[idx]))
-    for idx, ax in enumerate(axs_r):
-        ax.annotate('Valuation = '+ver_grid[idx], xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - 5, 0),
-                    xycoords=ax.yaxis.label, textcoords='offset points', ha='right',
-                    va='center', rotation=90)
-    plt.savefig('Performance_curves_'+cost_type+'.pdf', dpi=600)
-
-def plot_relative_performance_shelby(lambda_df, cost_type='Total', lambda_type='U'):
+def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     '''
     Parameters
     ----------
@@ -241,6 +167,9 @@ def plot_relative_performance_shelby(lambda_df, cost_type='Total', lambda_type='
     # no_resources = lambda_df.no_resources.unique().tolist()
     # decision_type = lambda_df.decision_type.unique().tolist()
     judgment_type = lambda_df.judgment_type.unique().tolist()
+    if 'nan' in judgment_type:
+        judgment_type.remove('nan')
+    no_resources = lambda_df.no_resources.unique().tolist()
     auction_type = lambda_df.auction_type.unique().tolist()
     if 'nan' in auction_type:
         auction_type.remove('nan')
@@ -248,12 +177,12 @@ def plot_relative_performance_shelby(lambda_df, cost_type='Total', lambda_type='
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
     row_plot = [valuation_type, 'valuation_type']
-    col_plot = [auction_type, 'auction_type']
-    hue_type = [judgment_type, 'judgment_type']
+    col_plot = [judgment_type , 'judgment_type']
+    hue_type = [auction_type , 'auction_type']#[judgment_type, 'judgment_type']
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
-                            sharey=True, figsize=(4000/dpi, 2500/dpi))
+                            sharey=True, figsize=(2100/dpi, 1600/dpi))
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
             ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
@@ -263,74 +192,29 @@ def plot_relative_performance_shelby(lambda_df, cost_type='Total', lambda_type='
                                        (lambda_df[col_plot[1]] == 'nan'))&\
                                       ((lambda_df[row_plot[1]] == val_r)|\
                                        (lambda_df[row_plot[1]] == 'nan'))]
-            with sns.color_palette("RdYlGn", 8):  #sns.color_palette("YlOrRd", 7)
+            with sns.color_palette("Reds", 4): #sns.color_palette("RdYlGn", 8)
                 sns.barplot(x='no_resources', y='lambda_'+lambda_type,
                             hue=hue_type[1], data=selected_data, linewidth=0.5,
                             edgecolor=[.25, .25, .25], capsize=.05,
                             errcolor=[.25, .25, .25], errwidth=1, ax=ax)
                 ax.get_legend().set_visible(False)
-                ax.grid(which='major', axis='y', color=[.75, .75, .75], linewidth=.75)
-                ax.set_xlabel(r'\# resources')
+                ax.set_xlabel(r'$R_c$')
                 if idx_r != len(valuation_type)-1:
                     ax.set_xlabel('')
                 ax.set_ylabel(r'E[$\lambda_{%s}$], Valuation: %s'%(lambda_type, row_plot[0][idx_r]))
                 if idx_c != 0:
                     ax.set_ylabel('')
                 ax.xaxis.set_label_position('bottom')
-                ax.set_facecolor('w')
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='upper right', frameon=True, framealpha=0.5, ncol=1)
+    fig.legend(handles, labels, loc='lower right', bbox_to_anchor = (0.9,0.1),
+               frameon=True, framealpha=.75, ncol=1)
     _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
-        ax.set_title(r'Res. Alloc.: %s'%(auction_type[idx]))
+        ax.set_title(r'Judgment Type: %s'%(col_plot[0][idx]))
     plt.savefig('Relative_perforamnce.png', dpi=dpi)
 
-def plot_relative_performance_synthetic(lambda_df, cost_type='Total', lambda_type='U'):
-    '''
-    Parameters
-    ----------
-    lambda_df : TYPE
-        DESCRIPTION.
-    cost_type : TYPE, optional
-        DESCRIPTION. The default is 'Total'.
-    lambda_type : TYPE, optional
-        DESCRIPTION. The default is 'U'.
-
-    Returns
-    -------
-    None.
-
-    '''
-#    auction_type = lambda_df.auction_type.unique().tolist()
-#    auction_type.remove('')
-    valuation_type = lambda_df.valuation_type.unique().tolist()
-    valuation_type.remove('')
-    fig, axs = plt.subplots(len(valuation_type), 1, sharex=True, sharey='row', tight_layout=False)
-    for idxvt, vt in enumerate(valuation_type):
-        ax = axs[idxvt]
-        selected_data = lambda_df[(lambda_df['cost_type'] == cost_type)&\
-                                  (lambda_df['lambda_'+lambda_type] != 'nan')&\
-                                  ((lambda_df['valuation_type'] == vt)|\
-                                   (lambda_df['valuation_type'] == ''))]
-        with sns.color_palette("RdYlGn", 8):  #sns.color_palette("YlOrRd", 7)
-            sns.barplot(x='auction_type', y='lambda_'+lambda_type, hue="decision_type",
-                        data=selected_data, linewidth=0.5, edgecolor=[.25, .25, .25],
-                        capsize=.05, errcolor=[.25, .25, .25], errwidth=1, ax=ax)
-            ax.get_legend().set_visible(False)
-            ax.grid(which='major', axis='y', color=[.75, .75, .75], linewidth=.75)
-            ax.set_xlabel(r'Auction Type')
-            if idxvt != len(valuation_type)-1:
-                ax.set_xlabel('')
-            ax.set_ylabel(r'E[$\lambda_{%s}$], Valuation Type = %s'%(lambda_type, vt))
-            ax.xaxis.set_label_position('top')
-            ax.set_facecolor('w')
-    handles, labels = ax.get_legend_handles_labels()
-    labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='upper right', frameon=True, framealpha=0.5, ncol=1)
-    plt.savefig('Relative_perforamnce.pdf', dpi=600)
-
-def plot_auction_allocation_shelby(df_res, ci=None):
+def plot_auction_allocation(df_res, ci=None):
     '''
     Parameters
     ----------
@@ -393,73 +277,7 @@ def plot_auction_allocation_shelby(df_res, ci=None):
                         textcoords='offset points', ha='right', va='center', rotation=90)
         plt.savefig('Allocations_'+idx_f+'.png', dpi=600)
 
-def plot_auction_allocation_synthetic(df_res, resource_type='resource', ci=None):
-    '''
-    Parameters
-    ----------
-    df_res : TYPE
-        DESCRIPTION.
-    resource_type : TYPE, optional
-        DESCRIPTION. The default is 'resource'.
-    ci : TYPE, optional
-        DESCRIPTION. The default is None.
-
-    Returns
-    -------
-    None.
-
-    '''
-    layer = df_res.layer.unique().tolist()
-    auction_type = df_res.auction_type.unique().tolist()
-    if '' in auction_type:
-        auction_type.remove('')
-    valuation_type = df_res.valuation_type.unique().tolist()
-    if '' in valuation_type:
-        valuation_type.remove('')
-    T = len(df_res.t.unique().tolist())
-    hor_grid = auction_type
-    ver_grid = layer
-    new_window = valuation_type
-    for idxat, at in enumerate(new_window):
-        fig, axs = plt.subplots(len(ver_grid), len(hor_grid), sharex=True, sharey=True,
-                                tight_layout=False)
-        for idxnr, nr in enumerate(hor_grid):
-            for idxvt, vt in enumerate(ver_grid):
-                if len(ver_grid) == 1 and len(hor_grid) == 1:
-                    ax = axs
-                elif len(ver_grid) == 1:
-                    ax = axs[idxnr]
-                elif len(hor_grid) == 1:
-                    ax = axs[idxvt]
-                else:
-                    ax = axs[idxvt, idxnr]
-                data = df_res[(df_res['layer'] == vt)&\
-                              ((df_res['auction_type'] == nr)|(df_res['auction_type'] == ''))&\
-                              ((df_res['valuation_type'] == at)|(df_res['valuation_type'] == ''))]
-                with sns.xkcd_palette(['black', "windows blue", 'red', "green"]):
-                    ax = sns.lineplot(x='t', y=resource_type, hue="decision_type",
-                                      style='decision_type', markers=True, ci=ci,
-                                      ax=ax, legend='full', data=data)
-                    ax.get_legend().set_visible(False)
-                    ax.set(xlabel=r'time step $t$', ylabel=resource_type)
-                    if resource_type == "normalized_resource":
-                        ax.set(ylabel=r'$\% R_c$')
-                    ax.xaxis.set_ticks(np.arange(1, T+1, 1.0))   #ax.get_xlim()
-                    ax.grid(b=True, which='major', color='w', linewidth=1.0)
-        handles, labels = ax.get_legend_handles_labels()
-        labels = correct_legend_labels(labels)
-        fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5, labelspacing=0.2)
-        _, axs_c, axs_r = find_ax(axs, ver_grid, hor_grid)
-        fig.suptitle('Valuation Type: '+valuation_type[idxat])
-        for idx, ax in enumerate(axs_c):
-            ax.set_title(r'Auction Type: %s'%(hor_grid[idx]))
-        for idx, ax in enumerate(axs_r):
-            ax.annotate('Layer '+str(int(ver_grid[idx])), xy=(0.1, 0.5),
-                        xytext=(-ax.yaxis.labelpad - 5, 0), xycoords=ax.yaxis.label,
-                        textcoords='offset points', ha='right', va='center', rotation=90)
-        plt.savefig('Allocations_'+at+'.pdf', dpi=600)
-
-def plot_relative_allocation_shelby(gap_res, distance_type='gap'):
+def plot_relative_allocation(gap_res, distance_type='gap'):
     '''
     Parameters
     ----------
@@ -487,11 +305,12 @@ def plot_relative_allocation_shelby(gap_res, distance_type='gap'):
     hue_type = [judgment_type, 'judgment_type']
     # clrs = [['azure', 'light blue'], ['gold', 'khaki'], ['strawberry', 'salmon pink'],
     #         ['green', 'light green']] #['purple', 'orchid'
-    clrs = [['#003f5c', '#006999'], ['#7a5195', '#00a1ae'], ['#ef5675', '#30cf6f'],
-            ['#ffa600', '#ffe203']] #['purple', 'orchid']
+    clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green'],['bluish purple','orchid']]
+    # clrs = [['#003f5c', '#006999'], ['#7a5195', '#00a1ae'], ['#ef5675', '#30cf6f'],
+    #         ['#ffa600', '#ffe203']] #['purple', 'orchid']
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
-                            sharey=True, figsize=(4000/dpi, 2500/dpi))
+                            sharey=True, figsize=(3000/dpi, 1500/dpi))
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
             ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
@@ -508,104 +327,37 @@ def plot_relative_allocation_shelby(gap_res, distance_type='gap'):
                     data_ftp_pivot[l] += data_ftp_pivot[l-1]
             lyrs.sort(reverse=True)
             for l in lyrs:
-                with sns.color_palette(clrs[int(l)-1]): #pals[int(l)-1]:
+                erc = 0.05
+                if l%2 == 1:
+                    erc = 0.95
+                with sns.xkcd_palette(clrs[int(l)-1]):#color_palette
                     sns.barplot(x='no_resources', y=l, hue=hue_type[1], ax=ax,
                                 data=data_ftp_pivot, linewidth=0.5,
-                                edgecolor=[.25, .25, .25], capsize=.05,
-                                errcolor=[.25, .25, .25], errwidth=.75)
+                                edgecolor=[.25, .25, .25], capsize=.1,
+                                errcolor=[erc, erc, erc], errwidth=.75)
             ax.get_legend().set_visible(False)
-            ax.grid(which='major', axis='y', color=[.75, .75, .75], linewidth=.75)
-            ax.set_xlabel(r'\# resources')
+            # ax.grid(which='major', axis='y', color=[.75, .75, .75], linewidth=.75)
+            ax.set_xlabel(r'$R_c$')
             if idx_r != len(row_plot[0])-1:
                 ax.set_xlabel('')
             ax.set_ylabel(r'$E[\omega^k]$, Valuation: %s' % (row_plot[0][idx_r]))
             if idx_c != 0:
                 ax.set_ylabel('')
             ax.xaxis.set_label_position('bottom')
-            ax.set_facecolor('w')
+            # ax.set_facecolor('w')
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_legend_labels(labels)
     for idx, lab in enumerate(labels):
         layer_num = len(layer) - idx//(len(judgment_type))
         labels[idx] = lab[:7] + '. (Layer ' + str(layer_num) + ')'
-    lgd = fig.legend(handles, labels, loc='center', bbox_to_anchor=(0.5, 0.95),
-                     frameon=True, framealpha=0.5, ncol=4)#, fontsize='small'
+        layer_label = {1:'Water', 2:'Gas', 3:'Power', 4:'Telecomm.'} #!!! only for shelby
+        labels[idx] = layer_label[layer_num] #!!! only for shelby
+    lgd = fig.legend(handles, labels, loc='upper right', bbox_to_anchor=(0.9, 0.88),
+                     frameon=True, framealpha=0.5, ncol=1)#, fontsize='small'
     _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
-        ax.set_title(r'Auction Type: %s'%(col_plot[0][idx]))
+        ax.set_title(r'Res. Alloc. Type: %s'%(col_plot[0][idx]))
     plt.savefig('Allocation_Gap.png', bbox_extra_artists=(lgd, ), dpi=dpi)
-
-def plot_relative_allocation_synthetic(df_res, distance_type='distance_to_optimal'):
-    '''
-    Parameters
-    ----------
-    df_res : TYPE
-        DESCRIPTION.
-    distance_type : TYPE, optional
-        DESCRIPTION. The default is 'distance_to_optimal'.
-
-    Returns
-    -------
-    None.
-
-    '''
-#    no_resources = df_res.no_resources.unique().tolist()
-    layer = df_res.layer.unique().tolist()
-    decision_type = df_res.decision_type.unique().tolist()
-#    decision_type=['judgeCall_OPTIMISTIC']
-#    auction_type = df_res.auction_type.unique().tolist()
-    valuation_type = df_res.valuation_type.unique().tolist()
-    if '' in valuation_type:
-        valuation_type.remove('')
-    hor_grid = [0]
-    ver_grid = valuation_type
-    # pals = [sns.color_palette("Blues", 3), sns.color_palette("Reds", 3),
-    #         sns.color_palette("Greens", 3), sns.cubehelix_palette(3)]
-    clrs = [['strawberry', 'salmon pink'], ['azure', 'light blue'],
-            ['green', 'light green'], ['bluish purple', 'orchid']]
-    fig, axs = plt.subplots(len(ver_grid), len(hor_grid), sharex=True, sharey=True,
-                            tight_layout=False, figsize=(8, 6))
-    for idxat, _ in enumerate(hor_grid):
-        for idxvt, vt in enumerate(ver_grid):
-            ax, _, _ = find_ax(axs, hor_grid, ver_grid, idxat, idxvt)
-            data_ftp = df_res[(df_res['valuation_type'] == vt)|(df_res['valuation_type'] == '')]
-            for dt in decision_type:
-                bottom = 0
-                for P in layer:
-                    data_ftp.loc[(data_ftp['layer'] == P)&(data_ftp['decision_type'] == dt)&\
-                                 (data_ftp['valuation_type'] == vt), distance_type] += bottom
-                    bottom = data_ftp[(data_ftp['layer'] == P)&(data_ftp['decision_type'] == dt)&\
-                                      (data_ftp['valuation_type'] == vt)][distance_type].mean()
-                bottom = 0
-                for P in layer:
-                    data_ftp.loc[(data_ftp['layer'] == P)&(data_ftp['decision_type'] == dt)&\
-                                 (data_ftp['valuation_type'] == ''), distance_type] += bottom
-                    bottom = data_ftp[(data_ftp['layer'] == P)&(data_ftp['decision_type'] == dt)&\
-                                      (data_ftp['valuation_type'] == '')][distance_type].mean()
-            for P in reversed(layer):
-                with sns.xkcd_palette(clrs[int(P)-1]): #pals[int(P)-1]:
-                    sns.barplot(x='auction_type', y=distance_type, hue="decision_type",
-                                data=data_ftp[(data_ftp['layer'] == P)],
-                                linewidth=0.5, edgecolor=[.25, .25, .25],
-                                capsize=.05, errcolor=[.25, .25, .25], errwidth=.75, ax=ax)
-            ax.get_legend().set_visible(False)
-            ax.grid(which='major', axis='y', color=[.75, .75, .75], linewidth=.75)
-            ax.set_xlabel(r'Auction Type')
-            if idxvt != len(valuation_type)-1:
-                ax.set_xlabel('')
-            ax.set_ylabel(r'$E[\omega^k(r^k_d, r^k_c)]$, Valuation: %s' %(valuation_type[idxvt]))
-            if idxat != 0:
-                ax.set_ylabel('')
-            ax.xaxis.set_label_position('bottom')
-            ax.set_facecolor('w')
-    handles, labels = ax.get_legend_handles_labels()
-    labels = correct_legend_labels(labels)
-    for idx, lab in enumerate(labels):
-        layer_num = len(layer) - idx//(len(decision_type))
-        labels[idx] = lab[:7] + '. (Layer ' + str(layer_num) + ')'
-    lgd = fig.legend(handles, labels, loc='center', bbox_to_anchor=(0.5, 0.95),
-                     frameon=True, framealpha=0.5, ncol=4)#, fontsize='small'
-    plt.savefig('Allocation_Difference.pdf', bbox_extra_artists=(lgd, ), dpi=600)
 
 def plot_run_time(df, ci=None):
     '''
@@ -622,10 +374,12 @@ def plot_run_time(df, ci=None):
 
     '''
     #: Make lists
-    # no_resources = df.no_resources.unique().tolist()
+    no_resources = df.no_resources.unique().tolist()
     # layer = df.layer.unique().tolist()
     # decision_type = df.decision_type.unique().tolist()
     judgment_type = df.judgment_type.unique().tolist()
+    if 'nan' in judgment_type:
+        judgment_type.remove('nan')
     auction_type = df.auction_type.unique().tolist()
     if 'nan' in auction_type:
         auction_type.remove('nan')
@@ -633,40 +387,50 @@ def plot_run_time(df, ci=None):
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
     T = len(df['t'].unique().tolist())
-    value_vars = ['valuation_time', 'auction_time', 'decision_time']
+    value_vars = ['total_time','valuation_time', 'auction_time']#'decision_time'
     row_plot = [valuation_type, 'valuation_type']
-    col_plot = [auction_type, 'auction_type']
-    hue_type = [judgment_type, 'judgment_type']
-    # style_type = [decision_type, 'decision_type']
+    col_plot = [no_resources, 'no_resources'] 
+    hue_type = [auction_type, 'auction_type']
 
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
-                            sharey=True, figsize=(4000/dpi, 2500/dpi))
-    pals = [sns.cubehelix_palette(4, rot=-0.4, reverse=True), sns.color_palette("Reds", 3),
-            sns.cubehelix_palette(4, reverse=True)]
+                            sharey=True, figsize=(4000/dpi, 1500/dpi))
+    # pals = [sns.cubehelix_palette(4, rot=-0.4, reverse=True), sns.color_palette("Reds_r", 10),
+    #         sns.cubehelix_palette(4, reverse=True)]
+    clrs=['#000000', '#e9937c', '#a6292d']
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
             ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
             selected_data = df[((df[row_plot[1]] == val_r)|(df[row_plot[1]] == 'nan'))&\
                                ((df[col_plot[1]] == val_c)|(df[col_plot[1]] == 'nan'))]
-            # selected_data.loc[:, 'valuation_time'] += selected_data.loc[:, 'auction_time']+\
-            #     selected_data.loc[:, 'decision_time']
-            # selected_data.loc[:, 'auction_time'] += selected_data.loc[:, 'decision_time']
-            for tt in value_vars:
-                with pals[int(value_vars.index(tt))]:
-                    sns.lineplot(x='t', y=tt, hue=hue_type[1], markers=True, ci=ci, ax=ax,
-                                 data=selected_data[selected_data['t'] > 0], **{'markersize':5})
-                    # ax=sns.barplot(x='t', y=tt, hue=hue_type[1], data=selected_data,
-                    #             linewidth=0.5, edgecolor=[.25, .25, .25], ax=ax,
-                    #             capsize=.05, errcolor=[.25, .25, .25], errwidth=.75)
-            ax.set(xlabel=r'time step $t$')
+            selected_data['total_time'] = selected_data.loc[:, 'valuation_time']+\
+                selected_data.loc[:, 'auction_time']+\
+                selected_data.loc[:, 'decision_time']
+            id_vars = [x for x in list(selected_data.columns) if x not in value_vars]
+            df_melt = pd.melt(selected_data, id_vars=id_vars, value_vars=value_vars)
+            # Removing non-informative lines
+            df_melt = df_melt[~((df_melt['decision_type']=='indp')&(df_melt['variable']=='valuation_time'))]
+            df_melt = df_melt[~((df_melt['decision_type']=='indp')&(df_melt['variable']=='decision_time'))]
+            df_melt = df_melt[~((df_melt['decision_type']=='indp')&(df_melt['variable']=='auction_time'))]
+            df_melt = df_melt[~((df_melt['auction_type']=='UNIFORM')&(df_melt['variable']=='valuation_time'))]
+            df_melt = df_melt[~((df_melt['auction_type']=='UNIFORM')&(df_melt['variable']=='decision_time'))]
+            df_melt = df_melt[~((df_melt['auction_type']=='UNIFORM')&(df_melt['variable']=='auction_time'))]
+            df_melt = df_melt[~((df_melt['auction_type']=='MCA')&(df_melt['variable']=='decision_time'))]
+            df_melt = df_melt[~((df_melt['auction_type']=='MDA')&(df_melt['variable']=='decision_time'))]
+            df_melt = df_melt[~((df_melt['auction_type']=='MAA')&(df_melt['variable']=='decision_time'))]
+
+            with sns.color_palette(clrs):
+                sns.lineplot(x='t', y="value", hue=hue_type[1], style='variable',
+                             markers=True, ci=ci, ax=ax, style_order=value_vars,
+                             data=df_melt[df_melt['t'] > 0], **{'markersize':6})
+            ax.set(xlabel=r'Time Step $t$')
             if idx_r != len(row_plot[0])-1:
                 ax.set_xlabel('')
-            ax.set_ylabel('Run Time (sec), Val.: %s'% (row_plot[0][idx_r]))
+            ax.set_ylabel('Mean Time (sec), Val.: %s'% (row_plot[0][idx_r]))
             if idx_c != 0:
                 ax.set_ylabel('')
             ax.get_legend().set_visible(False)
-            ax.xaxis.set_ticks(np.arange(0, T, 1.0))   #ax.get_xlim()
+            ax.xaxis.set_ticks(np.arange(0, T, 2.0))   #ax.get_xlim()
     handles, labels = ax.get_legend_handles_labels()
     i = 0
     for x in labels:
@@ -674,13 +438,12 @@ def plot_run_time(df, ci=None):
             labels[labels.index(x)] = value_vars[i]
             i += 1
     labels = correct_legend_labels(labels)
-    # for idx, lab in enumerate(labels):
-    #     labels[idx] = correct_legend_labels([value_vars[idx//3]])[0]+' ('+lab[:7]+')'
-    fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5)
+    fig.legend(handles, labels, loc='upper right', bbox_to_anchor=(0.95,0.88),
+               ncol=1, framealpha=0.5, fontsize='x-small')
     _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
-        ax.set_title(r'Res. Alloc.: %s'%(col_plot[0][idx]))
-    plt.savefig('run_time.png', dpi=dpi, bbox_inches='tight')
+        ax.set_title(r'$R_c=$ %s'%(col_plot[0][idx]))
+    plt.savefig('run_time.png', dpi=dpi)
 
 def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
                                   ci=None, normalize=False):
@@ -767,8 +530,10 @@ def correct_legend_labels(labels):
     labels = ['Decision Type' if x == 'decision_type' else x for x in labels]
     labels = ['Valuation Type' if x == 'valuation_type' else x for x in labels]
     labels = ['Auction Time' if x == 'auction_time' else x for x in labels]
+    labels = ['Total Time' if x == 'total_time' else x for x in labels]
     labels = ['Decision Time' if x == 'decision_time' else x for x in labels]
     labels = ['Valuation Time' if x == 'valuation_time' else x for x in labels]
+    labels = ['Time Type' if x == 'variable' else x for x in labels]
     labels = ['iINDP' if x == 'indp' else x for x in labels]
     labels = ['iINDP' if x == 'nan' else x for x in labels]#!!!
     labels = ['td-INDP' if x == 'tdindp' else x for x in labels]

@@ -171,7 +171,7 @@ def run_parallel(i):
     None.
 
     '''
-    filter_sce = '/scratch/ht20/damagedElements_sliceQuantile_0.95.csv'
+    filter_sce = '/scratch/ht20/damagedElements_sliceQuantile_0.90.csv'
     #'../../data/damagedElements_sliceQuantile_0.95.csv'
     base_dir = '/scratch/ht20/Extended_Shelby_County/'
     #"../../data/Extended_Shelby_County/"
@@ -184,20 +184,20 @@ def run_parallel(i):
     fail_sce_param = {'TYPE':"WU", 'SAMPLE_RANGE':range(sample_no, sample_no+1),
                       'MAGS':range(mag_no, mag_no+1),
                       'FILTER_SCE':filter_sce, 'BASE_DIR':base_dir, 'DAMAGE_DIR':damage_dir}
-    rc = [12]
+    rc = [3, 6, 8, 12]
     layers = [1, 2, 3, 4]
     judge_type = ['OPTIMISTIC']
-    res_alloc_type = ["MCA"]
-    val_type = ['STM']
-    model_dir = '/scratch/ht20/ST_models'
-    stm_model_dict = {'num_pred':1, 'model_dir':model_dir+'/traces',
-                      'param_folder':model_dir+'/parameters'}
+    res_alloc_type = ["MDA", "MAA", "MCA", 'UNIFORM']
+    val_type = ['DTC']
+    #model_dir = '/scratch/ht20/ST_models'
+    #stm_model_dict = {'num_pred':1, 'model_dir':model_dir+'/traces',
+    #                  'param_folder':model_dir+'/parameters'}
 
-    run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir,)
+    run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir)
     # run_method(fail_sce_param, rc, layers, method='TD_INDP')
     run_method(fail_sce_param, rc, layers, method='JC', judgment_type=judge_type,
-               res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
-               misc = {'STM_MODEL_DICT':stm_model_dict})
+               res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir)
+    #          misc = {'STM_MODEL_DICT':stm_model_dict})
 
 if __name__ == "__main__":
     NUM_CORES = multiprocessing.cpu_count()

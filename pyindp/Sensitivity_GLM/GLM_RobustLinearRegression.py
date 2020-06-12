@@ -30,35 +30,35 @@ raw_df=pd.merge(raw_df, config_info,
              left_on=['Magnitude','topology'],
              right_on=['Config Number','topology']) 
 
-topo='Random'
-auc = 'Uniform'
+topo='Grid'
+auc = 'MCA'
 outputName = topo+'_'+auc
 
 
-raw_df = raw_df[(raw_df['topology']==topo)& (raw_df['auction_type']==auc)]
-df = pd.DataFrame({'nNodes': raw_df[' No. Nodes'], 'topoParam': raw_df[' Topology Parameter'],
-                   'Pint':  raw_df[' Interconnection Prob'], 'Pdam': raw_df[' Damage Prob'],
-                   'ResCap': raw_df[' Resource Cap'],'nLayers': raw_df[' No. Layers'],
-                   'y': raw_df['lambda_U'].astype('float')})
-df = df[df['y']!='nan']
-normalized_df=(df-df.mean())/df.std()
+# raw_df = raw_df[(raw_df['topology']==topo)& (raw_df['auction_type']==auc)]
+# df = pd.DataFrame({'nNodes': raw_df[' No. Nodes'], 'topoParam': raw_df[' Topology Parameter'],
+#                    'Pint':  raw_df[' Interconnection Prob'], 'Pdam': raw_df[' Damage Prob'],
+#                    'ResCap': raw_df[' Resource Cap'],'nLayers': raw_df[' No. Layers'],
+#                    'y': raw_df['lambda_U'].astype('float')})
+# df = df[df['y']!='nan']
+# normalized_df=(df-df.mean())/df.std()
 
-# Modeling
-priors = {"Intercept": pm.Normal.dist(mu=0, sd=10),
-          "Regressor": pm.Normal.dist(mu=0, sd=10)}
+# # Modeling
+# priors = {"Intercept": pm.Normal.dist(mu=0, sd=10),
+#           "Regressor": pm.Normal.dist(mu=0, sd=10)}
 
-with pm.Model() as model_glm:
-    family = pm.glm.families.StudentT()
-    GLM.from_formula('y ~ nNodes+Pint+Pdam+ResCap+topoParam+nLayers', normalized_df, family=family, priors=priors)
-    trace = pm.sample(cores=1, draws = 2000, tune=1000)
+# with pm.Model() as model_glm:
+#     family = pm.glm.families.StudentT()
+#     GLM.from_formula('y ~ nNodes+Pint+Pdam+ResCap+topoParam+nLayers', normalized_df, family=family, priors=priors)
+#     trace = pm.sample(cores=1, draws = 2000, tune=1000)
 
-# Save Output and model
-pm.stats.summary(trace).to_csv('output/Output_'+outputName+'.csv')
+# # Save Output and model
+# pm.stats.summary(trace).to_csv('output/Output_'+outputName+'.csv')
 
 
-# Write model and results to file
-with open('output/model'+outputName+'.pkl', 'wb') as buff:
-    pickle.dump({'model': model_glm, 'trace': trace}, buff)
+# # Write model and results to file
+# with open('output/model'+outputName+'.pkl', 'wb') as buff:
+#     pickle.dump({'model': model_glm, 'trace': trace}, buff)
 
 with open('output/model'+outputName+'.pkl', 'rb') as buff:
     data = pickle.load(buff)  
@@ -73,6 +73,7 @@ plt.close('all')
 #pm.autocorrplot(trace)
 
 axInt = pm.densityplot(trace)
+plt.close('all')
 plt.figure(figsize=(5, 3))
 #plt.rc('text', usetex=True)
 #plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})

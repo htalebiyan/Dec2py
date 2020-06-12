@@ -273,8 +273,8 @@ def plot_auction_allocation_shelby(df_res,ci=None,resource_type='distance_to_opt
             ax.set_title(r'Total resources = %d'%(no_resources[idx]))
         for idx, ax in enumerate(axy):
             ax.annotate('Layer '+`layer[idx]`,xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
-                xycoords=ax.yaxis.label, textcoords='offset points',ha='right',va='center',rotation=90)  
-  
+                        xycoords=ax.yaxis.label, textcoords='offset points',ha='right',
+                        va='center',rotation=90)
         plt.savefig('Allocations_'+at+'.pdf',dpi=600)
 
 def plot_relative_allocation_shelby(df_res,distance_type='distance_to_optimal'):   
@@ -446,8 +446,11 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
     hor_grid=topology_type
     ver_grid=nolayers    
 #    pals = [sns.color_palette("Blues",3),sns.color_palette("Reds",3),sns.color_palette("Greens",3),sns.cubehelix_palette(3)]
-    clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green'],['bluish purple','orchid']]
-    fig, axs = plt.subplots(len(ver_grid), len(hor_grid),sharex=True,sharey=True,tight_layout=False, figsize=(8,6))
+    # clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green'],['bluish purple','orchid']]
+    clrs = [['#003f5c', '#006999'], ['#7a5195', '#00a1ae'], ['#ef5675', '#30cf6f'],
+            ['#ffa600', '#ffe203']]
+    fig, axs = plt.subplots(len(ver_grid), len(hor_grid),sharex=True,sharey=True,
+                            tight_layout=False, figsize=(5,6))
     legend_save = True
     ax_legend = 0
     for idxat,at in enumerate(hor_grid):   
@@ -469,11 +472,14 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
                         data_ftp.loc[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['auction_type']==auc),distance_type]+=bottom
                         bottom=data_ftp[(data_ftp['layer']==P)&(data_ftp['decision_type']==dt)&(data_ftp['auction_type']==auc)][distance_type].mean()
             for P in reversed(range(1,vt+1)):    
-                with sns.xkcd_palette(clrs[int(P)-1]): #pals[int(P)-1]:
+                with sns.color_palette(clrs[int(P)-1]): #pals[int(P)-1]:#xkcd_palette
+                    erc = 0.25
+                    if P%2 == 1:
+                        erc = 0.75
                     ax=sns.barplot(x='auction_type',y=distance_type,hue="decision_type",
                                 data=data_ftp[(data_ftp['layer']==P)], 
-                                linewidth=0.5,edgecolor=[.25,.25,.25],
-                                capsize=.05,errcolor=[.25,.25,.25],errwidth=.75,ax=ax)
+                                linewidth=0.5,edgecolor=[.25,.25,.25], capsize=.1,
+                                errcolor=[erc,erc,erc],errwidth=1,ax=ax)
 #                    plt.pause(0.5)
                
             ax.get_legend().set_visible(False)
@@ -495,7 +501,7 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
         layer_num = len(layer) - idx//(len(decision_type))
 #        labels[idx] = lab[:7] + '. (Layer ' + `layer_num` + ')'
         labels[idx] = 'Layer ' + `layer_num`
-    lgd = fig.legend(handles, labels,loc='center', bbox_to_anchor=(0.85, 0.54),
+    lgd = fig.legend(handles, labels,loc='center', bbox_to_anchor=(0.85, 0.55),
                frameon =True,framealpha=0.5, ncol=1)     #, fontsize='small'
     if len(hor_grid)==1 and len(ver_grid)==1:
         axx=[axs]
@@ -514,7 +520,7 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
     for idx, ax in enumerate(axy):
         ann2=ax.annotate(`int(ver_grid[idx])`+' Layers', xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - 5, 0),
             xycoords=ax.yaxis.label, textcoords='offset points', ha='right', va='center', rotation=90) 
-    plt.savefig('Allocation_Difference.pdf',dpi=600,bbox_extra_artists=(lgd,ann,ann2),bbox_inches='tight') 
+    plt.savefig('Allocation_Difference.png',dpi=600,bbox_extra_artists=(lgd,ann,ann2),bbox_inches='tight') 
     
 def plot_run_time_synthetic(df,ci=None):
     auction_type = df.auction_type.unique().tolist()

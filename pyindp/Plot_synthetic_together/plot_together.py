@@ -17,7 +17,7 @@ plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 #lambda_df = lambda_df.assign(topology='Grid',interdependency='full')
 #comp_lambda_df = pd.DataFrame(lambda_df)
 #
-comp_lambda_df = pd.read_pickle('temp_synthetic_v3_1_MDDN')
+comp_lambda_df = pd.read_pickle('temp_synthetic_v3_1')
 #comp_lambda_df = pd.concat([comp_lambda_df,lambda_df])
 #
 #comp_lambda_df.to_pickle('temp_synthetic_v3_1_MDDN') 
