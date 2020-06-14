@@ -220,6 +220,7 @@ if __name__ == "__main__":
     DAMAGE_DIR = "../data/Wu_Damage_scenarios/" #random_disruption_shelby/"
     #: The address to where output are stored.
     OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
+    #'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
     #'../results/'
     # FAIL_SCE_PARAM['TOPO']+'/results/'
 
@@ -259,45 +260,45 @@ if __name__ == "__main__":
     # STM_MODEL_DICT = {'num_pred':1, 'model_dir':MODEL_DIR+'/traces',
     #                   'param_folder':MODEL_DIR+'/parameters'}
 
-    # # # ### Run different methods###
+    # # # # ### Run different methods###
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR)
-    # # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
+    # # # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
     #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
-    #             output_dir=OUTPUT_DIR)#, misc = {'STM_MODEL_DICT':STM_MODEL_DICT})
+                # output_dir=OUTPUT_DIR)#, misc = {'STM_MODEL_DICT':STM_MODEL_DICT})
 
-    # ### Post-processing ###
-    # COST_TYPES = ['Total']
-    # REF_METHOD = 'indp'
-    # METHOD_NAMES = ['indp', 'jc']
-    # SUFFIXES = ['real']
+    ### Post-processing ###
+    COST_TYPES = ['Total']
+    REF_METHOD = 'indp'
+    METHOD_NAMES = ['indp', 'jc']
+    SUFFIXES = ['real']
 
-    # SYNTH_DIR = None #BASE_DIR+FAIL_SCE_PARAM['TOPO']+'Networks/'
-    # COMBS, OPTIMAL_COMBS = dindp.generate_combinations('shelby',
-    #             FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
-    #             RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE, SUFFIXES,
-    #             list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
-    #             synthetic_dir=SYNTH_DIR)
+    SYNTH_DIR = None #BASE_DIR+FAIL_SCE_PARAM['TOPO']+'Networks/'
+    COMBS, OPTIMAL_COMBS = dindp.generate_combinations('shelby',
+                FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
+                RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE, SUFFIXES,
+                list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
+                synthetic_dir=SYNTH_DIR)
 
-    # BASE_DF, objs = dindp.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
-    #                                     root_result_dir=OUTPUT_DIR, deaggregate=True)
+    BASE_DF, objs = dindp.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
+                                        root_result_dir=OUTPUT_DIR, deaggregate=True)
 
-    # LAMBDA_DF = dindp.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
-    #                                         ref_method=REF_METHOD, cost_type=COST_TYPES[0])
-    # RES_ALLOC_DF, ALLOC_GAP_DF = dindp.read_resourcec_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
-    #                                                               objs, root_result_dir=OUTPUT_DIR,
-    #                                                               ref_method=REF_METHOD)
-    # RUN_TIME_DF = dindp.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
+    LAMBDA_DF = dindp.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
+                                            ref_method=REF_METHOD, cost_type=COST_TYPES[0])
+    RES_ALLOC_DF, ALLOC_GAP_DF = dindp.read_resourcec_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
+                                                                  objs, root_result_dir=OUTPUT_DIR,
+                                                                  ref_method=REF_METHOD)
+    RUN_TIME_DF = dindp.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
 
-    # ### Save Variables to file ###
-    # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
-    #             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES]
+    ### Save Variables to file ###
+    OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
+                RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES]
 
-    # ### Saving the objects ###
-    # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
-    #     pickle.dump(OBJ_LIST, f)
+    ### Saving the objects ###
+    with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
+        pickle.dump(OBJ_LIST, f)
 
-    # ### Getting back the objects ###
+    ### Getting back the objects ###
     # with open(OUTPUT_DIR+'/postprocess_dicts.pkl', 'rb') as f:
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
     #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE] = pickle.load(f)
@@ -305,16 +306,16 @@ if __name__ == "__main__":
     ### Plot results ###
     plt.close('all')
 
-    # plots.plot_performance_curves(BASE_DF, cost_type='Total', ci=None,
-    #                                       deaggregate=True, plot_resilience=False)
+    plots.plot_performance_curves(BASE_DF, cost_type='Total', ci=None,
+                                          deaggregate=True, plot_resilience=False)
 
-    # plots.plot_seperated_perform_curves(BASE_DF[BASE_DF['valuation_type'] != 'DTC'],
-    #                                     x='t', y='cost', cost_type='Total',
-    #                                     ci=None, normalize=False)
+    plots.plot_seperated_perform_curves(BASE_DF[BASE_DF['valuation_type'] != 'DTC'],
+                                        x='t', y='cost', cost_type='Total',
+                                        ci=None, normalize=False)
 
-    # plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
-    # plots.plot_auction_allocation(RES_ALLOC_DF, ci=None)
-    # plots.plot_relative_allocation(ALLOC_GAP_DF[ALLOC_GAP_DF['auction_type']!='UNIFORM'],
-    #                                distance_type='norm_gap')
+    plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
+    plots.plot_auction_allocation(RES_ALLOC_DF, ci=None)
+    plots.plot_relative_allocation(ALLOC_GAP_DF[ALLOC_GAP_DF['auction_type']!='UNIFORM'],
+                                    distance_type='gap')
     plots.plot_run_time(RUN_TIME_DF[(RUN_TIME_DF['auction_type']!='MDA')&
                                     (RUN_TIME_DF['auction_type']!='MAA')], ci=95)

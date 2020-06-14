@@ -12,8 +12,8 @@ import plotly
 plt.close('all')
 sns.set(context='notebook',style='darkgrid')
 
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+# plt.rc('text', usetex=True)
+# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 
 #res_alloc_rel = res_alloc_rel.assign(topology='Grid',interdependency='full')
@@ -43,7 +43,7 @@ comp_res=pd.merge(comp_res, config_info,
 selected_df = comp_res[(comp_res['distance_to_optimal']!='nan')&
                       (comp_res['auction_type']!='Uniform')]
 selected_df["distance_to_optimal"] = pd.to_numeric(selected_df["distance_to_optimal"])
-plots.plot_relative_allocation_synthetic(selected_df,distance_type='norm_distance_to_optimal')
+# plots.plot_relative_allocation_synthetic(selected_df,distance_type='distance_to_optimal')
 
 # comp_res = comp_res.rename(columns={"distance_to_optimal": "distance to optimal",
 #                                           "auction_type": "Auction Type",
@@ -153,20 +153,23 @@ plots.plot_relative_allocation_synthetic(selected_df,distance_type='norm_distanc
 #                  palette={"red": "#FF9999", "white": "#FFE888"},
 #                  plot_kws=dict(edgecolor="black", linewidth=0.5))
 '''Scatter'''
-# selected_df = selected_df.rename(columns={"norm_distance_to_optimal": "norm distance to optimal",
-#                                           "auction_type": "Auction Type",
-#                                           "topology":"Topology"})
+selected_df = selected_df.rename(columns={"norm_distance_to_optimal": "norm distance to optimal",
+                                          "distance_to_optimal": "distance to optimal",
+                                          "auction_type": "Auction Type",
+                                          "topology":"Topology"})
  
-# sns.set(font_scale=1.5) 
-# with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
-#     g=sns.relplot(x=" Resource Cap", y="norm distance to optimal",
-#             hue="Topology", size='Topology', col="Auction Type",
-#             legend="full", data=selected_df)
-#     g.set(ylim=(0.0001, 1),yscale="log",xlim=(1, 1000),xscale="log")
-#     g.set_xlabels(r'$R_c$')
-#     g.set_ylabels(r'Mean $\omega^k(r^k_d,r^k_c)$ over layers')
-#     g.set_titles(col_template = 'Auction Type: {col_name}')
-#     g._legend.set_bbox_to_anchor([0.89, 0.75])
+sns.set(font_scale=1.5) 
+with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
+    g=sns.relplot(x=" Damage Prob", y="distance to optimal",
+            hue="Topology", size='Topology', col="Auction Type",
+            legend="full", data=selected_df[selected_df["Topology"]=='Grid'])
+    # g.set(ylim=(0.0001, 1),yscale="log",xlim=(1, 1000),xscale="log")
+    # g.set(ylim=(0, 2),xlim=(0, 150))
+    # g.set_xlabels(r'$R_c$')
+    # g.set_ylabels(r'Mean $\omega^k(r^k_d,r^k_c)$ over layers')
+    # g.set_titles(col_template = 'Auction Type: {col_name}')
+    # g._legend.set_bbox_to_anchor([0.89, 0.75])
+
 # plt.savefig('OmegaVsRc.pdf', dpi=600)    #, bbox_inches='tight'
 """ PCA"""
 #from sklearn.preprocessing import StandardScaler

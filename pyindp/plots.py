@@ -5,7 +5,7 @@ import matplotlib as mplt
 import numpy as np
 import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-sns.set(context='notebook', style='darkgrid', font_scale=1.4)
+sns.set(context='notebook', style='darkgrid', font_scale=1.2)
 plt.rc('text', usetex=True)
 plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
@@ -302,41 +302,23 @@ def plot_relative_allocation(gap_res, distance_type='gap'):
         valuation_type.remove('nan')
     row_plot = [valuation_type, 'valuation_type']
     col_plot = [auction_type, 'auction_type']
-    hue_type = [judgment_type, 'judgment_type']
-    # clrs = [['azure', 'light blue'], ['gold', 'khaki'], ['strawberry', 'salmon pink'],
-    #         ['green', 'light green']] #['purple', 'orchid'
-    clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green'],['bluish purple','orchid']]
-    # clrs = [['#003f5c', '#006999'], ['#7a5195', '#00a1ae'], ['#ef5675', '#30cf6f'],
-    #         ['#ffa600', '#ffe203']] #['purple', 'orchid']
+    hue_type = [layer, 'layer']
+    clrs=['#5153ca', '#e4ad5d', '#c20809', '#5fb948']
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
-                            sharey=True, figsize=(3000/dpi, 1500/dpi))
+                            sharey=True, figsize=(3500/dpi, 1000/dpi))
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
             ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
             data_ftp = gap_res[(gap_res[col_plot[1]] == val_c)&\
                                ((gap_res[row_plot[1]] == val_r)|\
                                (gap_res[row_plot[1]] == 'nan'))]
-            data_ftp_pivot = data_ftp.pivot_table(values=distance_type,
-                index=data_ftp.columns.drop(['layer', 'gap', 'norm_gap']).tolist(),
-                columns='layer')
-            data_ftp_pivot.reset_index(inplace=True)
-            lyrs = data_ftp['layer'].unique().tolist()
-            for l in lyrs:
-                if l != 1:
-                    data_ftp_pivot[l] += data_ftp_pivot[l-1]
-            lyrs.sort(reverse=True)
-            for l in lyrs:
-                erc = 0.05
-                if l%2 == 1:
-                    erc = 0.95
-                with sns.xkcd_palette(clrs[int(l)-1]):#color_palette
-                    sns.barplot(x='no_resources', y=l, hue=hue_type[1], ax=ax,
-                                data=data_ftp_pivot, linewidth=0.5,
-                                edgecolor=[.25, .25, .25], capsize=.1,
-                                errcolor=[erc, erc, erc], errwidth=.75)
+            with sns.color_palette(clrs):
+                sns.barplot(x='no_resources', y=distance_type, hue=hue_type[1], ax=ax,
+                            data=data_ftp, linewidth=0.5,
+                            edgecolor=[.25, .25, .25], capsize=.05,
+                            errcolor=[.25, .25, .25], errwidth=.75)
             ax.get_legend().set_visible(False)
-            # ax.grid(which='major', axis='y', color=[.75, .75, .75], linewidth=.75)
             ax.set_xlabel(r'$R_c$')
             if idx_r != len(row_plot[0])-1:
                 ax.set_xlabel('')
@@ -344,20 +326,18 @@ def plot_relative_allocation(gap_res, distance_type='gap'):
             if idx_c != 0:
                 ax.set_ylabel('')
             ax.xaxis.set_label_position('bottom')
-            # ax.set_facecolor('w')
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_legend_labels(labels)
     for idx, lab in enumerate(labels):
-        layer_num = len(layer) - idx//(len(judgment_type))
-        labels[idx] = lab[:7] + '. (Layer ' + str(layer_num) + ')'
         layer_label = {1:'Water', 2:'Gas', 3:'Power', 4:'Telecomm.'} #!!! only for shelby
-        labels[idx] = layer_label[layer_num] #!!! only for shelby
-    lgd = fig.legend(handles, labels, loc='upper right', bbox_to_anchor=(0.9, 0.88),
-                     frameon=True, framealpha=0.5, ncol=1)#, fontsize='small'
+        labels[idx] = layer_label[idx+1]
+    lgd = fig.legend(handles, labels, loc='upper right', bbox_to_anchor=(0.85, 0.97),
+                     frameon=True, framealpha=0.5, ncol=1, fontsize='x-small')
     _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
         ax.set_title(r'Res. Alloc. Type: %s'%(col_plot[0][idx]))
-    plt.savefig('Allocation_Gap.png', bbox_extra_artists=(lgd, ), dpi=dpi)
+    plt.savefig('Allocation_Gap.png', dpi=dpi, bbox_inches='tight',
+                bbox_extra_artists=(lgd, ))#
 
 def plot_run_time(df, ci=None):
     '''
@@ -395,8 +375,6 @@ def plot_run_time(df, ci=None):
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
                             sharey=True, figsize=(4000/dpi, 1500/dpi))
-    # pals = [sns.cubehelix_palette(4, rot=-0.4, reverse=True), sns.color_palette("Reds_r", 10),
-    #         sns.cubehelix_palette(4, reverse=True)]
     clrs=['#000000', '#e9937c', '#a6292d']
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
@@ -579,3 +557,12 @@ def find_ax(axs, row_plot, col_plot, idx_r=0, idx_c=0):
         axs_c = axs[0, :]
         axs_r = axs[:, 0]
     return ax, axs_c, axs_r
+
+# Color repository
+# clrs = [['azure', 'light blue'], ['gold', 'khaki'], ['strawberry', 'salmon pink'],
+#         ['green', 'light green']] #['purple', 'orchid'
+# clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green'],['bluish purple','orchid']]
+# clrs = [['#003f5c', '#006999'], ['#7a5195', '#00a1ae'], ['#ef5675', '#30cf6f'],
+#         ['#ffa600', '#ffe203']] #['purple', 'orchid']
+    # pals = [sns.cubehelix_palette(4, rot=-0.4, reverse=True), sns.color_palette("Reds_r", 10),
+    #         sns.cubehelix_palette(4, reverse=True)]
