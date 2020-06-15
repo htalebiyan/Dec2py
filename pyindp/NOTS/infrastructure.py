@@ -794,12 +794,12 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3",topol
                         #print "Adding node",node[0][0],"in layer",node[0][1],"."
                         G.G.add_node((n.local_id,n.net_id),data={'inf_data':n})
                         global_index+=1                    
-                        G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].reconstruction_cost=float(v[1][7])*cost_scale
-                        G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].oversupply_penalty=float(v[1][5])*cost_scale
-                        G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].undersupply_penalty=float(v[1][6])*cost_scale
+                        G.G.nodes[(n.local_id,n.net_id)]['data']['inf_data'].reconstruction_cost=float(v[1][7])*cost_scale
+                        G.G.nodes[(n.local_id,n.net_id)]['data']['inf_data'].oversupply_penalty=float(v[1][5])*cost_scale
+                        G.G.nodes[(n.local_id,n.net_id)]['data']['inf_data'].undersupply_penalty=float(v[1][6])*cost_scale
                         # Assume only one kind of resource for now and one resource for each repaired element.
-                        G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].resource_usage=1
-                        G.G.node[(n.local_id,n.net_id)]['data']['inf_data'].demand=float(v[1][4])
+                        G.G.nodes[(n.local_id,n.net_id)]['data']['inf_data'].resource_usage=1
+                        G.G.nodes[(n.local_id,n.net_id)]['data']['inf_data'].demand=float(v[1][4])
         for file in files:
             if file=='N'+str(k)+'_Arcs.txt':
                 with open(file_dir+file) as f:
@@ -866,8 +866,8 @@ def add_synthetic_failure_scenario(G,DAM_DIR="../data/Generated_Network_Dataset_
                     try:
                         data = pd.read_csv(f, delimiter='\t',header=None)
                         for v in data.iterrows():    
-                            G.G.node[(v[1][0],k)]['data']['inf_data'].functionality=0.0
-                            G.G.node[(v[1][0],k)]['data']['inf_data'].repaired=0.0
+                            G.G.nodes[(v[1][0],k)]['data']['inf_data'].functionality=0.0
+                            G.G.nodes[(v[1][0],k)]['data']['inf_data'].repaired=0.0
 #                            print "Node (",`int(v[1][0])`+","+`k`+") broken."
                     except:
                         print('Empty file: '+ file)

@@ -173,25 +173,20 @@ def run_parallel(i):
     '''
     filter_sce = '/scratch/ht20/damagedElements_sliceQuantile_0.90.csv'
     #'../../data/damagedElements_sliceQuantile_0.95.csv'
-    base_dir = '/scratch/ht20/Synthetic_database/'
+    base_dir = '/scratch/ht20/Extended_Shelby_County/'
     #"../../data/Extended_Shelby_County/"
-	#'/scratch/ht20/Synthetic_database/'
-    damage_dir = '/scratch/ht20/Synthetic_database/'
+    damage_dir = '/scratch/ht20/Wu_Damage_scenarios/'
     #"../../data/Wu_Damage_scenarios/"
-	#'/scratch/ht20/Synthetic_database/'
-    output_dir = '/scratch/ht20/Grid/'
+    output_dir = '/scratch/ht20/'
     #'../../'
     sample_no = i//96
     mag_no = i%96
-    # fail_sce_param = {'TYPE':"WU", 'SAMPLE_RANGE':range(sample_no, sample_no+1),
-                      # 'MAGS':range(mag_no, mag_no+1),
-                      # 'FILTER_SCE':filter_sce, 'BASE_DIR':base_dir, 'DAMAGE_DIR':damage_dir}
-    FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(5, 10), 'MAGS':range(0, 100),
-                      'FILTER_SCE':None, 'TOPO':'Grid',
-                      'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    rc = [0] #[3, 6, 8, 12]
+    fail_sce_param = {'TYPE':"WU", 'SAMPLE_RANGE':range(sample_no, sample_no+1),
+                      'MAGS':range(mag_no, mag_no+1),
+                      'FILTER_SCE':filter_sce, 'BASE_DIR':base_dir, 'DAMAGE_DIR':damage_dir}
+    rc = [3, 6, 8, 12]
     layers = [1, 2, 3, 4]
-    judge_type = ["OPTIMISTIC"] #OPTIMISTIC #'DET-DEMAND' #PESSIMISTIC
+    judge_type = ["PESSIMISTIC"] #OPTIMISTIC #'DET-DEMAND'
     res_alloc_type = ["MDA", "MAA", "MCA", 'UNIFORM']
     val_type = ['DTC']
     #model_dir = '/scratch/ht20/ST_models'

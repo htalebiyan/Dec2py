@@ -215,11 +215,14 @@ if __name__ == "__main__":
     #: The address to the list of scenarios that should be included in the analyses.
     FILTER_SCE = '../data/damagedElements_sliceQuantile_0.95.csv'
     #: The address to the basic (topology, parameters, etc.) information of the network.
-    BASE_DIR = "../data/Extended_Shelby_County/"
+    BASE_DIR = "C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\"
+    # "../data/Extended_Shelby_County/"
     #: The address to damge scenario data.
-    DAMAGE_DIR = "../data/Wu_Damage_scenarios/" #random_disruption_shelby/"
+    DAMAGE_DIR = "C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\"
+    # ../data/random_disruption_shelby/"
+    #"../data/Wu_Damage_scenarios/" 
     #: The address to where output are stored.
-    OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
+    OUTPUT_DIR = '../results/'
     #'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
     #'../results/'
     # FAIL_SCE_PARAM['TOPO']+'/results/'
@@ -233,18 +236,18 @@ if __name__ == "__main__":
     #:     sce range: FAIL_SCE_PARAM['MAGS']
     #: For Synthetic nets: sample range: FAIL_SCE_PARAM['SAMPLE_RANGE'],
     #:     configurations: FAIL_SCE_PARAM['MAGS']
-    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(0, 50), 'MAGS':range(0, 95),
-                      'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
+    # FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(0, 50), 'MAGS':range(0, 95),
+    #                   'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"random", 'SAMPLE_RANGE':range(10, 11), 'MAGS':range(0, 1),
     #                   'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    # FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 5), 'MAGS':range(0, 100),
-    #                   'FILTER_SCE':None, 'TOPO':'Grid'
-    #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
+    FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(5, 6), 'MAGS':range(19, 21),
+                      'FILTER_SCE':None, 'TOPO':'Grid',
+                      'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
 
     # No restriction on number of resources for each layer
-    RC = [3, 6, 8, 12]
+    RC = [0]
     # Not necessary for synthetic nets
     # [3, 6, 8, 12]
     # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
@@ -261,11 +264,11 @@ if __name__ == "__main__":
     #                   'param_folder':MODEL_DIR+'/parameters'}
 
     # # # # ### Run different methods###
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR)
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR)
     # # # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
-    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
-                # output_dir=OUTPUT_DIR)#, misc = {'STM_MODEL_DICT':STM_MODEL_DICT})
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
+                res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
+                output_dir=OUTPUT_DIR)#, misc = {'STM_MODEL_DICT':STM_MODEL_DICT})
 
     ### Post-processing ###
     COST_TYPES = ['Total']
@@ -273,8 +276,8 @@ if __name__ == "__main__":
     METHOD_NAMES = ['indp', 'jc']
     SUFFIXES = ['real']
 
-    SYNTH_DIR = None #BASE_DIR+FAIL_SCE_PARAM['TOPO']+'Networks/'
-    COMBS, OPTIMAL_COMBS = dindp.generate_combinations('shelby',
+    SYNTH_DIR = BASE_DIR+FAIL_SCE_PARAM['TOPO']+'Networks/'
+    COMBS, OPTIMAL_COMBS = dindp.generate_combinations(FAIL_SCE_PARAM['TYPE'],
                 FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
                 RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE, SUFFIXES,
                 list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
@@ -307,15 +310,14 @@ if __name__ == "__main__":
     plt.close('all')
 
     plots.plot_performance_curves(BASE_DF, cost_type='Total', ci=None,
-                                          deaggregate=True, plot_resilience=False)
+                                          deaggregate=True, plot_resilience=True)
 
-    plots.plot_seperated_perform_curves(BASE_DF[BASE_DF['valuation_type'] != 'DTC'],
-                                        x='t', y='cost', cost_type='Total',
+    plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
                                         ci=None, normalize=False)
 
     plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
     plots.plot_auction_allocation(RES_ALLOC_DF, ci=None)
     plots.plot_relative_allocation(ALLOC_GAP_DF[ALLOC_GAP_DF['auction_type']!='UNIFORM'],
                                     distance_type='gap')
-    plots.plot_run_time(RUN_TIME_DF[(RUN_TIME_DF['auction_type']!='MDA')&
-                                    (RUN_TIME_DF['auction_type']!='MAA')], ci=95)
+    plots.plot_run_time(RUN_TIME_DF, ci=None)
+    # [(RUN_TIME_DF['auction_type']!='MDA')&(RUN_TIME_DF['auction_type']!='MAA')]

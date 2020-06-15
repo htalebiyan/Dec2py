@@ -48,8 +48,14 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
         for rst in params["RES_ALLOC_TYPE"]:
             params_copy['RES_ALLOC_TYPE'] = rst
             if rst not in ["MDA", "MAA", "MCA"]:
-                objs[c] = JcModel(c, params_copy)
-                c += 1
+                output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
+                                str(params["MAGNITUDE"])+"_v"+str(params["V"])+'_'+jc+'_'+\
+                                rst+'/actions_'+str(params["SIM_NUMBER"])+'_real.csv'
+                if os.path.exists(output_dir_full):
+                    print(jc,rst,'results are already there\n')
+                else:
+                    objs[c] = JcModel(c, params_copy)
+                    c += 1
             else:
                 for vt in params["VALUATION_TYPE"]:
                     params_copy['VALUATION_TYPE'] = vt
@@ -57,7 +63,7 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
                                     str(params["MAGNITUDE"])+"_v"+str(params["V"])+'_'+jc+'_AUCTION_'+\
                                     rst+'_'+vt+'/actions_'+str(params["SIM_NUMBER"])+'_real.csv'
                     if os.path.exists(output_dir_full):
-                        print('results are already there\n')
+                        print(jc,rst,vt,'results are already there\n')
                     else:
                         objs[c] = JcModel(c, params_copy)
                         c += 1
@@ -645,7 +651,8 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
             for rc in [no_resources]:
                 for dt, jt, at, vt in itertools.product(decision_type, judgment_type,
                                                         res_alloc_type, valuation_type):
-                    if (dt in optimal_method) and [m, s, L, rc, dt] not in optimal_combinations:
+                    if (dt in optimal_method) and [m, s, L, rc, dt, 'nan', 'nan', 'nan', '']\
+                            not in optimal_combinations:
                         optimal_combinations.append([m, s, L, rc, dt, 'nan',
                                                      'nan', 'nan', ''])
                     elif (dt not in optimal_method) and (at not in ['UNIFORM']):
@@ -653,7 +660,8 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
                             combinations.append([m, s, L, rc, dt, jt, at, vt, sf])
                     elif (dt not in optimal_method) and (at in ['UNIFORM']):
                         for sf in suffixes:
-                            combinations.append([m, s, L, rc, dt, jt, 'nan', at, sf])
+                            if [m, s, L, rc, dt, jt, at, 'nan', sf] not in combinations:
+                                    combinations.append([m, s, L, rc, dt, jt, at, 'nan', sf])
             idx += 1
             update_progress(idx, no_total)
     else:
