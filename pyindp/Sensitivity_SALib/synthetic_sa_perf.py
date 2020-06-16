@@ -57,8 +57,8 @@ results["Topology/Resource_allocation"] = results["Resource_allocation"]+'\n'+re
 df = results.pivot_table(values='Rank', index='Parameter', columns='Topology/Resource_allocation')
 df.reset_index()
 
-plot.plot_radar(df,df.index.values,df.columns)
-print(df.mean(axis=1))
+# plot.plot_radar(df,df.index.values,df.columns)
+# print(df.mean(axis=1))
 
 # plt.figure()
 # ax = sns.lineplot(x="Topology/Resource_allocation", y="Rank",
