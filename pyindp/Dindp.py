@@ -615,7 +615,7 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
     print('\nCombination Generation\n', end='')
     idx = 0
     no_total = len(mags)*len(sample)
-    if database == 'shelby':
+    if database in ['shelby', 'random', 'ANDRES', 'WU']:
         if list_high_dam_add:
             list_high_dam = pd.read_csv(list_high_dam_add)
         L = len(layers)

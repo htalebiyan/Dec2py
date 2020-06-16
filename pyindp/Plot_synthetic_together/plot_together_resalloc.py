@@ -40,9 +40,9 @@ comp_res=pd.merge(comp_res, config_info,
              right_on=['Config Number','topology']) 
 #
 """ Plot results """    
-selected_df = comp_res[(comp_res['distance_to_optimal']!='nan')&
-                      (comp_res['auction_type']!='Uniform')]
-selected_df["distance_to_optimal"] = pd.to_numeric(selected_df["distance_to_optimal"])
+# selected_df = comp_res[(comp_res['distance_to_optimal']!='nan')&
+#                       (comp_res['auction_type']!='Uniform')]
+# selected_df["distance_to_optimal"] = pd.to_numeric(selected_df["distance_to_optimal"])
 # plots.plot_relative_allocation_synthetic(selected_df,distance_type='distance_to_optimal')
 
 # comp_res = comp_res.rename(columns={"distance_to_optimal": "distance to optimal",
@@ -59,7 +59,24 @@ selected_df["distance_to_optimal"] = pd.to_numeric(selected_df["distance_to_opti
 # g.axes[0,0].set_ylabel(r'$E[\omega^k(r^k_d,r^k_c)]$')
 # g.axes[0,0].set_xlabel(r'Number of Layers')
 # g.axes[0,1].set_xlabel(r'Number of Layers')
+'''scatter plot'''
+selected_df = comp_res[(comp_res['distance_to_optimal']!='nan')]
+selected_df["distance_to_optimal"] = pd.to_numeric(selected_df["distance_to_optimal"], errors='ignore')
+selected_df = selected_df[selected_df['distance_to_optimal']<1]
+x = " No. Layers"#' No. Layers', ' No. Nodes', ' Topology Parameter',
+                         #' Interconnection Prob', ' Damage Prob', ' Resource Cap'
+y = "distance_to_optimal"
+col = "auction_type"
+row = "topology"
+g = sns.lmplot(x=x, y=y, col=col, row=row, hue="topology", data=selected_df,
+               robust=False, fit_reg=True, sharex=False)
 
+from scipy.stats.stats import pearsonr
+for c in selected_df[col].unique():
+    for r in selected_df[row].unique():
+        df_sel = selected_df[(selected_df[col]==c)&(selected_df[row]==r)]
+        pc, p = pearsonr(df_sel[x], df_sel[y])
+        print(c, r, pc, p)
 """ Parallel Axes"""
 #cols=list(selected_df.columns.values)
 #selected_df = comp_res[(comp_res['distance_to_optimal']!='nan')&(comp_res['auction_type']!='Uniform')]
@@ -153,16 +170,16 @@ selected_df["distance_to_optimal"] = pd.to_numeric(selected_df["distance_to_opti
 #                  palette={"red": "#FF9999", "white": "#FFE888"},
 #                  plot_kws=dict(edgecolor="black", linewidth=0.5))
 '''Scatter'''
-selected_df = selected_df.rename(columns={"norm_distance_to_optimal": "norm distance to optimal",
-                                          "distance_to_optimal": "distance to optimal",
-                                          "auction_type": "Auction Type",
-                                          "topology":"Topology"})
+# selected_df = selected_df.rename(columns={"norm_distance_to_optimal": "norm distance to optimal",
+#                                           "distance_to_optimal": "distance to optimal",
+#                                           "auction_type": "Auction Type",
+#                                           "topology":"Topology"})
  
-sns.set(font_scale=1.5) 
-with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
-    g=sns.relplot(x=" Damage Prob", y="distance to optimal",
-            hue="Topology", size='Topology', col="Auction Type",
-            legend="full", data=selected_df[selected_df["Topology"]=='Grid'])
+# sns.set(font_scale=1.5) 
+# with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
+#     g=sns.relplot(x=" Damage Prob", y="distance to optimal",
+#             hue="Topology", size='Topology', col="Auction Type",
+#             legend="full", data=selected_df[selected_df["Topology"]=='Grid'])
     # g.set(ylim=(0.0001, 1),yscale="log",xlim=(1, 1000),xscale="log")
     # g.set(ylim=(0, 2),xlim=(0, 150))
     # g.set_xlabels(r'$R_c$')

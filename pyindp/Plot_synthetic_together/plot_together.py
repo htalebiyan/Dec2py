@@ -10,17 +10,17 @@ import random
 plt.close('all')
 sns.set(context='notebook',style='whitegrid')
 
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+# plt.rc('text', usetex=True)
+# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 
 #lambda_df = lambda_df.assign(topology='Grid',interdependency='full')
-#comp_lambda_df = pd.DataFrame(lambda_df)
+#comp_df = pd.DataFrame(lambda_df)
 #
-comp_lambda_df = pd.read_pickle('temp_synthetic_v3_1')
-#comp_lambda_df = pd.concat([comp_lambda_df,lambda_df])
+comp_df = pd.read_pickle('temp_synthetic_v3_1')
+#comp_df = pd.concat([comp_df,lambda_df])
 #
-#comp_lambda_df.to_pickle('temp_synthetic_v3_1_MDDN') 
+#comp_df.to_pickle('temp_synthetic_v3_1_MDDN') 
 
 df1 = pd.read_csv("C:\Users\ht20\Documents\Files\Generated_Network_Dataset_v3.1\GridNetworks\List_of_Configurations.txt",
                  header=0, sep="\t")
@@ -33,46 +33,64 @@ df3 = pd.read_csv("C:\Users\ht20\Documents\Files\Generated_Network_Dataset_v3.1\
 df3 = df3.assign(topology='Random')
 config_info = pd.concat([df1,df2,df3])
 
-comp_lambda_df=pd.merge(comp_lambda_df, config_info,
+comp_df=pd.merge(comp_df, config_info,
              left_on=['Magnitude','topology'],
              right_on=['Config Number','topology']) 
 
 """ Plot results """    
-selected_df = comp_lambda_df[(comp_lambda_df['lambda_U']!='nan')]
-selected_df["lambda_TC"] = pd.to_numeric(selected_df["lambda_U"])
+# selected_df = comp_df[(comp_df['lambda_U']!='nan')]
+# selected_df["lambda_TC"] = pd.to_numeric(selected_df["lambda_U"])
 
-selected_df = selected_df.rename(columns={"lambda_U": "lambda U",
-                                          "auction_type": "Auction Type",
-                                          "topology":"Topology"})
-sns.set(font_scale=1.5) 
-g = sns.catplot(x=' No. Layers', y='lambda U', hue='Auction Type',
-                 col='Topology',data=selected_df,
-                 kind='bar',palette="Reds",
-                 linewidth=0.5,edgecolor=[.25,.25,.25],
-                 capsize=.05,errcolor=[.25,.25,.25],errwidth=1,
-                 height=6, aspect=0.5)
+# selected_df = selected_df.rename(columns={"lambda_U": "lambda U",
+#                                           "auction_type": "Auction Type",
+#                                           "topology":"Topology"})
+# sns.set(font_scale=1.5) 
+# g = sns.catplot(x=' No. Layers', y='lambda U', hue='Auction Type',
+#                  col='Topology',data=selected_df,
+#                  kind='bar',palette="Reds",
+#                  linewidth=0.5,edgecolor=[.25,.25,.25],
+#                  capsize=.05,errcolor=[.25,.25,.25],errwidth=1,
+#                  height=6, aspect=0.5)
 
-#g.set(ylim=(-0.65, 0))
-g.axes[0,0].set_ylabel(r'$E[\lambda_U]$')
-g.axes[0,0].set_xlabel(r'Number of Layers')
-g.axes[0,1].set_xlabel(r'Number of Layers')
-g.axes[0,2].set_xlabel(r'Number of Layers')
-g.axes[0,0].spines['bottom'].set_visible(False)
-g.axes[0,0].spines['left'].set_visible(False)
-g.axes[0,1].spines['bottom'].set_visible(False)
-g.axes[0,1].spines['left'].set_visible(False)
-g.axes[0,2].spines['bottom'].set_visible(False)
-g.axes[0,2].spines['left'].set_visible(False)
-g.set_titles(col_template = 'Topology: {col_name}')
-handles, labels = g.axes[0,2].get_legend_handles_labels()   
-labels[0]='MCA+MDDN'
-lgd = g.axes[0,2].legend(handles, labels,loc='lower right', bbox_to_anchor=(1.025, 0),
-           frameon =True,framealpha=0.9, ncol=1, title='Auction Type') 
-plt.savefig('Relative Performance.pdf', dpi=600, bbox_extra_artists=(lgd,))    #, bbox_inches='tight'
+# #g.set(ylim=(-0.65, 0))
+# g.axes[0,0].set_ylabel(r'$E[\lambda_U]$')
+# g.axes[0,0].set_xlabel(r'Number of Layers')
+# g.axes[0,1].set_xlabel(r'Number of Layers')
+# g.axes[0,2].set_xlabel(r'Number of Layers')
+# g.axes[0,0].spines['bottom'].set_visible(False)
+# g.axes[0,0].spines['left'].set_visible(False)
+# g.axes[0,1].spines['bottom'].set_visible(False)
+# g.axes[0,1].spines['left'].set_visible(False)
+# g.axes[0,2].spines['bottom'].set_visible(False)
+# g.axes[0,2].spines['left'].set_visible(False)
+# g.set_titles(col_template = 'Topology: {col_name}')
+# handles, labels = g.axes[0,2].get_legend_handles_labels()   
+# labels[0]='MCA+MDDN'
+# lgd = g.axes[0,2].legend(handles, labels,loc='lower right', bbox_to_anchor=(1.025, 0),
+#            frameon =True,framealpha=0.9, ncol=1, title='Auction Type') 
+# plt.savefig('Relative Performance.pdf', dpi=600, bbox_extra_artists=(lgd,))    #, bbox_inches='tight'
+'''scatter plot'''
+selected_df = comp_df[(comp_df['lambda_U']!='nan')]
+selected_df["lambda_U"] = pd.to_numeric(selected_df["lambda_U"], errors='ignore')
+selected_df = selected_df[selected_df['lambda_U']>-1]
+x = " No. Layers"#' No. Layers', ' No. Nodes', ' Topology Parameter',
+                         #' Interconnection Prob', ' Damage Prob', ' Resource Cap'
+y = "lambda_U"
+col = "auction_type"
+row = "topology"
+g = sns.lmplot(x=x, y=y, col=col, row=row, hue="topology", data=selected_df,
+               robust=False, fit_reg=True, sharex=False)
+
+from scipy.stats.stats import pearsonr
+for c in selected_df[col].unique():
+    for r in selected_df[row].unique():
+        df_sel = selected_df[(selected_df[col]==c)&(selected_df[row]==r)]
+        pc, p = pearsonr(df_sel[x], df_sel[y])
+        print(c, r, pc, p)
 """ Parallel Axes"""
 #cols=list(selected_df.columns.values)
-#selected_df = comp_lambda_df[(comp_lambda_df['lambda_TC']!='nan')&
-#                             (comp_lambda_df['lambda_TC']<-0.1)]
+#selected_df = comp_df[(comp_df['lambda_TC']!='nan')&
+#                             (comp_df['lambda_TC']<-0.1)]
 #selected_df["lambda_TC"] = pd.to_numeric(selected_df["lambda_TC"])
 #width = 0.5  
 #cat_columns = list(selected_df.select_dtypes(['object']).columns)
@@ -122,7 +140,7 @@ plt.savefig('Relative Performance.pdf', dpi=600, bbox_extra_artists=(lgd,))    #
 
 
 """Other plots"""
-#selected_df = comp_lambda_df[(comp_lambda_df['lambda_U']!='nan')]
+#selected_df = comp_df[(comp_df['lambda_U']!='nan')]
 #selected_df["lambda_U"] = pd.to_numeric(selected_df["lambda_U"])
 ##
 #f, ax = plt.subplots()

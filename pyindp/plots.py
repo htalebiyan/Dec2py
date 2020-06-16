@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 sns.set(context='notebook', style='darkgrid', font_scale=1.2)
-# plt.rc('text', usetex=True)
-# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                    decision_type=None, judgment_type=None,
@@ -61,7 +61,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     T = len(df[x].unique().tolist())
     #sns.color_palette("husl", len(auction_type)+1)
     row_plot = [valuation_type, 'valuation_type']
-    col_plot = [judgment_type, 'judgment_type']#no_resources, 'no_resources'
+    col_plot = [no_resources, 'no_resources']#no_resources, judgment_type
     hue_type = [auction_type, 'auction_type']
     style_type = 'decision_type'
     # Initialize plot properties
@@ -181,7 +181,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     row_plot = [valuation_type, 'valuation_type']
     col_plot = [judgment_type , 'judgment_type']
     hue_type = [auction_type , 'auction_type']#[judgment_type, 'judgment_type']
-    x = 'judgment_type' #no_resources
+    x = 'no_resources' #judgment_type
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
@@ -246,7 +246,7 @@ def plot_auction_allocation(df_res, ci=None):
         valuation_type.remove('nan')
     figs = [judgment_type, 'judgment_type']#valuation_type, 'valuation_type'
     row_plot = [layer, 'layer']
-    col_plot = [judgment_type, 'judgment_type']#no_resources, 'no_resources'
+    col_plot = [no_resources, 'no_resources']#no_resources, judgment_type
     hue_type = [auction_type, 'auction_type']
     style_type = [decision_type, 'decision_type']
     # Initialize plot properties
@@ -311,7 +311,7 @@ def plot_relative_allocation(gap_res, distance_type='gap'):
     col_plot = [auction_type, 'auction_type']
     hue_type = [layer, 'layer']
     clrs=['#5153ca', '#e4ad5d', '#c20809', '#5fb948']
-    x = 'judgment_type' #no_resources
+    x = 'no_resources' #no_resources judgment_type
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
                             sharey=True, figsize=(3500/dpi, 1000/dpi))
@@ -377,7 +377,7 @@ def plot_run_time(df, ci=None):
     T = len(df['t'].unique().tolist())
     value_vars = ['total_time','valuation_time', 'auction_time']#'decision_time'
     row_plot = [valuation_type, 'valuation_type']
-    col_plot = [judgment_type, 'judgment_type'] #no_resources, 'no_resources'
+    col_plot = [no_resources, 'no_resources'] #no_resources, judgment_type
     hue_type = [auction_type, 'auction_type']
 
     dpi = 300

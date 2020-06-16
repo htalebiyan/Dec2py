@@ -1,4 +1,5 @@
 import networkx as nx
+import networkx as nx
 import indputils
 import re
 import string
@@ -771,7 +772,7 @@ def read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim
 
 def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3",topology='Random',config=6,sample=0,cost_scale=1.0):
     print("Initiallize Damage...")
-    net_dir = BASE_DIR+'\\'+topology+'Networks\\'
+    net_dir = BASE_DIR+topology+'Networks\\'
     topo_initial = {'Random':'RN','ScaleFree':'SFN','Grid':'GN'}
     with open(net_dir+'List_of_Configurations.txt') as f:
         config_data = pd.read_csv(f, delimiter='\t')

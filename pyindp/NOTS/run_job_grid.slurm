@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=shelby_Wu
+#SBATCH --job-name=grid
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16 
 #SBATCH --mem-per-cpu=2000m
@@ -23,4 +23,4 @@ export PATH="${PATH}:${GUROBI_HOME}/bin"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
 export GRB_LICENSE_FILE="${GUROBI_HOME}/gurobi.lic"
 
-python /home/ht20/Codes/run_main.py
+python /home/ht20/Codes/run_main_grid.py

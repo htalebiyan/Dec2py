@@ -79,8 +79,8 @@ def load_array_format_extended(BASE_DIR,topo='RN',config=0,sample=0,cost_scale=1
 
 plt.close('all')
 plt.figure(figsize=(10,8))  
-BASE_DIR="C:\\Users\ht20\Documents\\Files\\Generated_Network_Dataset_v3.1\\GridNetworks\\"
-G,pos,noLayers,dam_nodes,dam_arcs = load_array_format_extended(BASE_DIR,topo='GN',config=93,sample=7)  
+BASE_DIR="C:\\Users\ht20\Documents\\Files\\Generated_Network_Dataset_v3.1\\ScaleFreeNetworks\\"
+G,pos,noLayers,dam_nodes,dam_arcs = load_array_format_extended(BASE_DIR,topo='SFN',config=79,sample=7)  
 labels = {}
 for n,d in G.nodes(data=True):
     labels[n]= "%d" % (n[0])
@@ -102,8 +102,8 @@ for k in range(noLayers):
     nx.draw_networkx_edges(G,pos,edgelist=arc_dict,width=3,alpha=0.25,edge_color=clr[k])
     interarc_dict = [x for x in G.edges() if x[0][1]==k+1 and x[1][1]!=k+1]
     nx.draw_networkx_edges(G,pos,edgelist=interarc_dict,width=2,alpha=0.25,edge_color='k')
-nx.draw_networkx_nodes(G,pos,nodelist=dam_nodes,node_color='w',node_shape="o",node_size=200)
-nx.draw_networkx_edges(G,pos,edgelist=dam_arcs,width=3,alpha=1,edge_color='w',style='dashed')
+# nx.draw_networkx_nodes(G,pos,nodelist=dam_nodes,node_color='w',node_shape="o",node_size=200)
+# nx.draw_networkx_edges(G,pos,edgelist=dam_arcs,width=3,alpha=1,edge_color='w',style='dashed')
 plt.tight_layout()   
 plt.axis('off')
 #plt.savefig(output_dir+'/plot_net'+folderSuffix+'.png',dpi=600)

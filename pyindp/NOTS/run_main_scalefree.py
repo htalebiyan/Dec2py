@@ -179,17 +179,14 @@ def run_parallel(i):
     damage_dir = '/scratch/ht20/Synthetic_database/'
     #"../../data/Wu_Damage_scenarios/"
 	#'/scratch/ht20/Synthetic_database/'
-    output_dir = '/scratch/ht20/Grid/'
+    output_dir = '/scratch/ht20/ScaleFree/'
     #'../../'
-    sample_no = i//96
-    mag_no = i%96
-    # fail_sce_param = {'TYPE':"WU", 'SAMPLE_RANGE':range(sample_no, sample_no+1),
-                      # 'MAGS':range(mag_no, mag_no+1),
-                      # 'FILTER_SCE':filter_sce, 'BASE_DIR':base_dir, 'DAMAGE_DIR':damage_dir}
-    FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(5, 10), 'MAGS':range(0, 100),
-                      'FILTER_SCE':None, 'TOPO':'Grid',
-                      'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    rc = [0] #[3, 6, 8, 12]
+    sample_no = i//100
+    mag_no = i%100
+    fail_sce_param = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(sample_no+5, sample_no+6), 'MAGS':range(mag_no, mag_no+1),
+                      'FILTER_SCE':None, 'TOPO':'ScaleFree',
+                      'BASE_DIR':base_dir, 'DAMAGE_DIR':damage_dir}
+    rc = [0]
     layers = [1, 2, 3, 4]
     judge_type = ["OPTIMISTIC"] #OPTIMISTIC #'DET-DEMAND' #PESSIMISTIC
     res_alloc_type = ["MDA", "MAA", "MCA", 'UNIFORM']
@@ -208,4 +205,4 @@ if __name__ == "__main__":
     NUM_CORES = multiprocessing.cpu_count()
     print('number of cores:'+str(NUM_CORES)+'\n')
     POOL = multiprocessing.Pool(NUM_CORES)
-    RESULTS = POOL.map(run_parallel, range(0, 4800))
+    RESULTS = POOL.map(run_parallel, range(0, 500))
