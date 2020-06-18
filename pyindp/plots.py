@@ -185,7 +185,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
-                            sharey=True, figsize=(2100/dpi, 1600/dpi))
+                            sharey=True, figsize=(4000/dpi, 1600/dpi))
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
             ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
@@ -233,6 +233,7 @@ def plot_auction_allocation(df_res, ci=None):
     '''
     #: Make lists
     no_resources = df_res.no_resources.unique().tolist()
+    T = len(df_res.t.unique().tolist())
     layer = df_res.layer.unique().tolist()
     decision_type = df_res.decision_type.unique().tolist()
     judgment_type = df_res.judgment_type.unique().tolist()
@@ -264,7 +265,7 @@ def plot_auction_allocation(df_res, ci=None):
                                  markers=True, ci=ci, ax=ax, legend='full', data=data)
                     ax.get_legend().set_visible(False)
                     ax.set(xlabel=r'time step $t$', ylabel='No. resources')
-                    ax.xaxis.set_ticks(np.arange(1, 11, 1.0))   #ax.get_xlim()
+                    ax.xaxis.set_ticks(np.arange(1, T, 1.0))   #ax.get_xlim()
 #                    ax.yaxis.set_ticks(np.arange(0, ax.get_ylim()[1], 1.0), minor=True)
                     ax.yaxis.set_ticks(np.arange(0, ax.get_ylim()[1], 1.0))
                     ax.grid(b=True, which='major', color='w', linewidth=1.0)
@@ -508,9 +509,7 @@ def correct_legend_labels(labels):
         DESCRIPTION.
 
     '''
-    labels = ['iINDP' if x == 'sample_indp_12Node' else x for x in labels]
-    labels = ['JC Optimistic' if x == 'sample_judgeCall_12Node_OPTIMISTIC' else x for x in labels]
-    labels = ['JC Pessimistic' if x == 'sample_judgeCall_12Node_PESSIMISTIC' else x for x in labels]
+    labels = ['iINDP' if x == 'indp_sample_12Node' else x for x in labels]
     labels = ['Res. Alloc. Type' if x == 'auction_type' else x for x in labels]
     labels = ['Judge. Type' if x == 'judgment_type' else x for x in labels]
     labels = ['Decision Type' if x == 'decision_type' else x for x in labels]
@@ -523,9 +522,8 @@ def correct_legend_labels(labels):
     labels = ['iINDP' if x == 'indp' else x for x in labels]
     labels = ['iINDP' if x == 'nan' else x for x in labels]#!!!
     labels = ['td-INDP' if x == 'tdindp' else x for x in labels]
-    labels = ['?JC Optimistic' if x == 'judgeCall_OPTIMISTIC' else x for x in labels]
-    labels = ['?JC Pessimistic' if x == 'judgeCall_PESSIMISTIC' else x for x in labels]
     labels = ['Judge. Call' if x == 'jc' else x for x in labels]
+    labels = ['Judge. Call' if x == 'jc_sample_12Node' else x for x in labels]
     return labels
 
 def find_ax(axs, row_plot, col_plot, idx_r=0, idx_c=0):

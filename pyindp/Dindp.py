@@ -107,8 +107,8 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
                 obj.results_judge.extend(indp_results[1], t_offset=i+1)
                 # Save models to file
                 if save_jc_model:
-                    indp.save_INDP_model_to_file(indp_results[0],
-                                                 params["OUTPUT_DIR"]+"/Model", i+1, l)
+                    indp.save_INDP_model_to_file(indp_results[0], obj.output_dir+"/Model",
+                                                 i+1, l)
                 # Modify network to account for recovery and calculate components.
                 indp.apply_recovery(obj.net, obj.results_judge, i+1)
                 obj.results_judge.add_components(i+1, indputils.INDPComponents.\
@@ -125,8 +125,7 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
                 obj.results_real.extend(indp_results_real[1], t_offset=i+1)
                 obj.correct_results_real(l, i+1)
                 if save_jc_model:
-                    indp.save_INDP_model_to_file(indp_results_real[0],
-                                                 params["OUTPUT_DIR"]+"/Model",
+                    indp.save_INDP_model_to_file(indp_results_real[0], obj.output_dir+"/Model",
                                                  i+1, l, suffix='real')
             #Calculate sum of costs
             obj.recal_result_sum(i+1)
@@ -224,7 +223,7 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
     for idx, x in enumerate(joinedlist):
         #: Make the directory
         full_suffix = '_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])
-        if x[4] == 'jc':
+        if x[4][:2] == 'jc':
             full_suffix += '_'+x[5]
             if x[6] in ["MDA", "MAA", "MCA"]:
                 full_suffix += '_AUCTION_'+x[6]+'_'+x[7]
@@ -272,7 +271,7 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
                             cmplt_results = cmplt_results.append(dict(zip(columns, values)),
                                                                  ignore_index=True)
             #: Getting back the JuCModel objects:
-            if x[4] == 'jc':
+            if x[4][:2] == 'jc':
                 with open(result_dir+'/objs_'+str(x[1])+'.pkl', 'rb') as f:
                     objs[str(x)] = pickle.load(f)
             if idx%(len(joinedlist)//100+1) == 0:

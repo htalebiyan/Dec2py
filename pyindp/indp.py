@@ -525,7 +525,7 @@ def initialize_sample_network(params={},layers=[1,2]):
     for s in space_to_nodes_dict:
         InterdepNet.S.append(InfrastructureSpace(s,0))
         for n in space_to_nodes_dict[s]:
-            InterdepNet.G.node[n]['data']['inf_data'].space=s
+            InterdepNet.G.nodes[n]['data']['inf_data'].space=s
     for a in arc_list:
         aa=InfrastructureArc(a[0][0],a[1][0],a[0][1])
         aa.flow_cost=1
@@ -831,13 +831,13 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
     for n,d in InterdepNet.G.nodes(data=True):
         labels[n]= "%d[%d]" % (n[0],d['data']['inf_data'].demand)
     pos_moved={}
-    for key,value in pos.iteritems():
+    for key,value in pos.items():
         pos_moved[key] = [0,0]
         pos_moved[key][0] = pos[key][0]-0.2
         pos_moved[key][1] = pos[key][1]+0.2
 
     v_r = params["V"]
-    if isinstance(v_r, (int, long)):
+    if isinstance(v_r, (int)):
         totalResource = v_r
     else:
         if len(v_r) != 1:
@@ -845,14 +845,14 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
         else:
             totalResource = v_r[0]
 
-    output_dir=params["OUTPUT_DIR"]+'_m'+str(params["MAGNITUDE"])+"_v"+str(totalResource)+folderSuffix
+    output_dir=params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+str(params["MAGNITUDE"])+"_v"+str(totalResource)+folderSuffix
     action_file =output_dir+"/actions_"+str(params["SIM_NUMBER"])+"_"+suffix+".csv"
     actions = {0:[]}
     if os.path.isfile(action_file):
         with open(action_file) as f:
             lines=f.readlines()[1:]
             for line in lines:
-                data=string.split(str.strip(line),",")
+                data=line.split(",")
                 t=int(data[0])
                 action=str.strip(data[1])
                 if t not in actions:
@@ -864,7 +864,7 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
         plt.subplot(2, (T+1)/2+1 ,t+1, aspect='equal')
         plt.title('Time = %d' % t)
         for a in value:
-            data=string.split(str.strip(a),".")
+            data=a.split(".")
             node_dict[int(data[1])*10+1].append((int(data[0]),int(data[1])))
             node_dict[int(data[1])*10+2].remove((int(data[0]),int(data[1])))
         nx.draw(InterdepNet.G, pos,node_color='w')
