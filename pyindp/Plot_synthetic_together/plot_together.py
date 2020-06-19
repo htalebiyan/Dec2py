@@ -8,224 +8,96 @@ import matplotlib.pyplot as plt
 import random
 
 plt.close('all')
-sns.set(context='notebook',style='whitegrid')
+sns.set(context='notebook',style='darkgrid', font_scale=1.2)
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+dpi = 300
 
-# plt.rc('text', usetex=True)
-# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+[LAMBDA_DF, ALLOC_GAP_DF, RUN_TIME_DF] = pd.read_pickle('postprocess_dicts_all_topo.pkl')
 
+""" Plot Lambda results """    
+selected_df = LAMBDA_DF[(LAMBDA_DF['lambda_U']!='nan')]
+selected_df["lambda_TC"] = pd.to_numeric(selected_df["lambda_U"])
 
-#lambda_df = lambda_df.assign(topology='Grid',interdependency='full')
-#comp_df = pd.DataFrame(lambda_df)
-#
-comp_df = pd.read_pickle('temp_synthetic_v3_1')
-#comp_df = pd.concat([comp_df,lambda_df])
-#
-#comp_df.to_pickle('temp_synthetic_v3_1_MDDN') 
+selected_df = selected_df.rename(columns={"lambda_U": "lambda U",
+                                          "auction_type": "Auction Type",
+                                          "topology":"Topology"})
+g = sns.catplot(x=' No. Layers', y='lambda U', hue='Auction Type',
+                  col='Topology',data=selected_df, kind='bar',palette="Reds",
+                  linewidth=0.5,edgecolor=[.25,.25,.25], capsize=.05,
+                  errcolor=[.25,.25,.25],errwidth=1, height=6, aspect=0.5)
+g.fig.set_size_inches(4000/dpi,1200/dpi)
+g._legend.remove()
+g.axes[0,0].set_ylabel(r'$E[\lambda_U]$')
+g.axes[0,0].set_xlabel(r'$L$')
+g.axes[0,1].set_xlabel(r'$L$')
+g.axes[0,2].set_xlabel(r'$L$')
+g.set_titles(col_template = 'Topology: {col_name}')
+handles, labels = g.axes[0,2].get_legend_handles_labels()
+lgd = g.axes[0,2].legend(handles, labels,loc='lower left', bbox_to_anchor=(0, 0),
+            frameon =True,framealpha=0.9, ncol=1, title='Res. Alloc. Type') 
+plt.savefig('Relative_Performance_synthetic.png', dpi=dpi, bbox_extra_artists=(lgd,), bbox_inches='tight')
+""" Plot allocation gap """    
+selected_df = ALLOC_GAP_DF[(ALLOC_GAP_DF['gap']!='nan')&
+                      (ALLOC_GAP_DF['auction_type']!='UNIFORM')]
+selected_df["gap"] = pd.to_numeric(selected_df["gap"])
+plots.plot_relative_allocation_synthetic(selected_df,distance_type='gap')
 
-df1 = pd.read_csv("C:\Users\ht20\Documents\Files\Generated_Network_Dataset_v3.1\GridNetworks\List_of_Configurations.txt",
-                 header=0, sep="\t")
-df1 = df1.assign(topology='Grid')
-df2 = pd.read_csv("C:\Users\ht20\Documents\Files\Generated_Network_Dataset_v3.1\ScaleFreeNetworks\List_of_Configurations.txt",
-                 header=0, sep="\t")
-df2 = df2.assign(topology='ScaleFree')
-df3 = pd.read_csv("C:\Users\ht20\Documents\Files\Generated_Network_Dataset_v3.1\RandomNetworks\List_of_Configurations.txt",
-                 header=0, sep="\t")
-df3 = df3.assign(topology='Random')
-config_info = pd.concat([df1,df2,df3])
+''' time plot '''  
+selected_df = RUN_TIME_DF[(RUN_TIME_DF['decision_time']<1000)&(RUN_TIME_DF['t']>0)] 
+selected_df["decision_time"] = pd.to_numeric(selected_df["decision_time"])
+#normalize the valuation time by the number of resources
+selected_df["valuation_time"] = selected_df["valuation_time"]/selected_df["no_resources"]
+selected_df["Total Time"] = selected_df["valuation_time"]+selected_df["decision_time"]+\
+                            selected_df["auction_time"]
+selected_df = selected_df.rename(columns={"auction_type": "Auction Type",
+                                    "valuation_time": "Valuation Time",
+                                    'topology':'Topology',
+                                    'auction_time':'Auction Time'})
 
-comp_df=pd.merge(comp_df, config_info,
-             left_on=['Magnitude','topology'],
-             right_on=['Config Number','topology']) 
+time_names = ['Valuation Time','decision_time','Auction Time','Total Time']
+id_vars = [x for x in list(selected_df.columns) if x not in time_names]
+selected_df = pd.melt(selected_df, id_vars=id_vars, value_vars=time_names)
+# Removing non-informative lines
+selected_df = selected_df[~((selected_df['decision_type']=='indp')&(selected_df['variable']=='Valuation Time'))]
+selected_df = selected_df[~((selected_df['decision_type']=='indp')&(selected_df['variable']=='decision_time'))]
+selected_df = selected_df[~((selected_df['decision_type']=='indp')&(selected_df['variable']=='Auction Time'))]
+selected_df = selected_df[~((selected_df['Auction Type']=='UNIFORM')&(selected_df['variable']=='Valuation Time'))]
+selected_df = selected_df[~((selected_df['Auction Type']=='UNIFORM')&(selected_df['variable']=='decision_time'))]
+selected_df = selected_df[~((selected_df['Auction Type']=='UNIFORM')&(selected_df['variable']=='Auction Time'))]
+selected_df = selected_df[~((selected_df['Auction Type']=='MCA')&(selected_df['variable']=='decision_time'))]
+selected_df = selected_df[~((selected_df['Auction Type']=='MDA'))]
+selected_df = selected_df[~((selected_df['Auction Type']=='MAA'))]
 
-""" Plot results """    
-# selected_df = comp_df[(comp_df['lambda_U']!='nan')]
-# selected_df["lambda_TC"] = pd.to_numeric(selected_df["lambda_U"])
+#Plot
+flatui = ["#fc7e2f", "#377eb8", "#E41a1c", "#649d66", "k"]
+clrs=['#e9937c', '#a6292d', '#000000']
+with sns.color_palette(clrs):#sns.color_palette("Set1", 5)
+    g = sns.relplot(x="t", y="value", col="Topology", hue="Auction Type", style='variable',
+                    kind="line", ci=None, data=selected_df, legend='full', 
+                    markers=True, ms=7,
+                    style_order=['Total Time',"Valuation Time",'Auction Time'])
 
-# selected_df = selected_df.rename(columns={"lambda_U": "lambda U",
-#                                           "auction_type": "Auction Type",
-#                                           "topology":"Topology"})
-# sns.set(font_scale=1.5) 
-# g = sns.catplot(x=' No. Layers', y='lambda U', hue='Auction Type',
-#                  col='Topology',data=selected_df,
-#                  kind='bar',palette="Reds",
-#                  linewidth=0.5,edgecolor=[.25,.25,.25],
-#                  capsize=.05,errcolor=[.25,.25,.25],errwidth=1,
-#                  height=6, aspect=0.5)
+# Correct the legend
+labels_objs = g._legend.texts
+rep_dict = {'Auction Type':'Allocation Type','variable':'Time Type', 'nan':'iINDP',}
+for x in labels_objs:
+    if x._text in rep_dict.keys():
+        x._text = rep_dict[x._text]
+    x.set_fontsize(14)
+g._legend._loc = 1
+g._legend.set_bbox_to_anchor((0.59, 0.88))
+g._legend.set_frame_on(True)
 
-# #g.set(ylim=(-0.65, 0))
-# g.axes[0,0].set_ylabel(r'$E[\lambda_U]$')
-# g.axes[0,0].set_xlabel(r'Number of Layers')
-# g.axes[0,1].set_xlabel(r'Number of Layers')
-# g.axes[0,2].set_xlabel(r'Number of Layers')
-# g.axes[0,0].spines['bottom'].set_visible(False)
-# g.axes[0,0].spines['left'].set_visible(False)
-# g.axes[0,1].spines['bottom'].set_visible(False)
-# g.axes[0,1].spines['left'].set_visible(False)
-# g.axes[0,2].spines['bottom'].set_visible(False)
-# g.axes[0,2].spines['left'].set_visible(False)
-# g.set_titles(col_template = 'Topology: {col_name}')
-# handles, labels = g.axes[0,2].get_legend_handles_labels()   
-# labels[0]='MCA+MDDN'
-# lgd = g.axes[0,2].legend(handles, labels,loc='lower right', bbox_to_anchor=(1.025, 0),
-#            frameon =True,framealpha=0.9, ncol=1, title='Auction Type') 
-# plt.savefig('Relative Performance.pdf', dpi=600, bbox_extra_artists=(lgd,))    #, bbox_inches='tight'
-'''scatter plot'''
-selected_df = comp_df[(comp_df['lambda_U']!='nan')]
-selected_df["lambda_U"] = pd.to_numeric(selected_df["lambda_U"], errors='ignore')
-selected_df = selected_df[selected_df['lambda_U']>-1]
-x = " No. Layers"#' No. Layers', ' No. Nodes', ' Topology Parameter',
-                         #' Interconnection Prob', ' Damage Prob', ' Resource Cap'
-y = "lambda_U"
-col = "auction_type"
-row = "topology"
-g = sns.lmplot(x=x, y=y, col=col, row=row, hue="topology", data=selected_df,
-               robust=False, fit_reg=True, sharex=False)
+g.axes[0][0].set_ylabel(r'Mean Time (sec)')
+g.axes[0][0].set_xlabel(r'Time Step')
+g.axes[0][1].set_xlabel(r'Time Step')
+g.axes[0][2].set_xlabel(r'Time Step')
+g.axes[0][0].set_title(r'Topology: Random')
+g.axes[0][1].set_title(r'Topology: Scale Free')
+g.axes[0][2].set_title(r'Topology: Grid')
+g.axes[0][0].xaxis.set_ticks(np.arange(1, 11, 1.0))#ax.get_xlim()
 
-from scipy.stats.stats import pearsonr
-for c in selected_df[col].unique():
-    for r in selected_df[row].unique():
-        df_sel = selected_df[(selected_df[col]==c)&(selected_df[row]==r)]
-        pc, p = pearsonr(df_sel[x], df_sel[y])
-        print(c, r, pc, p)
-""" Parallel Axes"""
-#cols=list(selected_df.columns.values)
-#selected_df = comp_df[(comp_df['lambda_TC']!='nan')&
-#                             (comp_df['lambda_TC']<-0.1)]
-#selected_df["lambda_TC"] = pd.to_numeric(selected_df["lambda_TC"])
-#width = 0.5  
-#cat_columns = list(selected_df.select_dtypes(['object']).columns)
-#cat_columns.append(' No. Layers')
-#mapping = {}
-#for cc in cat_columns:
-#    mapping[cc] = dict(enumerate(selected_df[cc].astype('category').cat.categories))
-#    if cc!= ' No. Layers':
-#        selected_df[cc] = selected_df[cc].astype('category').cat.codes   
-#selected_df[cat_columns]=selected_df[cat_columns].add(np.random.rand(selected_df[cat_columns].shape[0], selected_df[cat_columns].shape[1])*width)
-#    
-#import plotly.graph_objects as go
-#import plotly
-#fig = go.Figure(data=
-#    go.Parcoords(
-#        line = dict(color = selected_df['lambda_TC'],
-#                   colorscale = 'Electric',
-#                   showscale = True,cmin=-0.5,cmax=0),
-#        dimensions = list([
-#            dict(range = [0,0.025],
-#                 label = ' Interconnection Prob', values = selected_df[' Interconnection Prob']),
-#            dict(range = [5,50],
-#                 label = ' No. Nodes', values = selected_df[' No. Nodes']),
-#            dict(range = [0,1+width],
-#                 label = 'decision_type', values = selected_df['decision_type']),
-#            dict(range = [0,10],
-#                 label = ' Topology Parameter', values = selected_df[' Topology Parameter']),
-#            dict(range = [0,2+width],
-#                 label = 'topology', values = selected_df['topology']),
-#            dict(range = [0,400],
-#                 label = ' Resource Cap', values = selected_df[' Resource Cap']),
-#            dict(range = [0,1+width],
-#                 label = 'valuation_type', values = selected_df['valuation_type']),
-#            dict(range = [0,3+width],
-#                 label = 'auction_type', values = selected_df['auction_type']),
-#            dict(range = [2,4+width],
-#                 label = ' No. Layers', values = selected_df[' No. Layers']),
-#            dict(range = [0.05,0.5],
-#                 label = ' Damage Prob', values = selected_df[' Damage Prob']),
-##            dict(range = [0,2+width],
-##                 label = 'interdependency', values = selected_df['interdependency']),
-#            ])
-#    )
-#)
-#
-#plotly.offline.plot(fig)
-
-
-"""Other plots"""
-#selected_df = comp_df[(comp_df['lambda_U']!='nan')]
-#selected_df["lambda_U"] = pd.to_numeric(selected_df["lambda_U"])
-##
-#f, ax = plt.subplots()
-#sns.despine(bottom=True, left=True)
-#sns.stripplot(x="lambda_U", y="auction_type", hue=" No. Layers",
-#              data=selected_df, dodge=True, jitter=True,
-#              alpha=.25, zorder=1)
-#
-## Show the conditional means
-#sns.pointplot(x="lambda_U", y="auction_type", hue=" No. Layers",
-#              data=selected_df, dodge=.532, join=False, palette="dark",
-#              markers="d", scale=.75, ci=None)
-#
-#selected_df = selected_df.rename(columns={"norm_distance_to_optimal": "norm distance to optimal",
-#                                          "auction_type": "Auction Type",
-#                                          "topology":"Topology"})
- 
-#sns.set(font_scale=1.5) 
-#with sns.xkcd_palette(['black',"windows blue",'red',"green"]): #sns.color_palette("muted"):
-#    g=sns.relplot(x=" Resource Cap", y="lambda_U",
-#            hue="topology", size='topology', col="auction_type",
-#            legend="full", data=selected_df)
-#    g.set(ylim=(-2, .1))
-#    g.set(xlim=(-5, 150))
-#    g.set_xlabels(r'$R_c$')
-#    g.set_ylabels(r'Mean $\lambda_U$ over layers')
-#    g.set_titles(col_template = 'Auction Type: {col_name}')
-#    g._legend.set_bbox_to_anchor([0.89, 0.75])    
-    
-#plt.savefig('OmegaVsRc.pdf', dpi=600) 
-
-## Draw the two density plots
-#ax = sns.kdeplot(selected_df[selected_df[' No. Layers']==2][" Damage Prob"],
-#                 selected_df[selected_df[' No. Layers']==2]["lambda_U"],
-#                 cmap="Reds", shade=True, shade_lowest=False)
-#ax = sns.kdeplot(selected_df[selected_df[' No. Layers']==4][" Damage Prob"], 
-#                 selected_df[selected_df[' No. Layers']==4]["lambda_U"],
-#                 cmap="Blues", shade=True, shade_lowest=False)
-
-#sns.relplot(x=" Damage Prob", y="lambda_U",
-#            hue="auction_type", size="topology", col=" No. Layers",
-#            height=5, aspect=.75, legend="full", data=selected_df)
-
-#g = sns.catplot(x="auction_type", y="lambda_U",
-#                 hue="topology", col=" No. Layers",
-#                 data=selected_df, kind="violin", split=True, inner="quartile",
-#                 height=4, aspect=.7);
-
-#cols = ['lambda_U', ' No. Layers', ' Interconnection Prob', ' Damage Prob', ' Resource Cap', ' No. Nodes']
-#pp = sns.pairplot(selected_df[cols], size=1.8, aspect=1.8, 
-#                  palette={"red": "#FF9999", "white": "#FFE888"},
-#                  plot_kws=dict(edgecolor="black", linewidth=0.5))
-
-""" PCA"""
-#from sklearn.preprocessing import StandardScaler
-#features = ['lambda_U',' No. Layers',' Interconnection Prob',' Damage Prob',
-#            ' Resource Cap',' No. Nodes',' Topology Parameter']
-## Separating out the features
-#x = selected_df.loc[:, features].values
-## Separating out the target
-#y = selected_df.loc[:,['topology']].values
-## Standardizing the features
-#x = StandardScaler().fit_transform(x)
-#
-#from sklearn.decomposition import PCA
-#pca = PCA(n_components=2)
-#principalComponents = pca.fit_transform(x)
-#principalDf = pd.DataFrame(data = principalComponents
-#             , columns = ['principal component 1', 'principal component 2'])
-#finalDf = pd.concat([principalDf, selected_df[['topology']]], axis = 1)
-#
-#fig = plt.figure(figsize = (8,8))
-#ax = fig.add_subplot(1,1,1) 
-#ax.set_xlabel('Principal Component 1', fontsize = 15)
-#ax.set_ylabel('Principal Component 2', fontsize = 15)
-#ax.set_title('2 component PCA', fontsize = 20)
-#targets = ['Random', 'ScaleFree']
-#colors = ['r', 'g', 'b']
-#for target, color in zip(targets,colors):
-#    indicesToKeep = finalDf['topology'] == target
-#    ax.scatter(finalDf.loc[indicesToKeep, 'principal component 1']
-#               , finalDf.loc[indicesToKeep, 'principal component 2']
-#               , c = color
-#               , s = 50)
-#ax.legend(targets)
-#ax.grid()
-#
-#pca.explained_variance_ratio_
+dpi = 600
+g.fig.set_size_inches(8000/dpi, 3000/dpi)
+plt.savefig('time_synthetic.png', dpi=dpi, bbox_inches='tight') 

@@ -1,70 +1,94 @@
-import seaborn as sns
-import os.path
-import networkx as nx
 import numpy as np
 import pandas as pd
 from SALib.analyze import delta
-import plot
+from scipy.stats.stats import pearsonr
+import pickle
 
 '''Compute sensitivity'''
-# comp_res = pd.read_pickle('temp_synthetic_v3_1')
+[LAMBDA_DF, ALLOC_GAP_DF, RUN_TIME_DF] = pd.read_pickle('postprocess_dicts_all_topo.pkl')
 
-# df1 = pd.read_csv('C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\GridNetworks\\List_of_Configurations.txt',
-#                   header=0, sep="\t")
-# df1 = df1.assign(topology='Grid')
-# df2 = pd.read_csv("C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\ScaleFreeNetworks\\List_of_Configurations.txt",
-#                   header=0, sep="\t")
-# df2 = df2.assign(topology='ScaleFree')
-# df3 = pd.read_csv("C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\RandomNetworks\\List_of_Configurations.txt",
-#                   header=0, sep="\t")
-# df3 = df3.assign(topology='Random')
-# config_info = pd.concat([df1,df2,df3])
+# sens_perf= pd.DataFrame(columns = ['config_param', 'auction', 'topology','delta', 'delta_CI'])
+# sens_res= pd.DataFrame(columns = ['config_param', 'auction', 'topology','delta', 'delta_CI'])
+# for topo in ['Random', 'ScaleFree', 'Grid']:
+#     for auc in ['UNIFORM', 'MCA', 'MDA', 'MAA']:
+#         print(topo,auc)
+#         gamma_dict={'ScaleFree':[2, 3], 'Random':[0.02, 0.62], 'Grid':[3, 10]}
+#         problem = {
+#             'num_vars': 6,
+#             'names': ['L', 'N', 'gamma', 'pi', 'pd', 'Rc'],
+#             'bounds': [[2, 4], [10, 50], gamma_dict[topo], [0.001, 0.1], [0.05, 0.5], [2, 400]]}
+#         print('Resilience')
+#         LAMBDA_DF['lambda_U'] = LAMBDA_DF['lambda_U'].astype(float)
+#         sel_LAMBDA_DF = LAMBDA_DF[(LAMBDA_DF['topology']==topo)&\
+#                                   (LAMBDA_DF['auction_type']==auc)]
+#         X = pd.concat([sel_LAMBDA_DF[' No. Layers'], sel_LAMBDA_DF[' No. Nodes'],
+#                         sel_LAMBDA_DF[' Topology Parameter'], sel_LAMBDA_DF[' Interconnection Prob'],
+#                         sel_LAMBDA_DF[' Damage Prob'], sel_LAMBDA_DF[' Resource Cap']],
+#                       axis=1, keys=['L', 'N', 'gamma', 'pi', 'pd', 'Rc']).to_numpy()
+#         Y = pd.concat([sel_LAMBDA_DF['lambda_U']], axis=1, keys=['lambda_U']).to_numpy().ravel()
+#         delta_perf = delta.analyze(problem, X, Y, num_resamples=100, conf_level=0.95,
+#                                     print_to_console=True, seed=None)
+#         for idx, para in enumerate(delta_perf['names']):
+#             sens_perf = sens_perf.append({'config_param':para, 'auction':auc,
+#                                           'topology':topo, 'delta':delta_perf['delta'][idx],
+#                                           'delta_CI':delta_perf['delta_conf'][idx]},
+#                                           ignore_index=True)
+#         print('Allocation')
+#         ALLOC_GAP_DF['gap'] = ALLOC_GAP_DF['gap'].astype(float)
+#         sel_ALLOC_GAP_DF = ALLOC_GAP_DF[(ALLOC_GAP_DF['topology']==topo)&\
+#                                         (ALLOC_GAP_DF['auction_type']==auc)]
+#         X = pd.concat([sel_ALLOC_GAP_DF[' No. Layers'], sel_ALLOC_GAP_DF[' No. Nodes'],
+#                         sel_ALLOC_GAP_DF[' Topology Parameter'], sel_ALLOC_GAP_DF[' Interconnection Prob'],
+#                         sel_ALLOC_GAP_DF[' Damage Prob'], sel_ALLOC_GAP_DF[' Resource Cap']],
+#                       axis=1, keys=['L', 'N', 'gamma', 'pi', 'pd', 'Rc']).to_numpy()
+#         Y = pd.concat([sel_ALLOC_GAP_DF['gap']], axis=1, keys=['gap']).to_numpy().ravel()
+#         delta_res = delta.analyze(problem, X, Y, num_resamples=100, conf_level=0.95,
+#                                   print_to_console=True, seed=None)
+#         for idx, para in enumerate(delta_res['names']):
+#             sens_res = sens_res.append({'config_param':para, 'auction':auc,
+#                                         'topology':topo, 'delta':delta_res['delta'][idx],
+#                                         'delta_CI':delta_res['delta_conf'][idx]},
+#                                         ignore_index=True)
+'''Compute correlation '''
+# col = "auction_type"
+# row = "topology"
+# params = [' No. Layers', ' No. Nodes', ' Topology Parameter',
+#           ' Interconnection Prob', ' Damage Prob', ' Resource Cap']
+# corr= pd.DataFrame(columns = ['y', 'config_param', col, row, 'pearson_corr', 'p_value'])
+# y = "gap"
+# for c in ALLOC_GAP_DF[col].unique():
+#     for r in ALLOC_GAP_DF[row].unique():
+#         for x in params:
+#             print(c, r, x)
+#             df_sel = ALLOC_GAP_DF[(ALLOC_GAP_DF[col]==c)&(ALLOC_GAP_DF[row]==r)]
+#             pc, p = pearsonr(df_sel[x], df_sel[y])
+#             print('res',c, r, pc, p)
+#             corr = corr.append({'y':y, 'config_param':x, col:c, row:r, 'pearson_corr':pc,
+#                                 'p_value':p}, ignore_index=True)
 
-# comp_res=pd.merge(comp_res, config_info,
-#               left_on=['Magnitude','topology'],
-#               right_on=['Config Number','topology']) 
+# y = "lambda_U"
+# for c in LAMBDA_DF[col].unique():
+#     for r in LAMBDA_DF[row].unique():
+#         for x in params:
+#             print(c, r, x)
+#             df_sel = LAMBDA_DF[(LAMBDA_DF[col]==c)&(LAMBDA_DF[row]==r)]
+#             pc, p = pearsonr(df_sel[x], df_sel[y])
+#             print('perf',c, r, pc, p)
+#             corr = corr.append({'y':y, 'config_param':x, col:c, row:r, 'pearson_corr':pc,
+#                                 'p_value':p}, ignore_index=True)
 
-# topo = 'Grid' #'ScaleFree' #'Random' #Grid
-# auc = 'MAA'
-# gamma_dict={'ScaleFree':[2, 3], 'Random':[0.02, 0.62], 'Grid':[3, 10]}
-# problem = {
-#     'num_vars': 6,
-#     'names': ['L', 'N', 'gamma', 'pi', 'pd', 'Rc'],
-#     'bounds': [[2, 4], [10, 50], gamma_dict[topo], [0.001, 0.1], [0.05, 0.5], [2, 400]]}
-# comp_res['lambda_U'] = comp_res['lambda_U'].astype(float)
-# # comp_res = comp_res[(comp_res['topology']==topo)&(comp_res['auction_type']==auc)]
-# comp_res = comp_res[(comp_res['topology']==topo)&(comp_res['auction_type']!='')]
-# # id_vars = [x for x in comp_res.columns if x not in ['lambda_U','lambda_P','lambda_TC',
-# #                                                     'Area_TC','Area_P']]
-# # comp_res = comp_res.groupby(id_vars, as_index=False)['lambda_U'].mean()
-# X = pd.concat([comp_res[' No. Layers'], comp_res[' No. Nodes'], comp_res[' Topology Parameter'],
-#                 comp_res[' Interconnection Prob'], comp_res[' Damage Prob'], comp_res[' Resource Cap']], 
-#               axis=1, keys=['L', 'N', 'gamma', 'pi', 'pd', 'Rc']).to_numpy()
-# Y = pd.concat([comp_res['lambda_U']], axis=1, keys=['lambda_U']).to_numpy().ravel()
-# delta = delta.analyze(problem, X, Y, num_resamples=100, conf_level=0.95, print_to_console=True, seed=None)
-
-# np.where(np.isnan(Y))
-# np.where(np.isinf(Y))
-# np.where(np.isneginf(Y))
-# X.max(axis=0)
-# X.min(axis=0)
-
-'''Plot results'''
-
-results = pd.read_csv('Results_perf.csv', header=0)
-results = results[results['Resource_allocation']!='All']
-results["Topology/Resource_allocation"] = results["Resource_allocation"]+'\n'+results["Topology"]
-df = results.pivot_table(values='Rank', index='Parameter', columns='Topology/Resource_allocation')
-df.reset_index()
-
-# plot.plot_radar(df,df.index.values,df.columns)
-# print(df.mean(axis=1))
-
-# plt.figure()
-# ax = sns.lineplot(x="Topology/Resource_allocation", y="Rank",
-#                   hue="Parameter", style="Parameter", lw=5, ms=12,
-#                   markers=True, dashes=False, data=results)
-# ax.invert_yaxis()
-# g = sns.catplot(x='Parameter',y='Delta',hue="Topology", col="Resource_allocation",
-#                 data=results, kind="bar", height=4, aspect=.7);
-
+''' compute ranking and save '''
+# sens_res.loc[:, 'delta_CI/delta'] = sens_res['delta_CI']/sens_res['delta']
+# for topo in ['Random', 'ScaleFree', 'Grid']:
+#     for auc in ['UNIFORM', 'MCA', 'MDA', 'MAA']:
+#         cond = (sens_res['topology']==topo)&(sens_res['auction']==auc)
+#         sens_res.loc[cond, 'rank'] = sens_res.loc[cond, 'delta'].rank(method='average',
+#                                                                       ascending=False)
+# sens_perf.loc[:, 'delta_CI/delta'] = sens_perf['delta_CI']/sens_perf['delta']
+# for topo in ['Random', 'ScaleFree', 'Grid']:
+#     for auc in ['UNIFORM', 'MCA', 'MDA', 'MAA']:
+#         cond = (sens_perf['topology']==topo)&(sens_perf['auction']==auc)
+#         sens_perf.loc[cond, 'rank'] = sens_perf.loc[cond, 'delta'].rank(method='average',
+#                                                                       ascending=False)
+# with open('postprocess_dicts_sens_synth.pkl', 'wb') as f:
+#     pickle.dump([corr, sens_res, sens_perf], f)

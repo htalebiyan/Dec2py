@@ -15,7 +15,7 @@ data = data.rename(columns={'L': r'$L$', 'N': r'$N$', 'gamma': r'$\Upsilon$', 'P
 for y in data.y.unique():
     data_fig = data[data['y']==y].drop(['y', 'topology','resource allocation'], axis=1)
     plt.figure(figsize=[1500/dpi,1000/dpi])
-    ax = sns.heatmap(data_fig, annot=False, fmt="1.2f", vmin=-.75, vmax=.75,
+    ax = sns.heatmap(data_fig, annot=False, fmt="1.2f", vmin=-1, vmax=1,
                      cmap="RdYlGn")#.transpose()
     # plt.setp(ax.xaxis.get_majorticklabels(), rotation=0 )
     # plt.setp(ax.yaxis.get_majorticklabels(), rotation=0 )

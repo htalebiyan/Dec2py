@@ -3,7 +3,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 
-sns.set(context='notebook',style='darkgrid', font_scale=1.6)
+sns.set(context='notebook',style='darkgrid', font_scale=1.0)
 # plt.rc('text', usetex=True)
 # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
@@ -128,9 +128,9 @@ def plot_auction_allocation_synthetic(df_res,resource_type='resource',ci=None):
                     ax.set(xlabel=r'time step $t$', ylabel=resource_type)
                     if resource_type=="normalized_resource":
                         ax.set(ylabel=r'\% resource')
-                        ax.set(ylabel=r'$\% R_c$, L'+`int(vt)`)
-                    ax.xaxis.set_ticks(np.arange(1, T+1, 1.0))   #ax.get_xlim()         
-                    ax.grid(b=True, which='major', color='w', linewidth=1.0)    
+                        ax.set(ylabel=r'$\% R_c$, L'+str(int(vt)))
+                    ax.xaxis.set_ticks(np.arange(1, T+1, 1.0))   #ax.get_xlim()
+                    ax.grid(b=True, which='major', color='w', linewidth=1.0)
 
         handles, labels = ax.get_legend_handles_labels()
         labels = correct_legend_labels(labels)
@@ -152,7 +152,7 @@ def plot_auction_allocation_synthetic(df_res,resource_type='resource',ci=None):
         for idx, ax in enumerate(axx):
             ax.set_title(r'Auction Type: %s'%(hor_grid[idx]))
         for idx, ax in enumerate(axy):
-            ax.annotate('Layer '+`int(ver_grid[idx])`,xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
+            ax.annotate('Layer '+str(int(ver_grid[idx])),xy=(0.1, 0.5),xytext=(-ax.yaxis.labelpad - 5, 0),
                 xycoords=ax.yaxis.label, textcoords='offset points',ha='right',va='center',rotation=90)  
 
         plt.savefig('Allocations_'+at+'.png',dpi=600, bbox_inches='tight')
@@ -210,7 +210,7 @@ def plot_relative_allocation_synthetic(df_res,distance_type='distance_to_optimal
     handles, labels = ax_legend.get_legend_handles_labels()   
     labels = correct_legend_labels(labels)
     for idx,lab in enumerate(labels):
-        labels[idx] = 'Layer ' + `idx+1`
+        labels[idx] = 'Layer ' + str(idx+1)
     lgd = fig.legend(handles, labels,loc='center', bbox_to_anchor=(0.8, 0.55),
                frameon =True,framealpha=0.5, ncol=1)     #, fontsize='small'
     if len(hor_grid)==1 and len(ver_grid)==1:
