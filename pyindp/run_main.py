@@ -77,9 +77,16 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                             external_interdependency_dir=ext_interdependency,
                             magnitude=m, sample=i, shelby_data=shelby_data,
                             topology=topology)
-
             params["SIM_NUMBER"] = i
             params["MAGNITUDE"] = m
+            # Check if the results exist
+            output_dir_full = ''
+            if params["ALGORITHM"] != "JC":
+                output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
+                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'/agents/actions_'+str(i)+'_L1_.csv'
+            if os.path.exists(output_dir_full):
+                print('results are already there\n')
+                continue
 
             if fail_sce_param['TYPE'] == 'WU':
                 indp.add_Wu_failure_scenario(params["N"], DAM_DIR=damage_dir,
@@ -234,7 +241,8 @@ if __name__ == "__main__":
     #: The address to where output are stored.
     OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Auction_synthetic_networks_v3.1/'
     #'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
-    #'../results/'
+    #'../results/
+    # 'C:/Users/ht20/Documents/Files/Auction_synthetic_networks_v3.1/''
     # FAIL_SCE_PARAM['TOPO']+'/results/'
 
     #: Informatiom on the ype of the failure scenario (Andres or Wu)
@@ -252,10 +260,14 @@ if __name__ == "__main__":
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"random", 'SAMPLE_RANGE':range(10, 11), 'MAGS':range(0, 1),
     #                   'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(5, 10), 'MAGS':range(0, 100),
-                      'FILTER_SCE':None, 'TOPO':'Random',
+    FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(10, 15), 'MAGS':range(0, 100),
+                      'FILTER_SCE':None, 'TOPO':'ScaleFree',
                       'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-
+    # Oytput and base dir for sythetic database
+    SYNTH_DIR = None
+    if FAIL_SCE_PARAM['TYPE'] == 'synthetic':
+        SYNTH_DIR = BASE_DIR+FAIL_SCE_PARAM['TOPO']+'Networks/'
+        OUTPUT_DIR += FAIL_SCE_PARAM['TOPO']+'/results/'
     # No restriction on number of resources for each layer
     RC = [0]
     # Not necessary for synthetic nets
@@ -273,7 +285,7 @@ if __name__ == "__main__":
     # STM_MODEL_DICT = {'num_pred':1, 'model_dir':MODEL_DIR+'/traces',
     #                   'param_folder':MODEL_DIR+'/parameters'}
 
-    # # # # ### Run different methods###
+    # # # ### Run different methods###
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR)
     # # # # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
@@ -286,10 +298,6 @@ if __name__ == "__main__":
     METHOD_NAMES = ['indp', 'jc']
     SUFFIXES = ['real']
 
-    SYNTH_DIR = None
-    if FAIL_SCE_PARAM['TYPE'] == 'synthetic':
-        SYNTH_DIR = BASE_DIR+FAIL_SCE_PARAM['TOPO']+'Networks/'
-        OUTPUT_DIR += FAIL_SCE_PARAM['TOPO']+'/results/'
     COMBS, OPTIMAL_COMBS = dindp.generate_combinations(FAIL_SCE_PARAM['TYPE'],
                 FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
                 RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE, SUFFIXES,
