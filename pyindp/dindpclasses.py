@@ -414,7 +414,7 @@ class ResourceModel:
             self.type = 'LAYER_FIXED'
             self.set_lf_res(params)
         else:
-            sys.exit('Unsupported resource allocation type: '+params['RES_ALLOC_TYPE'])
+            sys.exit('Unsupported resource allocation type: '+str(params['RES_ALLOC_TYPE']))
     def set_uniform_res(self, params):
         '''
 
