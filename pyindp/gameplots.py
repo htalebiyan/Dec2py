@@ -7,7 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-def plot_ne_sol_2player(game):
+def plot_ne_sol_2player(game, suffix=''):
     '''
     This function plot the payoff functions with nath equilibria amd optimal solution
     marked on it (currently for 2-player games)
@@ -46,12 +46,21 @@ def plot_ne_sol_2player(game):
             p2_act_idx = list(pivot_dict.index.values).index(val['P2 actions'])
             axs[idxl].add_patch(Rectangle((p1_act_idx, p2_act_idx), 1, 1,
                                           fill=False, edgecolor='red', lw=2))
-        try:
-            p1_opt_idx = list(pivot_dict).index(game.optimal_solution['P1 actions'])
-            p2_opt_idx = list(pivot_dict.index.values).index(game.optimal_solution['P2 actions'])
-            axs[idxl].add_patch(Rectangle((p1_opt_idx, p2_opt_idx), 1, 1, fill=False,
-                                          hatch='xxx', edgecolor='red', lw=2))
-        except RuntimeError:
-            print('Optimal solution is not among the actions:')
-            print(game.optimal_solution)
-    plt.savefig('NE_sol_2D.png', dpi=dpi, bbox_inches='tight')
+            
+        if game.chosen_equilibrium:
+            p1_cne_idx = list(pivot_dict).index(game.chosen_equilibrium['P1 actions'])
+            p2_cne_idx = list(pivot_dict.index.values).index(game.chosen_equilibrium['P2 actions'])
+            axs[idxl].add_patch(Rectangle((p1_cne_idx, p2_cne_idx), 1, 1, fill=False,
+                                          hatch='///', edgecolor='red', lw=0.1))
+        if game.optimal_solution:
+            try:
+                p1_opt_idx = list(pivot_dict).index(game.optimal_solution['P1 actions'])
+                p2_opt_idx = list(pivot_dict.index.values).index(game.optimal_solution['P2 actions'])
+                axs[idxl].add_patch(Rectangle((p1_opt_idx, p2_opt_idx), 1, 1, fill=False,
+                                              hatch='xxx', edgecolor='green', lw=0.1))
+            except:
+                print('Optimal solution is not among the actions:')
+                print(game.optimal_solution)
+        else:
+            print('Optimal solution has not been calculated')
+    plt.savefig('NE_sol_2D_'+suffix+'.png', dpi=dpi, bbox_inches='tight')

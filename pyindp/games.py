@@ -8,26 +8,23 @@ import pandas as pd
 import gambit
 import indp
 import gameclasses
-import gameplots
+
 
 # def run_indp_sample():
 interdep_net= indp.initialize_sample_network()
-params={"NUM_ITERATIONS":7, "OUTPUT_DIR":'../results/ng_sample_12Node_results',
+params={"NUM_ITERATIONS":5, "OUTPUT_DIR":'../results/ng_sample_12Node_results',
         "V":2, "T":1, "L":[1,2], "WINDOW_LENGTH":1, "ALGORITHM":"NORMALGAME"}
 params["N"]=interdep_net
 params["JUDGMENT_TYPE"]="OPTIMISTIC"
-params["MAGNITUDE"]=0
+params["MAGNITUDE"] = 0
+params["SIM_NUMBER"] = 0
 params["SIM_NUMBER"]=0
 params["RES_ALLOC_TYPE"]= 'UNIFORM'
+params["VALUATION_TYPE"]= 'DTC'
 
-# obj = gameclasses.infrastructureGame(params)
+obj = gameclasses.InfrastructureGame(params)
+obj.run_game(compute_optimal=True, plot=True)
 
-game = gameclasses.NormalGame(params['L'], params['N'], [2,2])
-game.compute_payoffs()
-game.build_game(write_to_file_dir='./games', file_name='test')
-game.solve_game(method='enumpure', print_to_cmd=False)
-gameplots.plot_ne_sol_2player(game)
- 
    
 
 
