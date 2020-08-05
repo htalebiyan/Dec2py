@@ -9,8 +9,8 @@ from matplotlib.patches import Rectangle
 
 def plot_ne_sol_2player(game, suffix=''):
     '''
-    This function plot the payoff functions with nath equilibria amd optimal solution
-    marked on it (currently for 2-player games)
+    This function plot the payoff functions of a normal game for one time step
+    with nash equilibria and optimal solution marked on it (currently for 2-player games)
 
     Parameters
     ----------
@@ -40,18 +40,26 @@ def plot_ne_sol_2player(game, suffix=''):
                                        columns='P'+str(1)+' actions',
                                        values='P'+str(l)+' payoff')
         sns.heatmap(pivot_dict, annot=False, linewidths=.2, cmap="YlGnBu", ax=axs[idxl])
-        axs[idxl].set_title('Player %d\'s payoffs'%l)
+        axs[idxl].set_title('Player %d\'s payoffs, $R_c=$%d'%(l,game.v_r[l]))
         for _, val in game.solution.sol.items():
-            p1_act_idx = list(pivot_dict).index(val['P1 actions'])
-            p2_act_idx = list(pivot_dict.index.values).index(val['P2 actions'])
-            axs[idxl].add_patch(Rectangle((p1_act_idx, p2_act_idx), 1, 1,
-                                          fill=False, edgecolor='red', lw=2))
+            for act in val['solution combination']:
+                p1_act_idx = list(pivot_dict).index(act[0])
+                p2_act_idx = list(pivot_dict.index.values).index(act[1])
+                edgeclr = 'red'
+                if len(val['solution combination']) > 1:
+                    edgeclr = 'magenta'
+                axs[idxl].add_patch(Rectangle((p1_act_idx, p2_act_idx), 1, 1,
+                                              fill=False, edgecolor=edgeclr, lw=2))
             
         if game.chosen_equilibrium:
-            p1_cne_idx = list(pivot_dict).index(game.chosen_equilibrium['P1 actions'])
-            p2_cne_idx = list(pivot_dict.index.values).index(game.chosen_equilibrium['P2 actions'])
-            axs[idxl].add_patch(Rectangle((p1_cne_idx, p2_cne_idx), 1, 1, fill=False,
-                                          hatch='///', edgecolor='red', lw=0.1))
+            for act in game.chosen_equilibrium['solution combination']:
+                p1_cne_idx = list(pivot_dict).index(act[0])
+                p2_cne_idx = list(pivot_dict.index.values).index(act[1])
+                edgeclr = 'red'
+                if len(val['solution combination']) > 1:
+                    edgeclr = 'magenta'
+                axs[idxl].add_patch(Rectangle((p1_cne_idx, p2_cne_idx), 1, 1, fill=False,
+                                              hatch='o', edgecolor=edgeclr, lw=0.1))
         if game.optimal_solution:
             try:
                 p1_opt_idx = list(pivot_dict).index(game.optimal_solution['P1 actions'])

@@ -9,11 +9,10 @@ import gambit
 import indp
 import gameclasses
 
-
-# def run_indp_sample():
 interdep_net= indp.initialize_sample_network()
 params={"NUM_ITERATIONS":5, "OUTPUT_DIR":'../results/ng_sample_12Node_results',
-        "V":2, "T":1, "L":[1,2], "WINDOW_LENGTH":1, "ALGORITHM":"NORMALGAME"}
+        "V":9, "T":1, "L":[1,2], "WINDOW_LENGTH":1, "ALGORITHM":"NORMALGAME",
+        'EQUIBALG':'enummixed_solve'}
 params["N"]=interdep_net
 params["JUDGMENT_TYPE"]="OPTIMISTIC"
 params["MAGNITUDE"] = 0
@@ -29,64 +28,16 @@ obj.run_game(compute_optimal=True, plot=True)
 
 
 
-# g = gambit.Game.new_table([2,2])
-# m = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=gambit.Rational)
-# m2 = np.array([[[11, 12], [13, 14]], [[15, 16], [17, 18]]], dtype=gambit.Rational)
-# m3 = np.array([[[21, 22], [23, 24]], [[25, 26], [27, 28]]], dtype=gambit.Rational)
-# g = gambit.Game.from_arrays(m, m2,m3)#np.transpose(m))
-
-# g.title = "A prisoner's dilemma game"
-# # g.players[0].label = "Alphonse"
-# # g.players[1].label = "Gaston"
-# # g.players[0].strategies[0].label = "Cooperate"
-# # g.players[0].strategies[1].label = "Defect"
-# # g.players[1].strategies[0].label = "Cooperate"
-# # g.players[1].strategies[1].label = "Defect"
-# # g.players[1].strategies[2].label = "extra"
-# print("outcomes")
-# for x in g.outcomes:
-#         print([float(y) for y in x]) 
-# # for profile in g.contingencies:
-# #     print(profile, g[profile][0], g[profile][1], g[profile][2])
-
-# list(g.players[0].strategies)[0]
-
+# g = gambit.Game.read_game("e02.nfg")
 # p = g.mixed_strategy_profile()
-# list(p)
-# p.payoff(g.players[0])
-# p.strategy_value(g.players[0].strategies[0])
-
-# a = gambit.nash.enumpure_solve(g)
-# # a = gambit.nash.lcp_solve(g, rational=True, use_strategic=True)
-
-# print("Solution")
-# for x in a:
-#     print([float(y) for y in x])
-#     print([float(y) for y in x.payoff()])
-
-# # g = gambit.Game.read_game("games/2x2x2.nfg")
-# # for x in g.outcomes:
-# #         print([y for y in x])
-
-# # # list(g.players[0].strategies)[0]
-
-# # # p = g.mixed_strategy_profile()
-# # # list(p)
-# # # p.payoff(g.players[0])
-# # # p.strategy_value(g.players[0].strategies[0])
-
-# # a = gambit.nash.enumpure_solve(g)
-# # for x in a:
-# #     print([float(y) for y in x])
-# #     print([float(y) for y in x.payoff()])
-
-# # g = gambit.Game.read_game("games/e02.nfg")
-# # solver = gambit.nash.ExternalEnumPureSolver()
-# # solver.solve(g)
-
-# # solver = gambit.nash.ExternalEnumMixedSolver()
-# # solver.solve(g)
-
-# # g = gambit.Game.read_game("games/e02.efg")
-# # p = g.mixed_behavior_profile()
-# # list(p)
+# # g.write(format='native')[2:-1].replace('\\n', '\n')
+# # print(p)
+# # print(p.payoff())
+# # print(p.strategy_value(g.players[1].strategies[1]))
+# gambit.nash.enumpure_solve(g)
+# gambit.nash.enummixed_solve(g)
+# gambit.nash.lcp_solve(g)
+# # gambit.nash.lp_solve(g)
+# gambit.nash.simpdiv_solve(g)
+# gambit.nash.ipa_solve(g)
+# gambit.nash.gnm_solve(g)

@@ -57,6 +57,7 @@ class NormalGame:
             actions[l] = []
             for v in range(self.v_r[l]):
                 actions[l].extend(list(itertools.combinations(basic_actions, v+1)))
+            actions[l].extend([('NA',l)])
         return actions
 
     def compute_payoffs(self):
@@ -101,22 +102,25 @@ class NormalGame:
 
         '''
         for idxl, l in enumerate(self.players):
-            for act in action[idxl]:
-                self.net.G.nodes[act]['data']['inf_data'].repaired=1.0
-                self.net.G.nodes[act]['data']['inf_data'].functionality=1.0
+            if action[idxl] != ('NA',l):
+                for act in action[idxl]:
+                    self.net.G.nodes[act]['data']['inf_data'].repaired=1.0
+                    self.net.G.nodes[act]['data']['inf_data'].functionality=1.0
         flow_results = indp.indp(self.net, v_r=0, layers=self.players,
                                  controlled_layers=self.players,
                                  print_cmd=True, time_limit=None)
         for idxl, l in enumerate(self.players):
-            for act in action[idxl]:
-                self.net.G.nodes[act]['data']['inf_data'].repaired=0.0
-                self.net.G.nodes[act]['data']['inf_data'].functionality=0.0
+            if action[idxl] != ('NA',l):
+                for act in action[idxl]:
+                    self.net.G.nodes[act]['data']['inf_data'].repaired=0.0
+                    self.net.G.nodes[act]['data']['inf_data'].functionality=0.0
         for idxl, l in enumerate(self.players):
-            for act in action[idxl]:
-                action_conv=str(act[0])+"."+str(act[1])
-                flow_results[1].add_action(0,action_conv)
+            if action[idxl] != ('NA',l):
+                for act in action[idxl]:
+                    action_conv=str(act[0])+"."+str(act[1])
+                    flow_results[1].add_action(0,action_conv)
         return flow_results
-        
+
     def build_game(self, save_model=None, suffix=''):
         '''
         This function constructs the normal restoratuion game
@@ -152,14 +156,14 @@ class NormalGame:
             with open(save_model+'/ne_game_'+suffix+".txt", "w") as text_file:
                 text_file.write(self.normgame.write(format='native')[2:-1].replace('\\n', '\n'))
 
-    def solve_game(self, method='enumpure', print_to_cmd=False):
+    def solve_game(self, method='enumpure_solve', print_to_cmd=False):
         '''
         This function solves the normal restoration games given a solving method
 
         Parameters
         ----------
         method : str, optional
-            DESCRIPTION. The default is 'enumpure'.
+            DESCRIPTION. The default is 'enumpure_solve'.
         print_to_cmd : bool, optional
             DESCRIPTION. The default is False.
 
@@ -168,26 +172,43 @@ class NormalGame:
         None.
 
         '''
-        if method == 'enumpure':
+        if method == 'enumpure_solve':
             gambit_solution = gambit.nash.enumpure_solve(self.normgame)
+        elif method == 'enummixed_solve':
+            gambit_solution = gambit.nash.enummixed_solve(self.normgame)
+        elif method == 'lcp_solve':
+            gambit_solution = gambit.nash.lcp_solve(self.normgame)
+        elif method == 'lp_solve':
+            gambit_solution = gambit.nash.lp_solve(self.normgame)
+        elif method == 'simpdiv_solve':
+            gambit_solution = gambit.nash.simpdiv_solve(self.normgame)
+        elif method == 'ipa_solve':
+            gambit_solution = gambit.nash.ipa_solve(self.normgame)
+        elif method == 'gnm_solve':
+            gambit_solution = gambit.nash.gnm_solve(self.normgame)
         else:
             sys.exit('The solution method is not valid')
-            
+
         self.solution = GameSolution(self.players, gambit_solution, self.actions)
         # Find the INDP results correpsonding to solutions
-        for key, ac in self.payoffs.items():
-            for _, sol in self.solution.sol.items():
+        for _, sol in self.solution.sol.items():
+            sol['full results'] = []
+            # Find all co,bination of action in the case of mixed strategy
+            sol_super_set = []
+            for l in self.players:
+                sol_super_set.append(sol['P'+str(l)+' actions'])
+            sol['solution combination'] = list(itertools.product(*sol_super_set))
+            for key, ac in self.payoffs.items():
                 pay_vec = []
-                sol_vec = []
                 for l in self.players:
                     pay_vec.append(ac[l][0])
-                    sol_vec.append(sol['P'+str(l)+' actions']) 
-                if pay_vec == sol_vec:
-                    sol['full results'] = self.temp_storage[key]
+                for sol_vec in sol['solution combination']:
+                    if pay_vec == list(sol_vec):
+                        sol['full results'].append(self.temp_storage[key])
         self.temp_storage = {} #Empty the temprory attribute
         # Print to console
         if print_to_cmd:
-            print("NE Solutions(s)")
+            print("NE (pure or mixed) Solutions(s)")
             for idx, x in enumerate(gambit_solution):
                 print('%d.'%(idx+1))
                 print([float(y) for y in x])
@@ -199,11 +220,21 @@ class NormalGame:
             total_cost_dict[key] = sol['total cost']
         min_val = min(total_cost_dict.items())[1]
         min_keys = [k for k, v in total_cost_dict.items() if v == min_val]
+        # Chosse the lowest cost NE
         if len(min_keys) == 1:
-            self.chosen_equilibrium = self.solution.sol[min_keys[0]]
+            sol_key = min_keys[0]
         else:
-            self.chosen_equilibrium = self.solution.sol[random.choice(min_keys)]
+            sol_key = random.choice(min_keys)
+        # Chosse a ranodm action from the action profile if it is a mixed NE
+        num_profile_actions = len(self.solution.sol[sol_key]['solution combination'])    
+        if num_profile_actions == 1:
+            mixed_index = 0
+        else:
+            mixed_index = random.choice(range(num_profile_actions))
             
+        self.chosen_equilibrium = self.solution.sol[sol_key]
+        self.chosen_equilibrium['chosen mixed profile action'] = mixed_index
+
     def find_optimal_solution(self):
         '''
         This function finds the centralized, optimal solution corresponding to
@@ -224,7 +255,9 @@ class NormalGame:
             self.optimal_solution['P'+str(l)+' actions'] = ()
             for act in indp_res.results_layer[l][0]['actions']:
                 act = [int(y) for y in act.split(".")]
-                self.optimal_solution['P'+str(l)+' actions'] += ((act[0], act[1]), )
+                self.optimal_solution['P'+str(l)+' actions'] += ((act[0], act[1]),)
+            if len(indp_res.results_layer[l][0]['actions']) == 0:
+                self.optimal_solution['P'+str(l)+' actions'] += ('NA', l)
             self.optimal_solution['P'+str(l)+' payoff'] = indp_res.results_layer[l][0]['costs']['Total']
         self.optimal_solution['full result'] = indp_res
 
@@ -259,15 +292,19 @@ class GameSolution:
             sup_action.extend(actions[l])
         for idx, x in enumerate(self.gambit_sol):
             sol[idx] = {}
+            for l in self.players:
+                sol[idx]['P'+str(l)+' actions'] = []
+                sol[idx]['P'+str(l)+' action probs'] = []
             c = -1
             for y in x:
                 c += 1
-                if y > 0.0:
+                if y > 1e-3:
                     act = sup_action[c]
                     for l in self.players:
                         if act in actions[l]:
                             plyr = l
-                    sol[idx]['P'+str(plyr)+' actions'] = act
+                    sol[idx]['P'+str(plyr)+' actions'].append(act)
+                    sol[idx]['P'+str(plyr)+' action probs'].append(y)
             total_cost = 0
             for idxl, l in enumerate(self.players):
                 sol[idx]['P'+str(l)+' payoff'] = float(x.payoff()[idxl])
@@ -284,6 +321,7 @@ class InfrastructureGame:
         #: Basic attributes
         self.layers = params['L']
         self.game_type = params['ALGORITHM']
+        self.equib_alg = params['EQUIBALG']
         self.judge_type = params["JUDGMENT_TYPE"]
         self.magnitude = params['MAGNITUDE']
         self.sample = params["SIM_NUMBER"]
@@ -296,6 +334,38 @@ class InfrastructureGame:
         self.res_alloc_type = self.resource.type
         self.v_r = self.resource.v_r
         self.output_dir = self.set_out_dir(params['OUTPUT_DIR'], self.magnitude)
+
+    def run_game(self, compute_optimal=False, save_results=True, plot=False):
+        print('--Running Game: '+self.game_type+', resource allocation: '+self.res_alloc_type)
+        if self.game_type == 'NORMALGAME':
+            for t in self.objs.keys():
+                print("-Time Step", t, "/", self.time_steps)
+                self.objs[t] = NormalGame(self.layers, self.net, self.v_r[t])
+                self.objs[t].compute_payoffs()
+                game_start = time.time()
+                if self.objs[t].payoffs:
+                    self.objs[t].build_game(save_model=self.output_dir, suffix=str(t))
+                    self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=True)
+                    self.objs[t].choose_equilibrium()
+                    mixed_index = self.objs[t].chosen_equilibrium['chosen mixed profile action']
+                    game_time = time.time()-game_start
+                    if compute_optimal:
+                        self.objs[t].find_optimal_solution()
+                    if plot:
+                        gameplots.plot_ne_sol_2player(self.objs[t], suffix=str(t))
+                    
+                    ne_results = self.objs[t].chosen_equilibrium['full results'][mixed_index]
+                    ne_results[1].results[0]['run_time'] = game_time
+                    self.results.extend(ne_results[1], t_offset=t)
+                    indp.apply_recovery(self.net, self.results, t)
+                    self.results.add_components(t, indputils.INDPComponents.\
+                                                calculate_components(ne_results[0],
+                                                self.net, layers=self.layers))
+                else:
+                    print('No further action is feasible')
+        if save_results:
+            # self.save_object_to_file()
+            self.save_results_to_file()
 
     def set_out_dir(self, root, mag):
         '''
@@ -360,39 +430,7 @@ class InfrastructureGame:
             sys.exit('ERROR: T!=1, JC currently only supports iINDP, not td_INDP.')
         else:
             return num_iter
-        
-    def run_game(self, compute_optimal=False, save_results=True, plot=False):
-        print('--Running Game: '+self.game_type+', resource allocation: '+self.res_alloc_type)
-        if self.game_type == 'NORMALGAME':
-            for t in self.objs.keys():
-                print("-Time Step", t, "/", self.time_steps)
-                self.objs[t] = NormalGame(self.layers, self.net, self.v_r[t])
-                self.objs[t].compute_payoffs()
-                game_start = time.time()
-                if self.objs[t].payoffs:
-                    self.objs[t].build_game(save_model=self.output_dir, suffix=str(t))
-                    self.objs[t].solve_game(method='enumpure', print_to_cmd=True)
-                    self.objs[t].choose_equilibrium()
-                    game_time = time.time()-game_start
-                    if compute_optimal:
-                        self.objs[t].find_optimal_solution()
-                    if plot:
-                        gameplots.plot_ne_sol_2player(self.objs[t], suffix=str(t))
-                    
-                    ne_results = self.objs[t].chosen_equilibrium['full results']
-                    ne_results[1].results[0]['run_time'] = game_time
-                    self.results.extend(ne_results[1], t_offset=t)
-                    indp.apply_recovery(self.net, self.results, t)
-                    self.results.add_components(t, indputils.INDPComponents.\
-                                                calculate_components(ne_results[0],
-                                                self.net, layers=self.layers))
-                else:
-                    print('No further action is feasible')
-        if save_results:
-            # self.save_object_to_file()
-            self.save_results_to_file()
-            
-        
+
     def save_object_to_file(self):
         '''
 
@@ -410,7 +448,7 @@ class InfrastructureGame:
             os.makedirs(self.output_dir)
         with open(self.output_dir+'/objs_'+str(self.sample)+'.pkl', 'wb') as output:
             pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
-    
+
     def save_results_to_file(self):
         '''
 
