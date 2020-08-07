@@ -39,33 +39,41 @@ def plot_ne_sol_2player(game, suffix=''):
         pivot_dict = payoff_dict.pivot(index='P'+str(2)+' actions',
                                        columns='P'+str(1)+' actions',
                                        values='P'+str(l)+' payoff')
-        sns.heatmap(pivot_dict, annot=False, linewidths=.2, cmap="YlGnBu", ax=axs[idxl])
+        sns.heatmap(pivot_dict, annot=False, linewidths=.2, cmap="Blues_r", ax=axs[idxl])
         axs[idxl].set_title('Player %d\'s payoffs, $R_c=$%d'%(l,game.v_r[l]))
         for _, val in game.solution.sol.items():
             for act in val['solution combination']:
                 p1_act_idx = list(pivot_dict).index(act[0])
                 p2_act_idx = list(pivot_dict.index.values).index(act[1])
                 edgeclr = 'red'
+                line_width = 2
+                zor = 2
                 if len(val['solution combination']) > 1:
-                    edgeclr = 'magenta'
+                    edgeclr = 'gold'
+                    line_width = 5
+                    zor = 1
                 axs[idxl].add_patch(Rectangle((p1_act_idx, p2_act_idx), 1, 1,
-                                              fill=False, edgecolor=edgeclr, lw=2))
+                                              fill=False, edgecolor=edgeclr,
+                                              lw=line_width, zorder=zor))
             
         if game.chosen_equilibrium:
-            for act in game.chosen_equilibrium['solution combination']:
-                p1_cne_idx = list(pivot_dict).index(act[0])
-                p2_cne_idx = list(pivot_dict.index.values).index(act[1])
-                edgeclr = 'red'
-                if len(val['solution combination']) > 1:
-                    edgeclr = 'magenta'
-                axs[idxl].add_patch(Rectangle((p1_cne_idx, p2_cne_idx), 1, 1, fill=False,
-                                              hatch='o', edgecolor=edgeclr, lw=0.1))
+            mixed_profile = game.chosen_equilibrium['chosen mixed profile action']
+            act = game.chosen_equilibrium['solution combination'][mixed_profile]
+            p1_cne_idx = list(pivot_dict).index(act[0])
+            p2_cne_idx = list(pivot_dict.index.values).index(act[1])
+            edgeclr = 'red'
+            if len(game.chosen_equilibrium['solution combination']) > 1:
+                edgeclr = 'gold'
+                axs[idxl].set_hatch_color = edgeclr
+            axs[idxl].add_patch(Rectangle((p1_cne_idx, p2_cne_idx), 1, 1, fill=False,
+                                          hatch='o', edgecolor=edgeclr, lw=0.01))
+            
         if game.optimal_solution:
             try:
                 p1_opt_idx = list(pivot_dict).index(game.optimal_solution['P1 actions'])
                 p2_opt_idx = list(pivot_dict.index.values).index(game.optimal_solution['P2 actions'])
                 axs[idxl].add_patch(Rectangle((p1_opt_idx, p2_opt_idx), 1, 1, fill=False,
-                                              hatch='xxx', edgecolor='green', lw=0.1))
+                                              hatch='xxx', edgecolor='green', lw=0.01))
             except:
                 print('Optimal solution is not among the actions:')
                 print(game.optimal_solution)

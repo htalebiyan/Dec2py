@@ -13,7 +13,8 @@ import sys
 #if platform.system() == "Linux":
 #    HOME_DIR="/home/andrew/"
 
-def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_actions=False, print_cmd=True, time_limit=None):
+def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
+         forced_actions=False, fixed_nodes={}, print_cmd=True, time_limit=None):
     """INDP optimization problem. Also solves td-INDP if T > 1.
     :param N: An InfrastructureNetwork instance (created in infrastructure.py)
     :param v_r: Vector of number of resources given to each layer in each timestep. If the size of the vector is 1, it shows the total number of resources for all layers.
@@ -83,9 +84,14 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
             m.addVar(name='delta-_'+str(n)+","+str(t),lb=0.0)
         # Add functionality binary variables for each node in N'.
         for n,d in N_hat.nodes(data=True):
-            m.addVar(name='w_'+str(n)+","+str(t),vtype=GRB.BINARY)
+            m.addVar(name='w_'+str(n)+","+str(t),vtype=GRB.BINARY)               
             if T > 1:
-                m.addVar(name='w_tilde_'+str(n)+","+str(t),vtype=GRB.BINARY)
+                m.addVar(name='w_tilde_'+str(n)+","+str(t),vtype=GRB.BINARY) 
+        # Fix node values (only for iINDP)
+        m.update()
+        for key, val in fixed_nodes.items():
+            m.getVarByName('w_'+str(key)+","+str(0)).lb=val
+            m.getVarByName('w_'+str(key)+","+str(0)).ub=val                   
         # Add flow variables for each arc.
         for u,v,a in N_hat.edges(data=True):
             m.addVar(name='x_'+str(u)+","+str(v)+","+str(t),lb=0.0)

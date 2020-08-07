@@ -11,22 +11,17 @@ import gameclasses
 
 interdep_net= indp.initialize_sample_network()
 params={"NUM_ITERATIONS":5, "OUTPUT_DIR":'../results/ng_sample_12Node_results',
-        "V":9, "T":1, "L":[1,2], "WINDOW_LENGTH":1, "ALGORITHM":"NORMALGAME",
+        "V":6, "T":1, "L":[1,2], "WINDOW_LENGTH":1, "ALGORITHM":"NORMALGAME",
         'EQUIBALG':'enummixed_solve'}
 params["N"]=interdep_net
 params["JUDGMENT_TYPE"]="OPTIMISTIC"
 params["MAGNITUDE"] = 0
 params["SIM_NUMBER"] = 0
-params["SIM_NUMBER"]=0
 params["RES_ALLOC_TYPE"]= 'UNIFORM'
-params["VALUATION_TYPE"]= 'DTC'
+# params["VALUATION_TYPE"]= 'DTC'
 
 obj = gameclasses.InfrastructureGame(params)
 obj.run_game(compute_optimal=True, plot=True)
-
-   
-
-
 
 # g = gambit.Game.read_game("e02.nfg")
 # p = g.mixed_strategy_profile()

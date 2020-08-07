@@ -28,6 +28,7 @@ class NormalGame:
         self.players = L
         self.net = net
         self.v_r = v_r
+        self.dependee_nodes = {}
         self.actions = self.find_actions()
         self.payoffs = {}
         self.payoff_time = {}
@@ -39,7 +40,7 @@ class NormalGame:
 
     def find_actions(self):
         '''
-        This function finds all possible restoration actions for each player
+        This function finds all relevant restoration actions for each player
 
         Returns
         -------
@@ -47,20 +48,46 @@ class NormalGame:
             DESCRIPTION.
 
         '''
+        for u,v,a in self.net.G.edges(data=True):
+            if a['data']['inf_data'].is_interdep:
+                if u not in self.dependee_nodes:
+                    self.dependee_nodes[u]=[]    
+                self.dependee_nodes[u].append((v,a['data']['inf_data'].gamma))
         actions = {}
         for l in self.players:
             damaged_nodes = [n for n, d in self.net.G.nodes(data=True) if\
                         d['data']['inf_data'].functionality == 0.0 and n[1] == l]
             damaged_arcs = [(u, v) for u, v, a in self.net.G.edges(data=True) if\
                         a['data']['inf_data'].functionality == 0.0 and u[1] == l and v[1] == l]
-            basic_actions = damaged_nodes + damaged_arcs
+            '''
+            Arc repaire actions are collected under "other action (OA)" since
+            the arc actions do not affect the decision of other palyers
+            '''
+            other_action = False
+            if len(damaged_arcs) > 0:
+                other_action = True
+            '''
+            Non-depndeee node repaire actions are collected under "other action (OA)" 
+            since these actions do not affect the decision of other palyers
+            '''
+            rel_actions = []
+            for n in damaged_nodes:
+                if n in self.dependee_nodes.keys():
+                    rel_actions.append(n)
+                else:
+                    other_action = True
+            if other_action:
+                rel_actions.extend([('OA',l)])
             actions[l] = []
             for v in range(self.v_r[l]):
-                actions[l].extend(list(itertools.combinations(basic_actions, v+1)))
+                actions[l].extend(list(itertools.combinations(rel_actions, v+1)))
+            '''
+            "No Action (NA)" is added to possible actions
+            '''
             actions[l].extend([('NA',l)])
         return actions
 
-    def compute_payoffs(self):
+    def compute_payoffs(self, save_model=None):
         '''
         This function finds all possible combinations of actions and their corresponding
         payoffs considering resource limitations
@@ -79,6 +106,9 @@ class NormalGame:
         for idx, ac in enumerate(action_comb):
             self.payoffs[idx] = {}
             flow_results = self.flow_problem(ac)
+            if save_model:
+                indp.save_INDP_model_to_file(flow_results[0], save_model[0],
+                                             save_model[1], suffix=str(ac))
             for idxl, l in enumerate(self.players):
                 # Minus sign because we want to minimize the cost
                 payoff_layer = -flow_results[1].results_layer[l][0]['costs']['Total']
@@ -90,6 +120,31 @@ class NormalGame:
     def flow_problem(self, action):
         '''
         solves a flow problem for a given combination of actions
+        
+        Damaged arc repairs and damage, non-dependee node repairs are removed 
+        from action and collected under "Other Action (OA)" since they do not 
+        affect the action of other agents.
+        
+        To find OA payoff, I solve an INDP problem with fixed node values. For 
+        example, assume player 1's relevant damaged nodes (damaged, dependee node)
+        [(1,1), (2,1), (3,1)]. Also, player 2's relevant damaged nodes are
+        [(1,2), (2,2), (3,2)]. For an action profile {[(1,1), (OA,1)],
+        [(2,2), (3,2), (OA,2)]}, I set (1,1) to 1 and (2,1), (3,1) to 0. Similarly,
+        I set (2,2) and (3,2) to 1, and (1,2) to 0. Then, I solve INDP by given 
+        these restrictions.
+        
+        Also, I restrict the number of resources for each layer. Say, if Rc=2 
+        for each layer, I impose this restriction too. Effectively, in solving 
+        INDP for player 1, I assume that (1,1) is repaired, (2,1), (3,1) must not 
+        be repaired, and the repair of non-relevant elements are decided by INDP.
+
+        Furthermore, if there are, for example, 3 resources available (Rc=3) for
+        each player but the action profile is {[(1,1),[(2,2), (3,2)]}, then I solve
+        INDP by restricting Rc to 1 for player 1 and to 2  for player 2. Therefore,
+        I make sure that only the nodes in the action profile are considered repaired.
+        
+        Also, by removing arcs from the actions, I am ignoring the geographical
+        interdependency.
 
         Parameters
         ----------
@@ -101,24 +156,25 @@ class NormalGame:
         None.
 
         '''
+        adjusted_v_r = {key:val for key, val in self.v_r.items()}
+        fixed_nodes = {}
+        for u in self.dependee_nodes.keys():
+            if self.net.G.nodes[u]['data']['inf_data'].functionality != 1.0:
+                fixed_nodes[u] = 0.0
         for idxl, l in enumerate(self.players):
             if action[idxl] != ('NA',l):
                 for act in action[idxl]:
-                    self.net.G.nodes[act]['data']['inf_data'].repaired=1.0
-                    self.net.G.nodes[act]['data']['inf_data'].functionality=1.0
-        flow_results = indp.indp(self.net, v_r=0, layers=self.players,
-                                 controlled_layers=self.players,
-                                 print_cmd=True, time_limit=None)
-        for idxl, l in enumerate(self.players):
-            if action[idxl] != ('NA',l):
-                for act in action[idxl]:
-                    self.net.G.nodes[act]['data']['inf_data'].repaired=0.0
-                    self.net.G.nodes[act]['data']['inf_data'].functionality=0.0
-        for idxl, l in enumerate(self.players):
-            if action[idxl] != ('NA',l):
-                for act in action[idxl]:
-                    action_conv=str(act[0])+"."+str(act[1])
-                    flow_results[1].add_action(0,action_conv)
+                    if act != ('OA',l):
+                        fixed_nodes[act] = 1.0
+                if ('OA',l) not in action[idxl]:
+                    adjusted_v_r[l] = len(action[idxl])
+            else:
+                adjusted_v_r[l] = 0
+
+        adjusted_v_r = [val for _,val in adjusted_v_r.items()]
+        flow_results = indp.indp(self.net, v_r=adjusted_v_r, layers=self.players,
+                                 controlled_layers=self.players, print_cmd=True,
+                                 time_limit=None, fixed_nodes=fixed_nodes)
         return flow_results
 
     def build_game(self, save_model=None, suffix=''):
@@ -230,7 +286,18 @@ class NormalGame:
         if num_profile_actions == 1:
             mixed_index = 0
         else:
-            mixed_index = random.choice(range(num_profile_actions))
+            max_prob_idx = {}
+            chosen_profile = ()
+            for l in self.players:  
+                probs = self.solution.sol[sol_key]['P'+str(l)+' action probs']
+                max_prob = max(probs)[1]
+                max_keys = [c for c in range(len(probs)) if probs[c] == max_prob]
+                if len(max_keys) == 1:
+                    max_prob_idx[l] = max_keys[0]
+                else:
+                    max_prob_idx[l] = random.choice(max_keys) 
+                chosen_profile += self.solution.sol[sol_key]['P'+str(l)+' action'][max_prob_idx[l]]
+            mixed_index = self.solution.sol[sol_key]['solution combination'].index(chosen_profile)
             
         self.chosen_equilibrium = self.solution.sol[sol_key]
         self.chosen_equilibrium['chosen mixed profile action'] = mixed_index
@@ -255,7 +322,10 @@ class NormalGame:
             self.optimal_solution['P'+str(l)+' actions'] = ()
             for act in indp_res.results_layer[l][0]['actions']:
                 act = [int(y) for y in act.split(".")]
-                self.optimal_solution['P'+str(l)+' actions'] += ((act[0], act[1]),)
+                if ((act[0], act[1])) in self.dependee_nodes.keys():
+                    self.optimal_solution['P'+str(l)+' actions'] += ((act[0], act[1]),)
+                elif ('OA',l) not in self.optimal_solution['P'+str(l)+' actions']:
+                    self.optimal_solution['P'+str(l)+' actions'] += (('OA', l),)
             if len(indp_res.results_layer[l][0]['actions']) == 0:
                 self.optimal_solution['P'+str(l)+' actions'] += ('NA', l)
             self.optimal_solution['P'+str(l)+' payoff'] = indp_res.results_layer[l][0]['costs']['Total']
@@ -341,10 +411,11 @@ class InfrastructureGame:
             for t in self.objs.keys():
                 print("-Time Step", t, "/", self.time_steps)
                 self.objs[t] = NormalGame(self.layers, self.net, self.v_r[t])
-                self.objs[t].compute_payoffs()
+                self.objs[t].compute_payoffs(save_model=[self.output_dir+'/payoff_models', t])
                 game_start = time.time()
                 if self.objs[t].payoffs:
-                    self.objs[t].build_game(save_model=self.output_dir, suffix=str(t))
+                    self.objs[t].build_game(save_model=self.output_dir+'/games',
+                                            suffix=str(t))
                     self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=True)
                     self.objs[t].choose_equilibrium()
                     mixed_index = self.objs[t].chosen_equilibrium['chosen mixed profile action']
