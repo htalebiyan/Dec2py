@@ -15,7 +15,6 @@ import sys
 import sphinx_rtd_theme
 sys.path.insert(0, os.path.abspath('../../pyindp'))
 
-
 # -- Project information -----------------------------------------------------
 
 project = 'Decenalized Decision Making'
@@ -32,7 +31,7 @@ release = '0.1.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.napoleon',
-'sphinx_automodapi.automodapi', 'sphinx.ext.todo', 'sphinx.ext.githubpages',
+'sphinx_automodapi.automodapi','sphinx.ext.todo', 'sphinx.ext.githubpages',
 'sphinx_rtd_theme', 'sphinx.ext.viewcode']
 numpydoc_show_class_members = False
 todo_include_todos = True
