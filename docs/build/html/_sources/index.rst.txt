@@ -3,7 +3,7 @@ Decentralized Decision Making's documentation
 .. toctree::
    :maxdepth: 2
    :caption: Topics:
- 
+
    main_vars.rst
    run_main.rst
    indp_main.rst
