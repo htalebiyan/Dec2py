@@ -1,0 +1,538 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="Python 3.7.6" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="Python 3.7.6" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>run_main &mdash; Decenalized Decision Making 0.1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Decenalized Decision Making
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Topics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../main_vars.html">Input Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../run_main.html">Run INDP and Judgment Call</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../indp_main.html">Interdependent Network Design Problem (INDP)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dindp_main.html">Judgment Call Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gameclasses.html">Restoration Game Classes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Decenalized Decision Making</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>run_main</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for run_main</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Runs INDP, td-INDP, and Judgment Call &quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">indp</span>
+<span class="kn">import</span> <span class="nn">dindp</span>
+<span class="kn">import</span> <span class="nn">plots</span>
+<span class="kn">import</span> <span class="nn">gametree</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="k">try</span><span class="p">:</span>
+<span class="c1"># Change the current working Directory</span>
+    <span class="n">DIR_MAIN</span> <span class="o">=</span> <span class="s1">&#39;C:/Users/ht20/Documents/GitHub/td-DINDP/pyindp&#39;</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">DIR_MAIN</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Directory changed to &quot;</span><span class="o">+</span><span class="n">DIR_MAIN</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Can&#39;t change the Current Working Directory&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="batch_run"><a class="viewcode-back" href="../run_main.html#run_main.batch_run">[docs]</a><span class="k">def</span> <span class="nf">batch_run</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">fail_sce_param</span><span class="p">,</span> <span class="n">player_ordering</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Batch run different methods for a given list of damage scenarios,</span>
+<span class="sd">        given global parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    params : dict</span>
+<span class="sd">        DESCRIPTION.</span>
+<span class="sd">    fail_sce_param : dict</span>
+<span class="sd">        DESCRIPTION.</span>
+<span class="sd">    player_ordering : list, optional</span>
+<span class="sd">        DESCRIPTION. The default is [3, 1].</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None. Writes to file</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># Set root directories</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;BASE_DIR&#39;</span><span class="p">]</span>
+    <span class="n">damage_dir</span> <span class="o">=</span> <span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;DAMAGE_DIR&#39;</span><span class="p">]</span>
+    <span class="n">topology</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">shelby_data</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">ext_interdependency</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;TYPE&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Andres&#39;</span><span class="p">:</span>
+        <span class="n">ext_interdependency</span> <span class="o">=</span> <span class="s2">&quot;../data/INDP_4-12-2016&quot;</span>
+    <span class="k">elif</span> <span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;TYPE&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;WU&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;FILTER_SCE&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">list_high_dam</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;FILTER_SCE&#39;</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;TYPE&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;TYPE&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;synthetic&#39;</span><span class="p">:</span>
+        <span class="n">shelby_data</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">topology</span> <span class="o">=</span> <span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;TOPO&#39;</span><span class="p">]</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;----Running for resources: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;V&#39;</span><span class="p">]))</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;MAGS&#39;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;SAMPLE_RANGE&#39;</span><span class="p">]:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">list_high_dam</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_high_dam</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">list_high_dam</span><span class="o">.</span><span class="n">set</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span><span class="o">&amp;</span>\
+                                         <span class="p">(</span><span class="n">list_high_dam</span><span class="o">.</span><span class="n">sce</span> <span class="o">==</span> <span class="n">m</span><span class="p">)]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;---Running Magnitude &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; sample &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;...&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Initializing network...&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">shelby_data</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">],</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">indp</span><span class="o">.</span><span class="n">initialize_network</span><span class="p">(</span><span class="n">BASE_DIR</span><span class="o">=</span><span class="n">base_dir</span><span class="p">,</span>
+                            <span class="n">external_interdependency_dir</span><span class="o">=</span><span class="n">ext_interdependency</span><span class="p">,</span>
+                            <span class="n">sim_number</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">magnitude</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;V&quot;</span><span class="p">],</span>
+                            <span class="n">shelby_data</span><span class="o">=</span><span class="n">shelby_data</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;V&quot;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">indp</span><span class="o">.</span><span class="n">initialize_network</span><span class="p">(</span><span class="n">BASE_DIR</span><span class="o">=</span><span class="n">base_dir</span><span class="p">,</span>
+                            <span class="n">external_interdependency_dir</span><span class="o">=</span><span class="n">ext_interdependency</span><span class="p">,</span>
+                            <span class="n">magnitude</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">shelby_data</span><span class="o">=</span><span class="n">shelby_data</span><span class="p">,</span>
+                            <span class="n">topology</span><span class="o">=</span><span class="n">topology</span><span class="p">)</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;SIM_NUMBER&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;MAGNITUDE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">m</span>
+            <span class="c1"># Check if the results exist</span>
+            <span class="n">output_dir_full</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;ALGORITHM&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;JC&quot;</span><span class="p">:</span>
+                <span class="n">output_dir_full</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;OUTPUT_DIR&quot;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;_L&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;L&quot;</span><span class="p">]))</span><span class="o">+</span><span class="s1">&#39;_m&#39;</span><span class="o">+</span>\
+                    <span class="nb">str</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;MAGNITUDE&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;_v&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;V&quot;</span><span class="p">])</span><span class="o">+</span><span class="s1">&#39;/agents/actions_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;_L1_.csv&#39;</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_dir_full</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;results are already there</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;TYPE&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;WU&#39;</span><span class="p">:</span>
+                <span class="n">indp</span><span class="o">.</span><span class="n">add_Wu_failure_scenario</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">],</span> <span class="n">DAM_DIR</span><span class="o">=</span><span class="n">damage_dir</span><span class="p">,</span>
+                                             <span class="n">noSet</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">noSce</span><span class="o">=</span><span class="n">m</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;TYPE&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;ANDRES&#39;</span><span class="p">:</span>
+                <span class="n">indp</span><span class="o">.</span><span class="n">add_failure_scenario</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">],</span> <span class="n">DAM_DIR</span><span class="o">=</span><span class="n">damage_dir</span><span class="p">,</span>
+                                          <span class="n">magnitude</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;V&quot;</span><span class="p">],</span> <span class="n">sim_number</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;TYPE&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span>
+                <span class="n">indp</span><span class="o">.</span><span class="n">add_random_failure_scenario</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">],</span> <span class="n">DAM_DIR</span><span class="o">=</span><span class="n">damage_dir</span><span class="p">,</span>
+                                                 <span class="n">sample</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">fail_sce_param</span><span class="p">[</span><span class="s1">&#39;TYPE&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;synthetic&#39;</span><span class="p">:</span>
+                <span class="n">indp</span><span class="o">.</span><span class="n">add_synthetic_failure_scenario</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">],</span> <span class="n">DAM_DIR</span><span class="o">=</span><span class="n">base_dir</span><span class="p">,</span>
+                                                    <span class="n">topology</span><span class="o">=</span><span class="n">topology</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;ALGORITHM&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;INDP&quot;</span><span class="p">:</span>
+                <span class="n">indp</span><span class="o">.</span><span class="n">run_indp</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">],</span> <span class="n">layers</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">],</span>
+                              <span class="n">controlled_layers</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">],</span> <span class="n">saveModel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">print_cmd_line</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;ALGORITHM&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;INFO_SHARE&quot;</span><span class="p">:</span>
+                <span class="n">indp</span><span class="o">.</span><span class="n">run_info_share</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">],</span> <span class="n">T</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;ALGORITHM&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;INRG&quot;</span><span class="p">:</span>
+                <span class="n">indp</span><span class="o">.</span><span class="n">run_inrg</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">],</span> <span class="n">player_ordering</span><span class="o">=</span><span class="n">player_ordering</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;ALGORITHM&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;BACKWARDS_INDUCTION&quot;</span><span class="p">:</span>
+                <span class="n">gametree</span><span class="o">.</span><span class="n">run_backwards_induction</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">],</span> <span class="n">i</span><span class="p">,</span> <span class="n">players</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">],</span>
+                                                 <span class="n">player_ordering</span><span class="o">=</span><span class="n">player_ordering</span><span class="p">,</span>
+                                                 <span class="n">T</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">],</span> <span class="n">outdir</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;OUTPUT_DIR&quot;</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;ALGORITHM&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;JC&quot;</span><span class="p">:</span>
+                <span class="n">dindp</span><span class="o">.</span><span class="n">run_judgment_call</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">save_jc_model</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">print_cmd</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+<span class="k">def</span> <span class="nf">run_indp_sample</span><span class="p">():</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+    <span class="n">interdep_net</span><span class="o">=</span> <span class="n">indp</span><span class="o">.</span><span class="n">initialize_sample_network</span><span class="p">()</span>
+    <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;NUM_ITERATIONS&quot;</span><span class="p">:</span><span class="mi">7</span><span class="p">,</span> <span class="s2">&quot;OUTPUT_DIR&quot;</span><span class="p">:</span><span class="s1">&#39;../results/indp_sample_12Node_results&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;V&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;WINDOW_LENGTH&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;ALGORITHM&quot;</span><span class="p">:</span><span class="s2">&quot;INDP&quot;</span><span class="p">}</span>
+    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">]</span><span class="o">=</span><span class="n">interdep_net</span>
+    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;MAGNITUDE&quot;</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span>
+    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;SIM_NUMBER&quot;</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span>
+    <span class="c1"># indp.run_indp(params, layers=[1, 2], T=params[&quot;T&quot;], suffix=&quot;&quot;, saveModel=True,</span>
+    <span class="c1">#           print_cmd_line=True)</span>
+    <span class="c1"># indp.plot_indp_sample(params)</span>
+    <span class="n">auction_type</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MCA&quot;</span><span class="p">,</span> <span class="s2">&quot;MAA&quot;</span><span class="p">,</span> <span class="s2">&quot;MDA&quot;</span><span class="p">]</span>
+    <span class="n">valuation_type</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;DTC&quot;</span><span class="p">]</span>
+    <span class="n">judge_types</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;PESSIMISTIC&quot;</span><span class="p">,</span><span class="s2">&quot;OPTIMISTIC&quot;</span><span class="p">]</span>
+    <span class="n">interdep_net</span><span class="o">=</span><span class="n">indp</span><span class="o">.</span><span class="n">initialize_sample_network</span><span class="p">()</span>
+    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">]</span><span class="o">=</span><span class="n">interdep_net</span>
+    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;NUM_ITERATIONS&quot;</span><span class="p">]</span><span class="o">=</span><span class="mi">7</span>
+    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;ALGORITHM&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;JC&quot;</span>
+    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;JUDGMENT_TYPE&quot;</span><span class="p">]</span><span class="o">=</span><span class="n">judge_types</span>
+    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;OUTPUT_DIR&quot;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;../results/jc_sample_12Node_results&#39;</span>
+    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;V&quot;</span><span class="p">]</span><span class="o">=</span><span class="mi">2</span>
+    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;RES_ALLOC_TYPE&quot;</span><span class="p">]</span><span class="o">=</span> <span class="n">auction_type</span>
+    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;VALUATION_TYPE&quot;</span><span class="p">]</span><span class="o">=</span> <span class="n">valuation_type</span>
+    <span class="n">dindp</span><span class="o">.</span><span class="n">run_judgment_call</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">save_jc_model</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">print_cmd</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># indp.plot_indp_sample(params, folderSuffix=&#39;_auction_&#39;+params[&quot;AUCTION_TYPE&quot;]+\</span>
+    <span class="c1">#                  &#39;_&#39;+params[&quot;VALUATION_TYPE&quot;], suffix=&quot;sum&quot;)</span>
+    <span class="n">COMBS</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">OPTIMAL_COMBS</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;indp_sample_12Node&#39;</span><span class="p">,</span> <span class="s1">&#39;nan&#39;</span><span class="p">,</span> <span class="s1">&#39;nan&#39;</span><span class="p">,</span> <span class="s1">&#39;nan&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]]</span>
+    <span class="k">for</span> <span class="n">jt</span><span class="p">,</span> <span class="n">rst</span><span class="p">,</span> <span class="n">vt</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">judge_types</span><span class="p">,</span> <span class="n">auction_type</span><span class="p">,</span> <span class="n">valuation_type</span><span class="p">):</span>
+        <span class="n">COMBS</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;jc_sample_12Node&#39;</span><span class="p">,</span> <span class="n">jt</span><span class="p">,</span> <span class="n">rst</span><span class="p">,</span> <span class="n">vt</span><span class="p">,</span> <span class="s1">&#39;real&#39;</span><span class="p">])</span>
+    <span class="n">BASE_DF</span><span class="p">,</span> <span class="n">objs</span> <span class="o">=</span> <span class="n">dindp</span><span class="o">.</span><span class="n">read_results</span><span class="p">(</span><span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Total&#39;</span><span class="p">],</span>
+                                        <span class="n">root_result_dir</span><span class="o">=</span><span class="s1">&#39;../results/&#39;</span><span class="p">,</span> <span class="n">deaggregate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">LAMBDA_DF</span> <span class="o">=</span> <span class="n">dindp</span><span class="o">.</span><span class="n">relative_performance</span><span class="p">(</span><span class="n">BASE_DF</span><span class="p">,</span> <span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">,</span>
+                                            <span class="n">ref_method</span><span class="o">=</span><span class="s1">&#39;indp_sample_12Node&#39;</span><span class="p">,</span> <span class="n">cost_type</span><span class="o">=</span><span class="s1">&#39;Total&#39;</span><span class="p">)</span>
+    <span class="n">RES_ALLOC_DF</span><span class="p">,</span> <span class="n">ALLOC_GAP_DF</span> <span class="o">=</span> <span class="n">dindp</span><span class="o">.</span><span class="n">read_resourcec_allocation</span><span class="p">(</span><span class="n">BASE_DF</span><span class="p">,</span> <span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">,</span>
+                                                                  <span class="n">objs</span><span class="p">,</span> <span class="n">root_result_dir</span><span class="o">=</span><span class="s1">&#39;../results/&#39;</span><span class="p">,</span>
+                                                                  <span class="n">ref_method</span><span class="o">=</span><span class="s1">&#39;indp_sample_12Node&#39;</span><span class="p">)</span>
+    <span class="n">RUN_TIME_DF</span> <span class="o">=</span> <span class="n">dindp</span><span class="o">.</span><span class="n">read_run_time</span><span class="p">(</span><span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">,</span> <span class="n">objs</span><span class="p">,</span> <span class="n">root_result_dir</span><span class="o">=</span><span class="s1">&#39;../results/&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># plots.plot_performance_curves(BASE_DF, cost_type=&#39;Total&#39;, ci=None,</span>
+    <span class="c1">#                               deaggregate=True, plot_resilience=True)</span>
+    <span class="c1"># plots.plot_seperated_perform_curves(BASE_DF, x=&#39;t&#39;, y=&#39;cost&#39;, cost_type=&#39;Total&#39;,</span>
+    <span class="c1">#                                     ci=None, normalize=False)</span>
+    <span class="n">plots</span><span class="o">.</span><span class="n">plot_relative_performance</span><span class="p">(</span><span class="n">LAMBDA_DF</span><span class="p">,</span> <span class="n">lambda_type</span><span class="o">=</span><span class="s1">&#39;U&#39;</span><span class="p">)</span>
+    <span class="n">plots</span><span class="o">.</span><span class="n">plot_auction_allocation</span><span class="p">(</span><span class="n">RES_ALLOC_DF</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="c1"># plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type=&#39;gap&#39;)</span>
+    <span class="c1"># plots.plot_run_time(RUN_TIME_DF, ci=95)</span>
+
+<div class="viewcode-block" id="run_method"><a class="viewcode-back" href="../run_main.html#run_main.run_method">[docs]</a><span class="k">def</span> <span class="nf">run_method</span><span class="p">(</span><span class="n">fail_sce_param</span><span class="p">,</span> <span class="n">v_r</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">judgment_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">res_alloc_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">valuation_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="s1">&#39;..&#39;</span><span class="p">,</span> <span class="n">misc</span> <span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    This function runs a given method for different numbers of resources,</span>
+<span class="sd">    and a given judge, auction, and valuation type in the case of JC.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fail_sce_param : dict</span>
+<span class="sd">        informaton of damage scenrios.</span>
+<span class="sd">    v_r : float, list of float, or list of lists of floats</span>
+<span class="sd">        number of resources,</span>
+<span class="sd">        if this is a list of floats, each float is interpreted as a different total</span>
+<span class="sd">        number of resources, and indp is run given the total number of resources.</span>
+<span class="sd">        It only works when auction_type != None.</span>
+<span class="sd">        If this is a list of lists of floats, each list is interpreted as fixed upper</span>
+<span class="sd">        bounds on the number of resources each layer can use (same for all time step)..</span>
+<span class="sd">    layers : TYPE</span>
+<span class="sd">        DESCRIPTION.</span>
+<span class="sd">    method : TYPE</span>
+<span class="sd">        DESCRIPTION.</span>
+<span class="sd">    judgment_type : str, optional</span>
+<span class="sd">        Type of Judgments in Judfment Call Method. The default is None.</span>
+<span class="sd">    res_alloc_type : str, optional</span>
+<span class="sd">        Type of resource allocation method for resource allocation. The default is None.</span>
+<span class="sd">    valuation_type : str, optional</span>
+<span class="sd">        Type of valuation in auction. The default is None.</span>
+<span class="sd">    output_dir : str, optional</span>
+<span class="sd">        DESCRIPTION. The default is &#39;..&#39;.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None.  Writes to file</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">v_r</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;INDP&#39;</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;NUM_ITERATIONS&quot;</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;OUTPUT_DIR&quot;</span><span class="p">:</span><span class="n">output_dir</span><span class="o">+</span><span class="s1">&#39;/indp_results&#39;</span><span class="p">,</span>
+                      <span class="s2">&quot;V&quot;</span><span class="p">:</span><span class="n">v</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">:</span><span class="n">layers</span><span class="p">,</span> <span class="s2">&quot;ALGORITHM&quot;</span><span class="p">:</span><span class="s2">&quot;INDP&quot;</span><span class="p">}</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;JC&#39;</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;NUM_ITERATIONS&quot;</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span>
+                      <span class="s2">&quot;OUTPUT_DIR&quot;</span><span class="p">:</span><span class="n">output_dir</span><span class="o">+</span><span class="s1">&#39;/jc_results&#39;</span><span class="p">,</span>
+                      <span class="s2">&quot;V&quot;</span><span class="p">:</span><span class="n">v</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">:</span><span class="n">layers</span><span class="p">,</span> <span class="s2">&quot;ALGORITHM&quot;</span><span class="p">:</span><span class="s2">&quot;JC&quot;</span><span class="p">,</span>
+                      <span class="s2">&quot;JUDGMENT_TYPE&quot;</span><span class="p">:</span><span class="n">judgment_type</span><span class="p">,</span> <span class="s2">&quot;RES_ALLOC_TYPE&quot;</span><span class="p">:</span><span class="n">res_alloc_type</span><span class="p">,</span>
+                      <span class="s2">&quot;VALUATION_TYPE&quot;</span><span class="p">:</span><span class="n">valuation_type</span><span class="p">}</span>
+            <span class="k">if</span> <span class="s1">&#39;STM&#39;</span> <span class="ow">in</span> <span class="n">valuation_type</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s1">&#39;STM_MODEL_DICT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">misc</span><span class="p">[</span><span class="s1">&#39;STM_MODEL_DICT&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;TD_INDP&#39;</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;NUM_ITERATIONS&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;OUTPUT_DIR&quot;</span><span class="p">:</span><span class="n">output_dir</span><span class="o">+</span><span class="s1">&#39;/tdindp_results&#39;</span><span class="p">,</span>
+                      <span class="s2">&quot;V&quot;</span><span class="p">:</span><span class="n">v</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;WINDOW_LENGTH&quot;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">:</span><span class="n">layers</span><span class="p">,</span> <span class="s2">&quot;ALGORITHM&quot;</span><span class="p">:</span><span class="s2">&quot;INDP&quot;</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s1">&#39;Wrong method name: &#39;</span><span class="o">+</span><span class="n">method</span><span class="p">)</span>
+        <span class="n">batch_run</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">fail_sce_param</span><span class="p">)</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1">### Run a toy example for different methods ###</span>
+    <span class="c1"># run_indp_sample()</span>
+    <span class="c1"># obj_dir = &quot;C:/Users/ht20/Documents/GitHub/td-DINDP/results/jc_sample_12Node_results_L2_m0_v2_OPTIMISTIC_AUCTION_MAA_DTC/&quot;</span>
+    <span class="c1"># with open(obj_dir+&#39;objs_0.pkl&#39;, &#39;rb&#39;) as f:</span>
+    <span class="c1">#     obj = pickle.load(f)</span>
+
+    <span class="c1">#: The address to the list of scenarios that should be included in the analyses.</span>
+    <span class="n">FILTER_SCE</span> <span class="o">=</span> <span class="s1">&#39;../data/damagedElements_sliceQuantile_0.90.csv&#39;</span>
+    
+    <span class="c1">#: The address to the basic (topology, parameters, etc.) information of the network.</span>
+    <span class="n">BASE_DIR</span> <span class="o">=</span> <span class="s2">&quot;C:</span><span class="se">\\</span><span class="s2">Users</span><span class="se">\\</span><span class="s2">ht20</span><span class="se">\\</span><span class="s2">Documents</span><span class="se">\\</span><span class="s2">Files</span><span class="se">\\</span><span class="s2">Generated_Network_Dataset_v3.1</span><span class="se">\\</span><span class="s2">&quot;</span>
+    <span class="c1"># &quot;../data/Extended_Shelby_County/&quot;</span>
+    <span class="c1"># &quot;C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\&quot;</span>
+    
+    <span class="c1">#: The address to damge scenario data.</span>
+    <span class="n">DAMAGE_DIR</span> <span class="o">=</span> <span class="s2">&quot;C:</span><span class="se">\\</span><span class="s2">Users</span><span class="se">\\</span><span class="s2">ht20</span><span class="se">\\</span><span class="s2">Documents</span><span class="se">\\</span><span class="s2">Files</span><span class="se">\\</span><span class="s2">Generated_Network_Dataset_v3.1</span><span class="se">\\</span><span class="s2">&quot;</span>
+    <span class="c1"># ../data/random_disruption_shelby/&quot;</span>
+    <span class="c1">#&quot;../data/Wu_Damage_scenarios/&quot; </span>
+    <span class="c1"># &quot;C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\&quot;</span>
+    
+    <span class="c1">#: The address to where output are stored.</span>
+    <span class="n">OUTPUT_DIR</span> <span class="o">=</span> <span class="s1">&#39;C:/Users/ht20/Documents/Files/Auction_synthetic_networks_v3.1/&#39;</span>
+    <span class="c1">#&#39;C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/&#39;</span>
+    <span class="c1">#&#39;../results/</span>
+    <span class="c1"># &#39;C:/Users/ht20/Documents/Files/Auction_synthetic_networks_v3.1/&#39;&#39;</span>
+    <span class="c1"># FAIL_SCE_PARAM[&#39;TOPO&#39;]+&#39;/results/&#39;</span>
+
+    <span class="c1">#: Informatiom on the ype of the failure scenario (Andres or Wu)</span>
+    <span class="c1">#: and network dataset (shelby or synthetic)</span>
+    <span class="c1">#: Help:</span>
+    <span class="c1">#: For Andres scenario: sample range: FAIL_SCE_PARAM[&#39;SAMPLE_RANGE&#39;],</span>
+    <span class="c1">#:     magnitudes: FAIL_SCE_PARAM[&#39;MAGS&#39;]</span>
+    <span class="c1">#: For Wu scenario: set range: FAIL_SCE_PARAM[&#39;SAMPLE_RANGE&#39;],</span>
+    <span class="c1">#:     sce range: FAIL_SCE_PARAM[&#39;MAGS&#39;]</span>
+    <span class="c1">#: For Synthetic nets: sample range: FAIL_SCE_PARAM[&#39;SAMPLE_RANGE&#39;],</span>
+    <span class="c1">#:     configurations: FAIL_SCE_PARAM[&#39;MAGS&#39;]</span>
+    <span class="c1"># FAIL_SCE_PARAM = {&#39;TYPE&#39;:&quot;WU&quot;, &#39;SAMPLE_RANGE&#39;:range(0, 50), &#39;MAGS&#39;:range(0, 95),</span>
+    <span class="c1">#                   &#39;FILTER_SCE&#39;:FILTER_SCE, &#39;BASE_DIR&#39;:BASE_DIR, &#39;DAMAGE_DIR&#39;:DAMAGE_DIR}</span>
+    <span class="c1"># FAIL_SCE_PARAM = {&#39;TYPE&#39;:&quot;ANDRES&quot;, &#39;SAMPLE_RANGE&#39;:range(1, 1001), &#39;MAGS&#39;:[6, 7, 8, 9],</span>
+    <span class="c1">#                  &#39;BASE_DIR&#39;:BASE_DIR, &#39;DAMAGE_DIR&#39;:DAMAGE_DIR}</span>
+    <span class="c1"># FAIL_SCE_PARAM = {&#39;TYPE&#39;:&quot;random&quot;, &#39;SAMPLE_RANGE&#39;:range(10, 11), &#39;MAGS&#39;:range(0, 1),</span>
+    <span class="c1">#                   &#39;FILTER_SCE&#39;:None, &#39;BASE_DIR&#39;:BASE_DIR, &#39;DAMAGE_DIR&#39;:DAMAGE_DIR}</span>
+    <span class="n">FAIL_SCE_PARAM</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;TYPE&#39;</span><span class="p">:</span><span class="s2">&quot;synthetic&quot;</span><span class="p">,</span> <span class="s1">&#39;SAMPLE_RANGE&#39;</span><span class="p">:</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span> <span class="s1">&#39;MAGS&#39;</span><span class="p">:</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+                      <span class="s1">&#39;FILTER_SCE&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;TOPO&#39;</span><span class="p">:</span><span class="s1">&#39;ScaleFree&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;BASE_DIR&#39;</span><span class="p">:</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;DAMAGE_DIR&#39;</span><span class="p">:</span><span class="n">DAMAGE_DIR</span><span class="p">}</span>
+    <span class="c1"># Oytput and base dir for sythetic database</span>
+    <span class="n">SYNTH_DIR</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">FAIL_SCE_PARAM</span><span class="p">[</span><span class="s1">&#39;TYPE&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;synthetic&#39;</span><span class="p">:</span>
+        <span class="n">SYNTH_DIR</span> <span class="o">=</span> <span class="n">BASE_DIR</span><span class="o">+</span><span class="n">FAIL_SCE_PARAM</span><span class="p">[</span><span class="s1">&#39;TOPO&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;Networks/&#39;</span>
+        <span class="n">OUTPUT_DIR</span> <span class="o">+=</span> <span class="n">FAIL_SCE_PARAM</span><span class="p">[</span><span class="s1">&#39;TOPO&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;/results/&#39;</span>
+    <span class="c1"># No restriction on number of resources for each layer</span>
+    <span class="n">RC</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># Not necessary for synthetic nets</span>
+    <span class="c1"># [3, 6, 8, 12]</span>
+    <span class="c1"># [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer</span>
+    <span class="n">LAYERS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+    <span class="c1"># Not necessary for synthetic nets</span>
+    <span class="n">JUDGE_TYPE</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;OPTIMISTIC&quot;</span><span class="p">]</span>
+    <span class="c1">#[&quot;PESSIMISTIC&quot;, &quot;OPTIMISTIC&quot;, &quot;DEMAND&quot;, &quot;DET-DEMAND&quot;, &quot;RANDOM&quot;]</span>
+    <span class="n">RES_ALLOC_TYPE</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MDA&quot;</span><span class="p">,</span> <span class="s2">&quot;MAA&quot;</span><span class="p">,</span> <span class="s2">&quot;MCA&quot;</span><span class="p">,</span> <span class="s1">&#39;UNIFORM&#39;</span><span class="p">]</span>
+    <span class="c1">#[&quot;MDA&quot;, &quot;MAA&quot;, &quot;MCA&quot;, &#39;UNIFORM&#39;]</span>
+    <span class="n">VAL_TYPE</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;DTC&#39;</span><span class="p">]</span>
+    <span class="c1">#[&#39;DTC&#39;, &#39;DTC_uniform&#39;, &#39;MDDN&#39;, &#39;STM&#39;, &#39;DTC-LP&#39;]</span>
+    <span class="c1"># MODEL_DIR = &#39;C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc&#39;</span>
+    <span class="c1"># STM_MODEL_DICT = {&#39;num_pred&#39;:1, &#39;model_dir&#39;:MODEL_DIR+&#39;/traces&#39;,</span>
+    <span class="c1">#                   &#39;param_folder&#39;:MODEL_DIR+&#39;/parameters&#39;}</span>
+
+    <span class="c1"># # # ### Run different methods###</span>
+    <span class="c1"># run_method(FAIL_SCE_PARAM, RC, LAYERS, method=&#39;INDP&#39;, output_dir=OUTPUT_DIR)</span>
+    <span class="c1"># # # # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method=&#39;TD_INDP&#39;)</span>
+    <span class="c1"># run_method(FAIL_SCE_PARAM, RC, LAYERS, method=&#39;JC&#39;, judgment_type=JUDGE_TYPE,</span>
+    <span class="c1">#             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,</span>
+    <span class="c1">#             output_dir=OUTPUT_DIR)#, misc = {&#39;STM_MODEL_DICT&#39;:STM_MODEL_DICT})</span>
+
+    <span class="c1">### Post-processing ###</span>
+    <span class="n">COST_TYPES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span>
+    <span class="n">REF_METHOD</span> <span class="o">=</span> <span class="s1">&#39;indp&#39;</span>
+    <span class="n">METHOD_NAMES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;indp&#39;</span><span class="p">,</span> <span class="s1">&#39;jc&#39;</span><span class="p">]</span>
+    <span class="n">SUFFIXES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;real&#39;</span><span class="p">]</span>
+
+    <span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span> <span class="o">=</span> <span class="n">dindp</span><span class="o">.</span><span class="n">generate_combinations</span><span class="p">(</span><span class="n">FAIL_SCE_PARAM</span><span class="p">[</span><span class="s1">&#39;TYPE&#39;</span><span class="p">],</span>
+                <span class="n">FAIL_SCE_PARAM</span><span class="p">[</span><span class="s1">&#39;MAGS&#39;</span><span class="p">],</span> <span class="n">FAIL_SCE_PARAM</span><span class="p">[</span><span class="s1">&#39;SAMPLE_RANGE&#39;</span><span class="p">],</span> <span class="n">LAYERS</span><span class="p">,</span>
+                <span class="n">RC</span><span class="p">,</span> <span class="n">METHOD_NAMES</span><span class="p">,</span> <span class="n">JUDGE_TYPE</span><span class="p">,</span> <span class="n">RES_ALLOC_TYPE</span><span class="p">,</span> <span class="n">VAL_TYPE</span><span class="p">,</span> <span class="n">SUFFIXES</span><span class="p">,</span>
+                <span class="n">list_high_dam_add</span><span class="o">=</span><span class="n">FAIL_SCE_PARAM</span><span class="p">[</span><span class="s1">&#39;FILTER_SCE&#39;</span><span class="p">],</span>
+                <span class="n">synthetic_dir</span><span class="o">=</span><span class="n">SYNTH_DIR</span><span class="p">)</span>
+
+    <span class="n">BASE_DF</span><span class="p">,</span> <span class="n">objs</span> <span class="o">=</span> <span class="n">dindp</span><span class="o">.</span><span class="n">read_results</span><span class="p">(</span><span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">,</span> <span class="n">COST_TYPES</span><span class="p">,</span>
+                                        <span class="n">root_result_dir</span><span class="o">=</span><span class="n">OUTPUT_DIR</span><span class="p">,</span> <span class="n">deaggregate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">LAMBDA_DF</span> <span class="o">=</span> <span class="n">dindp</span><span class="o">.</span><span class="n">relative_performance</span><span class="p">(</span><span class="n">BASE_DF</span><span class="p">,</span> <span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">,</span>
+                                            <span class="n">ref_method</span><span class="o">=</span><span class="n">REF_METHOD</span><span class="p">,</span> <span class="n">cost_type</span><span class="o">=</span><span class="n">COST_TYPES</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">RES_ALLOC_DF</span><span class="p">,</span> <span class="n">ALLOC_GAP_DF</span> <span class="o">=</span> <span class="n">dindp</span><span class="o">.</span><span class="n">read_resourcec_allocation</span><span class="p">(</span><span class="n">BASE_DF</span><span class="p">,</span> <span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">,</span>
+                                                                  <span class="n">objs</span><span class="p">,</span> <span class="n">root_result_dir</span><span class="o">=</span><span class="n">OUTPUT_DIR</span><span class="p">,</span>
+                                                                  <span class="n">ref_method</span><span class="o">=</span><span class="n">REF_METHOD</span><span class="p">)</span>
+    <span class="n">RUN_TIME_DF</span> <span class="o">=</span> <span class="n">dindp</span><span class="o">.</span><span class="n">read_run_time</span><span class="p">(</span><span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">,</span> <span class="n">objs</span><span class="p">,</span> <span class="n">root_result_dir</span><span class="o">=</span><span class="n">OUTPUT_DIR</span><span class="p">)</span>
+
+    <span class="c1">### Save Variables to file ###</span>
+    <span class="n">OBJ_LIST</span> <span class="o">=</span> <span class="p">[</span><span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">,</span> <span class="n">BASE_DF</span><span class="p">,</span> <span class="n">METHOD_NAMES</span><span class="p">,</span> <span class="n">LAMBDA_DF</span><span class="p">,</span>
+                <span class="n">RES_ALLOC_DF</span><span class="p">,</span> <span class="n">ALLOC_GAP_DF</span><span class="p">,</span> <span class="n">RUN_TIME_DF</span><span class="p">,</span> <span class="n">COST_TYPES</span><span class="p">]</span>
+
+    <span class="c1">### Saving the objects ###</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="o">+</span><span class="s1">&#39;postprocess_dicts.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">OBJ_LIST</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+    <span class="c1">## Getting back the objects ###</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="o">+</span><span class="s1">&#39;/postprocess_dicts.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="p">[</span><span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">,</span> <span class="n">BASE_DF</span><span class="p">,</span> <span class="n">METHOD_NAMES</span><span class="p">,</span> <span class="n">LAMBDA_DF</span><span class="p">,</span> <span class="n">RES_ALLOC_DF</span><span class="p">,</span>
+          <span class="n">ALLOC_GAP_DF</span><span class="p">,</span> <span class="n">RUN_TIME_DF</span><span class="p">,</span> <span class="n">COST_TYPE</span><span class="p">]</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="c1">### Plot results ###</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+
+    <span class="c1"># plots.plot_performance_curves(BASE_DF[(BASE_DF[&#39;auction_type&#39;]!=&#39;UNIFORM&#39;)&amp;(BASE_DF[&#39;auction_type&#39;]!=&#39;MAA&#39;)], cost_type=&#39;Total&#39;, ci=None,</span>
+    <span class="c1">#                                       deaggregate=True, plot_resilience=True)</span>
+
+    <span class="c1"># plots.plot_seperated_perform_curves(BASE_DF, x=&#39;t&#39;, y=&#39;cost&#39;, cost_type=&#39;Total&#39;,</span>
+    <span class="c1">#                                     ci=None, normalize=False)</span>
+
+    <span class="c1"># plots.plot_relative_performance(LAMBDA_DF, lambda_type=&#39;U&#39;)</span>
+    <span class="c1"># plots.plot_auction_allocation(RES_ALLOC_DF[(RES_ALLOC_DF[&#39;auction_type&#39;]!=&#39;UNIFORM&#39;)&amp;(RES_ALLOC_DF[&#39;auction_type&#39;]!=&#39;MAA&#39;)], ci=None)</span>
+    <span class="c1"># plots.plot_relative_allocation(ALLOC_GAP_DF[ALLOC_GAP_DF[&#39;auction_type&#39;]!=&#39;UNIFORM&#39;],</span>
+    <span class="c1">#                                 distance_type=&#39;gap&#39;)</span>
+    <span class="c1"># plots.plot_run_time(RUN_TIME_DF[(RUN_TIME_DF[&#39;auction_type&#39;]!=&#39;MDA&#39;)&amp;(RUN_TIME_DF[&#39;auction_type&#39;]!=&#39;MAA&#39;)], ci=95)</span>
+    <span class="c1"># [(RUN_TIME_DF[&#39;auction_type&#39;]!=&#39;MDA&#39;)&amp;(RUN_TIME_DF[&#39;auction_type&#39;]!=&#39;MAA&#39;)]</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Hesam Talebiyan
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

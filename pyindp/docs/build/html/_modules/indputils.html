@@ -1,0 +1,447 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="Python 3.7.6" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="Python 3.7.6" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>indputils &mdash; Decenalized Decision Making 0.1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Decenalized Decision Making
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Topics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../main_vars.html">Input Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../run_main.html">Run INDP and Judgment Call</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../indp_main.html">Interdependent Network Design Problem (INDP)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dindp_main.html">Judgment Call Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gameclasses.html">Restoration Game Classes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Decenalized Decision Making</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>indputils</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for indputils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">string</span> 
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">gurobipy</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="k">class</span> <span class="nc">INDPComponents</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="o">=</span><span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_components</span><span class="o">=</span><span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gc_size</span><span class="o">=</span><span class="mi">0</span>
+    <span class="k">def</span> <span class="nf">add_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">members</span><span class="p">,</span><span class="n">excess_supply</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">members</span><span class="p">,</span><span class="n">excess_supply</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">to_csv_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">comp_strings</span><span class="o">=</span><span class="p">[]</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="n">comp</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">supp</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">comp_string</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">comp_string</span><span class="o">+=</span><span class="s2">&quot;:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">comp_strings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">comp_string</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">comp_strings</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">calculate_components</span><span class="p">(</span><span class="n">clss</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">net</span><span class="p">,</span><span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">layers</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]):</span>
+        <span class="n">indp_components</span><span class="o">=</span><span class="n">INDPComponents</span><span class="p">()</span>
+        <span class="n">components</span><span class="o">=</span><span class="n">net</span><span class="o">.</span><span class="n">get_clusters</span><span class="p">(</span><span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">indp_components</span><span class="o">.</span><span class="n">num_components</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">components</span><span class="p">)</span>
+        <span class="n">indp_components</span><span class="o">.</span><span class="n">gc_size</span><span class="o">=</span><span class="n">net</span><span class="o">.</span><span class="n">gc_size</span><span class="p">(</span><span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">components</span><span class="p">:</span>
+            <span class="n">total_excess_supply</span><span class="o">=</span><span class="mf">0.0</span>
+            <span class="n">members</span><span class="o">=</span><span class="p">[]</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">c</span><span class="p">:</span>
+                <span class="n">members</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;.&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="n">excess_supply</span><span class="o">=</span><span class="mf">0.0</span>
+                <span class="n">excess_supply</span><span class="o">+=</span><span class="n">m</span><span class="o">.</span><span class="n">getVarByName</span><span class="p">(</span><span class="s1">&#39;delta+_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">))</span><span class="o">.</span><span class="n">x</span>
+                <span class="n">excess_supply</span><span class="o">+=-</span><span class="n">m</span><span class="o">.</span><span class="n">getVarByName</span><span class="p">(</span><span class="s1">&#39;delta-_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">))</span><span class="o">.</span><span class="n">x</span>
+                <span class="n">total_excess_supply</span><span class="o">+=</span><span class="n">excess_supply</span>
+            <span class="n">indp_components</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">members</span><span class="p">,</span><span class="n">total_excess_supply</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">indp_components</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_csv_string</span><span class="p">(</span><span class="n">clss</span><span class="p">,</span><span class="n">csv_string</span><span class="p">):</span>
+        <span class="n">indp_components</span><span class="o">=</span><span class="n">INDPComponents</span><span class="p">()</span>
+        <span class="n">comps</span><span class="o">=</span><span class="n">csv_string</span>
+        <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">comps</span><span class="p">:</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+            <span class="n">members</span><span class="o">=</span><span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+            <span class="n">supp</span><span class="o">=</span><span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">indp_components</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">members</span><span class="p">,</span><span class="nb">float</span><span class="p">(</span><span class="n">supp</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">indp_components</span>
+
+<div class="viewcode-block" id="INDPResults"><a class="viewcode-back" href="../indputils.html#indputils.INDPResults">[docs]</a><span class="k">class</span> <span class="nc">INDPResults</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Saves INDP results including actions, costs, run time, and components</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">cost_types</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">,</span><span class="s2">&quot;Arc&quot;</span><span class="p">,</span><span class="s2">&quot;Node&quot;</span><span class="p">,</span><span class="s2">&quot;Over Supply&quot;</span><span class="p">,</span><span class="s2">&quot;Under Supply&quot;</span><span class="p">,</span><span class="s2">&quot;Flow&quot;</span><span class="p">,</span><span class="s2">&quot;Total&quot;</span><span class="p">,</span><span class="s2">&quot;Under Supply Perc&quot;</span><span class="p">]</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">layers</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="o">=</span><span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">=</span><span class="n">layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="o">=</span><span class="p">{</span><span class="n">l</span><span class="p">:{}</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">}</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">index</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">indp_result</span><span class="p">,</span><span class="n">t_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">t_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">t_end</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t_end</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> 
+            <span class="n">t_end</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">indp_result</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">new_t</span><span class="p">,</span><span class="n">t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="n">x</span><span class="o">+</span><span class="n">t_offset</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t_end</span><span class="o">-</span><span class="n">t_start</span><span class="p">)],[</span><span class="n">y</span><span class="o">+</span><span class="n">t_start</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t_end</span><span class="o">-</span><span class="n">t_start</span><span class="p">)]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">new_t</span><span class="p">]</span><span class="o">=</span><span class="n">indp_result</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">t_end</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> 
+                <span class="n">t_end</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">indp_result</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">indp_result</span><span class="o">.</span><span class="n">results_layer</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">new_t</span><span class="p">,</span><span class="n">t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="n">x</span><span class="o">+</span><span class="n">t_offset</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t_end</span><span class="o">-</span><span class="n">t_start</span><span class="p">)],[</span><span class="n">y</span><span class="o">+</span><span class="n">t_start</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t_end</span><span class="o">-</span><span class="n">t_start</span><span class="p">)]):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">new_t</span><span class="p">]</span><span class="o">=</span><span class="n">indp_result</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">add_cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">cost_type</span><span class="p">,</span><span class="n">cost</span><span class="p">,</span><span class="n">cost_layer</span><span class="o">=</span><span class="p">{}):</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;costs&#39;</span><span class="p">:{</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Arc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Node&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Over Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply Perc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Flow&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Total&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">},</span><span class="s1">&#39;actions&#39;</span><span class="p">:[],</span><span class="s1">&#39;gc_size&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;num_components&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;components&#39;</span><span class="p">:</span><span class="n">INDPComponents</span><span class="p">(),</span><span class="s1">&#39;run_time&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="n">cost_type</span><span class="p">]</span><span class="o">=</span><span class="n">cost</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">cost_layer</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t</span><span class="p">]</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;costs&#39;</span><span class="p">:{</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Arc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Node&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Over Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply Perc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Flow&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Total&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">},</span><span class="s1">&#39;actions&#39;</span><span class="p">:[],</span><span class="s1">&#39;gc_size&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;num_components&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;components&#39;</span><span class="p">:</span><span class="n">INDPComponents</span><span class="p">(),</span><span class="s1">&#39;run_time&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="n">cost_type</span><span class="p">]</span><span class="o">=</span><span class="n">cost_layer</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">add_run_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">run_time</span><span class="p">,</span> <span class="n">save_layer</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;costs&#39;</span><span class="p">:{</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Arc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Node&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Over Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply Perc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Flow&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Total&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">},</span><span class="s1">&#39;actions&#39;</span><span class="p">:[],</span><span class="s1">&#39;gc_size&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;num_components&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;components&#39;</span><span class="p">:</span><span class="n">INDPComponents</span><span class="p">(),</span><span class="s1">&#39;run_time&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;run_time&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">run_time</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="ow">and</span> <span class="n">save_layer</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t</span><span class="p">]</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;costs&#39;</span><span class="p">:{</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Arc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Node&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Over Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply Perc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Flow&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Total&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">},</span><span class="s1">&#39;actions&#39;</span><span class="p">:[],</span><span class="s1">&#39;gc_size&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;num_components&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;components&#39;</span><span class="p">:</span><span class="n">INDPComponents</span><span class="p">(),</span><span class="s1">&#39;run_time&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;run_time&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">run_time</span>
+    <span class="k">def</span> <span class="nf">add_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">save_layer</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;costs&#39;</span><span class="p">:{</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Arc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Node&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Over Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply Perc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Flow&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Total&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">},</span><span class="s1">&#39;actions&#39;</span><span class="p">:[],</span><span class="s1">&#39;gc_size&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;num_components&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;components&#39;</span><span class="p">:</span><span class="n">INDPComponents</span><span class="p">(),</span><span class="s1">&#39;run_time&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="ow">and</span> <span class="n">save_layer</span><span class="p">:</span>
+            <span class="n">action_layer</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">action</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">action_layer</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">action_layer</span><span class="p">][</span><span class="n">t</span><span class="p">]</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;costs&#39;</span><span class="p">:{</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Arc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Node&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Over Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply Perc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Flow&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Total&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">},</span><span class="s1">&#39;actions&#39;</span><span class="p">:[],</span><span class="s1">&#39;gc_size&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;num_components&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;components&#39;</span><span class="p">:</span><span class="n">INDPComponents</span><span class="p">(),</span><span class="s1">&#39;run_time&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">action_layer</span><span class="p">][</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">add_gc_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">gc_size</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;costs&#39;</span><span class="p">:{</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Arc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Node&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Over Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply Perc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Flow&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Total&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">},</span><span class="s1">&#39;actions&#39;</span><span class="p">:[],</span><span class="s1">&#39;gc_size&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;num_components&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;components&#39;</span><span class="p">:</span><span class="n">INDPComponents</span><span class="p">(),</span><span class="s1">&#39;run_time&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;gc_size&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">gc_size</span>
+    <span class="k">def</span> <span class="nf">add_num_components</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">num_components</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;costs&#39;</span><span class="p">:{</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Arc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Node&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Over Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply Perc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Flow&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Total&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">},</span><span class="s1">&#39;actions&#39;</span><span class="p">:[],</span><span class="s1">&#39;gc_size&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;num_components&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;components&#39;</span><span class="p">:</span><span class="n">INDPComponents</span><span class="p">(),</span><span class="s1">&#39;run_time&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;num_components&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">num_components</span>
+    <span class="k">def</span> <span class="nf">add_components</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">components</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;costs&#39;</span><span class="p">:{</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Arc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Node&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Over Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply Perc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Flow&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Total&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">},</span><span class="s1">&#39;actions&#39;</span><span class="p">:[],</span><span class="s1">&#39;gc_size&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;num_components&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;components&#39;</span><span class="p">:</span><span class="n">INDPComponents</span><span class="p">(),</span><span class="s1">&#39;run_time&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;components&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_num_components</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">components</span><span class="o">.</span><span class="n">num_components</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_gc_size</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">components</span><span class="o">.</span><span class="n">gc_size</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">to_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">outdir</span><span class="p">,</span><span class="n">sample_num</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="n">action_file</span> <span class="o">=</span><span class="n">outdir</span><span class="o">+</span><span class="s2">&quot;/actions_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span>
+        <span class="n">costs_file</span> <span class="o">=</span><span class="n">outdir</span><span class="o">+</span><span class="s2">&quot;/costs_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span>
+        <span class="n">run_time_file</span> <span class="o">=</span><span class="n">outdir</span><span class="o">+</span><span class="s2">&quot;/run_time_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span>
+        <span class="n">perc_file</span>  <span class="o">=</span><span class="n">outdir</span><span class="o">+</span><span class="s2">&quot;/percolation_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span>
+        <span class="n">comp_file</span>  <span class="o">=</span><span class="n">outdir</span><span class="o">+</span><span class="s2">&quot;/components_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">action_file</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;t,action</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;actions&#39;</span><span class="p">]:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="n">a</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">run_time_file</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;t,run_time</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;run_time&#39;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">costs_file</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Under Supply Perc</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+                <span class="n">costs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">]</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Arc&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Node&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Over Supply&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Under Supply&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Flow&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Total&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Under Supply Perc&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1">#        with open(perc_file,&#39;w&#39;) as f:</span>
+<span class="c1">#            f.write(&quot;t,gc_size,num_components\n&quot;)</span>
+<span class="c1">#            for t in self.results:</span>
+<span class="c1">#                f.write(str(t)+&quot;,&quot;+`self.results[t][&#39;gc_size&#39;]`+&quot;,&quot;+`self.results[t][&#39;num_components&#39;]`+&quot;\n&quot;)</span>
+<span class="c1">#        with open(comp_file,&#39;w&#39;) as f:</span>
+<span class="c1">#            f.write(&quot;t,components\n&quot;)</span>
+<span class="c1">#            for t in self.results:</span>
+<span class="c1">#                f.write(str(t)+&quot;,&quot;+self.results[t][&#39;components&#39;].to_csv_string()+&quot;\n&quot;)</span>
+    <span class="k">def</span> <span class="nf">to_csv_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">outdir</span><span class="p">,</span><span class="n">sample_num</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="n">action_file</span> <span class="o">=</span><span class="n">outdir</span><span class="o">+</span><span class="s2">&quot;/actions_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_L&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span>
+            <span class="n">costs_file</span> <span class="o">=</span><span class="n">outdir</span><span class="o">+</span><span class="s2">&quot;/costs_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_L&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span>
+            <span class="n">run_time_file</span> <span class="o">=</span><span class="n">outdir</span><span class="o">+</span><span class="s2">&quot;/run_time_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_L&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">action_file</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;t,action</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">]:</span>
+                    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;actions&#39;</span><span class="p">]:</span>
+                        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="n">a</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">run_time_file</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;t,run_time</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">]:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;run_time&#39;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">costs_file</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Under Supply Perc</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">]:</span>
+                    <span class="n">costs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">]</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Arc&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Node&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Over Supply&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Under Supply&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Flow&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Total&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;,&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="s2">&quot;Under Supply Perc&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_csv</span><span class="p">(</span><span class="n">clss</span><span class="p">,</span><span class="n">outdir</span><span class="p">,</span><span class="n">sample_num</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="n">action_file</span><span class="o">=</span><span class="n">outdir</span><span class="o">+</span><span class="s2">&quot;/actions_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span>
+        <span class="n">costs_file</span> <span class="o">=</span><span class="n">outdir</span><span class="o">+</span><span class="s2">&quot;/costs_&quot;</span>  <span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span>
+        <span class="n">perc_file</span>  <span class="o">=</span><span class="n">outdir</span><span class="o">+</span><span class="s2">&quot;/percolation_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span>
+        <span class="n">comp_file</span>  <span class="o">=</span><span class="n">outdir</span><span class="o">+</span><span class="s2">&quot;/components_&quot;</span> <span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span>
+        <span class="n">run_time_file</span>  <span class="o">=</span><span class="n">outdir</span><span class="o">+</span><span class="s2">&quot;/run_time_&quot;</span> <span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">suffix</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span>
+        <span class="n">indp_result</span><span class="o">=</span><span class="n">INDPResults</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">action_file</span><span class="p">):</span> <span class="c1">#!!!</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">action_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+                    <span class="n">data</span><span class="o">=</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                    <span class="n">t</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">action</span><span class="o">=</span><span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">indp_result</span><span class="o">.</span><span class="n">add_action</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">action</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">costs_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+                <span class="n">cost_types</span><span class="o">=</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+                    <span class="n">data</span><span class="o">=</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                    <span class="n">t</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">costs</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                    <span class="k">for</span> <span class="n">ct</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cost_types</span><span class="p">)):</span>
+                        <span class="n">indp_result</span><span class="o">.</span><span class="n">add_cost</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">cost_types</span><span class="p">[</span><span class="n">ct</span><span class="p">],</span><span class="nb">float</span><span class="p">(</span><span class="n">costs</span><span class="p">[</span><span class="n">ct</span><span class="p">]))</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">run_time_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+                    <span class="n">data</span><span class="o">=</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                    <span class="n">t</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">run_time</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">indp_result</span><span class="o">.</span><span class="n">add_run_time</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">run_time</span><span class="p">)</span>
+<span class="c1">#            with open(perc_file) as f:</span>
+<span class="c1">#                lines=f.readlines()[1:]</span>
+<span class="c1">#                for line in lines:</span>
+<span class="c1">#                    data=string.split(str.strip(line),&quot;,&quot;)</span>
+<span class="c1">#                    t=int(data[0])</span>
+<span class="c1">#                    indp_result.add_gc_size(t,int(data[1]))</span>
+<span class="c1">#                    indp_result.add_num_components(t,int(data[2]))</span>
+<span class="c1">#            with open(comp_file) as f:</span>
+<span class="c1">#                lines=f.readlines()[1:]</span>
+<span class="c1">#                for line in lines:</span>
+<span class="c1">#                    data=string.split(str.strip(line),&quot;,&quot;)</span>
+<span class="c1">#                    t=int(data[0])</span>
+<span class="c1">#                    comps=data[1:]</span>
+<span class="c1">#                    if comps[0]!=&#39;&#39;:</span>
+<span class="c1">#                        indp_result.add_components(t,INDPComponents.from_csv_string(comps))</span>
+<span class="c1">#                    else:</span>
+<span class="c1">##                        print &quot;Caution: No component.&quot;</span>
+<span class="c1">#                        pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s1">&#39;File does not exist: &#39;</span><span class="o">+</span><span class="n">action_file</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">indp_result</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_results_dir</span><span class="p">(</span><span class="n">clss</span><span class="p">,</span><span class="n">outdir</span><span class="p">,</span><span class="n">sample_range</span><span class="p">,</span><span class="n">player</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">iteration</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">flip</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">avg_results</span><span class="o">=</span><span class="n">INDPResults</span><span class="p">()</span>
+        <span class="n">orig_suffix</span><span class="o">=</span><span class="n">suffix</span>
+        <span class="n">suffix</span><span class="o">=</span><span class="n">suffix</span>
+        <span class="k">if</span> <span class="n">player</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">iteration</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;P&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">player</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_i&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">iteration</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">player</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;P&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">flip</span><span class="p">:</span>
+            <span class="n">suffix</span><span class="o">+=</span><span class="n">orig_suffix</span>
+        <span class="c1"># Sum cost and percolation values over all samples.</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sample_range</span><span class="p">:</span>
+            <span class="n">sample_result</span><span class="o">=</span><span class="kc">None</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">flip</span><span class="p">:</span>
+                <span class="n">sample_result</span><span class="o">=</span><span class="n">clss</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="n">s</span><span class="p">,</span><span class="n">suffix</span><span class="o">=</span><span class="n">suffix</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                    <span class="n">this_suffix</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">this_suffix</span><span class="o">=</span><span class="n">suffix</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+                <span class="n">sample_result</span><span class="o">=</span><span class="n">clss</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">orig_suffix</span><span class="p">),</span><span class="n">suffix</span><span class="o">=</span><span class="n">this_suffix</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">sample_result</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">avg_results</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+                    <span class="n">avg_results</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;costs&#39;</span><span class="p">:{</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Arc&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Node&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Over Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Under Supply&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Flow&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s2">&quot;Total&quot;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">},</span><span class="s1">&#39;gc_size&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span><span class="s1">&#39;num_components&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">}</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">clss</span><span class="o">.</span><span class="n">cost_types</span><span class="p">:</span>
+                    <span class="n">avg_results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span><span class="o">+=</span><span class="nb">float</span><span class="p">(</span><span class="n">sample_result</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">])</span>
+                <span class="n">avg_results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;gc_size&#39;</span><span class="p">]</span><span class="o">+=</span><span class="nb">float</span><span class="p">(</span><span class="n">sample_result</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;gc_size&#39;</span><span class="p">])</span>
+                <span class="n">avg_results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;num_components&#39;</span><span class="p">]</span><span class="o">+=</span><span class="nb">float</span><span class="p">(</span><span class="n">sample_result</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;num_components&#39;</span><span class="p">])</span>
+        <span class="c1"># Average results over number of samples.</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">avg_results</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">clss</span><span class="o">.</span><span class="n">cost_types</span><span class="p">:</span>
+                <span class="n">avg_results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span><span class="o">=</span><span class="n">avg_results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="n">c</span><span class="p">]</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_range</span><span class="p">))</span>
+            <span class="n">avg_results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;gc_size&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">avg_results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;gc_size&#39;</span><span class="p">]</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_range</span><span class="p">))</span>
+            <span class="n">avg_results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;num_components&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">avg_results</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">&#39;num_components&#39;</span><span class="p">]</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_range</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">avg_results</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Hesam Talebiyan
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

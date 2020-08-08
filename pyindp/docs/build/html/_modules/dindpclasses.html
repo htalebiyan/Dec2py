@@ -1,0 +1,957 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="Python 3.7.6" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="Python 3.7.6" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>dindpclasses &mdash; Decenalized Decision Making 0.1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Decenalized Decision Making
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Topics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../main_vars.html">Input Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../run_main.html">Run INDP and Judgment Call</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../indp_main.html">Interdependent Network Design Problem (INDP)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dindp_main.html">Judgment Call Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gameclasses.html">Restoration Game Classes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Decenalized Decision Making</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>dindpclasses</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for dindpclasses</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39; Decentralized restoration for interdepndent networks&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">operator</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">gurobipy</span>
+<span class="kn">import</span> <span class="nn">indp</span>
+<span class="kn">import</span> <span class="nn">indputils</span>
+<span class="kn">import</span> <span class="nn">stm</span>
+<span class="kn">import</span> <span class="nn">indpalt</span>
+
+<div class="viewcode-block" id="JcModel"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.JcModel">[docs]</a><span class="k">class</span> <span class="nc">JcModel</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Description</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ide</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="c1">#: Basic attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">ide</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">algo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_algo</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;ALGORITHM&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">judge_type</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;JUDGMENT_TYPE&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">net</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_network</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_steps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_time_steps</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;NUM_ITERATIONS&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">judgments</span> <span class="o">=</span> <span class="n">JudgmentModel</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_steps</span><span class="p">)</span>
+        <span class="c1">#: Resource allocation attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="o">=</span> <span class="n">ResourceModel</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_steps</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">res_alloc_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">v_r</span>
+        <span class="c1">#: Results attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_out_dir</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;OUTPUT_DIR&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;MAGNITUDE&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_judge</span> <span class="o">=</span> <span class="n">indputils</span><span class="o">.</span><span class="n">INDPResults</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_real</span> <span class="o">=</span> <span class="n">indputils</span><span class="o">.</span><span class="n">INDPResults</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+<div class="viewcode-block" id="JcModel.set_out_dir"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.JcModel.set_out_dir">[docs]</a>    <span class="k">def</span> <span class="nf">set_out_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">mag</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        root : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+<span class="sd">        mag : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        output_dir : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">output_dir</span> <span class="o">=</span> <span class="n">root</span><span class="o">+</span><span class="s1">&#39;_L&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;_m&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">mag</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_v&quot;</span><span class="o">+</span>\
+            <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">judge_type</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">res_alloc_type</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">res_alloc_type</span> <span class="o">==</span> <span class="s1">&#39;AUCTION&#39;</span><span class="p">:</span>
+            <span class="n">output_dir</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">auction_model</span><span class="o">.</span><span class="n">auction_type</span><span class="o">+</span>\
+                <span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">auction_model</span><span class="o">.</span><span class="n">valuation_type</span>
+        <span class="k">return</span> <span class="n">output_dir</span></div>
+<div class="viewcode-block" id="JcModel.set_algo"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.JcModel.set_algo">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">set_algo</span><span class="p">(</span><span class="n">algorithm</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        algorithm : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">algorithm</span> <span class="o">!=</span> <span class="s1">&#39;JC&#39;</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s1">&#39;Wrong Algorithm. It should be JC.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;JC&#39;</span></div>
+<div class="viewcode-block" id="JcModel.set_network"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.JcModel.set_network">[docs]</a>    <span class="k">def</span> <span class="nf">set_network</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="s2">&quot;N&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s1">&#39;No initial network object for: &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">judge_type</span><span class="o">+</span><span class="s1">&#39;, &#39;</span><span class="o">+</span>\
+                     <span class="bp">self</span><span class="o">.</span><span class="n">res_alloc_type</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">])</span> <span class="c1">#!!! deepcopy</span></div>
+
+<div class="viewcode-block" id="JcModel.set_time_steps"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.JcModel.set_time_steps">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">set_time_steps</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">num_iter</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        T : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+<span class="sd">        num_iter : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        num_iter : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">T</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span><span class="c1">#!!! to be modified in futher expansions</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s1">&#39;ERROR: T!=1, JC currently only supports iINDP, not td_INDP.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">num_iter</span></div>
+
+<div class="viewcode-block" id="JcModel.recal_result_sum"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.JcModel.recal_result_sum">[docs]</a>    <span class="k">def</span> <span class="nf">recal_result_sum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t_step</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t_step : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># compute total demand of all layers and each layer</span>
+        <span class="n">total_demand</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">total_demand_layer</span> <span class="o">=</span> <span class="p">{</span><span class="n">l</span><span class="p">:</span><span class="mf">0.0</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="n">demand_value</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">demand</span>
+            <span class="k">if</span> <span class="n">demand_value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">total_demand</span> <span class="o">+=</span> <span class="n">demand_value</span>
+                <span class="n">total_demand_layer</span><span class="p">[</span><span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">+=</span> <span class="n">demand_value</span>
+
+        <span class="n">max_run_time</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">max_rtime_r</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">cost_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_judge</span><span class="o">.</span><span class="n">cost_types</span><span class="p">:</span>
+            <span class="n">sum_temp</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">sum_temp_r</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cost_type</span> <span class="o">!=</span> <span class="s1">&#39;Under Supply Perc&#39;</span><span class="p">:</span>
+                    <span class="n">sum_temp</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_judge</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t_step</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="n">cost_type</span><span class="p">]</span>
+                    <span class="n">sum_temp_r</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_real</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t_step</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="n">cost_type</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">factor</span> <span class="o">=</span> <span class="n">total_demand_layer</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">/</span><span class="n">total_demand</span>
+                    <span class="n">sum_temp</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_judge</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t_step</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="n">cost_type</span><span class="p">]</span><span class="o">*</span><span class="n">factor</span>
+                    <span class="n">sum_temp_r</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_real</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t_step</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="n">cost_type</span><span class="p">]</span><span class="o">*</span><span class="n">factor</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results_judge</span><span class="o">.</span><span class="n">add_cost</span><span class="p">(</span><span class="n">t_step</span><span class="p">,</span> <span class="n">cost_type</span><span class="p">,</span> <span class="n">sum_temp</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results_real</span><span class="o">.</span><span class="n">add_cost</span><span class="p">(</span><span class="n">t_step</span><span class="p">,</span> <span class="n">cost_type</span><span class="p">,</span> <span class="n">sum_temp_r</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_judge</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t_step</span><span class="p">][</span><span class="s1">&#39;run_time&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_run_time</span><span class="p">:</span>
+                <span class="n">max_run_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_judge</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t_step</span><span class="p">][</span><span class="s1">&#39;run_time&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_real</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t_step</span><span class="p">][</span><span class="s1">&#39;run_time&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_rtime_r</span><span class="p">:</span>
+                <span class="n">max_rtime_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_real</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t_step</span><span class="p">][</span><span class="s1">&#39;run_time&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_judge</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t_step</span><span class="p">][</span><span class="s1">&#39;actions&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">results_judge</span><span class="o">.</span><span class="n">add_action</span><span class="p">(</span><span class="n">t_step</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">save_layer</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">results_real</span><span class="o">.</span><span class="n">add_action</span><span class="p">(</span><span class="n">t_step</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">save_layer</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_judge</span><span class="o">.</span><span class="n">add_run_time</span><span class="p">(</span><span class="n">t_step</span><span class="p">,</span> <span class="n">max_run_time</span><span class="p">,</span> <span class="n">save_layer</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_real</span><span class="o">.</span><span class="n">add_run_time</span><span class="p">(</span><span class="n">t_step</span><span class="p">,</span> <span class="n">max_rtime_r</span><span class="p">,</span> <span class="n">save_layer</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JcModel.save_results_to_file"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.JcModel.save_results_to_file">[docs]</a>    <span class="k">def</span> <span class="nf">save_results_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sample : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">output_dir_agents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="o">+</span><span class="s1">&#39;/agents&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_dir_agents</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir_agents</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_judge</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">sample</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_real</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;real&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_judge</span><span class="o">.</span><span class="n">to_csv_layer</span><span class="p">(</span><span class="n">output_dir_agents</span><span class="p">,</span> <span class="n">sample</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_real</span><span class="o">.</span><span class="n">to_csv_layer</span><span class="p">(</span><span class="n">output_dir_agents</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;real&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JcModel.save_object_to_file"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.JcModel.save_object_to_file">[docs]</a>    <span class="k">def</span> <span class="nf">save_object_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sample : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="o">+</span><span class="s1">&#39;/objs_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">output</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JcModel.correct_results_real"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.JcModel.correct_results_real">[docs]</a>    <span class="k">def</span> <span class="nf">correct_results_real</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lyr</span><span class="p">,</span> <span class="n">t_step</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        lyr : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+<span class="sd">        t_step : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">rslts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_judge</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">lyr</span><span class="p">][</span><span class="n">t_step</span><span class="p">]</span>
+        <span class="n">rslts_real</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_real</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">lyr</span><span class="p">][</span><span class="n">t_step</span><span class="p">]</span>
+        <span class="n">rslts_real</span><span class="p">[</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="s2">&quot;Node&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rslts</span><span class="p">[</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="s2">&quot;Node&quot;</span><span class="p">]</span>
+        <span class="n">rslts_real</span><span class="p">[</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="s2">&quot;Arc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rslts</span><span class="p">[</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="s2">&quot;Arc&quot;</span><span class="p">]</span>
+        <span class="n">rslts_real</span><span class="p">[</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rslts</span><span class="p">[</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="s2">&quot;Space Prep&quot;</span><span class="p">]</span>
+        <span class="n">rslts_real</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">rslts</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">]]</span></div></div>
+
+<div class="viewcode-block" id="JudgmentModel"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.JudgmentModel">[docs]</a><span class="k">class</span> <span class="nc">JudgmentModel</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Description</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">t_steps</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">judgment_type</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;JUDGMENT_TYPE&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">judged_nodes</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">:{</span><span class="n">l</span><span class="p">:{}</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]}</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t_steps</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dest_nodes</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">:{</span><span class="n">l</span><span class="p">:{}</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]}</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t_steps</span><span class="p">)}</span>
+
+<div class="viewcode-block" id="JudgmentModel.save_judgments"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.JudgmentModel.save_judgments">[docs]</a>    <span class="k">def</span> <span class="nf">save_judgments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">judge_dict</span><span class="p">,</span> <span class="n">lyr</span><span class="p">,</span> <span class="n">t_step</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        only for damage dependee nodes and their depndents</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        obj : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+<span class="sd">        judge_dict : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+<span class="sd">        lyr : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+<span class="sd">        t_step : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">is_interdep</span> <span class="ow">and</span> <span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">lyr</span> <span class="ow">and</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">lyr</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">functionality</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">judged_nodes</span><span class="p">[</span><span class="n">t_step</span><span class="p">][</span><span class="n">lyr</span><span class="p">][</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">judge_dict</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">u</span><span class="p">]]</span>
+                    <span class="c1">#!!! td-INDP: 0 in judge_dict[0] should be replaced</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">dest_nodes</span><span class="p">[</span><span class="n">t_step</span><span class="p">][</span><span class="n">lyr</span><span class="p">][</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">u</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="JudgmentModel.create_judgment_dict"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.JudgmentModel.create_judgment_dict">[docs]</a>    <span class="k">def</span> <span class="nf">create_judgment_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">layers_tbj</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">judge_type_forced</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Creates a functionality map for input into the functionality parameter in the indp function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        obj : JcModel instance</span>
+<span class="sd">            DESCRIPTION.</span>
+<span class="sd">        layers_tbj : list</span>
+<span class="sd">            List of layers to be judged, which can be different</span>
+<span class="sd">            from all layers of the network or controlled layers.</span>
+<span class="sd">        T : int, optional</span>
+<span class="sd">            DESCRIPTION. The default is 1</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        functionality : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">judge_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">judgment_type</span>
+        <span class="k">if</span> <span class="n">judge_type_forced</span><span class="p">:</span>
+            <span class="n">judge_type</span> <span class="o">=</span> <span class="n">judge_type_forced</span>
+        <span class="n">functionality</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">g_prime_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>\
+                         <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">net_id</span> <span class="ow">in</span> <span class="n">layers_tbj</span><span class="p">]</span>
+        <span class="n">g_prime</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">g_prime_nodes</span><span class="p">)</span>
+        <span class="n">N_prime</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">g_prime</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>\
+                   <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">functionality</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">]</span>
+        <span class="n">N_prime_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">g_prime</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>\
+                         <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">functionality</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">):</span>
+            <span class="n">functionality</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">functional_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1"># Generate resoration probabilities and corresponding bernoulli experiments</span>
+            <span class="c1"># for demand-based and deterministic demand-based judgments</span>
+            <span class="c1"># Updates the bernoulli experiments (not the resoration probabilities) for each t</span>
+            <span class="n">interdep_src</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">det_priority</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="n">judge_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;DEMAND&#39;</span><span class="p">,</span> <span class="s1">&#39;DET-DEMAND&#39;</span><span class="p">]:</span>
+                <span class="n">priority_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">demand_based_priority_list</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">net</span><span class="p">,</span> <span class="n">layers_tbj</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">judge_type</span> <span class="o">==</span> <span class="s1">&#39;DET-DEMAND&#39;</span><span class="p">:</span>
+                    <span class="n">sorted_priority_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">priority_list</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+                                                  <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">num_layers</span> <span class="o">=</span> <span class="mi">1</span> <span class="c1">#len(obj.layers)+1</span>
+                    <span class="n">res_cap</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="o">//</span><span class="n">num_layers</span>
+                    <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">is_interdep</span> <span class="ow">and</span> <span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">layers_tbj</span><span class="p">:</span>
+                            <span class="n">interdep_src</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sorted_priority_list</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">N_prime_nodes</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">det_priority</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">res_cap</span><span class="p">)</span> <span class="ow">and</span>\
+                            <span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">interdep_src</span><span class="p">):</span>
+                            <span class="n">det_priority</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="c1"># Nodes that are judged/known to be functional for t_p&lt;t</span>
+            <span class="k">for</span> <span class="n">t_p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">functionality</span><span class="p">[</span><span class="n">t_p</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">functionality</span><span class="p">[</span><span class="n">t_p</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">:</span>
+                        <span class="n">functional_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">g_prime</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                <span class="c1">#print &quot;layers=&quot;, layers, &quot;n=&quot;, n</span>
+                <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">net_id</span> <span class="ow">in</span> <span class="n">layers_tbj</span><span class="p">:</span>
+                    <span class="c1"># Undamged Nodes don&#39;t get judged</span>
+                    <span class="k">if</span> <span class="n">g_prime</span><span class="o">.</span><span class="n">has_node</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">N_prime</span><span class="p">:</span>
+                        <span class="n">functionality</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+                    <span class="c1"># Nodes in functional nodes don&#39;t get judged</span>
+                    <span class="k">elif</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">functional_nodes</span><span class="p">:</span>
+                        <span class="n">functionality</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+                    <span class="c1"># Judgments</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">judge_type</span> <span class="o">==</span> <span class="s2">&quot;OPTIMISTIC&quot;</span><span class="p">:</span>
+                            <span class="n">functionality</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+                        <span class="k">elif</span> <span class="n">judge_type</span> <span class="o">==</span> <span class="s2">&quot;PESSIMISTIC&quot;</span><span class="p">:</span>
+                            <span class="n">functionality</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                        <span class="k">elif</span> <span class="n">judge_type</span> <span class="o">==</span> <span class="s2">&quot;DEMAND&quot;</span><span class="p">:</span>
+                            <span class="n">functionality</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">priority_list</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="k">elif</span> <span class="n">judge_type</span> <span class="o">==</span> <span class="s2">&quot;DET-DEMAND&quot;</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">det_priority</span><span class="p">:</span>
+                                <span class="n">functionality</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">functionality</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                        <span class="k">elif</span> <span class="n">judge_type</span> <span class="o">==</span> <span class="s2">&quot;RANDOM&quot;</span><span class="p">:</span>
+                            <span class="n">functionality</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
+                        <span class="k">elif</span> <span class="n">judge_type</span> <span class="o">==</span> <span class="s2">&quot;REALISTIC&quot;</span><span class="p">:</span>
+                            <span class="n">functionality</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">functionality</span>
+                        <span class="k">elif</span> <span class="n">judge_type</span> <span class="o">==</span> <span class="s2">&quot;BHM&quot;</span><span class="p">:</span>
+                            <span class="k">pass</span> <span class="c1">#!!! Add BHM Judgment</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">functionality</span><span class="p">[</span><span class="n">t</span><span class="p">]:</span>
+                                <span class="n">functionality</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">return</span> <span class="n">functionality</span></div>
+<div class="viewcode-block" id="JudgmentModel.demand_based_priority_list"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.JudgmentModel.demand_based_priority_list">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">demand_based_priority_list</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">layers_tbj</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        This function generates the prioirt list for the demand-based judgment</span>
+<span class="sd">        Here, an agent judges that the dependee node in the dependee network is repaired</span>
+<span class="sd">        until the next time step with the probability that is equal to the demand/supply</span>
+<span class="sd">        value of the dependee node divided by the maximum demand/supply value in the dependee</span>
+<span class="sd">        network. Also, based on the probability, a judgment is generated for the dependee node.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        N : InfrastructureNetwork instance</span>
+<span class="sd">            DESCRIPTION.</span>
+<span class="sd">        layers_tbj : list</span>
+<span class="sd">            List of layers to be judged, which can be different</span>
+<span class="sd">            from all layers of the network or controlled layers.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        prob : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">max_values</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">layers_tbj</span><span class="p">:</span>
+            <span class="n">g_lyr_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">N</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>\
+                           <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">net_id</span> <span class="o">==</span> <span class="n">l</span><span class="p">]</span>
+            <span class="n">g_lyr</span> <span class="o">=</span> <span class="n">N</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">g_lyr_nodes</span><span class="p">)</span>
+            <span class="n">max_values</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="s1">&#39;Demand&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">demand</span>\
+                                           <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">g_lyr</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)])</span>
+            <span class="n">max_values</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="s1">&#39;Supply&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">demand</span>\
+                                           <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">g_lyr</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)])</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">g_lyr</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                <span class="n">prob_node</span> <span class="o">=</span> <span class="mf">0.5</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">prob</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">demand</span>
+                    <span class="k">if</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">prob_node</span> <span class="o">=</span> <span class="n">value</span><span class="o">/</span><span class="n">max_values</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="s1">&#39;Supply&#39;</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">prob_node</span> <span class="o">=</span> <span class="n">value</span><span class="o">/</span><span class="n">max_values</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="s1">&#39;Demand&#39;</span><span class="p">]</span>
+                <span class="n">prob</span><span class="p">[</span><span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="n">prob_node</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="o">-</span><span class="n">prob_node</span><span class="p">,</span> <span class="n">prob_node</span><span class="p">])]</span>
+        <span class="k">return</span> <span class="n">prob</span></div></div>
+
+<div class="viewcode-block" id="ResourceModel"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.ResourceModel">[docs]</a><span class="k">class</span> <span class="nc">ResourceModel</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    DESCRIPTION</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">time_steps</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_steps</span> <span class="o">=</span> <span class="n">time_steps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="mf">0.0</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_steps</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_r</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">:{</span><span class="n">l</span><span class="p">:</span><span class="mi">0</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]}</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_steps</span><span class="p">)}</span>
+        <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;RES_ALLOC_TYPE&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;MDA&quot;</span><span class="p">,</span> <span class="s2">&quot;MAA&quot;</span><span class="p">,</span> <span class="s2">&quot;MCA&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;AUCTION&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auction_model</span> <span class="o">=</span> <span class="n">AuctionModel</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_steps</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sum_resource</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;V&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;RES_ALLOC_TYPE&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;UNIFORM&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;UNIFORM&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_uniform_res</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;RES_ALLOC_TYPE&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;LAYER_FIXED&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;LAYER_FIXED&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_lf_res</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s1">&#39;Unsupported resource allocation type: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;RES_ALLOC_TYPE&#39;</span><span class="p">]))</span>
+<div class="viewcode-block" id="ResourceModel.set_uniform_res"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.ResourceModel.set_uniform_res">[docs]</a>    <span class="k">def</span> <span class="nf">set_uniform_res</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;V&#39;</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sum_resource</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;V&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_steps</span><span class="p">):</span>
+                <span class="n">v_r_uni</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">sum_resource</span><span class="o">//</span><span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]}</span>
+                <span class="n">rnd_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_resource</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]),</span>
+                                           <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">rnd_idx</span><span class="p">:</span>
+                    <span class="n">v_r_uni</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">v_r</span><span class="p">[</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">v_r_uni</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s1">&#39;Number of resources is an integer for the resource allocation type UNIFORM.&#39;</span><span class="p">)</span></div>
+<div class="viewcode-block" id="ResourceModel.set_lf_res"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.ResourceModel.set_lf_res">[docs]</a>    <span class="k">def</span> <span class="nf">set_lf_res</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;V&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">])</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s1">&#39;Length of resource vector and layer vector should be the same for &#39;</span><span class="o">+</span>\
+                     <span class="s1">&#39;the resource allocation type FIXED_LAYER.&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_resource</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;V&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_steps</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">v_r</span><span class="p">[</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;V&#39;</span><span class="p">][</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">l</span><span class="p">)])</span></div></div>
+
+<div class="viewcode-block" id="AuctionModel"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.AuctionModel">[docs]</a><span class="k">class</span> <span class="nc">AuctionModel</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    DESCRIPTION</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">time_steps</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auction_type</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;RES_ALLOC_TYPE&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valuation_type</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;VALUATION_TYPE&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bidder_type</span> <span class="o">=</span> <span class="s1">&#39;truthful&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">winners</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">:{}</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">time_steps</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win_bids</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">:{}</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">time_steps</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win_prices</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">:{}</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">time_steps</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bids</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">:{</span><span class="n">l</span><span class="p">:{}</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]}</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">time_steps</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valuations</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">:{</span><span class="n">l</span><span class="p">:{}</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]}</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">time_steps</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valuation_time</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">:{</span><span class="n">l</span><span class="p">:</span><span class="mf">0.0</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]}</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">time_steps</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auction_time</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="mf">0.0</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">time_steps</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poa</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="mf">0.0</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">time_steps</span><span class="p">)}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">valuation_type</span> <span class="o">==</span> <span class="s1">&#39;STM&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stm_pred_dict</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;STM_MODEL_DICT&#39;</span><span class="p">]</span>
+<div class="viewcode-block" id="AuctionModel.bidding"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.AuctionModel.bidding">[docs]</a>    <span class="k">def</span> <span class="nf">bidding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_step</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        time_step : TYPE</span>
+<span class="sd">            DESCRIPTION.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">lval</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">valuations</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">vval</span> <span class="ow">in</span> <span class="n">lval</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bidder_type</span> <span class="o">==</span> <span class="s1">&#39;truthful&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">bids</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">vval</span></div>
+<div class="viewcode-block" id="AuctionModel.auction_resources"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.AuctionModel.auction_resources">[docs]</a>    <span class="k">def</span> <span class="nf">auction_resources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">print_cmd</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">compute_poa</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        allocate resources based on given types of auction and valuatoin.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        obj : JcModel</span>
+<span class="sd">            DESCRIPTION.</span>
+<span class="sd">        time_step : int</span>
+<span class="sd">            DESCRIPTION.</span>
+<span class="sd">        print_cmd : bool, optional</span>
+<span class="sd">            DESCRIPTION. The default is True.</span>
+<span class="sd">        compute_poa : bool, optional</span>
+<span class="sd">            DESCRIPTION. The default is False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1">#: Compute Valuations</span>
+        <span class="k">if</span> <span class="n">print_cmd</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Compute Valuations: &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">valuation_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_valuations</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">time_step</span><span class="p">,</span> <span class="n">print_cmd</span><span class="o">=</span><span class="n">print_cmd</span><span class="p">,</span>
+                                <span class="n">compute_optimal_valuation</span><span class="o">=</span><span class="n">compute_poa</span><span class="p">)</span>
+        <span class="c1">#: Bidding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bidding</span><span class="p">(</span><span class="n">time_step</span><span class="p">)</span>
+        <span class="c1">#: Auctioning</span>
+        <span class="k">if</span> <span class="n">print_cmd</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Auction: &quot;</span> <span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">auction_type</span><span class="p">)</span>
+        <span class="n">start_time_auction</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auction_type</span> <span class="o">==</span> <span class="s2">&quot;MDA&quot;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">print_cmd</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Resource &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;: &#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="n">cur_bid</span> <span class="o">=</span> <span class="p">{</span><span class="n">l</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">bids</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">v_r</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">l</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>\
+                           <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">}</span>
+                <span class="n">winner</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">cur_bid</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">1</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">winners</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">winner</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">win_bids</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cur_bid</span><span class="p">[</span><span class="n">winner</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">win_prices</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cur_bid</span><span class="p">[</span><span class="n">winner</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">cur_bid</span><span class="p">[</span><span class="n">winner</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">print_cmd</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Player </span><span class="si">%d</span><span class="s2"> wins!&quot;</span> <span class="o">%</span> <span class="n">winner</span><span class="p">)</span>
+                    <span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">v_r</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">winner</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">print_cmd</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No auction winner!&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auction_type</span> <span class="o">==</span> <span class="s2">&quot;MAA&quot;</span><span class="p">:</span>
+            <span class="n">all_bids</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">lval</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bids</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">vval</span> <span class="ow">in</span> <span class="n">lval</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">all_bids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vval</span><span class="p">)</span>
+            <span class="n">all_bids</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+            <span class="n">Q</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="p">{</span><span class="n">l</span><span class="p">:</span><span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">}</span>
+            <span class="n">price</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">while</span> <span class="n">Q</span> <span class="o">&gt;</span> <span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="p">:</span>
+                <span class="n">price</span> <span class="o">=</span> <span class="n">all_bids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">Q</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+                    <span class="n">q</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bids</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="n">price</span><span class="p">:</span>
+                            <span class="n">q</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">break</span>
+                    <span class="n">Q</span> <span class="o">+=</span> <span class="n">q</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+                <span class="n">all_bids</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">all_bids</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">price</span><span class="p">]</span>
+            <span class="n">num_assigned_res</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+                <span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">v_r</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="n">l</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="n">l</span><span class="p">]):</span>
+                    <span class="k">if</span> <span class="n">print_cmd</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Resource &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">num_assigned_res</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;: Player &#39;</span><span class="o">+</span>\
+                              <span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; wins!&#39;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">winners</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">num_assigned_res</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">l</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">win_bids</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">num_assigned_res</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bids</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">win_prices</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">num_assigned_res</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">price</span>
+                    <span class="n">num_assigned_res</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">Q</span> <span class="o">&lt;</span> <span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="o">-</span><span class="n">Q</span><span class="p">)):</span>
+                    <span class="k">if</span> <span class="n">print_cmd</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Resource &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">Q</span><span class="o">+</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;: No auction winner!&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auction_type</span> <span class="o">==</span> <span class="s2">&quot;MCA&quot;</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">gurobipy</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="s1">&#39;auction&#39;</span><span class="p">)</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">setParam</span><span class="p">(</span><span class="s1">&#39;OutputFlag&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="c1"># Add allocation variables and populate objective function.</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="p">):</span>
+                    <span class="n">m</span><span class="o">.</span><span class="n">addVar</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;y_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;, &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">),</span> <span class="n">vtype</span><span class="o">=</span><span class="n">gurobipy</span><span class="o">.</span><span class="n">GRB</span><span class="o">.</span><span class="n">BINARY</span><span class="p">,</span>
+                             <span class="n">obj</span><span class="o">=</span><span class="nb">sum</span><span class="p">([</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">bids</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">vv</span><span class="p">]</span> <span class="k">for</span> <span class="n">vv</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">v</span><span class="o">+</span><span class="mi">2</span><span class="p">)]))</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+            <span class="c1"># Add constraints</span>
+            <span class="n">num_alloc_res</span> <span class="o">=</span> <span class="n">gurobipy</span><span class="o">.</span><span class="n">LinExpr</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+                <span class="n">each_bidder_alloc</span> <span class="o">=</span> <span class="n">gurobipy</span><span class="o">.</span><span class="n">LinExpr</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="p">):</span>
+                    <span class="n">num_alloc_res</span> <span class="o">+=</span> <span class="n">m</span><span class="o">.</span><span class="n">getVarByName</span><span class="p">(</span><span class="s1">&#39;y_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;, &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">))</span><span class="o">*</span><span class="p">(</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">each_bidder_alloc</span> <span class="o">+=</span> <span class="n">m</span><span class="o">.</span><span class="n">getVarByName</span><span class="p">(</span><span class="s1">&#39;y_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;, &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">))</span>
+                <span class="n">m</span><span class="o">.</span><span class="n">addConstr</span><span class="p">(</span><span class="n">each_bidder_alloc</span><span class="p">,</span> <span class="n">gurobipy</span><span class="o">.</span><span class="n">GRB</span><span class="o">.</span><span class="n">LESS_EQUAL</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span>
+                            <span class="s2">&quot;Bidder &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot; allocation&quot;</span><span class="p">)</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">addConstr</span><span class="p">(</span><span class="n">num_alloc_res</span><span class="p">,</span> <span class="n">gurobipy</span><span class="o">.</span><span class="n">GRB</span><span class="o">.</span><span class="n">LESS_EQUAL</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="p">,</span>
+                        <span class="s2">&quot;Total number of resources&quot;</span><span class="p">)</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">optimize</span><span class="p">()</span>
+            <span class="c1"># m.write(&#39;model.lp&#39;)</span>
+            <span class="c1"># m.write(&#39;model.sol&#39;)</span>
+            <span class="n">num_assigned_res</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">getVarByName</span><span class="p">(</span><span class="s1">&#39;y_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;, &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">))</span><span class="o">.</span><span class="n">x</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">v_r</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">vv</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="n">print_cmd</span><span class="p">:</span>
+                                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Resource &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">num_assigned_res</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;: Player &#39;</span><span class="o">+</span>\
+                                      <span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; wins!&#39;</span><span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">winners</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">num_assigned_res</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">l</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">win_bids</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">num_assigned_res</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> \
+                                <span class="bp">self</span><span class="o">.</span><span class="n">bids</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">vv</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">win_prices</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">num_assigned_res</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> \
+                                <span class="bp">self</span><span class="o">.</span><span class="n">bids</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">vv</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                            <span class="n">num_assigned_res</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auction_time</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start_time_auction</span>
+        <span class="k">if</span> <span class="n">compute_poa</span><span class="p">:</span>
+            <span class="n">winners_valuations</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">winner</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">winners</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">winners_valuations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">valuations</span><span class="p">[</span><span class="n">time_step</span><span class="p">][</span><span class="n">winner</span><span class="p">][</span><span class="n">v</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">winners_valuations</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">poa</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">poa</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">winners_valuations</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">poa</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;nan&#39;</span></div>
+<div class="viewcode-block" id="AuctionModel.compute_valuations"><a class="viewcode-back" href="../dindpclasses.html#dindpclasses.AuctionModel.compute_valuations">[docs]</a>    <span class="k">def</span> <span class="nf">compute_valuations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">t_step</span><span class="p">,</span> <span class="n">print_cmd</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">compute_optimal_valuation</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Computes bidders&#39; valuations and bids for different number of resources</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        obj : JcModel instance</span>
+<span class="sd">            DESCRIPTION.</span>
+<span class="sd">        t_step : int</span>
+<span class="sd">            DESCRIPTION.</span>
+<span class="sd">        print_cmd : bool, optional</span>
+<span class="sd">            DESCRIPTION. The default is True.</span>
+<span class="sd">        compute_optimal_valuation : bool, optional</span>
+<span class="sd">            DESCRIPTION. The default is False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1">#: Calculating current total cost ###</span>
+        <span class="n">time_limit</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="mi">60</span> <span class="c1">#!!! Maybe adjusted</span>
+        <span class="n">current_total_cost</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="n">current_total_cost</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">results_real</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="n">t_step</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span>
+        <span class="c1">#: Optimal Valuation, which the optimal walfare value. Used to compute POA ###</span>
+        <span class="k">if</span> <span class="n">compute_optimal_valuation</span><span class="p">:</span>
+            <span class="n">current_optimal_tc</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">results_real</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">t_step</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span>
+            <span class="n">indp_results</span> <span class="o">=</span> <span class="n">indp</span><span class="o">.</span><span class="n">indp</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">net</span><span class="p">,</span> <span class="n">v_r</span><span class="o">=</span><span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                     <span class="n">layers</span><span class="o">=</span><span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">,</span> <span class="n">controlled_layers</span><span class="o">=</span><span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span>
+            <span class="n">optimal_tc</span> <span class="o">=</span> <span class="n">indp_results</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">poa</span><span class="p">[</span><span class="n">t_step</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_optimal_tc</span> <span class="o">-</span> <span class="n">optimal_tc</span>
+        <span class="c1">#: Compute valuations</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="n">max_val_time</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">if</span> <span class="n">print_cmd</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Bidder-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">l</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">valuation_type</span> <span class="o">==</span> <span class="s1">&#39;DTC&#39;</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="p">):</span>
+                    <span class="n">start_time_val</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                    <span class="n">neg_layer</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">layers</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">l</span><span class="p">]</span>
+                    <span class="n">functionality</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">judgments</span><span class="o">.</span><span class="n">create_judgment_dict</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">neg_layer</span><span class="p">)</span>
+                    <span class="n">indp_results</span> <span class="o">=</span> <span class="n">indp</span><span class="o">.</span><span class="n">indp</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">net</span><span class="p">,</span> <span class="n">v_r</span><span class="o">=</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">,</span>
+                                             <span class="n">controlled_layers</span><span class="o">=</span><span class="p">[</span><span class="n">l</span><span class="p">],</span> <span class="n">functionality</span><span class="o">=</span><span class="n">functionality</span><span class="p">,</span>
+                                             <span class="n">print_cmd</span><span class="o">=</span><span class="n">print_cmd</span><span class="p">,</span> <span class="n">time_limit</span><span class="o">=</span><span class="n">time_limit</span><span class="p">)</span>
+                    <span class="n">new_total_cost</span> <span class="o">=</span> <span class="n">indp_results</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">indp_results</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="p">[]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">valuations</span><span class="p">[</span><span class="n">t_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_total_cost</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">-</span><span class="n">new_total_cost</span>
+                        <span class="n">current_total_cost</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_total_cost</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">valuations</span><span class="p">[</span><span class="n">t_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                    <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start_time_val</span> <span class="o">&gt;</span> <span class="n">max_val_time</span><span class="p">:</span>
+                        <span class="n">max_val_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start_time_val</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">valuation_type</span> <span class="o">==</span> <span class="s1">&#39;DTC_uniform&#39;</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="p">):</span>
+                    <span class="n">start_time_val</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                    <span class="n">total_cost_bounds</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">jt</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;PESSIMISTIC&quot;</span><span class="p">,</span> <span class="s2">&quot;OPTIMISTIC&quot;</span><span class="p">]:</span>
+                        <span class="n">neg_layer</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">layers</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">l</span><span class="p">]</span>
+                        <span class="n">functionality</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">judgments</span><span class="o">.</span><span class="n">create_judgment_dict</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">neg_layer</span><span class="p">,</span>
+                                                                           <span class="n">judge_type_forced</span><span class="o">=</span><span class="n">jt</span><span class="p">)</span>
+                        <span class="n">indp_results</span> <span class="o">=</span> <span class="n">indp</span><span class="o">.</span><span class="n">indp</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">net</span><span class="p">,</span> <span class="n">v_r</span><span class="o">=</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">,</span>
+                                                 <span class="n">controlled_layers</span><span class="o">=</span><span class="p">[</span><span class="n">l</span><span class="p">],</span> <span class="n">functionality</span><span class="o">=</span><span class="n">functionality</span><span class="p">,</span>
+                                                 <span class="n">print_cmd</span><span class="o">=</span><span class="n">print_cmd</span><span class="p">,</span> <span class="n">time_limit</span><span class="o">=</span><span class="n">time_limit</span><span class="p">)</span>
+                        <span class="n">total_cost_bounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indp_results</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="s1">&#39;Total&#39;</span><span class="p">])</span>
+                    <span class="n">new_total_cost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">total_cost_bounds</span><span class="p">),</span>
+                                                       <span class="nb">max</span><span class="p">(</span><span class="n">total_cost_bounds</span><span class="p">),</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">current_total_cost</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">-</span><span class="n">new_total_cost</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">valuations</span><span class="p">[</span><span class="n">t_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_total_cost</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">-</span><span class="n">new_total_cost</span>
+                        <span class="n">current_total_cost</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_total_cost</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">valuations</span><span class="p">[</span><span class="n">t_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                    <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start_time_val</span> <span class="o">&gt;</span> <span class="n">max_val_time</span><span class="p">:</span>
+                        <span class="n">max_val_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start_time_val</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">valuation_type</span> <span class="o">==</span> <span class="s1">&#39;MDDN&#39;</span><span class="p">:</span>
+                <span class="n">start_time_val</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="n">g_prime_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>\
+                                 <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">net_id</span> <span class="o">==</span> <span class="n">l</span><span class="p">]</span>
+                <span class="n">g_prime</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">G</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">g_prime_nodes</span><span class="p">)</span>
+                <span class="n">penalty_dmgd_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">g_prime</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">functionality</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">demand</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">penalty_dmgd_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">demand</span><span class="o">*</span>\
+                                                          <span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">oversupply_penalty</span><span class="p">))</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">penalty_dmgd_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">demand</span><span class="o">*</span>\
+                                                          <span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;inf_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">undersupply_penalty</span><span class="p">))</span>
+                <span class="n">penalty_rsorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">penalty_dmgd_nodes</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">v</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">penalty_rsorted</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">valuations</span><span class="p">[</span><span class="n">t_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">valuations</span><span class="p">[</span><span class="n">t_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">penalty_rsorted</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+                <span class="n">max_val_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start_time_val</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">valuation_type</span> <span class="o">==</span> <span class="s1">&#39;STM&#39;</span><span class="p">:</span>
+                <span class="n">pred_dict</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">auction_model</span><span class="o">.</span><span class="n">stm_pred_dict</span>
+                <span class="n">max_val_time</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="p">):</span>
+                    <span class="n">pred_dict</span><span class="p">[</span><span class="s1">&#39;V&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="o">+</span><span class="mi">1</span>
+                    <span class="n">pred_results</span> <span class="o">=</span> <span class="n">stm</span><span class="o">.</span><span class="n">predict_resotration</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">t_step</span><span class="p">,</span> <span class="n">pred_dict</span><span class="p">)</span>
+                    <span class="n">new_total_cost</span> <span class="o">=</span> <span class="mf">0.0</span>
+                    <span class="n">equiv_run_time</span> <span class="o">=</span> <span class="mf">0.0</span>
+                    <span class="k">for</span> <span class="n">pred_s</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">pred_results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="n">new_total_cost</span> <span class="o">+=</span> <span class="n">val</span><span class="o">.</span><span class="n">results_layer</span><span class="p">[</span><span class="n">l</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span>
+                        <span class="n">equiv_run_time</span> <span class="o">+=</span> <span class="n">pred_results</span><span class="p">[</span><span class="n">pred_s</span><span class="p">]</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;run_time&#39;</span><span class="p">]</span>
+                    <span class="n">new_total_cost</span> <span class="o">/=</span> <span class="n">pred_dict</span><span class="p">[</span><span class="s1">&#39;num_pred&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">current_total_cost</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">-</span><span class="n">new_total_cost</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">valuations</span><span class="p">[</span><span class="n">t_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_total_cost</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">-</span><span class="n">new_total_cost</span>
+                        <span class="n">current_total_cost</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_total_cost</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">valuations</span><span class="p">[</span><span class="n">t_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                        
+                    <span class="k">if</span> <span class="n">equiv_run_time</span><span class="o">/</span><span class="n">pred_dict</span><span class="p">[</span><span class="s1">&#39;num_pred&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_val_time</span><span class="p">:</span>
+                        <span class="n">max_val_time</span> <span class="o">=</span> <span class="n">equiv_run_time</span><span class="o">/</span><span class="n">pred_dict</span><span class="p">[</span><span class="s1">&#39;num_pred&#39;</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">valuation_type</span> <span class="o">==</span> <span class="s1">&#39;DTC-LP&#39;</span><span class="p">:</span>
+                <span class="n">start_time_val</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">sum_resource</span><span class="p">):</span>
+                    <span class="n">neg_layer</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">layers</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">l</span><span class="p">]</span>
+                    <span class="n">functionality</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">judgments</span><span class="o">.</span><span class="n">create_judgment_dict</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">neg_layer</span><span class="p">)</span>
+                    <span class="n">indp_results</span> <span class="o">=</span> <span class="n">indpalt</span><span class="o">.</span><span class="n">indp_relax</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">net</span><span class="p">,</span> <span class="n">v_r</span><span class="o">=</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="n">obj</span><span class="o">.</span><span class="n">layers</span><span class="p">,</span>
+                                             <span class="n">controlled_layers</span><span class="o">=</span><span class="p">[</span><span class="n">l</span><span class="p">],</span> <span class="n">functionality</span><span class="o">=</span><span class="n">functionality</span><span class="p">,</span>
+                                             <span class="n">print_cmd</span><span class="o">=</span><span class="n">print_cmd</span><span class="p">,</span> <span class="n">time_limit</span><span class="o">=</span><span class="n">time_limit</span><span class="p">)</span>
+                    <span class="n">new_total_cost</span> <span class="o">=</span> <span class="n">indp_results</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;costs&#39;</span><span class="p">][</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">indp_results</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="p">[]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">valuations</span><span class="p">[</span><span class="n">t_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_total_cost</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">-</span><span class="n">new_total_cost</span>
+                        <span class="n">current_total_cost</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_total_cost</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">valuations</span><span class="p">[</span><span class="n">t_step</span><span class="p">][</span><span class="n">l</span><span class="p">][</span><span class="n">v</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                    <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start_time_val</span> <span class="o">&gt;</span> <span class="n">max_val_time</span><span class="p">:</span>
+                        <span class="n">max_val_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start_time_val</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valuation_time</span><span class="p">[</span><span class="n">t_step</span><span class="p">][</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_val_time</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Hesam Talebiyan
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
