@@ -1,4 +1,4 @@
-Welcome to Decenalized Decision Making's documentation
+Decentralized Decision Making's documentation
 =======================================================
 .. toctree::
    :maxdepth: 2
@@ -6,8 +6,9 @@ Welcome to Decenalized Decision Making's documentation
  
    main_vars.rst
    run_main.rst
-   dindp.rst
-   dindpclasses.rst
+   indp_main.rst
+   dindp_main.rst
+   gameclasses.rst
    
 Indices and tables
 ==================
@@ -15,3 +16,8 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+Future works
+===================
+.. todolist::
+

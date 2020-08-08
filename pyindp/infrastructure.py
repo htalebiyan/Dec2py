@@ -63,6 +63,9 @@ class InfrastructureSpace(object):
         self.cost=cost
 
 class InfrastructureNetwork(object):
+    '''
+    Stores information of the infrastructure network
+    '''
     def __init__(self,id):
         self.G=nx.DiGraph()
         self.S=[]
