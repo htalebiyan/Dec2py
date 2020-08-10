@@ -741,7 +741,7 @@ class AuctionModel():
                         current_total_cost[l] = new_total_cost
                     else:
                         self.valuations[t_step][l][v+1] = 0.0
-                        
+
                     if equiv_run_time/pred_dict['num_pred'] > max_val_time:
                         max_val_time = equiv_run_time/pred_dict['num_pred']
             elif self.valuation_type == 'DTC-LP':

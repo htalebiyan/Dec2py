@@ -1,6 +1,6 @@
-''' 
+'''
 This module contains functions to run decentralized restoration for interdepndent networks
-using Judgment Call method :cite:`Talebiyan2019c,Talebiyan2019`, read the results, 
+using Judgment Call method :cite:`Talebiyan2019c,Talebiyan2019`, read the results,
 and compute comparison measures.
 '''
 import os.path
@@ -314,7 +314,7 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
         It is used only when the reference method is JC. The default is 'nan'.
     ref_vt : str, optional
         Referece val;uation type to computue relative measure in comparison to.
-        It is used only when the reference method is JC, and the reference resource 
+        It is used only when the reference method is JC, and the reference resource
         allocation type is Auntion. The default is 'nan'.
     cost_type : str, optional
         Cost type for which the relative measure is computed. The default is 'Total'.
@@ -602,7 +602,7 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
                           list_high_dam_add=None, synthetic_dir=None):
     '''
     This fucntion returns all combinations of magnitude, sample, judgment type,
-    resource allocation type, and valuation type (if applicable) involved in 
+    resource allocation type, and valuation type (if applicable) involved in
     decentralized and centralized analyses. The returend dictionary are used by
     other functions to read results and calculate comparison measures.
 
@@ -610,7 +610,7 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
     ----------
     database : str
         Name of the initial damage database. \n
-        options: 
+        options:
             For shelby county network: 'shelby', 'random', 'ANDRES', 'WU' \n
             For synthetic networks: 'synthetic'
     mags : range
@@ -629,7 +629,7 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
         List of valuation types.
     suffixes : list, optional
         List of suffixes of result files. For JC results, it should be set to 'real',
-        as JC entails judge-based performance and costs and realized ones, and the 
+        as JC entails judge-based performance and costs and realized ones, and the
         latter one is of interest. The default is ''.
     list_high_dam_add : str, optional
         Address of the file containing the list of damage scenarios that should be read
