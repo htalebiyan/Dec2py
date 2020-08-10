@@ -1,4 +1,8 @@
-''' Decentralized restoration for interdepndent networks'''
+''' 
+This module contains functions to run decentralized restoration for interdepndent networks
+using Judgment Call method :cite:`Talebiyan2019c,Talebiyan2019`, read the results, 
+and compute comparison measures.
+'''
 import os.path
 import operator
 import copy
@@ -14,15 +18,13 @@ from dindpclasses import JcModel
 
 def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False):
     '''
-    Solves an INDP problem with specified parameters using a decentralized hueristic.
-    Judgment Call
+    Finds interdepndent restoration strategies using a decentralized hueristic,
+    Judgment Call :cite:`Talebiyan2019c,Talebiyan2019`.
 
     Parameters
     ----------
     params : dict
-         Global parameters.
-    T : int, optional
-         Number of time steps per analyses (1 for D-iINDP and T>1 for D-tdINDP). The default is 1.
+         Global parameters, including number of iterations, judgment type, etc.
     save_jc : bool, optional
         If true, the results are saved to files. The default is True.
     print_cmd : bool, optional
@@ -32,7 +34,8 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
 
     Returns
     -------
-    None :
+    :
+        None
 
     '''
     if "NUM_ITERATIONS" not in params:
@@ -142,27 +145,21 @@ def realized_performance(obj, t_step, functionality, judger_layer, print_cmd=Fal
 
     Parameters
     ----------
-    N : TYPE
-        DESCRIPTION.
-    indp_results : TYPE
-        DESCRIPTION.
-    functionality : TYPE
-        DESCRIPTION.
-    layers : TYPE
-        DESCRIPTION.
-    T : TYPE, optional
-        DESCRIPTION. The default is 1.
-    judger_layer : TYPE, optional
-        DESCRIPTION. The default is [1].
-    print_cmd : TYPE, optional
-        DESCRIPTION. The default is False.
+    obj : :class:`~dindpclasses.JcModel`
+        Objects that contain the Judgment Call model.
+    t_step : int
+        Current time step.
+    functionality : dict
+        Dictionary of actual functionality state of nodes in dependee networks.
+    judger_layer : int
+        Name of the layer whose agent has made the judgment.
+    print_cmd : bool, optional
+        If true, the results are printed to console. The default is False.
 
     Returns
     -------
-    indp_results_real : TYPE
-        DESCRIPTION.
-    realizations : TYPE
-        DESCRIPTION.
+    indp_results_real : :class:`~indputils.INDPResults`
+        Results that represesnt the realized perforamnce of the decentralized strategy.
 
     '''
     time_limit = 10*60 #!!! Might be adjusted later
@@ -190,26 +187,34 @@ def realized_performance(obj, t_step, functionality, judger_layer, print_cmd=Fal
 def read_results(combinations, optimal_combinations, cost_types, root_result_dir='../results/',
                  deaggregate=False, rslt_dir_lyr='/agents'):
     '''
+    This function reads the results of analyses (INDP, JC, etc.) and the corresponding
+    objects from file and aggregates the results in a dictionary.
 
     Parameters
     ----------
-    combinations : TYPE
-        DESCRIPTION.
-    optimal_combinations : TYPE
-        DESCRIPTION.
-    suffixes : TYPE
-        DESCRIPTION.
-    root_result_dir : TYPE, optional
-        DESCRIPTION. The default is '../results/'.
-    deaggregate : TYPE, optional
-        DESCRIPTION. The default is False.
-    rslt_dir_lyr : TYPE, optional
-        DESCRIPTION. The default is '/agents'.
+    combinations : dict
+        All combinations of magnitude, sample, judgment type, resource allocation type
+        involved in the JC (or any other decentralized results) collected by
+        :func:`generate_combinations`.
+    optimal_combinations : dict
+        All combinations of magnitude, sample, judgment type, resource allocation type
+        involved in the INDP (or any other optimal results) collected by :func:`generate_combinations`.
+    cost_types : str
+        Cost types that should be read from results and will be shown in the plots.
+    root_result_dir : 'str', optional
+        Root directory where the results are stored. The default is '../results/'.
+    deaggregate : bool, optional
+        Should the deaggregated results (for seperate layers) be read. The default is False.
+    rslt_dir_lyr : str, optional
+        Directory insdie the :func:`root result directory <read_results>` where
+        the deaggregated results (for seperate layers)  are. The default is '/agents'.
 
     Returns
     -------
-    cmplt_results : TYPE
-        DESCRIPTION.
+    cmplt_results : dict
+        Dictionary that contains the read results.
+    objs : dict
+        Dictionary that contains the objects corresponding to the read results.
 
     '''
     columns = ['t', 'Magnitude', 'cost_type', 'decision_type', 'judgment_type',
@@ -284,30 +289,40 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
 def relative_performance(r_df, combinations, optimal_combinations, ref_method='indp',
                          ref_jt='nan', ref_at='nan', ref_vt='nan', cost_type='Total'):
     '''
+    This functions computes the relative performance, relative cost, and univeral
+    relative measure :cite:`Talebiyan2019c` based on results from JC and INDP.
 
     Parameters
     ----------
-    r_df : TYPE
-        DESCRIPTION.
-    combinations : TYPE
-        DESCRIPTION.
-    optimal_combinations : TYPE
-        DESCRIPTION.
-    ref_method : TYPE, optional
-        DESCRIPTION. The default is 'indp'.
-    ref_at : TYPE, optional
-        DESCRIPTION. The default is ''.
-    ref_vt : TYPE, optional
-        DESCRIPTION. The default is ''.
-    ref_vt : TYPE, optional
-        DESCRIPTION. The default is ''.
-    cost_type : TYPE, optional
-        DESCRIPTION. The default is 'Total'.
+    r_df : dict
+        Dictionary that contains complete results by JC and INDP collected by
+        :func:`read_results`.
+    combinations : dict
+        All combinations of magnitude, sample, judgment type, resource allocation type
+        involved in the JC (or any other decentralized results) collected by
+        :func:`generate_combinations`.
+    optimal_combinations : dict
+        All combinations of magnitude, sample, judgment type, resource allocation type
+        involved in the INDP (or any other optimal results) collected by :func:`generate_combinations`.
+    ref_method : str, optional
+        Referece method to computue relative measure in comparison to. The default is 'indp'.
+    ref_jt : str, optional
+        Referece judgment type to computue relative measure in comparison to. It is used only
+        when the reference method is JC. The default is 'nan'.
+    ref_at : str, optional
+        Referece resource allocation type to computue relative measure in comparison to.
+        It is used only when the reference method is JC. The default is 'nan'.
+    ref_vt : str, optional
+        Referece val;uation type to computue relative measure in comparison to.
+        It is used only when the reference method is JC, and the reference resource 
+        allocation type is Auntion. The default is 'nan'.
+    cost_type : str, optional
+        Cost type for which the relative measure is computed. The default is 'Total'.
 
     Returns
     -------
-    lambda_df : TYPE
-        DESCRIPTION.
+    lambda_df : dict
+        Dictionary that contains the relative measures.
 
     '''
     columns = ['Magnitude', 'cost_type', 'decision_type', 'judgment_type', 'auction_type',
@@ -385,27 +400,33 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
 def read_resourcec_allocation(result_df, combinations, optimal_combinations, objs,
                               ref_method='indp', root_result_dir='../results/'):
     '''
-    PLACEHOLDER
+    This functions reads the resource allocation vectors by INDP and JC. Also,
+    it computes the allocation gap between the respurce allocation by JC and
+    and the optimal allocation by INDP :cite:`Talebiyan2020a`.
 
     Parameters
     ----------
-    result_df : TYPE
-        DESCRIPTION.
-    combinations : TYPE
-        DESCRIPTION.
-    optimal_combinations : TYPE
-        DESCRIPTION.
-    ref_method : TYPE, optional
-        DESCRIPTION. The default is 'indp'.
-    root_result_dir : TYPE, optional
-        DESCRIPTION. The default is '../results/'.
+    result_df : dict
+        Dictionary that contains complete results by JC and INDP collected by
+        :func:`read_results`.
+    combinations : dict
+        All combinations of magnitude, sample, judgment type, resource allocation type
+        involved in the JC (or any other decentralized results) collected by
+        :func:`generate_combinations`.
+    optimal_combinations : dict
+        All combinations of magnitude, sample, judgment type, resource allocation type
+        involved in the INDP (or any other optimal results) collected by :func:`generate_combinations`.
+    ref_method : str, optional
+        Referece method to computue relative measure in comparison to. The default is 'indp'.
+    root_result_dir : str, optional
+        Directory that contains the results. The default is '../results/'.
 
     Returns
     -------
-    df_res : TYPE
-        DESCRIPTION.
-    df_alloc_gap : TYPE
-        DESCRIPTION.
+    df_res : dict
+        Dictionary that contain the resoruce allcoation vectors.
+    df_alloc_gap : dict
+        Dictionary that contain the allcoation gap values.
     '''
     cols = ['t', 'resource', 'decision_type', 'judgment_type', 'auction_type',
             'valuation_type', 'sample', 'Magnitude', 'layer', 'no_resources',
@@ -510,21 +531,27 @@ def read_resourcec_allocation(result_df, combinations, optimal_combinations, obj
 
 def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../results/'):
     '''
+    This function reads the run time of computing restoration strategies by different methods.
+
     Parameters
     ----------
-    combinations : TYPE
-        DESCRIPTION.
-    optimal_combinations : TYPE
-        DESCRIPTION.
-    objs : TYPE
-        DESCRIPTION.
-    root_result_dir : TYPE, optional
-        DESCRIPTION. The default is '../results/'.
+    combinations : dict
+        All combinations of magnitude, sample, judgment type, resource allocation type
+        involved in the JC (or any other decentralized results) collected by
+        :func:`generate_combinations`.
+    optimal_combinations : dict
+        All combinations of magnitude, sample, judgment type, resource allocation type
+        involved in the INDP (or any other optimal results) collected by :func:`generate_combinations`.
+    objs : dict
+        Dictionary that contains the objects corresponding to the results collected
+        by :func:`read_results`.
+    root_result_dir : str, optional
+        Directory that contains the results. The default is '../results/'.
 
     Returns
     -------
-    run_time_results : TYPE
-        DESCRIPTION.
+    run_time_results : dict
+        Dictionary that contain run time of for all computed strategies.
 
     '''
     columns = ['t', 'Magnitude', 'decision_type', 'judgment_type', 'auction_type', 'valuation_type',
@@ -574,38 +601,50 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
                           judgment_type, res_alloc_type, valuation_type, suffixes=[''],
                           list_high_dam_add=None, synthetic_dir=None):
     '''
+    This fucntion returns all combinations of magnitude, sample, judgment type,
+    resource allocation type, and valuation type (if applicable) involved in 
+    decentralized and centralized analyses. The returend dictionary are used by
+    other functions to read results and calculate comparison measures.
 
     Parameters
     ----------
-    database : TYPE
-        DESCRIPTION.
-    mags : TYPE
-        DESCRIPTION.
-    sample : TYPE
-        DESCRIPTION.
-    layers : TYPE
-        DESCRIPTION.
-    no_resources : TYPE
-        DESCRIPTION.
-    decision_type : TYPE
-        DESCRIPTION.
-    res_alloc_type : TYPE
-        DESCRIPTION.
-    valuation_type : TYPE
-        DESCRIPTION.
-    suffixes : TYPE, optional
-        DESCRIPTION. The default is ''.
-    list_high_dam_add : TYPE, optional
-        DESCRIPTION. The default is None.
-    synthetic_dir : TYPE, optional
-        DESCRIPTION. The default is None.
+    database : str
+        Name of the initial damage database. \n
+        options: 
+            For shelby county network: 'shelby', 'random', 'ANDRES', 'WU' \n
+            For synthetic networks: 'synthetic'
+    mags : range
+        Range of magnitude parameter of the current simulation.
+    sample : range
+        Range of sample parameter of the current simulation.
+    layers : list
+        List of layers.
+    no_resources : list
+        List of number of available resources, :math:`R_c`.
+    decision_type : list
+        List of methods.
+    res_alloc_type : list
+        List of resoure allocation methods.
+    valuation_type : list
+        List of valuation types.
+    suffixes : list, optional
+        List of suffixes of result files. For JC results, it should be set to 'real',
+        as JC entails judge-based performance and costs and realized ones, and the 
+        latter one is of interest. The default is ''.
+    list_high_dam_add : str, optional
+        Address of the file containing the list of damage scenarios that should be read
+        from file. It is used to read a selected subset of results. The default is None.
+    synthetic_dir : str, optional
+        Address of the synthetic database files. The default is None.
 
     Returns
     -------
-    combinations : TYPE
-        DESCRIPTION.
-    optimal_combinations : TYPE
-        DESCRIPTION.
+    combinations : dict
+        All combinations of magnitude, sample, judgment type, resource allocation type
+        involved in the JC (or any other decentralized results).
+    optimal_combinations : dict
+        All combinations of magnitude, sample, judgment type, resource allocation type
+        involved in the INDP (or any other optimal results).
 
     '''
     combinations = []
@@ -669,17 +708,19 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
 
 def update_progress(progress, total):
     '''
+    This function updates and writes a progress bar to console.
 
     Parameters
     ----------
-    progress : TYPE
-        DESCRIPTION.
-    total : TYPE
-        DESCRIPTION.
+    progress : int
+        The current progress.
+    total : int
+        Total number of cases.
 
     Returns
     -------
-    None.
+    :
+        None.
 
     '''
     print('\r[%s] %1.1f%%' % ('#'*int(progress/float(total)*20),
@@ -688,18 +729,20 @@ def update_progress(progress, total):
 
 def trapz_int(x, y):
     '''
+    This function computes the area underneath a curve (y) over time vector (x) including
+    checking if the time vector is sorted.
 
     Parameters
     ----------
-    x : TYPE
-        DESCRIPTION.
-    y : TYPE
-        DESCRIPTION.
+    x : list
+        Time vector.
+    y : list
+        Vector of the integrand.
 
     Returns
     -------
-    TYPE
-        DESCRIPTION.
+    float
+        Area underneath x-y curve.
 
     '''
     if not np.all([i < j for i, j in zip(x[:-1], x[1:])]):

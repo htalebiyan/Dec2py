@@ -17,7 +17,11 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-Future works
+To-do works
 ===================
 .. todolist::
+
+Bibliography
+===================
+.. bibliography:: biblio.bib
 

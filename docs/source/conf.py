@@ -32,7 +32,7 @@ release = '0.1.0'
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.napoleon',
 'sphinx_automodapi.automodapi','sphinx.ext.todo', 'sphinx.ext.githubpages',
-'sphinx_rtd_theme']#, 'sphinx.ext.viewcode']
+'sphinx_rtd_theme', 'sphinxcontrib.bibtex']#, 'sphinx.ext.viewcode']
 numpydoc_show_class_members = False
 todo_include_todos = True
 autodoc_mock_imports = ['gambit']
