@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 sns.set(context='notebook', style='darkgrid', font_scale=1.2)
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+# plt.rc('text', usetex=True)
+# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                    decision_type=None, judgment_type=None,
@@ -308,7 +308,7 @@ def plot_relative_allocation(gap_res, distance_type='gap'):
     valuation_type = gap_res.valuation_type.unique().tolist()
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
-    row_plot = [judgment_type, 'judgment_type']#valuation_type, 'valuation_type'
+    row_plot = [valuation_type, 'valuation_type']#valuation_type, judgment_type
     col_plot = [auction_type, 'auction_type']
     hue_type = [layer, 'layer']
     clrs=['#5153ca', '#e4ad5d', '#c20809', '#5fb948']
