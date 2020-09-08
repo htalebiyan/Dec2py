@@ -498,59 +498,6 @@ def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependen
         InterdepNet,v_temp,layers_temp=load_synthetic_network(BASE_DIR=BASE_DIR,topology=topology,config=magnitude,sample=sample,cost_scale=cost_scale)
     return InterdepNet,v_temp,layers_temp
 
-
-def initialize_sample_network(params={},layers=[1,2]):
-    """ Initializes sample 2x6 network
-    :param params: (Currently not used).
-    :param layers: (Currently not used).
-    :returns: An interdependent InfrastructureNetwork.
-    """
-    InterdepNet=InfrastructureNetwork("2x8_centralized")
-    node_to_demand_dict={(1,1):5,(2,1):-1,(3,1):-2,(4,1):-2,(5,1):-4,(6,1):4,
-                         (7,2):-2,(8,2):6,(9,2):1,(10,2):-5,(11,2):4,(12,2):-4}
-    space_to_nodes_dict={1:[(1,1),(7,2)],2:[(2,1),(8,2)],
-                    3:[(3,1),(5,1),(9,2),(11,2)],4:[(4,1),(6,1),(10,2),(12,2)]}
-    arc_list= [((1,1),(2,1)),((1,1),(4,1)),((1,1),(3,1)),((6,1),(4,1)),((6,1),(5,1)),
-               ((8,2),(7,2)),((8,2),(10,2)),((9,2),(7,2)),((9,2),(10,2)),((9,2),(12,2)),((11,2),(12,2))]
-    interdep_list=[((1,1),(7,2)),((2,1),(8,2)),((9,2),(3,1)),((4,1),(10,2))]
-    failed_nodes=[(1,1),(2,1),(3,1),(5,1),(6,1),
-                  (7,2),(8,2),(9,2),(11,2),(12,2)]
-    global_index=1
-    for n in node_to_demand_dict:
-        nn=InfrastructureNode(global_index,n[1],n[0])
-        nn.demand=node_to_demand_dict[n]
-        nn.reconstruction_cost=abs(nn.demand)
-        nn.oversupply_penalty=50
-        nn.undersupply_penalty=50
-        nn.resource_usage=1
-        if n in failed_nodes:
-            nn.functionality=0.0
-            nn.repaired=0.0
-        InterdepNet.G.add_node((nn.local_id,nn.net_id),data={'inf_data':nn})
-        global_index+=1
-    for s in space_to_nodes_dict:
-        InterdepNet.S.append(InfrastructureSpace(s,0))
-        for n in space_to_nodes_dict[s]:
-            InterdepNet.G.nodes[n]['data']['inf_data'].space=s
-    for a in arc_list:
-        aa=InfrastructureArc(a[0][0],a[1][0],a[0][1])
-        aa.flow_cost=1
-        aa.capacity=50
-        InterdepNet.G.add_edge((aa.source,aa.layer),(aa.dest,aa.layer),data={'inf_data':aa})
-    for g in interdep_list:
-        aa=InfrastructureInterdepArc(g[0][0],g[1][0],g[0][1],g[1][1],1.0)
-        InterdepNet.G.add_edge((aa.source,aa.source_layer),(aa.dest,aa.dest_layer),data={'inf_data':aa})
-    return InterdepNet
-
-def run_sample(params):
-    """ Runs the sample network generated in initialize_sample_network through indp.
-    :param params: Global parameters.
-    """
-    N=initialize_sample_network(params)
-    params["N"]=N
-    params["V"]=2
-    run_indp(params)
-
 def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,validate=False,save=True,suffix="",forced_actions=False,saveModel=False,print_cmd_line=True):
     """ Runs an INDP problem with specified parameters. Outputs to directory specified in params['OUTPUT_DIR'].
     :param params: Global parameters.
@@ -799,40 +746,126 @@ def save_INDP_model_to_file(model,outModelDir,t,l=0,suffix=''):
     fileID.write('Obj: %g' % model.objVal)
     fileID.close()
 
+def initialize_sample_network(layers=[1,2]):
+    """ Initializes sample network
+    :param layers: (Currently not used).
+    :returns: An interdependent InfrastructureNetwork.
+    """
+    InterdepNet=InfrastructureNetwork("sample_network")
+    node_to_demand_dict={(1,1):5,(2,1):-1,(3,1):-2,(4,1):-2,(5,1):-4,(6,1):4,
+                         (7,2):-2,(8,2):6,(9,2):1,(10,2):-5,(11,2):4,(12,2):-4}
+    space_to_nodes_dict={1:[(1,1),(7,2)],2:[(2,1),(8,2)],
+                    3:[(3,1),(5,1),(9,2),(11,2)],4:[(4,1),(6,1),(10,2),(12,2)]}
+    arc_list= [((1,1),(2,1)),((1,1),(4,1)),((1,1),(3,1)),((6,1),(4,1)),((6,1),(5,1)),
+               ((8,2),(7,2)),((8,2),(10,2)),((9,2),(7,2)),((9,2),(10,2)),((9,2),(12,2)),
+               ((11,2),(12,2))]
+    interdep_list=[((1,1),(7,2)),((2,1),(8,2)),((9,2),(3,1)),((4,1),(10,2))]
+    failed_nodes=[(1,1),(2,1),(3,1),(5,1),(6,1),
+                  (7,2),(8,2),(9,2),(11,2),(12,2)]
+    if 3 in layers:
+        node_to_demand_dict.update({(13,3):3,(14,3):6,(15,3):-5,(16,3):-6,
+                                    (17,3):4,(18,3):-2})
+        space_to_nodes_dict[1].extend([(13,3),(14,3),(15,3)])
+        space_to_nodes_dict[2].extend([(16,3),(17,3),(18,3)])
+        arc_list.extend([((13,3),(15,3)),((14,3),(15,3)),((14,3),(16,3)),
+                         ((17,3),(15,3)),((17,3),(16,3)),((17,3),(18,3))])
+        interdep_list.extend([((11,2),(17,3)),((9,2),(15,3)),((14,3),(8,2))])  
+        failed_nodes.extend([(14,3),(15,3),(16,3),(17,3),(18,3)]) 
+    global_index=1
+    for n in node_to_demand_dict:
+        nn=InfrastructureNode(global_index,n[1],n[0])
+        nn.demand=node_to_demand_dict[n]
+        nn.reconstruction_cost=abs(nn.demand)
+        nn.oversupply_penalty=50
+        nn.undersupply_penalty=50
+        nn.resource_usage=1
+        if n in failed_nodes:
+            nn.functionality=0.0
+            nn.repaired=0.0
+        InterdepNet.G.add_node((nn.local_id,nn.net_id),data={'inf_data':nn})
+        global_index+=1
+    for s in space_to_nodes_dict:
+        InterdepNet.S.append(InfrastructureSpace(s,0))
+        for n in space_to_nodes_dict[s]:
+            InterdepNet.G.nodes[n]['data']['inf_data'].space=s
+    for a in arc_list:
+        aa=InfrastructureArc(a[0][0],a[1][0],a[0][1])
+        aa.flow_cost=1
+        aa.capacity=50
+        InterdepNet.G.add_edge((aa.source,aa.layer),(aa.dest,aa.layer),data={'inf_data':aa})
+    for g in interdep_list:
+        aa=InfrastructureInterdepArc(g[0][0],g[1][0],g[0][1],g[1][1],1.0)
+        InterdepNet.G.add_edge((aa.source,aa.source_layer),(aa.dest,aa.dest_layer),data={'inf_data':aa})
+    return InterdepNet
+
+def run_sample(params):
+    """ Runs the sample network generated in initialize_sample_network through indp.
+    :param params: Global parameters.
+    """
+    N=initialize_sample_network(params)
+    params["N"]=N
+    params["V"]=2
+    run_indp(params)
+
 def plot_indp_sample(params,folderSuffix="",suffix=""):
     plt.figure(figsize=(16,8))
-    InterdepNet=initialize_sample_network()
+    if 3 in params["L"]:
+        plt.figure(figsize=(16,10))
+    InterdepNet=initialize_sample_network(layers=params["L"])
     pos=nx.spring_layout(InterdepNet.G)
-    for key,value in pos.items():
-         pos[(1,1)][0] =  0.5
-         pos[(7,2)][0] =  0.5
-         pos[(2,1)][0] =  0.0
-         pos[(8,2)][0] =  0.0
-         pos[(3,1)][0] =  2.0
-         pos[(9,2)][0] =  2.0
-         pos[(4,1)][0] =  1.5
-         pos[(10,2)][0] =  1.5
-         pos[(5,1)][0] =  3.0
-         pos[(11,2)][0] =  3.0
-         pos[(6,1)][0] =  2.5
-         pos[(12,2)][0] =  2.5
-         pos[(8,2)][1] =  0.0
-         pos[(10,2)][1] =  0.0
-         pos[(12,2)][1] =  0.0
-         pos[(7,2)][1] =  1.0
-         pos[(9,2)][1] =  1.0
-         pos[(11,2)][1] =  1.0
-         pos[(2,1)][1] =  2.0
-         pos[(4,1)][1] =  2.0
-         pos[(6,1)][1] =  2.0
-         pos[(1,1)][1] =  3.0
-         pos[(3,1)][1] =  3.0
-         pos[(5,1)][1] =  3.0
+    pos[(1,1)][0] =  0.5
+    pos[(7,2)][0] =  0.5
+    pos[(2,1)][0] =  0.0
+    pos[(8,2)][0] =  0.0
+    pos[(3,1)][0] =  2.0
+    pos[(9,2)][0] =  2.0
+    pos[(4,1)][0] =  1.5
+    pos[(10,2)][0] =  1.5
+    pos[(5,1)][0] =  3.0
+    pos[(11,2)][0] =  3.0
+    pos[(6,1)][0] =  2.5
+    pos[(12,2)][0] =  2.5
+    pos[(2,1)][1] =  0.0
+    pos[(4,1)][1] =  0.0
+    pos[(6,1)][1] =  0.0
+    pos[(1,1)][1] =  1.0
+    pos[(3,1)][1] =  1.0
+    pos[(5,1)][1] =  1.0
+    pos[(8,2)][1] =  2.0
+    pos[(10,2)][1] =  2.0
+    pos[(12,2)][1] =  2.0
+    pos[(7,2)][1] =  3.0
+    pos[(9,2)][1] =  3.0
+    pos[(11,2)][1] =  3.0
+    node_dict={1:[(1,1),(2,1),(3,1),(4,1),(5,1),(6,1)], 
+               11:[(4,1)], #Undamaged
+               12:[(1,1),(2,1),(3,1),(5,1),(6,1)], #Damaged
+               2:[(7,2),(8,2),(9,2),(10,2),(11,2),(12,2)], 
+               21:[(10,2)], 
+               22:[(7,2),(8,2),(9,2),(11,2),(12,2)]}
+    arc_dict= {1: [((1,1),(2,1)),((1,1),(3,1)),((1,1),(4,1)),((6,1),(4,1)),
+                   ((6,1),(5,1))],
+               2: [((8,2),(7,2)),((8,2),(10,2)),((9,2),(7,2)),((9,2),(10,2)),
+                   ((9,2),(12,2)),((11,2),(12,2))]}
+    if 3 in params["L"]:
+         pos[(13,3)][0] =  0.5
+         pos[(14,3)][0] =  0.0
+         pos[(15,3)][0] =  2.0
+         pos[(16,3)][0] =  1.5
+         pos[(17,3)][0] =  3.0
+         pos[(18,3)][0] =  2.5
+         pos[(13,3)][1] =  5.0
+         pos[(14,3)][1] =  4.0
+         pos[(15,3)][1] =  5.0
+         pos[(16,3)][1] =  4.0
+         pos[(17,3)][1] =  5.0
+         pos[(18,3)][1] =  4.0   
+         node_dict[3] = [(13,3),(14,3),(15,3),(16,3),(17,3),(18,3)]
+         node_dict[31] = [(13,3)]
+         node_dict[32] = [(14,3),(15,3),(16,3),(17,3),(18,3)]
+         arc_dict[3] = [((13,3),(15,3)),((14,3),(15,3)),((14,3),(16,3)),
+                         ((17,3),(15,3)),((17,3),(16,3)),((17,3),(18,3))]
 
-    node_dict={1:[(1,1),(2,1),(3,1),(4,1),(5,1),(6,1)], 11:[(4,1)], 12:[(1,1),(2,1),(3,1),(5,1),(6,1)],
-               2:[(7,2),(8,2),(9,2),(10,2),(11,2),(12,2)], 21:[(10,2)], 22:[(7,2),(8,2),(9,2),(11,2),(12,2)]}
-    arc_dict= {1: [((1,1),(2,1)),((1,1),(3,1)),((1,1),(4,1)),((6,1),(4,1)),((6,1),(5,1))],
-                   2: [((8,2),(7,2)),((8,2),(10,2)),((9,2),(7,2)),((9,2),(10,2)),((9,2),(12,2)),((11,2),(12,2))]}
     labels = {}
     for n,d in InterdepNet.G.nodes(data=True):
         labels[n]= "%d[%d]" % (n[0],d['data']['inf_data'].demand)
@@ -875,12 +908,16 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
             node_dict[int(data[1])*10+2].remove((int(data[0]),int(data[1])))
         nx.draw(InterdepNet.G, pos,node_color='w')
         nx.draw_networkx_labels(InterdepNet.G,labels=labels,pos=pos,
-                                font_color='w',font_family='CMU Serif',font_weight='bold')
+                                font_color='w',font_family='CMU Serif')#,font_weight='bold'
         nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[1],node_color='#b51717',node_size=1100,alpha=0.7)
         nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[2],node_color='#005f98',node_size=1100,alpha=0.7)
         nx.draw_networkx_nodes(InterdepNet.G,pos_moved,nodelist=node_dict[12],node_color='k',node_shape="X",node_size=150)
         nx.draw_networkx_nodes(InterdepNet.G,pos_moved,nodelist=node_dict[22],node_color='k',node_shape="X",node_size=150)
         nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[1],width=1,alpha=0.9,edge_color='r')
         nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[2],width=1,alpha=0.9,edge_color='b')
+        if 3 in params["L"]:
+            nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[3],node_color='#009181',node_size=1100,alpha=0.7)
+            nx.draw_networkx_nodes(InterdepNet.G,pos_moved,nodelist=node_dict[32],node_color='k',node_shape="X",node_size=150)
+            nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[3],width=1,alpha=0.9,edge_color='g')
     plt.tight_layout()
-    plt.savefig(output_dir+'/plot_net'+folderSuffix+'.png',dpi=600)
+    plt.savefig(output_dir+'/plot_net'+suffix+'.png',dpi=300)

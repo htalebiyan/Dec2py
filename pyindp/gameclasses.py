@@ -559,7 +559,7 @@ class InfrastructureGame:
                     game_time = time.time()-game_start
                     if compute_optimal:
                         self.objs[t].find_optimal_solution()
-                    if plot:
+                    if plot and len(self.layers)==2:
                         gameplots.plot_ne_sol_2player(self.objs[t], suffix=str(t))
 
                     ne_results = self.objs[t].chosen_equilibrium['full results'][mixed_index]
