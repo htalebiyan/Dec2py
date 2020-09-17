@@ -31,7 +31,7 @@ BASE_DIR = "../data/Extended_Shelby_County/"
 DAMAGE_DIR = "../data/Wu_Damage_scenarios/" 
 OUTPUT_DIR = '../results/'
 
-layers=[1,3]
+layers=[2,4]
 FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(0, 50), 'MAGS':range(0, 95),
                   'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
 params = {"NUM_ITERATIONS":1, "OUTPUT_DIR":OUTPUT_DIR+'/ng_results',

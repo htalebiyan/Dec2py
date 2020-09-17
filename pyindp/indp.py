@@ -14,7 +14,8 @@ import sys
 #    HOME_DIR="/home/andrew/"
 
 def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
-         forced_actions=False, fixed_nodes={}, print_cmd=True, time_limit=None):
+         forced_actions=False, fixed_nodes={}, print_cmd=True, time_limit=None,
+         co_location=True):
     """INDP optimization problem. Also solves td-INDP if T > 1.
     :param N: An InfrastructureNetwork instance (created in infrastructure.py)
     :param v_r: Vector of number of resources given to each layer in each timestep. If the size of the vector is 1, it shows the total number of resources for all layers.
@@ -40,7 +41,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
     # Damaged nodes in whole network
     N_prime = [n for n in G_prime.nodes(data=True) if n[1]['data']['inf_data'].repaired==0.0]
     # Nodes in controlled network.
-    N_hat_nodes   = [n[0] for n in G_prime.nodes(data=True) if n[1]['data']['inf_data'].net_id in controlled_layers]
+    N_hat_nodes = [n[0] for n in G_prime.nodes(data=True) if n[1]['data']['inf_data'].net_id in controlled_layers]
     N_hat = G_prime.subgraph(N_hat_nodes)
     # Damaged nodes in controlled network.
     N_hat_prime= [n for n in N_hat.nodes(data=True) if n[1]['data']['inf_data'].repaired==0.0]
@@ -76,8 +77,9 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
     #print "N'=",[n for (n,d) in N_prime]
     for t in range(T):
         # Add geographical space variables.
-        for s in S:
-            m.addVar(name='z_'+str(s.id)+","+str(t),vtype=GRB.BINARY)
+        if co_location:
+            for s in S:
+                m.addVar(name='z_'+str(s.id)+","+str(t),vtype=GRB.BINARY)
         # Add over/undersupply variables for each node.
         for n,d in N_hat.nodes(data=True):
             m.addVar(name='delta+_'+str(n)+","+str(t),lb=0.0)
@@ -105,8 +107,9 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
     # Populate objective function.
     objFunc=LinExpr()
     for t in range(T):
-        for s in S:
-            objFunc+=s.cost*m.getVarByName('z_'+str(s.id)+","+str(t))
+        if co_location:
+            for s in S:
+                objFunc+=s.cost*m.getVarByName('z_'+str(s.id)+","+str(t))
         for u,v,a in A_hat_prime:
             if T == 1:
                 objFunc+=(float(a['data']['inf_data'].reconstruction_cost)/2.0)*m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))
@@ -280,17 +283,18 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
                 m.addConstr(recovery_sum,GRB.GREATER_EQUAL,1,"Forced action constraint")
 
         # Geographic space constraints
-        for s in S:
-            for n,d in N_hat_prime:
-                if T == 1:
-                    m.addConstr(m.getVarByName('w_'+str(n)+","+str(t))*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for node "+str(n)+","+str(t))
-                else:
-                    m.addConstr(m.getVarByName('w_tilde_'+str(n)+","+str(t))*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for node "+str(n)+","+str(t))
-            for u,v,a in A_hat_prime:
-                if T== 1:
-                    m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
-                else:
-                    m.addConstr(m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
+        if co_location:
+            for s in S:
+                for n,d in N_hat_prime:
+                    if T == 1:
+                        m.addConstr(m.getVarByName('w_'+str(n)+","+str(t))*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for node "+str(n)+","+str(t))
+                    else:
+                        m.addConstr(m.getVarByName('w_tilde_'+str(n)+","+str(t))*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for node "+str(n)+","+str(t))
+                for u,v,a in A_hat_prime:
+                    if T== 1:
+                        m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
+                    else:
+                        m.addConstr(m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
 
 #    print "Solving..."
     m.update()
@@ -300,7 +304,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
     if m.getAttr("Status")==GRB.OPTIMAL or m.status==9:
         if m.status==9:
             print ('\nOptimizer time limit, gap = %1.3f\n' % m.MIPGap)
-        results=collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S)
+        results=collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=co_location)
         results.add_run_time(t,run_time)
         return [m,results]
     else:
@@ -312,7 +316,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
                 print('%s' % c.constrName)
         return None
 
-def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
+def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=True):
     layers = controlled_layers
     indp_results=INDPResults(layers)
     # compute total demand of all layers and each layer
@@ -359,8 +363,9 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
                 #if T == 1:
                 #N.G[u][v]['data']['inf_data'].functionality=1.0
         # Calculate space preparation costs.
-        for s in S:
-            spacePrepCost+=s.cost*m.getVarByName('z_'+str(s.id)+","+str(t)).x
+        if coloc:
+            for s in S:
+                spacePrepCost+=s.cost*m.getVarByName('z_'+str(s.id)+","+str(t)).x
         indp_results.add_cost(t,"Space Prep",spacePrepCost,spacePrepCost_layer)
         # Calculate arc preparation costs.
         for u,v,a in A_hat_prime:

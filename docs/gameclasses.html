@@ -694,6 +694,12 @@ is None, which prevent saving models to file.</p>
 <dt id="gameclasses.NormalGame.find_actions">
 <code class="sig-name descname">find_actions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.find_actions" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function finds all relevant restoration actions for each player</p>
+<div class="admonition-todo admonition" id="id5">
+<p class="admonition-title">Todo</p>
+<p>Games: Add the geographical interdependency to find actions, which means
+to consider the arc repaires as indepndent actions rather than aggregate
+them in the 'OA' action.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p><strong>actions</strong> -- Dictionary of all relavant restoration actions.</p>
@@ -741,7 +747,7 @@ the action profile is <span class="math notranslate nohighlight">\(\{[1], [5, 6]
 only the nodes in the action profile are considered repaired.</p>
 <p>Moreover, by removing arcs from the actions, I am ignoring the geographical
 interdependency among layers.</p>
-<div class="admonition-todo admonition" id="id5">
+<div class="admonition-todo admonition" id="id6">
 <p class="admonition-title">Todo</p>
 <p>Games: Add the geographical interdependency to computation of payoff values</p>
 </div>

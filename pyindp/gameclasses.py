@@ -83,6 +83,11 @@ class NormalGame:
     def find_actions(self):
         '''
         This function finds all relevant restoration actions for each player
+        
+        .. todo::
+            Games: Add the geographical interdependency to find actions, which means
+            to consider the arc repaires as indepndent actions rather than aggregate 
+            them in the 'OA' action.
 
         Returns
         -------
@@ -226,7 +231,8 @@ class NormalGame:
                 adjusted_v_r[l] = 0
         flow_results = indp.indp(self.net, v_r=adjusted_v_r, layers=self.players,
                                  controlled_layers=self.players, print_cmd=True,
-                                 time_limit=None, fixed_nodes=fixed_nodes)
+                                 time_limit=None, fixed_nodes=fixed_nodes,
+                                 co_location=False)
         return flow_results
 
     def build_game(self, save_model=None, suffix=''):
