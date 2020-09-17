@@ -36,8 +36,8 @@ def plot_ne_sol_2player(game, suffix=''):
     dpi = 300
     _, axs = plt.subplots(2, 1, sharex=True, figsize=(2000/dpi, 3000/dpi))
     for idxl, l in enumerate(game.players):
-        pivot_dict = payoff_dict.pivot(index='P'+str(2)+' actions',
-                                       columns='P'+str(1)+' actions',
+        pivot_dict = payoff_dict.pivot(index='P'+str(game.players[1])+' actions',
+                                       columns='P'+str(game.players[0])+' actions',
                                        values='P'+str(l)+' payoff')
         sns.heatmap(pivot_dict, annot=False, linewidths=.2, cmap="Blues_r", ax=axs[idxl])
         axs[idxl].set_title('Player %d\'s payoffs, $R_c=$%d'%(l,game.v_r[l]))
@@ -70,8 +70,12 @@ def plot_ne_sol_2player(game, suffix=''):
             
         if game.optimal_solution:
             try:
-                p1_opt_idx = list(pivot_dict).index(game.optimal_solution['P1 actions'])
-                p2_opt_idx = list(pivot_dict.index.values).index(game.optimal_solution['P2 actions'])
+                p1_opt_act = tuple(sorted(game.optimal_solution['P'+str(game.players[0])+' actions'],
+                                          key=lambda x: str(x[0])))
+                p2_opt_act = tuple(sorted(game.optimal_solution['P'+str(game.players[1])+' actions'],
+                                          key=lambda x: str(x[0])))
+                p1_opt_idx = list(pivot_dict).index(p1_opt_act)
+                p2_opt_idx = list(pivot_dict.index.values).index(p2_opt_act)
                 axs[idxl].add_patch(Rectangle((p1_opt_idx, p2_opt_idx), 1, 1, fill=False,
                                               hatch='xxx', edgecolor='green', lw=0.01))
             except:

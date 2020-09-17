@@ -187,24 +187,21 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
                 m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G[u][v]['data']['inf_data'].functionality,"Flow arc functionality constraint("+str(u)+","+str(v)+","+str(t)+")")
 
         #Resource availability constraints.
-        isSepResource = 0
+        isSepResource = False
         if isinstance(v_r, int):
             totalResource = v_r
         else:
-            if len(v_r) != 1:
-                isSepResource = 1
-                totalResource = sum(v_r)
-                if len(v_r) != len(layers):
-                    sys.exit("The number of resource cap values does not match the number of layers.\n")
-            else:
-                totalResource = v_r[0]
+            isSepResource = True
+            totalResource = sum([val for _, val in v_r.items()])
+            if len(v_r.keys()) != len(layers):
+                sys.exit("The number of resource cap values does not match the number of layers.\n")
 
         resourceLeftConstr=LinExpr()
         if isSepResource:
-            resourceLeftConstrSep = [LinExpr() for i in range(len(v_r))]
+            resourceLeftConstrSep = {key:LinExpr() for key, _ in v_r.items()}
 
         for u,v,a in A_hat_prime:
-            indexLayer = a['data']['inf_data'].layer - 1
+            indexLayer = a['data']['inf_data'].layer
             if T == 1:
                 resourceLeftConstr+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))
                 if isSepResource:
@@ -215,7 +212,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
                     resourceLeftConstrSep[indexLayer]+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))
 
         for n,d in N_hat_prime:
-            indexLayer = n[1] - 1
+            indexLayer = n[1]
             if T == 1:
                 resourceLeftConstr+=d['data']['inf_data'].resource_usage*m.getVarByName('w_'+str(n)+","+str(t))
                 if isSepResource:
@@ -227,7 +224,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
 
         m.addConstr(resourceLeftConstr,GRB.LESS_EQUAL,totalResource,"Resource availability constraint at "+str(t)+".")
         if isSepResource:
-            for k in range(len(v_r)):
+            for k,_ in v_r.items():
                 m.addConstr(resourceLeftConstrSep[k],GRB.LESS_EQUAL,v_r[k],"Resource availability constraint at "+str(t)+" for layer "+str(k)+".")
 
         # Interdependency constraints
@@ -519,10 +516,8 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
     v_r=params["V"]
     if isinstance(v_r, (int)):
         outDirSuffixRes = str(v_r)
-    elif len(v_r)==1:
-        outDirSuffixRes = str(v_r[0])
     else:
-        outDirSuffixRes = str(sum(v_r))+'_fixed_layer_Cap'
+        outDirSuffixRes = str(sum([val for _, val in v_r.items()]))+'_fixed_layer_Cap'
 
     indp_results=INDPResults(params["L"])
     if T == 1:
@@ -879,10 +874,7 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
     if isinstance(v_r, (int)):
         totalResource = v_r
     else:
-        if len(v_r) != 1:
-            totalResource = sum(v_r)
-        else:
-            totalResource = v_r[0]
+        totalResource = sum([val for _, val in v_r.items()])
 
     output_dir=params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+str(params["MAGNITUDE"])+"_v"+str(totalResource)+folderSuffix
     action_file =output_dir+"/actions_"+str(params["SIM_NUMBER"])+"_"+suffix+".csv"

@@ -91,7 +91,7 @@ class NormalGame:
 
         '''
         for u,v,a in self.net.G.edges(data=True):
-            if a['data']['inf_data'].is_interdep:
+            if a['data']['inf_data'].is_interdep and u[1] in self.players and v[1] in self.players:
                 if u not in self.dependee_nodes:
                     self.dependee_nodes[u]=[]
                 self.dependee_nodes[u].append((v,a['data']['inf_data'].gamma))
@@ -224,8 +224,6 @@ class NormalGame:
                     adjusted_v_r[l] = len(action[idxl])
             else:
                 adjusted_v_r[l] = 0
-
-        adjusted_v_r = [val for _,val in adjusted_v_r.items()]
         flow_results = indp.indp(self.net, v_r=adjusted_v_r, layers=self.players,
                                  controlled_layers=self.players, print_cmd=True,
                                  time_limit=None, fixed_nodes=fixed_nodes)
@@ -389,11 +387,15 @@ class NormalGame:
         for _, l in enumerate(self.players):
             self.optimal_solution['P'+str(l)+' actions'] = ()
             for act in indp_res.results_layer[l][0]['actions']:
-                act = [int(y) for y in act.split(".")]
-                if ((act[0], act[1])) in self.dependee_nodes.keys():
-                    self.optimal_solution['P'+str(l)+' actions'] += ((act[0], act[1]),)
-                elif ('OA',l) not in self.optimal_solution['P'+str(l)+' actions']:
-                    self.optimal_solution['P'+str(l)+' actions'] += (('OA', l),)
+                if '/' in act: 
+                    if ('OA',l) not in self.optimal_solution['P'+str(l)+' actions']:
+                        self.optimal_solution['P'+str(l)+' actions'] += (('OA', l),)
+                else:
+                    act = [int(y) for y in act.split(".")]
+                    if ((act[0], act[1])) in self.dependee_nodes.keys():
+                        self.optimal_solution['P'+str(l)+' actions'] += ((act[0], act[1]),)
+                    elif ('OA',l) not in self.optimal_solution['P'+str(l)+' actions']:
+                        self.optimal_solution['P'+str(l)+' actions'] += (('OA', l),)
             if len(indp_res.results_layer[l][0]['actions']) == 0:
                 self.optimal_solution['P'+str(l)+' actions'] += ('NA', l)
             self.optimal_solution['P'+str(l)+' payoff'] = indp_res.results_layer[l][0]['costs']['Total']
