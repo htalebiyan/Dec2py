@@ -80,6 +80,28 @@ class NormalGame:
         self.optimal_solution = {}
         self.temp_storage = {} # Just a temprory storage for payoff INDP models
 
+    def __getstate__(self):
+        """
+        Return state values to be pickled. Gambit game object is deleted when
+        pickling. To retirve it, user should save the game to file when building 
+        the game and read it later and add it to to the unpickled object
+        """
+        state = self.__dict__.copy()
+        state["normgame"] =  {}
+        try:
+            state['chosen_equilibrium']["full results"] = state['chosen_equilibrium']["full results"][0][1]
+        except:
+            pass
+        return state
+
+    def __setstate__(self, state):
+        """
+        Restore state from the unpickled state values. Gambit game object is deleted when
+        pickling. To retirve it, user should save the game to file when building 
+        the game and read it later and add it to to the unpickled object
+        """
+        self.__dict__.update(state)
+
     def find_actions(self):
         '''
         This function finds all relevant restoration actions for each player
@@ -427,6 +449,25 @@ class GameSolution:
         self.gambit_sol = sol
         self.sol = self.extract_solution(actions)
 
+    def __getstate__(self):
+        """
+        Return state values to be pickled. gambit_sol is deleted when
+        pickling. To retirve it, user should save the game to file when building 
+        the game and read it later and add it to to the unpickled object
+        """
+        state = self.__dict__.copy()
+        state["gambit_sol"] = {}
+        return state
+
+    def __setstate__(self, state):
+        """
+        Restore state from the unpickled state values. gambit_sol is deleted when
+        pickling. To retirve it, user should save the game to file when building 
+        the game and read it later and add it to to the unpickled object
+        """
+        self.__dict__.update(state)
+        state["gambit_sol"] = {}
+        
     def extract_solution(self, actions):
         '''
         This function extracts the solution of the normal game from the solution
@@ -462,7 +503,7 @@ class GameSolution:
                         if act in actions[l]:
                             plyr = l
                     sol[idx]['P'+str(plyr)+' actions'].append(act)
-                    sol[idx]['P'+str(plyr)+' action probs'].append(y)
+                    sol[idx]['P'+str(plyr)+' action probs'].append(float(y))
             total_cost = 0
             for idxl, l in enumerate(self.players):
                 sol[idx]['P'+str(l)+' payoff'] = float(x.payoff()[idxl])
@@ -580,7 +621,7 @@ class InfrastructureGame:
                 else:
                     print('No further action is feasible')
         if save_results:
-            # self.save_object_to_file()
+            self.save_object_to_file()
             self.save_results_to_file()
 
     def set_out_dir(self, root, mag):
@@ -660,9 +701,6 @@ class InfrastructureGame:
     def save_object_to_file(self):
         '''
         Writes the object to file using pickle
-
-        .. todo::
-            Games: Find a way to write objects that include a gambit object
 
         Parameters
         ----------

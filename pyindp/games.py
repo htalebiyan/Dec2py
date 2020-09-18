@@ -5,6 +5,7 @@ import sys
 import time
 import numpy as np
 import pandas as pd
+import pickle
 import gambit
 import indp
 import gameclasses
@@ -31,7 +32,7 @@ BASE_DIR = "../data/Extended_Shelby_County/"
 DAMAGE_DIR = "../data/Wu_Damage_scenarios/" 
 OUTPUT_DIR = '../results/'
 
-layers=[2,4]
+layers=[1,3]
 FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(0, 50), 'MAGS':range(0, 95),
                   'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
 params = {"NUM_ITERATIONS":1, "OUTPUT_DIR":OUTPUT_DIR+'/ng_results',
@@ -41,9 +42,14 @@ params = {"NUM_ITERATIONS":1, "OUTPUT_DIR":OUTPUT_DIR+'/ng_results',
 params["N"], _, _ = indp.initialize_network(BASE_DIR=BASE_DIR,
             external_interdependency_dir=None, sim_number=0, magnitude=6,
             sample=0, v=params["V"], shelby_data=True)
-params["SIM_NUMBER"] = 14
-params["MAGNITUDE"] = 88
-indp.add_Wu_failure_scenario(params["N"], DAM_DIR=DAMAGE_DIR, noSet=14, noSce=88)
+params["SIM_NUMBER"] = 1
+params["MAGNITUDE"] = 13
+indp.add_Wu_failure_scenario(params["N"], DAM_DIR=DAMAGE_DIR, noSet=1, noSce=13)
 
 obj = gameclasses.InfrastructureGame(params)
 obj.run_game(compute_optimal=True, plot=True)
+
+# Getting back the objects ###
+address = '../results/ng_results_L2_m13_v10_UNIFORM/objs_1.pkl'
+with open(address, 'rb') as f:
+    objs_read = pickle.load(f)

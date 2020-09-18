@@ -406,10 +406,6 @@ all time steps of the restoration process</p>
 <dt id="gameclasses.InfrastructureGame.save_object_to_file">
 <code class="sig-name descname">save_object_to_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.save_object_to_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Writes the object to file using pickle</p>
-<div class="admonition-todo admonition" id="id2">
-<p class="admonition-title">Todo</p>
-<p>Games: Find a way to write objects that include a gambit object</p>
-</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>sample</strong> (<em>int</em>) -- Sample paramter of the current simulation</p>
@@ -478,7 +474,7 @@ all simulations , and must not be altered</p>
 <em class="property">static </em><code class="sig-name descname">set_time_steps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="n">num_iter</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.set_time_steps" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks if the window length is equal to one as the current version of
 games is devised based on itrative INDP</p>
-<div class="admonition-todo admonition" id="id3">
+<div class="admonition-todo admonition" id="id2">
 <p class="admonition-title">Todo</p>
 <p>Games: Exapnd the code to imitate td-INDP</p>
 </div>
@@ -622,7 +618,7 @@ chosen randomly.</p>
 <p>If the chosen NE is a mixed strategy, the mixed strategy with the highest
 probability is chosen. If there are more than one of such mixed strategy,
 then one of them is chosen randomly</p>
-<div class="admonition-todo admonition" id="id4">
+<div class="admonition-todo admonition" id="id3">
 <p class="admonition-title">Todo</p>
 <p>Games: refine the way the game solution is chosen in each time step</p>
 </div>
@@ -694,7 +690,7 @@ is None, which prevent saving models to file.</p>
 <dt id="gameclasses.NormalGame.find_actions">
 <code class="sig-name descname">find_actions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.find_actions" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function finds all relevant restoration actions for each player</p>
-<div class="admonition-todo admonition" id="id5">
+<div class="admonition-todo admonition" id="id4">
 <p class="admonition-title">Todo</p>
 <p>Games: Add the geographical interdependency to find actions, which means
 to consider the arc repaires as indepndent actions rather than aggregate
@@ -747,7 +743,7 @@ the action profile is <span class="math notranslate nohighlight">\(\{[1], [5, 6]
 only the nodes in the action profile are considered repaired.</p>
 <p>Moreover, by removing arcs from the actions, I am ignoring the geographical
 interdependency among layers.</p>
-<div class="admonition-todo admonition" id="id6">
+<div class="admonition-todo admonition" id="id5">
 <p class="admonition-title">Todo</p>
 <p>Games: Add the geographical interdependency to computation of payoff values</p>
 </div>
