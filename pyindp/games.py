@@ -49,7 +49,7 @@ indp.add_Wu_failure_scenario(params["N"], DAM_DIR=DAMAGE_DIR, noSet=1, noSce=13)
 obj = gameclasses.InfrastructureGame(params)
 obj.run_game(compute_optimal=True, plot=True)
 
-# Getting back the objects ###
-address = '../results/ng_results_L2_m13_v10_UNIFORM/objs_1.pkl'
-with open(address, 'rb') as f:
-    objs_read = pickle.load(f)
+# # Getting back the objects ###
+# address = '../results/ng_results_L2_m13_v10_UNIFORM/objs_1.pkl'
+# with open(address, 'rb') as f:
+#     objs_read = pickle.load(f)

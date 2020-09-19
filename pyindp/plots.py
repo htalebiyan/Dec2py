@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mplt
 import numpy as np
 import pandas as pd
+from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 sns.set(context='notebook', style='darkgrid', font_scale=1.2)
 # plt.rc('text', usetex=True)
@@ -167,7 +168,9 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     '''
     #: Make lists
     # no_resources = lambda_df.no_resources.unique().tolist()
-    # decision_type = lambda_df.decision_type.unique().tolist()
+    decision_type = lambda_df.decision_type.unique().tolist()
+    if 'indp_sample_12Node' in decision_type:
+        decision_type.remove('indp_sample_12Node')
     judgment_type = lambda_df.judgment_type.unique().tolist()
     if 'nan' in judgment_type:
         judgment_type.remove('nan')
@@ -178,10 +181,10 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     valuation_type = lambda_df.valuation_type.unique().tolist()
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
-    row_plot = [valuation_type, 'valuation_type']
-    col_plot = [judgment_type , 'judgment_type']
-    hue_type = [auction_type , 'auction_type']#[judgment_type, 'judgment_type']
-    x = 'no_resources' #judgment_type
+    row_plot = [judgment_type, 'judgment_type'] #valuation_type
+    col_plot = [decision_type , 'decision_type']
+    hue_type = [auction_type , 'auction_type']
+    x = 'no_resources' 
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
@@ -204,7 +207,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
                 ax.set_xlabel(r'$R_c$')
                 if idx_r != len(valuation_type)-1:
                     ax.set_xlabel('')
-                ax.set_ylabel(r'E[$\lambda_{%s}$], Valuation: %s'%(lambda_type, row_plot[0][idx_r]))
+                ax.set_ylabel(r'E[$\lambda_{%s}$], %s'%(lambda_type, row_plot[0][idx_r]))
                 if idx_c != 0:
                     ax.set_ylabel('')
                 ax.xaxis.set_label_position('bottom')
@@ -214,7 +217,8 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
                frameon=True, framealpha=.75, ncol=1)
     _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
-        ax.set_title(r'Judgment Type: %s'%(col_plot[0][idx]))
+        corrected_label = correct_legend_labels([col_plot[0][idx]])[0]
+        ax.set_title(r'Decision Type: %s'%(corrected_label))
     plt.savefig('Relative_perforamnce.png', dpi=dpi)
 
 def plot_auction_allocation(df_res, ci=None):
@@ -300,7 +304,9 @@ def plot_relative_allocation(gap_res, distance_type='gap'):
     #: Make lists
     # no_resources = gap_res.no_resources.unique().tolist()
     layer = gap_res.layer.unique().tolist()
-    # decision_type = gap_res.decision_type.unique().tolist()
+    decision_type = gap_res.decision_type.unique().tolist()
+    if 'indp_sample_12Node' in decision_type:
+        decision_type.remove('indp_sample_12Node')
     judgment_type = gap_res.judgment_type.unique().tolist()
     if 'nan' in judgment_type:
         judgment_type.remove('nan')
@@ -308,7 +314,7 @@ def plot_relative_allocation(gap_res, distance_type='gap'):
     valuation_type = gap_res.valuation_type.unique().tolist()
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
-    row_plot = [valuation_type, 'valuation_type']#valuation_type, judgment_type
+    row_plot = [decision_type, 'decision_type']#valuation_type, judgment_type
     col_plot = [auction_type, 'auction_type']
     hue_type = [layer, 'layer']
     clrs=['#5153ca', '#e4ad5d', '#c20809', '#5fb948']
@@ -331,7 +337,8 @@ def plot_relative_allocation(gap_res, distance_type='gap'):
             ax.set_xlabel(r'$R_c$')
             if idx_r != len(row_plot[0])-1:
                 ax.set_xlabel('')
-            ax.set_ylabel(r'$E[\omega^k]$, Valuation: %s' % (row_plot[0][idx_r]))
+            corrected_label = correct_legend_labels([row_plot[0][idx_r]])[0]
+            ax.set_ylabel(r'$E[\omega^k]$, %s' % (corrected_label))
             if idx_c != 0:
                 ax.set_ylabel('')
             ax.xaxis.set_label_position('bottom')
@@ -524,6 +531,7 @@ def correct_legend_labels(labels):
     labels = ['td-INDP' if x == 'tdindp' else x for x in labels]
     labels = ['Judge. Call' if x == 'jc' else x for x in labels]
     labels = ['Judge. Call' if x == 'jc_sample_12Node' else x for x in labels]
+    labels = ['Normal Game' if x == 'ng_sample_12Node' else x for x in labels]
     return labels
 
 def find_ax(axs, row_plot, col_plot, idx_r=0, idx_c=0):
@@ -563,6 +571,89 @@ def find_ax(axs, row_plot, col_plot, idx_r=0, idx_c=0):
         axs_c = axs[0, :]
         axs_r = axs[:, 0]
     return ax, axs_c, axs_r
+
+def plot_ne_sol_2player(game, suffix='', plot_dir=''):
+    '''
+    This function plot the payoff functions of a normal game for one time step
+    with nash equilibria and optimal solution marked on it (currently for 2-player games)
+
+    Parameters
+    ----------
+    game : NormalGame object
+        The game object for which the payoff matrix and solutions should be plotted.
+    plot_dir: str
+        The directory where the plott should be saved. The default is ''.
+    suffix: str
+        Suffix that should be added to the plot file name. The default is ''.
+        
+    Returns
+    -------
+    None.
+
+    '''
+    payoff_dict_cols = ['P'+str(l)+' actions' for l in game.players]
+    payoff_dict_cols += ['P'+str(l)+' payoff' for l in game.players]
+    payoff_dict = pd.DataFrame(columns=payoff_dict_cols)
+    for _, ac in game.payoffs.items():
+        acts = []
+        pays = []
+        for _, l in ac.items():
+            acts.append(l[0])
+            pays.append(l[1])
+        payoff_dict = payoff_dict.append(dict(zip(payoff_dict_cols, acts+pays)),
+                                         ignore_index=True)
+    dpi = 300
+    _, axs = plt.subplots(2, 1, sharex=True, figsize=(2000/dpi, 3000/dpi))
+    for idxl, l in enumerate(game.players):
+        pivot_dict = payoff_dict.pivot(index='P'+str(game.players[1])+' actions',
+                                       columns='P'+str(game.players[0])+' actions',
+                                       values='P'+str(l)+' payoff')
+        sns.heatmap(pivot_dict, annot=False, linewidths=.2, cmap="Blues_r", ax=axs[idxl])
+        axs[idxl].set_title('Player %d\'s payoffs, $R_c=$%d'%(l,game.v_r[l]))
+        for _, val in game.solution.sol.items():
+            for act in val['solution combination']:
+                p1_act_idx = list(pivot_dict).index(act[0])
+                p2_act_idx = list(pivot_dict.index.values).index(act[1])
+                edgeclr = 'red'
+                line_width = 2
+                zor = 2
+                if len(val['solution combination']) > 1:
+                    edgeclr = 'gold'
+                    line_width = 5
+                    zor = 1
+                axs[idxl].add_patch(Rectangle((p1_act_idx, p2_act_idx), 1, 1,
+                                              fill=False, edgecolor=edgeclr,
+                                              lw=line_width, zorder=zor))
+            
+        if game.chosen_equilibrium:
+            mixed_profile = game.chosen_equilibrium['chosen mixed profile action']
+            act = game.chosen_equilibrium['solution combination'][mixed_profile]
+            p1_cne_idx = list(pivot_dict).index(act[0])
+            p2_cne_idx = list(pivot_dict.index.values).index(act[1])
+            edgeclr = 'red'
+            if len(game.chosen_equilibrium['solution combination']) > 1:
+                edgeclr = 'gold'
+                axs[idxl].set_hatch_color = edgeclr
+            axs[idxl].add_patch(Rectangle((p1_cne_idx, p2_cne_idx), 1, 1, fill=False,
+                                          hatch='o', edgecolor=edgeclr, lw=0.01))
+            
+        if game.optimal_solution:
+            try:
+                p1_opt_act = tuple(sorted(game.optimal_solution['P'+str(game.players[0])+' actions'],
+                                          key=lambda x: str(x[0])))
+                p2_opt_act = tuple(sorted(game.optimal_solution['P'+str(game.players[1])+' actions'],
+                                          key=lambda x: str(x[0])))
+                p1_opt_idx = list(pivot_dict).index(p1_opt_act)
+                p2_opt_idx = list(pivot_dict.index.values).index(p2_opt_act)
+                axs[idxl].add_patch(Rectangle((p1_opt_idx, p2_opt_idx), 1, 1, fill=False,
+                                              hatch='xxx', edgecolor='green', lw=0.01))
+            except:
+                print('Optimal solution is not among the actions:')
+                print(game.optimal_solution)
+        else:
+            print('Optimal solution has not been calculated')
+    plt.savefig(plot_dir+'/NE_sol_2D_'+suffix+'.png', dpi=dpi, bbox_inches='tight')
+    
 
 # Color repository
 # clrs = [['azure', 'light blue'], ['gold', 'khaki'], ['strawberry', 'salmon pink'],

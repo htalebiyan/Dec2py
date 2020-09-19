@@ -55,7 +55,7 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
                                 str(params["MAGNITUDE"])+"_v"+str(params["V"])+'_'+jc+'_'+\
                                 rst+'/actions_'+str(params["SIM_NUMBER"])+'_real.csv'
                 if os.path.exists(output_dir_full):
-                    print(jc,rst,'results are already there\n')
+                    print('Judgment Call:',jc,rst,'results are already there\n')
                 else:
                     objs[c] = JcModel(c, params_copy)
                     c += 1
@@ -66,7 +66,7 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
                                     str(params["MAGNITUDE"])+"_v"+str(params["V"])+'_'+jc+'_AUCTION_'+\
                                     rst+'_'+vt+'/actions_'+str(params["SIM_NUMBER"])+'_real.csv'
                     if os.path.exists(output_dir_full):
-                        print(jc,rst,vt,'results are already there\n')
+                        print('Judgment Call:',jc,rst,vt,'results are already there\n')
                     else:
                         objs[c] = JcModel(c, params_copy)
                         c += 1
@@ -228,7 +228,7 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
     for idx, x in enumerate(joinedlist):
         #: Make the directory
         full_suffix = '_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])
-        if x[4][:2] == 'jc':
+        if x[4][:2] == 'jc' or x[4][:2] == 'ng':
             full_suffix += '_'+x[5]
             if x[6] in ["MDA", "MAA", "MCA"]:
                 full_suffix += '_AUCTION_'+x[6]+'_'+x[7]
@@ -276,7 +276,7 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
                             cmplt_results = cmplt_results.append(dict(zip(columns, values)),
                                                                  ignore_index=True)
             #: Getting back the JuCModel objects:
-            if x[4][:2] == 'jc':
+            if x[4][:2] == 'jc' or x[4][:2] == 'ng':
                 with open(result_dir+'/objs_'+str(x[1])+'.pkl', 'rb') as f:
                     objs[str(x)] = pickle.load(f)
             if idx%(len(joinedlist)//100+1) == 0:

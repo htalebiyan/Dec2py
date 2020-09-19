@@ -17,7 +17,7 @@ import dindpclasses
 import indpalt
 import indp
 import indputils
-import gameplots
+import plots
 
 class NormalGame:
     '''
@@ -544,6 +544,10 @@ class InfrastructureGame:
         :class:`params <InfrastructureGame>` using :meth:`set_time_steps`
     objs : dict of :class:`NormalGame`
         Dictionary of game objects (:class:`NormalGame`) for all time steps of the restoration
+    judgments : :class:`~dindpclasses.JudgmentModel`
+        Object that stores the judgment attitude of agents, which is only needed 
+        for computing the resource allocation when using auction. So, it is not
+        used in building or solving the games
     results : :class:`~indputils.INDPResults`
         Object that stores the restoration strategies for all time steps of the
         restoration process
@@ -567,24 +571,30 @@ class InfrastructureGame:
         self.net = self.set_network(params)
         self.time_steps = self.set_time_steps(params['T'], params['NUM_ITERATIONS'])
         self.objs = {t:0 for t in range(1,self.time_steps+1)}
+        self.judgments = dindpclasses.JudgmentModel(params, self.time_steps)
         self.results = indputils.INDPResults(self.layers)
         self.resource = dindpclasses.ResourceModel(params, self.time_steps)
         self.res_alloc_type = self.resource.type
         self.v_r = self.resource.v_r
-        self.output_dir = self.set_out_dir(params['OUTPUT_DIR'], self.magnitude)
+        self.output_dir = self.set_out_dir(params['OUTPUT_DIR'])
 
-    def run_game(self, compute_optimal=False, save_results=True, plot=False):
+    def run_game(self, print_cmd=True, compute_optimal=False, save_results=True,
+                 plot=False, save_payoff=False,):
         '''
         Runs the infrastructure restoarion game for a given number of :attr:`time_steps`
 
         Parameters
         ----------
+        print_cmd : bool, optional
+            Should the game solution be printed to the command line. The default is True.
         compute_optimal : bool, optional
             Should the optimal restoarion action be found in each time step. The default is False.
         save_results : bool, optional
-            Should the results be written to file. The default is True.
+            Should the results and game be written to file. The default is True.
         plot : bool, optional
-            Should the payoff matrix be plotted. The default is False.
+            Should the payoff matrix be plotted (only for 2-players games). The default is False.
+        save_payoff : bool, optional
+            Should the indp modles to compute payoffs be written to file. The default is False.
 
         Returns
         -------
@@ -592,25 +602,38 @@ class InfrastructureGame:
             None
 
         '''
-        print('--Running Game: '+self.game_type+', resource allocation: '+self.res_alloc_type)
         if self.game_type == 'NORMALGAME':
             for t in self.objs.keys():
                 print("-Time Step", t, "/", self.time_steps)
+                #: Resource Allocation
+                res_alloc_time_start = time.time()
+                if self.resource.type == 'AUCTION':
+                    self.resource.auction_model.auction_resources(obj=self,
+                                                                  time_step=t,
+                                                                  print_cmd=print_cmd,
+                                                                  compute_poa=True)
+                self.resource.time[t] = time.time()-res_alloc_time_start
+                # Create normal game
                 self.objs[t] = NormalGame(self.layers, self.net, self.v_r[t])
-                self.objs[t].compute_payoffs(save_model=[self.output_dir+'/payoff_models', t])
+                # Compute payoffs
+                if save_payoff:
+                    save_payoff = [self.output_dir+'/payoff_models', t]
+                self.objs[t].compute_payoffs(save_model=save_payoff)
+                # Solve game
                 game_start = time.time()
                 if self.objs[t].payoffs:
-                    self.objs[t].build_game(save_model=self.output_dir+'/games',
-                                            suffix=str(t))
-                    self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=True)
+                    if save_results:
+                        save_results = self.output_dir+'/games'
+                    self.objs[t].build_game(save_model=save_results, suffix=str(t))
+                    self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd)
                     self.objs[t].choose_equilibrium()
                     mixed_index = self.objs[t].chosen_equilibrium['chosen mixed profile action']
                     game_time = time.time()-game_start
                     if compute_optimal:
                         self.objs[t].find_optimal_solution()
                     if plot and len(self.layers)==2:
-                        gameplots.plot_ne_sol_2player(self.objs[t], suffix=str(t))
-
+                        plots.plot_ne_sol_2player(self.objs[t], suffix=str(t),
+                                                  plot_dir=self.output_dir)
                     ne_results = self.objs[t].chosen_equilibrium['full results'][mixed_index]
                     ne_results[1].results[0]['run_time'] = game_time
                     self.results.extend(ne_results[1], t_offset=t)
@@ -624,7 +647,7 @@ class InfrastructureGame:
             self.save_object_to_file()
             self.save_results_to_file()
 
-    def set_out_dir(self, root, mag):
+    def set_out_dir(self, root):
         '''
         This function generates and sets the directory to which the results are written
 
@@ -641,8 +664,9 @@ class InfrastructureGame:
             Directory to which the results are written
 
         '''
-        output_dir = root+'_L'+str(len(self.layers))+'_m'+str(mag)+"_v"+\
-            str(self.resource.sum_resource)+'_'+self.res_alloc_type
+        output_dir = root+'_L'+str(len(self.layers))+'_m'+str(self.magnitude)+"_v"+\
+            str(self.resource.sum_resource)+'_'+self.judgments.judgment_type+\
+            '_'+self.res_alloc_type
         if self.res_alloc_type == 'AUCTION':
             output_dir += '_'+self.resource.auction_model.auction_type+\
                 '_'+self.resource.auction_model.valuation_type

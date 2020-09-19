@@ -153,7 +153,7 @@
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/dindp.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/dindputils.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -166,16 +166,16 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="module-dindp">
-<span id="judgment-call-functions"></span><h1>Judgment Call functions<a class="headerlink" href="#module-dindp" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-dindputils">
+<span id="judgment-call-functions"></span><h1>Judgment Call functions<a class="headerlink" href="#module-dindputils" title="Permalink to this headline">¶</a></h1>
 <p>This module contains functions to run decentralized restoration for interdepndent networks
 using Judgment Call method <a class="bibtex reference internal" href="index.html#talebiyan2019c" id="id1">[TDO20a]</a><a class="bibtex reference internal" href="index.html#talebiyan2019" id="id2">[TDO19]</a>, read the results,
 and compute comparison measures.</p>
 <div class="section" id="running-judgment-call">
 <h2>Running Judgment Call<a class="headerlink" href="#running-judgment-call" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
-<dt id="dindp.run_judgment_call">
-<code class="sig-prename descclassname">dindp.</code><code class="sig-name descname">run_judgment_call</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em>, <em class="sig-param"><span class="n">save_jc</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">print_cmd</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">save_jc_model</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindp.run_judgment_call" title="Permalink to this definition">¶</a></dt>
+<dt id="dindputils.run_judgment_call">
+<code class="sig-prename descclassname">dindputils.</code><code class="sig-name descname">run_judgment_call</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em>, <em class="sig-param"><span class="n">save_jc</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">print_cmd</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">save_jc_model</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindputils.run_judgment_call" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds interdepndent restoration strategies using a decentralized hueristic,
 Judgment Call <a class="bibtex reference internal" href="index.html#talebiyan2019c" id="id3">[TDO20a]</a><a class="bibtex reference internal" href="index.html#talebiyan2019" id="id4">[TDO19]</a>.</p>
 <dl class="field-list simple">
@@ -194,8 +194,8 @@ Judgment Call <a class="bibtex reference internal" href="index.html#talebiyan201
 </dd></dl>
 
 <dl class="py function">
-<dt id="dindp.realized_performance">
-<code class="sig-prename descclassname">dindp.</code><code class="sig-name descname">realized_performance</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obj</span></em>, <em class="sig-param"><span class="n">t_step</span></em>, <em class="sig-param"><span class="n">functionality</span></em>, <em class="sig-param"><span class="n">judger_layer</span></em>, <em class="sig-param"><span class="n">print_cmd</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindp.realized_performance" title="Permalink to this definition">¶</a></dt>
+<dt id="dindputils.realized_performance">
+<code class="sig-prename descclassname">dindputils.</code><code class="sig-name descname">realized_performance</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obj</span></em>, <em class="sig-param"><span class="n">t_step</span></em>, <em class="sig-param"><span class="n">functionality</span></em>, <em class="sig-param"><span class="n">judger_layer</span></em>, <em class="sig-param"><span class="n">print_cmd</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindputils.realized_performance" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function computes the realized values of flow cost, unbalanced cost, and
 demand deficit at the end of each step according to the what the other agent
 actually decides (as opposed to according to the judgment-based decisions).</p>
@@ -222,8 +222,8 @@ actually decides (as opposed to according to the judgment-based decisions).</p>
 <div class="section" id="reading-results-computing-comparison-measures">
 <h2>Reading results/Computing comparison measures<a class="headerlink" href="#reading-results-computing-comparison-measures" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
-<dt id="dindp.read_results">
-<code class="sig-prename descclassname">dindp.</code><code class="sig-name descname">read_results</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">combinations</span></em>, <em class="sig-param"><span class="n">optimal_combinations</span></em>, <em class="sig-param"><span class="n">cost_types</span></em>, <em class="sig-param"><span class="n">root_result_dir</span><span class="o">=</span><span class="default_value">'../results/'</span></em>, <em class="sig-param"><span class="n">deaggregate</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">rslt_dir_lyr</span><span class="o">=</span><span class="default_value">'/agents'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindp.read_results" title="Permalink to this definition">¶</a></dt>
+<dt id="dindputils.read_results">
+<code class="sig-prename descclassname">dindputils.</code><code class="sig-name descname">read_results</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">combinations</span></em>, <em class="sig-param"><span class="n">optimal_combinations</span></em>, <em class="sig-param"><span class="n">cost_types</span></em>, <em class="sig-param"><span class="n">root_result_dir</span><span class="o">=</span><span class="default_value">'../results/'</span></em>, <em class="sig-param"><span class="n">deaggregate</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">rslt_dir_lyr</span><span class="o">=</span><span class="default_value">'/agents'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindputils.read_results" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function reads the results of analyses (INDP, JC, etc.) and the corresponding
 objects from file and aggregates the results in a dictionary.</p>
 <dl class="field-list simple">
@@ -231,13 +231,13 @@ objects from file and aggregates the results in a dictionary.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>combinations</strong> (<em>dict</em>) -- All combinations of magnitude, sample, judgment type, resource allocation type
 involved in the JC (or any other decentralized results) collected by
-<a class="reference internal" href="#dindp.generate_combinations" title="dindp.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
+<a class="reference internal" href="#dindputils.generate_combinations" title="dindputils.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
 <li><p><strong>optimal_combinations</strong> (<em>dict</em>) -- All combinations of magnitude, sample, judgment type, resource allocation type
-involved in the INDP (or any other optimal results) collected by <a class="reference internal" href="#dindp.generate_combinations" title="dindp.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
+involved in the INDP (or any other optimal results) collected by <a class="reference internal" href="#dindputils.generate_combinations" title="dindputils.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
 <li><p><strong>cost_types</strong> (<em>str</em>) -- Cost types that should be read from results and will be shown in the plots.</p></li>
 <li><p><strong>root_result_dir</strong> (<em>'str'</em><em>, </em><em>optional</em>) -- Root directory where the results are stored. The default is '../results/'.</p></li>
 <li><p><strong>deaggregate</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Should the deaggregated results (for seperate layers) be read. The default is False.</p></li>
-<li><p><strong>rslt_dir_lyr</strong> (<em>str</em><em>, </em><em>optional</em>) -- Directory insdie the <a class="reference internal" href="#dindp.read_results" title="dindp.read_results"><code class="xref py py-func docutils literal notranslate"><span class="pre">root</span> <span class="pre">result</span> <span class="pre">directory</span></code></a> where
+<li><p><strong>rslt_dir_lyr</strong> (<em>str</em><em>, </em><em>optional</em>) -- Directory insdie the <a class="reference internal" href="#dindputils.read_results" title="dindputils.read_results"><code class="xref py py-func docutils literal notranslate"><span class="pre">root</span> <span class="pre">result</span> <span class="pre">directory</span></code></a> where
 the deaggregated results (for seperate layers)  are. The default is '/agents'.</p></li>
 </ul>
 </dd>
@@ -252,20 +252,20 @@ the deaggregated results (for seperate layers)  are. The default is '/agents'.</
 </dd></dl>
 
 <dl class="py function">
-<dt id="dindp.relative_performance">
-<code class="sig-prename descclassname">dindp.</code><code class="sig-name descname">relative_performance</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">r_df</span></em>, <em class="sig-param"><span class="n">combinations</span></em>, <em class="sig-param"><span class="n">optimal_combinations</span></em>, <em class="sig-param"><span class="n">ref_method</span><span class="o">=</span><span class="default_value">'indp'</span></em>, <em class="sig-param"><span class="n">ref_jt</span><span class="o">=</span><span class="default_value">'nan'</span></em>, <em class="sig-param"><span class="n">ref_at</span><span class="o">=</span><span class="default_value">'nan'</span></em>, <em class="sig-param"><span class="n">ref_vt</span><span class="o">=</span><span class="default_value">'nan'</span></em>, <em class="sig-param"><span class="n">cost_type</span><span class="o">=</span><span class="default_value">'Total'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindp.relative_performance" title="Permalink to this definition">¶</a></dt>
+<dt id="dindputils.relative_performance">
+<code class="sig-prename descclassname">dindputils.</code><code class="sig-name descname">relative_performance</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">r_df</span></em>, <em class="sig-param"><span class="n">combinations</span></em>, <em class="sig-param"><span class="n">optimal_combinations</span></em>, <em class="sig-param"><span class="n">ref_method</span><span class="o">=</span><span class="default_value">'indp'</span></em>, <em class="sig-param"><span class="n">ref_jt</span><span class="o">=</span><span class="default_value">'nan'</span></em>, <em class="sig-param"><span class="n">ref_at</span><span class="o">=</span><span class="default_value">'nan'</span></em>, <em class="sig-param"><span class="n">ref_vt</span><span class="o">=</span><span class="default_value">'nan'</span></em>, <em class="sig-param"><span class="n">cost_type</span><span class="o">=</span><span class="default_value">'Total'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindputils.relative_performance" title="Permalink to this definition">¶</a></dt>
 <dd><p>This functions computes the relative performance, relative cost, and univeral
 relative measure <a class="bibtex reference internal" href="index.html#talebiyan2019c" id="id5">[TDO20a]</a> based on results from JC and INDP.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>r_df</strong> (<em>dict</em>) -- Dictionary that contains complete results by JC and INDP collected by
-<a class="reference internal" href="#dindp.read_results" title="dindp.read_results"><code class="xref py py-func docutils literal notranslate"><span class="pre">read_results()</span></code></a>.</p></li>
+<a class="reference internal" href="#dindputils.read_results" title="dindputils.read_results"><code class="xref py py-func docutils literal notranslate"><span class="pre">read_results()</span></code></a>.</p></li>
 <li><p><strong>combinations</strong> (<em>dict</em>) -- All combinations of magnitude, sample, judgment type, resource allocation type
 involved in the JC (or any other decentralized results) collected by
-<a class="reference internal" href="#dindp.generate_combinations" title="dindp.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
+<a class="reference internal" href="#dindputils.generate_combinations" title="dindputils.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
 <li><p><strong>optimal_combinations</strong> (<em>dict</em>) -- All combinations of magnitude, sample, judgment type, resource allocation type
-involved in the INDP (or any other optimal results) collected by <a class="reference internal" href="#dindp.generate_combinations" title="dindp.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
+involved in the INDP (or any other optimal results) collected by <a class="reference internal" href="#dindputils.generate_combinations" title="dindputils.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
 <li><p><strong>ref_method</strong> (<em>str</em><em>, </em><em>optional</em>) -- Referece method to computue relative measure in comparison to. The default is 'indp'.</p></li>
 <li><p><strong>ref_jt</strong> (<em>str</em><em>, </em><em>optional</em>) -- Referece judgment type to computue relative measure in comparison to. It is used only
 when the reference method is JC. The default is 'nan'.</p></li>
@@ -287,8 +287,8 @@ allocation type is Auntion. The default is 'nan'.</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt id="dindp.read_resourcec_allocation">
-<code class="sig-prename descclassname">dindp.</code><code class="sig-name descname">read_resourcec_allocation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">result_df</span></em>, <em class="sig-param"><span class="n">combinations</span></em>, <em class="sig-param"><span class="n">optimal_combinations</span></em>, <em class="sig-param"><span class="n">objs</span></em>, <em class="sig-param"><span class="n">ref_method</span><span class="o">=</span><span class="default_value">'indp'</span></em>, <em class="sig-param"><span class="n">root_result_dir</span><span class="o">=</span><span class="default_value">'../results/'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindp.read_resourcec_allocation" title="Permalink to this definition">¶</a></dt>
+<dt id="dindputils.read_resourcec_allocation">
+<code class="sig-prename descclassname">dindputils.</code><code class="sig-name descname">read_resourcec_allocation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">result_df</span></em>, <em class="sig-param"><span class="n">combinations</span></em>, <em class="sig-param"><span class="n">optimal_combinations</span></em>, <em class="sig-param"><span class="n">objs</span></em>, <em class="sig-param"><span class="n">ref_method</span><span class="o">=</span><span class="default_value">'indp'</span></em>, <em class="sig-param"><span class="n">root_result_dir</span><span class="o">=</span><span class="default_value">'../results/'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindputils.read_resourcec_allocation" title="Permalink to this definition">¶</a></dt>
 <dd><p>This functions reads the resource allocation vectors by INDP and JC. Also,
 it computes the allocation gap between the respurce allocation by JC and
 and the optimal allocation by INDP <a class="bibtex reference internal" href="index.html#talebiyan2020a" id="id6">[TDO20b]</a>.</p>
@@ -296,12 +296,12 @@ and the optimal allocation by INDP <a class="bibtex reference internal" href="in
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>result_df</strong> (<em>dict</em>) -- Dictionary that contains complete results by JC and INDP collected by
-<a class="reference internal" href="#dindp.read_results" title="dindp.read_results"><code class="xref py py-func docutils literal notranslate"><span class="pre">read_results()</span></code></a>.</p></li>
+<a class="reference internal" href="#dindputils.read_results" title="dindputils.read_results"><code class="xref py py-func docutils literal notranslate"><span class="pre">read_results()</span></code></a>.</p></li>
 <li><p><strong>combinations</strong> (<em>dict</em>) -- All combinations of magnitude, sample, judgment type, resource allocation type
 involved in the JC (or any other decentralized results) collected by
-<a class="reference internal" href="#dindp.generate_combinations" title="dindp.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
+<a class="reference internal" href="#dindputils.generate_combinations" title="dindputils.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
 <li><p><strong>optimal_combinations</strong> (<em>dict</em>) -- All combinations of magnitude, sample, judgment type, resource allocation type
-involved in the INDP (or any other optimal results) collected by <a class="reference internal" href="#dindp.generate_combinations" title="dindp.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
+involved in the INDP (or any other optimal results) collected by <a class="reference internal" href="#dindputils.generate_combinations" title="dindputils.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
 <li><p><strong>ref_method</strong> (<em>str</em><em>, </em><em>optional</em>) -- Referece method to computue relative measure in comparison to. The default is 'indp'.</p></li>
 <li><p><strong>root_result_dir</strong> (<em>str</em><em>, </em><em>optional</em>) -- Directory that contains the results. The default is '../results/'.</p></li>
 </ul>
@@ -317,19 +317,19 @@ involved in the INDP (or any other optimal results) collected by <a class="refer
 </dd></dl>
 
 <dl class="py function">
-<dt id="dindp.read_run_time">
-<code class="sig-prename descclassname">dindp.</code><code class="sig-name descname">read_run_time</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">combinations</span></em>, <em class="sig-param"><span class="n">optimal_combinations</span></em>, <em class="sig-param"><span class="n">objs</span></em>, <em class="sig-param"><span class="n">root_result_dir</span><span class="o">=</span><span class="default_value">'../results/'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindp.read_run_time" title="Permalink to this definition">¶</a></dt>
+<dt id="dindputils.read_run_time">
+<code class="sig-prename descclassname">dindputils.</code><code class="sig-name descname">read_run_time</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">combinations</span></em>, <em class="sig-param"><span class="n">optimal_combinations</span></em>, <em class="sig-param"><span class="n">objs</span></em>, <em class="sig-param"><span class="n">root_result_dir</span><span class="o">=</span><span class="default_value">'../results/'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindputils.read_run_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function reads the run time of computing restoration strategies by different methods.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>combinations</strong> (<em>dict</em>) -- All combinations of magnitude, sample, judgment type, resource allocation type
 involved in the JC (or any other decentralized results) collected by
-<a class="reference internal" href="#dindp.generate_combinations" title="dindp.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
+<a class="reference internal" href="#dindputils.generate_combinations" title="dindputils.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
 <li><p><strong>optimal_combinations</strong> (<em>dict</em>) -- All combinations of magnitude, sample, judgment type, resource allocation type
-involved in the INDP (or any other optimal results) collected by <a class="reference internal" href="#dindp.generate_combinations" title="dindp.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
+involved in the INDP (or any other optimal results) collected by <a class="reference internal" href="#dindputils.generate_combinations" title="dindputils.generate_combinations"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_combinations()</span></code></a>.</p></li>
 <li><p><strong>objs</strong> (<em>dict</em>) -- Dictionary that contains the objects corresponding to the results collected
-by <a class="reference internal" href="#dindp.read_results" title="dindp.read_results"><code class="xref py py-func docutils literal notranslate"><span class="pre">read_results()</span></code></a>.</p></li>
+by <a class="reference internal" href="#dindputils.read_results" title="dindputils.read_results"><code class="xref py py-func docutils literal notranslate"><span class="pre">read_results()</span></code></a>.</p></li>
 <li><p><strong>root_result_dir</strong> (<em>str</em><em>, </em><em>optional</em>) -- Directory that contains the results. The default is '../results/'.</p></li>
 </ul>
 </dd>
@@ -346,8 +346,8 @@ by <a class="reference internal" href="#dindp.read_results" title="dindp.read_re
 <div class="section" id="other-functions">
 <h2>Other functions<a class="headerlink" href="#other-functions" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
-<dt id="dindp.generate_combinations">
-<code class="sig-prename descclassname">dindp.</code><code class="sig-name descname">generate_combinations</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">database</span></em>, <em class="sig-param"><span class="n">mags</span></em>, <em class="sig-param"><span class="n">sample</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">no_resources</span></em>, <em class="sig-param"><span class="n">decision_type</span></em>, <em class="sig-param"><span class="n">judgment_type</span></em>, <em class="sig-param"><span class="n">res_alloc_type</span></em>, <em class="sig-param"><span class="n">valuation_type</span></em>, <em class="sig-param"><span class="n">suffixes</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">list_high_dam_add</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">synthetic_dir</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindp.generate_combinations" title="Permalink to this definition">¶</a></dt>
+<dt id="dindputils.generate_combinations">
+<code class="sig-prename descclassname">dindputils.</code><code class="sig-name descname">generate_combinations</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">database</span></em>, <em class="sig-param"><span class="n">mags</span></em>, <em class="sig-param"><span class="n">sample</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">no_resources</span></em>, <em class="sig-param"><span class="n">decision_type</span></em>, <em class="sig-param"><span class="n">judgment_type</span></em>, <em class="sig-param"><span class="n">res_alloc_type</span></em>, <em class="sig-param"><span class="n">valuation_type</span></em>, <em class="sig-param"><span class="n">suffixes</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">list_high_dam_add</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">synthetic_dir</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindputils.generate_combinations" title="Permalink to this definition">¶</a></dt>
 <dd><p>This fucntion returns all combinations of magnitude, sample, judgment type,
 resource allocation type, and valuation type (if applicable) involved in
 decentralized and centralized analyses. The returend dictionary are used by
@@ -390,8 +390,8 @@ involved in the INDP (or any other optimal results).</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt id="dindp.update_progress">
-<code class="sig-prename descclassname">dindp.</code><code class="sig-name descname">update_progress</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">progress</span></em>, <em class="sig-param"><span class="n">total</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindp.update_progress" title="Permalink to this definition">¶</a></dt>
+<dt id="dindputils.update_progress">
+<code class="sig-prename descclassname">dindputils.</code><code class="sig-name descname">update_progress</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">progress</span></em>, <em class="sig-param"><span class="n">total</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindputils.update_progress" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function updates and writes a progress bar to console.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -407,8 +407,8 @@ involved in the INDP (or any other optimal results).</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt id="dindp.trapz_int">
-<code class="sig-prename descclassname">dindp.</code><code class="sig-name descname">trapz_int</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindp.trapz_int" title="Permalink to this definition">¶</a></dt>
+<dt id="dindputils.trapz_int">
+<code class="sig-prename descclassname">dindputils.</code><code class="sig-name descname">trapz_int</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em><span class="sig-paren">)</span><a class="headerlink" href="#dindputils.trapz_int" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function computes the area underneath a curve (y) over time vector (x) including
 checking if the time vector is sorted.</p>
 <dl class="field-list simple">

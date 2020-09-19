@@ -38,7 +38,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Restoration Game Classes" href="gameclasses.html" />
-    <link rel="prev" title="Judgment Call functions" href="dindp.html" /> 
+    <link rel="prev" title="Judgment Call functions" href="dindputils.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -88,7 +88,7 @@
 <li class="toctree-l1"><a class="reference internal" href="run_main.html">Run INDP and Judgment Call</a></li>
 <li class="toctree-l1"><a class="reference internal" href="indp_main.html">Interdependent Network Design Problem (INDP)</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="dindp_main.html">Judgment Call Method</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="dindp.html">Judgment Call functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dindputils.html">Judgment Call functions</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Judgment Call Classes</a><ul class="simple">
 </ul>
 </li>
@@ -175,8 +175,12 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>obj</strong> (<a class="reference internal" href="#dindpclasses.JcModel" title="dindpclasses.JcModel"><em>JcModel</em></a>) -- DESCRIPTION.</p></li>
-<li><p><strong>time_step</strong> (<em>int</em>) -- DESCRIPTION.</p></li>
+<li><p><strong>obj</strong> (<a class="reference internal" href="#dindpclasses.JcModel" title="dindpclasses.JcModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">JcModel</span></code></a> or <a class="reference internal" href="gameclasses.html#gameclasses.InfrastructureGame" title="gameclasses.InfrastructureGame"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfrastructureGame</span></code></a>) -- The object that stores the overall decentralized method for which the
+resource allocation is computed using <a class="reference internal" href="#dindpclasses.AuctionModel" title="dindpclasses.AuctionModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">AuctionModel</span></code></a>.
+The object type that can be passed here should have five attributes:
+net, layers, results (or results_real for <a class="reference internal" href="#dindpclasses.JcModel" title="dindpclasses.JcModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">JcModel</span></code></a>), and
+judgments (for computing the valuations).</p></li>
+<li><p><strong>time_step</strong> (<em>int</em>) -- Time step for which the auction is computed and resoures are allocated.</p></li>
 <li><p><strong>print_cmd</strong> (<em>bool</em><em>, </em><em>optional</em>) -- DESCRIPTION. The default is True.</p></li>
 <li><p><strong>compute_poa</strong> (<em>bool</em><em>, </em><em>optional</em>) -- DESCRIPTION. The default is False.</p></li>
 </ul>
@@ -519,7 +523,7 @@ from all layers of the network or controlled layers.</p></li>
         <a href="gameclasses.html" class="btn btn-neutral float-right" title="Restoration Game Classes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="dindp.html" class="btn btn-neutral float-left" title="Judgment Call functions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="dindputils.html" class="btn btn-neutral float-left" title="Judgment Call functions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

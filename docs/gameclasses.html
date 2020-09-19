@@ -327,6 +327,19 @@ using <a class="reference internal" href="#gameclasses.InfrastructureGame.set_ne
 </dd></dl>
 
 <dl class="py attribute">
+<dt id="gameclasses.InfrastructureGame.judgments">
+<code class="sig-name descname">judgments</code><a class="headerlink" href="#gameclasses.InfrastructureGame.judgments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object that stores the judgment attitude of agents, which is only needed
+for computing the resource allocation when using auction. So, it is not
+used in building or solving the games</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="dindpclasses.html#dindpclasses.JudgmentModel" title="dindpclasses.JudgmentModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">JudgmentModel</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
 <dt id="gameclasses.InfrastructureGame.results">
 <code class="sig-name descname">results</code><a class="headerlink" href="#gameclasses.InfrastructureGame.results" title="Permalink to this definition">¶</a></dt>
 <dd><p>Object that stores the restoration strategies for all time steps of the
@@ -386,14 +399,16 @@ all time steps of the restoration process</p>
 
 <dl class="py method">
 <dt id="gameclasses.InfrastructureGame.run_game">
-<code class="sig-name descname">run_game</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">compute_optimal</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">save_results</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">plot</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.run_game" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">run_game</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">print_cmd</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">compute_optimal</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">save_results</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">plot</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">save_payoff</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.run_game" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs the infrastructure restoarion game for a given number of <a class="reference internal" href="#gameclasses.InfrastructureGame.time_steps" title="gameclasses.InfrastructureGame.time_steps"><code class="xref py py-attr docutils literal notranslate"><span class="pre">time_steps</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
+<li><p><strong>print_cmd</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Should the game solution be printed to the command line. The default is True.</p></li>
 <li><p><strong>compute_optimal</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Should the optimal restoarion action be found in each time step. The default is False.</p></li>
-<li><p><strong>save_results</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Should the results be written to file. The default is True.</p></li>
-<li><p><strong>plot</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Should the payoff matrix be plotted. The default is False.</p></li>
+<li><p><strong>save_results</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Should the results and game be written to file. The default is True.</p></li>
+<li><p><strong>plot</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Should the payoff matrix be plotted (only for 2-players games). The default is False.</p></li>
+<li><p><strong>save_payoff</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Should the indp modles to compute payoffs be written to file. The default is False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -451,7 +466,7 @@ all simulations , and must not be altered</p>
 
 <dl class="py method">
 <dt id="gameclasses.InfrastructureGame.set_out_dir">
-<code class="sig-name descname">set_out_dir</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">root</span></em>, <em class="sig-param"><span class="n">mag</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.set_out_dir" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_out_dir</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">root</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.set_out_dir" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function generates and sets the directory to which the results are written</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

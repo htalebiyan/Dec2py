@@ -1,6 +1,6 @@
 Judgment Call functions
 =======================================================
-.. automodule:: dindp
+.. automodule:: dindputils
 
 *********************
 Running Judgment Call

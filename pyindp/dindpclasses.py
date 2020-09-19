@@ -503,10 +503,14 @@ class AuctionModel():
 
         Parameters
         ----------
-        obj : JcModel
-            DESCRIPTION.
+        obj : :class:`~.JcModel` or :class:`~gameclasses.InfrastructureGame`
+            The object that stores the overall decentralized method for which the
+            resource allocation is computed using :class:`~dindpclasses.AuctionModel`.
+            The object type that can be passed here should have five attributes: 
+            net, layers, results (or results_real for :class:`~.JcModel`), and
+            judgments (for computing the valuations).
         time_step : int
-            DESCRIPTION.
+            Time step for which the auction is computed and resoures are allocated.
         print_cmd : bool, optional
             DESCRIPTION. The default is True.
         compute_poa : bool, optional
@@ -653,10 +657,16 @@ class AuctionModel():
         time_limit = 2*60 #!!! Maybe adjusted
         current_total_cost = {}
         for l in obj.layers:
-            current_total_cost[l] = obj.results_real.results_layer[l][t_step-1]['costs']['Total']
+            if type(obj) is JcModel:
+                current_total_cost[l] = obj.results_real.results_layer[l][t_step-1]['costs']['Total']
+            else:
+                current_total_cost[l] = obj.results.results_layer[l][t_step-1]['costs']['Total']
         #: Optimal Valuation, which the optimal walfare value. Used to compute POA ###
         if compute_optimal_valuation:
-            current_optimal_tc = obj.results_real.results[t_step-1]['costs']['Total']
+            if type(obj) is JcModel:
+                current_optimal_tc = obj.results_real.results[t_step-1]['costs']['Total']
+            else:
+                current_optimal_tc = obj.results.results[t_step-1]['costs']['Total']
             indp_results = indp.indp(obj.net, v_r=obj.resource.sum_resource, T=1,
                                      layers=obj.layers, controlled_layers=obj.layers)
             optimal_tc = indp_results[1][0]['costs']['Total']

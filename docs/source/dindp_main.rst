@@ -5,6 +5,6 @@ Judgment Call Method
    :maxdepth: 2
    :caption: Topics:
    
-   dindp.rst
+   dindputils.rst
    dindpclasses.rst
 
