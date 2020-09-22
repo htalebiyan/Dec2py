@@ -617,7 +617,15 @@ def plot_ne_sol_2player(game, suffix='', plot_dir=''):
         pivot_dict = payoff_dict.pivot(index='P'+str(game.players[1])+' actions',
                                        columns='P'+str(game.players[0])+' actions',
                                        values='P'+str(l)+' payoff')
-        sns.heatmap(pivot_dict, annot=False, linewidths=.2, cmap="Blues_r", ax=axs[idxl])
+        mask = pivot_dict.copy()
+        for col in mask:
+            for i, row in mask.iterrows():
+                if mask.at[i,col] == -1e100:
+                    mask.loc[i,col] = True
+                else:
+                    mask.loc[i,col] = False
+        sns.heatmap(pivot_dict, annot=False, linewidths=.2, cmap="Blues_r", mask=mask, ax=axs[idxl])
+        axs[idxl].set_facecolor("black")
         axs[idxl].set_title('Player %d\'s payoffs, $R_c=$%d'%(l,game.v_r[l]))
         for _, val in game.solution.sol.items():
             for act in val['solution combination']:

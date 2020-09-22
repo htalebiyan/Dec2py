@@ -117,7 +117,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                 dindputils.run_judgment_call(params, save_jc_model=False, print_cmd=False)
             elif params["ALGORITHM"] == "NORMALGAME":
                 gameutils.run_game(params, save_results=True, print_cmd=True,
-                                   save_model=True, plot2D=False)
+                                   save_model=True, plot2D=True)
 
 def run_indp_sample(layers):
     interdep_net= indp.initialize_sample_network(layers=layers)
@@ -210,7 +210,7 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
         elif method == 'NORMALGAME':
             params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'/ng_results',
                       "V":v, "T":1, "L":layers, "ALGORITHM":"NORMALGAME",
-                      'EQUIBALG':'gnm_solve', "JUDGMENT_TYPE":judgment_type,
+                      'EQUIBALG':'enumpure_solve', "JUDGMENT_TYPE":judgment_type,
                       "RES_ALLOC_TYPE":res_alloc_type, "VALUATION_TYPE":valuation_type}
         elif method == 'TD_INDP':
             params = {"NUM_ITERATIONS":1, "OUTPUT_DIR":output_dir+'/tdindp_results',
@@ -261,18 +261,20 @@ if __name__ == "__main__":
     
     #: The address to the list of scenarios that should be included in the analyses.
     FILTER_SCE = '../data/damagedElements_sliceQuantile_0.90.csv'
-    
+
     #: The address to the basic (topology, parameters, etc.) information of the network.
-    BASE_DIR = "../data/Extended_Shelby_County/"
+    BASE_DIR = "/home/hesam/Desktop/Files/Generated_Network_Dataset_v3.1/"
     # "../data/Extended_Shelby_County/"
     # "C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\"
-    
+    # "/home/hesam/Desktop/Files/Generated_Network_Dataset_v3.1"
+
     #: The address to damge scenario data.
-    DAMAGE_DIR = "../data/Wu_Damage_scenarios/" 
+    DAMAGE_DIR = "/home/hesam/Desktop/Files/Generated_Network_Dataset_v3.1/" 
     # ../data/random_disruption_shelby/"
     #"../data/Wu_Damage_scenarios/" 
     # "C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\"
-    
+    # "/home/hesam/Desktop/Files/Generated_Network_Dataset_v3.1"
+
     #: The address to where output are stored.
     OUTPUT_DIR = '../results/'
     #'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
@@ -289,15 +291,15 @@ if __name__ == "__main__":
     #:     sce range: FAIL_SCE_PARAM['MAGS']
     #: For Synthetic nets: sample range: FAIL_SCE_PARAM['SAMPLE_RANGE'],
     #:     configurations: FAIL_SCE_PARAM['MAGS']
-    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(0, 50), 'MAGS':range(0, 3),
-                      'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
+    # FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(0, 50), 'MAGS':range(0, 95),
+    #                   'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"random", 'SAMPLE_RANGE':range(10, 11), 'MAGS':range(0, 1),
     #                   'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    # FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(0, 1),
-    #                   'FILTER_SCE':None, 'TOPO':'ScaleFree',
-    #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
+    FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(68, 69),
+                      'FILTER_SCE':None, 'TOPO':'Grid',
+                      'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # Oytput and base dir for sythetic database
     SYNTH_DIR = None
     if FAIL_SCE_PARAM['TYPE'] == 'synthetic':
@@ -322,7 +324,6 @@ if __name__ == "__main__":
 
     ''' Run different methods '''
     run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR)
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TD_INDP')
     run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
                 res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
                 output_dir=OUTPUT_DIR)#, misc = {'STM_MODEL_DICT':STM_MODEL_DICT})
@@ -366,15 +367,14 @@ if __name__ == "__main__":
     ### Plot results ###
     plt.close('all')
 
-    plots.plot_performance_curves(BASE_DF[(BASE_DF['auction_type']!='UNIFORM')&(BASE_DF['auction_type']!='MAA')], cost_type='Total', ci=None,
+    plots.plot_performance_curves(BASE_DF, cost_type='Total', ci=None,
                                           deaggregate=True, plot_resilience=True)
 
     plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
                                         ci=None, normalize=False)
 
     plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
-    plots.plot_auction_allocation(RES_ALLOC_DF[(RES_ALLOC_DF['auction_type']!='UNIFORM')&(RES_ALLOC_DF['auction_type']!='MAA')], ci=None)
-    plots.plot_relative_allocation(ALLOC_GAP_DF[ALLOC_GAP_DF['auction_type']!='UNIFORM'],
-                                    distance_type='gap')
+    plots.plot_auction_allocation(RES_ALLOC_DF, ci=None)
+    plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
     plots.plot_run_time(RUN_TIME_DF[(RUN_TIME_DF['auction_type']!='MDA')&(RUN_TIME_DF['auction_type']!='MAA')], ci=95)
     ### [(RUN_TIME_DF['auction_type']!='MDA')&(RUN_TIME_DF['auction_type']!='MAA')]

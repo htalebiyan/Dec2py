@@ -186,15 +186,22 @@ class NormalGame:
         for idx, ac in enumerate(action_comb):
             self.payoffs[idx] = {}
             flow_results = self.flow_problem(ac)
-            if save_model:
-                indp.save_INDP_model_to_file(flow_results[0], save_model[0],
-                                             save_model[1], suffix=str(ac))
-            for idxl, l in enumerate(self.players):
-                # Minus sign because we want to minimize the cost
-                payoff_layer = -flow_results[1].results_layer[l][0]['costs']['Total']
-                self.payoffs[idx][l] = [ac[idxl], payoff_layer]
-                self.temp_storage[idx] = flow_results
-                self.payoff_time[idx] = flow_results[1].results[0]['run_time']
+            if flow_results:
+                if save_model:
+                    indp.save_INDP_model_to_file(flow_results[0], save_model[0],
+                                                 save_model[1], suffix=str(ac))
+                for idxl, l in enumerate(self.players):
+                    # Minus sign because we want to minimize the cost
+                    payoff_layer = -flow_results[1].results_layer[l][0]['costs']['Total']
+                    self.payoffs[idx][l] = [ac[idxl], payoff_layer]
+                    self.temp_storage[idx] = flow_results
+                    self.payoff_time[idx] = flow_results[1].results[0]['run_time']
+            else:
+                for idxl, l in enumerate(self.players):
+                    payoff_layer = -1e100 # Change this to work for general case
+                    self.payoffs[idx][l] = [ac[idxl], payoff_layer]
+                    self.temp_storage[idx] = []
+                    self.payoff_time[idx] = 0.0
 
     def flow_problem(self, action):
         '''
@@ -645,8 +652,10 @@ class InfrastructureGame:
                     if compute_optimal:
                         self.objs[t].find_optimal_solution()
                     if plot and len(self.layers)==2:
-                        plots.plot_ne_sol_2player(self.objs[t], suffix=str(t),
-                                                  plot_dir=self.output_dir)
+                        if not os.path.exists(self.output_dir+'/payoff_matrix'):
+                            os.makedirs(self.output_dir+'/payoff_matrix')
+                        plots.plot_ne_sol_2player(self.objs[t], suffix=str(self.sample)+'_t'+str(t),
+                                                  plot_dir=self.output_dir+'/payoff_matrix')
                     ne_results = self.objs[t].chosen_equilibrium['full results'][mixed_index]
                     ne_results[1].results[0]['run_time'] = game_time
                     self.results.extend(ne_results[1], t_offset=t)
