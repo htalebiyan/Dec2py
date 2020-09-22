@@ -8,7 +8,7 @@ import copy
 import gameclasses
 import indp
 
-def run_game(params, save_game=True, print_cmd=True, save_payoff=False, plot2D=False):
+def run_game(params, save_results=True, print_cmd=True, save_model=False, plot2D=False):
     '''
     Finds interdepndent restoration strategies using a decentralized hueristic,
     Judgment Call :cite:`Talebiyan2019c,Talebiyan2019`.
@@ -17,14 +17,14 @@ def run_game(params, save_game=True, print_cmd=True, save_payoff=False, plot2D=F
     ----------
     params : dict
          Global parameters, including number of iterations, game type, etc.
-    save_game : bool, optional
-        Should the results and game be written to file. The default is True.
+    save_results : bool, optional
+        Should the results be written to file. The default is True.
     print_cmd : bool, optional
         If true, the results are printed to console. The default is True.
     plot2D : bool, optional
         Should the payoff matrix be plotted (only for 2-players games). The default is False.
-    save_payoff : bool, optional
-        Should the indp modles to compute payoffs be written to file. The default is False.
+    save_model : bool, optional
+        Should the games and indp models to compute payoffs be written to file. The default is False.
 
     Returns
     -------
@@ -80,5 +80,5 @@ def run_game(params, save_game=True, print_cmd=True, save_payoff=False, plot2D=F
         # t=0 results.
         obj.results = copy.deepcopy(indp_results_initial[1]) #!!! deepcopy
         # Run game
-        obj.run_game(compute_optimal=plot2D, plot=plot2D, save_results=save_game,
-                     print_cmd=print_cmd, save_payoff=save_payoff)
+        obj.run_game(compute_optimal=plot2D, plot=plot2D, save_results=save_results,
+                     print_cmd=print_cmd, save_model=save_model)

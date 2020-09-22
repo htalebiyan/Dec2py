@@ -45,6 +45,8 @@ class NormalGame:
         INDP or the corresponfing flow problem. It is populated by :meth:`compute_payoffs`.
     payoff_time : dict
         Time to compute each entry in :attr:`payoffs`
+    payoff_time : float
+        Time to solve the game using :meth:`solve_game`
     normgame : :class:`gambit.Game`
         Normal game object defined by gambit. It is populated by :meth:`build_game`.
     solution : :class:`GameSolution`
@@ -74,6 +76,7 @@ class NormalGame:
         self.actions = self.find_actions()
         self.payoffs = {}
         self.payoff_time = {}
+        self.solving_time = 0.0
         self.normgame = []
         self.solution = []
         self.chosen_equilibrium = {}
@@ -313,6 +316,7 @@ class NormalGame:
             None.
 
         '''
+        start_time = time.time()
         if method == 'enumpure_solve':
             gambit_solution = gambit.nash.enumpure_solve(self.normgame)
         elif method == 'enummixed_solve':
@@ -329,7 +333,12 @@ class NormalGame:
             gambit_solution = gambit.nash.gnm_solve(self.normgame)
         else:
             sys.exit('The solution method is not valid')
+        
+        if len(gambit_solution)==0:
+            print('No solution found: switching to pure enumeratiom method')
+            gambit_solution = gambit.nash.enumpure_solve(self.normgame)
 
+        self.solving_time = time.time()-start_time
         self.solution = GameSolution(self.players, gambit_solution, self.actions)
         # Find the INDP results correpsonding to solutions
         for _, sol in self.solution.sol.items():
@@ -448,7 +457,7 @@ class GameSolution:
         self.players = L
         self.gambit_sol = sol
         self.sol = self.extract_solution(actions)
-
+        
     def __getstate__(self):
         """
         Return state values to be pickled. gambit_sol is deleted when
@@ -457,6 +466,9 @@ class GameSolution:
         """
         state = self.__dict__.copy()
         state["gambit_sol"] = {}
+        for _,val in state['sol'].items():
+            if len(val['full results'][0])==2:
+                val['full results'] = val['full results'][0][1]
         return state
 
     def __setstate__(self, state):
@@ -579,7 +591,7 @@ class InfrastructureGame:
         self.output_dir = self.set_out_dir(params['OUTPUT_DIR'])
 
     def run_game(self, print_cmd=True, compute_optimal=False, save_results=True,
-                 plot=False, save_payoff=False,):
+                 plot=False, save_model=False,):
         '''
         Runs the infrastructure restoarion game for a given number of :attr:`time_steps`
 
@@ -593,8 +605,8 @@ class InfrastructureGame:
             Should the results and game be written to file. The default is True.
         plot : bool, optional
             Should the payoff matrix be plotted (only for 2-players games). The default is False.
-        save_payoff : bool, optional
-            Should the indp modles to compute payoffs be written to file. The default is False.
+        save_model : bool, optional
+            Should the games and indp models to compute payoffs be written to file. The default is False.
 
         Returns
         -------
@@ -616,15 +628,16 @@ class InfrastructureGame:
                 # Create normal game
                 self.objs[t] = NormalGame(self.layers, self.net, self.v_r[t])
                 # Compute payoffs
-                if save_payoff:
-                    save_payoff = [self.output_dir+'/payoff_models', t]
-                self.objs[t].compute_payoffs(save_model=save_payoff)
+                if save_model:
+                    save_model = [self.output_dir+'/payoff_models', t]
+                self.objs[t].compute_payoffs(save_model=save_model)
                 # Solve game
                 game_start = time.time()
                 if self.objs[t].payoffs:
-                    if save_results:
-                        save_results = self.output_dir+'/games'
-                    self.objs[t].build_game(save_model=save_results, suffix=str(t))
+                    if save_model:
+                        save_model = self.output_dir+'/games'
+                    self.objs[t].build_game(save_model=save_model,
+                                            suffix=str(self.sample)+'_t'+str(t))
                     self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd)
                     self.objs[t].choose_equilibrium()
                     mixed_index = self.objs[t].chosen_equilibrium['chosen mixed profile action']

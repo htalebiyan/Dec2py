@@ -171,6 +171,8 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     decision_type = lambda_df.decision_type.unique().tolist()
     if 'indp_sample_12Node' in decision_type:
         decision_type.remove('indp_sample_12Node')
+    if 'indp' in decision_type:
+        decision_type.remove('indp')
     judgment_type = lambda_df.judgment_type.unique().tolist()
     if 'nan' in judgment_type:
         judgment_type.remove('nan')
@@ -307,6 +309,8 @@ def plot_relative_allocation(gap_res, distance_type='gap'):
     decision_type = gap_res.decision_type.unique().tolist()
     if 'indp_sample_12Node' in decision_type:
         decision_type.remove('indp_sample_12Node')
+    if 'indp' in decision_type:
+        decision_type.remove('indp')
     judgment_type = gap_res.judgment_type.unique().tolist()
     if 'nan' in judgment_type:
         judgment_type.remove('nan')
@@ -372,7 +376,11 @@ def plot_run_time(df, ci=None):
     #: Make lists
     no_resources = df.no_resources.unique().tolist()
     # layer = df.layer.unique().tolist()
-    # decision_type = df.decision_type.unique().tolist()
+    decision_type = df.decision_type.unique().tolist()
+    if 'indp_sample_12Node' in decision_type:
+        decision_type.remove('indp_sample_12Node')
+    if 'indp' in decision_type:
+        decision_type.remove('indp')
     judgment_type = df.judgment_type.unique().tolist()
     if 'nan' in judgment_type:
         judgment_type.remove('nan')
@@ -384,7 +392,7 @@ def plot_run_time(df, ci=None):
         valuation_type.remove('nan')
     T = len(df['t'].unique().tolist())
     value_vars = ['total_time','valuation_time', 'auction_time']#'decision_time'
-    row_plot = [valuation_type, 'valuation_type']
+    row_plot = [decision_type, 'decision_type'] #valuation_type
     col_plot = [no_resources, 'no_resources'] #no_resources, judgment_type
     hue_type = [auction_type, 'auction_type']
 
@@ -395,7 +403,7 @@ def plot_run_time(df, ci=None):
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
             ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
-            selected_data = df[((df[row_plot[1]] == val_r)|(df[row_plot[1]] == 'nan'))&\
+            selected_data = df[((df[row_plot[1]] == val_r)|(df[row_plot[1]] == 'indp'))&\
                                ((df[col_plot[1]] == val_c)|(df[col_plot[1]] == 'nan'))]
             selected_data['total_time'] = selected_data.loc[:, 'valuation_time']+\
                 selected_data.loc[:, 'auction_time']+\
@@ -420,7 +428,7 @@ def plot_run_time(df, ci=None):
             ax.set(xlabel=r'Time Step $t$')
             if idx_r != len(row_plot[0])-1:
                 ax.set_xlabel('')
-            ax.set_ylabel('Mean Time (sec), Val.: %s'% (row_plot[0][idx_r]))
+            ax.set_ylabel('Mean Time (sec), %s'% (row_plot[0][idx_r]))
             if idx_c != 0:
                 ax.set_ylabel('')
             ax.get_legend().set_visible(False)
@@ -531,6 +539,7 @@ def correct_legend_labels(labels):
     labels = ['td-INDP' if x == 'tdindp' else x for x in labels]
     labels = ['Judge. Call' if x == 'jc' else x for x in labels]
     labels = ['Judge. Call' if x == 'jc_sample_12Node' else x for x in labels]
+    labels = ['Normal Game' if x == 'ng' else x for x in labels]
     labels = ['Normal Game' if x == 'ng_sample_12Node' else x for x in labels]
     return labels
 

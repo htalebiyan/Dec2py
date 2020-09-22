@@ -133,7 +133,7 @@ class JcModel:
         total_demand_layer = {l:0.0 for l in self.layers}
         for n, d in self.net.G.nodes(data=True):
             demand_value = d['data']['inf_data'].demand
-            if demand_value < 0:
+            if demand_value < 0 and n[1] in self.layers:
                 total_demand += demand_value
                 total_demand_layer[n[1]] += demand_value
 
@@ -255,7 +255,7 @@ class JudgmentModel:
 
         '''
         for u, v, a in obj.net.G.edges(data=True):
-            if a['data']['inf_data'].is_interdep and u[1] != lyr and v[1] == lyr:
+            if a['data']['inf_data'].is_interdep and u[1] != lyr and v[1] == lyr and u[1] in obj.layers:
                 if obj.net.G.nodes[u]['data']['inf_data'].functionality == 0.0:
                     self.judged_nodes[t_step][lyr][u] = [judge_dict[0][u]]
                     #!!! td-INDP: 0 in judge_dict[0] should be replaced

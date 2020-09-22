@@ -580,8 +580,18 @@ def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../
     for idx, x in enumerate(combinations):
         obj = objs[str(x)]
         for t in range(obj.time_steps+1):
-            decision_time = obj.results_judge.results[t]['run_time']+\
-                obj.results_real.results[t]['run_time']
+            if x[4] == 'jc':
+                decision_time = obj.results_judge.results[t]['run_time']+\
+                    obj.results_real.results[t]['run_time']
+            elif x[4] == 'ng':
+                if t==0:
+                    decision_time = obj.results.results[t]['run_time']
+                else:
+                    payoff_time = max(obj.objs[t].payoff_time.items(),
+                                      key=operator.itemgetter(1))[1]
+                    decision_time = obj.objs[t].solving_time + payoff_time
+            else:
+                sys.exit('Error: Wrong method name in computing decision time')
             auction_time = 0
             val_time_max = 0
             if x[6] in ["MDA", "MAA", "MCA"] and t > 0:
@@ -598,7 +608,7 @@ def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../
     return run_time_results
 
 def generate_combinations(database, mags, sample, layers, no_resources, decision_type,
-                          judgment_type, res_alloc_type, valuation_type, suffixes=[''],
+                          judgment_type, res_alloc_type, valuation_type,
                           list_high_dam_add=None, synthetic_dir=None):
     '''
     This fucntion returns all combinations of magnitude, sample, judgment type,
@@ -627,10 +637,6 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
         List of resoure allocation methods.
     valuation_type : list
         List of valuation types.
-    suffixes : list, optional
-        List of suffixes of result files. For JC results, it should be set to 'real',
-        as JC entails judge-based performance and costs and realized ones, and the
-        latter one is of interest. The default is ''.
     list_high_dam_add : str, optional
         Address of the file containing the list of damage scenarios that should be read
         from file. It is used to read a selected subset of results. The default is None.
@@ -663,17 +669,20 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
                 for rc in no_resources:
                     for dt, jt, at, vt in itertools.product(decision_type, judgment_type,
                                                             res_alloc_type, valuation_type):
-                        if (dt in optimal_method) and [m, s, L, rc, dt, 'nan', 'nan', 'nan', '']\
-                            not in optimal_combinations:
+                        if dt == 'JC':
+                            sf = 'real'
+                        else:
+                            sf = ''
+
+                        if (dt in optimal_method) and\
+                            [m, s, L, rc, dt, 'nan', 'nan', 'nan', ''] not in optimal_combinations:
                             optimal_combinations.append([m, s, L, rc, dt, 'nan',
-                                                         'nan', 'nan', ''])
+                                                         'nan', 'nan', sf])
                         elif (dt not in optimal_method) and (at not in ['UNIFORM']):
-                            for sf in suffixes:
-                                combinations.append([m, s, L, rc, dt, jt, at, vt, sf])
+                            combinations.append([m, s, L, rc, dt, jt, at, vt, sf])
                         elif (dt not in optimal_method) and (at in ['UNIFORM']):
-                            for sf in suffixes:
-                                if [m, s, L, rc, dt, jt, at, 'nan', sf] not in combinations:
-                                    combinations.append([m, s, L, rc, dt, jt, at, 'nan', sf])
+                            if [m, s, L, rc, dt, jt, at, 'nan', sf] not in combinations:
+                                combinations.append([m, s, L, rc, dt, jt, at, 'nan', sf])
             idx += 1
             update_progress(idx, no_total)
     elif database == 'synthetic':
@@ -689,17 +698,19 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
             for rc in [no_resources]:
                 for dt, jt, at, vt in itertools.product(decision_type, judgment_type,
                                                         res_alloc_type, valuation_type):
-                    if (dt in optimal_method) and [m, s, L, rc, dt, 'nan', 'nan', 'nan', '']\
-                            not in optimal_combinations:
+                    if dt == 'JC':
+                        sf = 'real'
+                    else:
+                        sf = ''
+                    if (dt in optimal_method) and\
+                        [m, s, L, rc, dt, 'nan', 'nan', 'nan', ''] not in optimal_combinations:
                         optimal_combinations.append([m, s, L, rc, dt, 'nan',
-                                                     'nan', 'nan', ''])
+                                                     'nan', 'nan', sf])
                     elif (dt not in optimal_method) and (at not in ['UNIFORM']):
-                        for sf in suffixes:
-                            combinations.append([m, s, L, rc, dt, jt, at, vt, sf])
+                        combinations.append([m, s, L, rc, dt, jt, at, vt, sf])
                     elif (dt not in optimal_method) and (at in ['UNIFORM']):
-                        for sf in suffixes:
-                            if [m, s, L, rc, dt, jt, at, 'nan', sf] not in combinations:
-                                    combinations.append([m, s, L, rc, dt, jt, at, 'nan', sf])
+                        if [m, s, L, rc, dt, jt, at, 'nan', sf] not in combinations:
+                            combinations.append([m, s, L, rc, dt, jt, at, 'nan', sf])
             idx += 1
             update_progress(idx, no_total)
     else:
