@@ -769,7 +769,7 @@ def initialize_sample_network(layers=[1,2]):
         space_to_nodes_dict[2].extend([(16,3),(17,3),(18,3)])
         arc_list.extend([((13,3),(15,3)),((14,3),(15,3)),((14,3),(16,3)),
                          ((17,3),(15,3)),((17,3),(16,3)),((17,3),(18,3))])
-        interdep_list.extend([((11,2),(17,3)),((9,2),(15,3)),((14,3),(8,2))])  
+        interdep_list.extend([((11,2),(17,3)),((9,2),(15,3)),((14,3),(8,2)),((14,3),(9,2))])
         failed_nodes.extend([(14,3),(15,3),(16,3),(17,3),(18,3)]) 
     global_index=1
     for n in node_to_demand_dict:
