@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import cPickle as pickle
+import _pickle as pickle
 from functools import partial
 import indp 
 import copy
@@ -12,32 +12,31 @@ from os.path import isfile, join
 # from plot_STAR import plot_correlation
 
 if __name__ == "__main__": 
-    t_suf = '20200430'
-    samples_all,costs_all,costs_local_all,initial_net = pickle.load(open('data'+t_suf+'/initial_data.pkl', "rb" ))     
-    train_data,test_data = pickle.load(open('data'+t_suf+'/train_test_data.pkl', "rb" ))     
-            
+    # t_suf = '20200430'
+    # samples_all,costs_all,costs_local_all,initial_net = pickle.load(open('data'+t_suf+'/initial_data.pkl', "rb" ))
+    # train_data,test_data = pickle.load(open('data'+t_suf+'/train_test_data.pkl', "rb" ))
+
     plt.close('all')
     base_dir = "../data/Extended_Shelby_County/"
     damage_dir = "../data/random_disruption_shelby/"
-    output_dir = 'C:/Users/ht20/Documents/Files/STAR_training_data/INDP_random_disruption/'   
-    failSce_param = {"type":"random","sample_range":range(0,990),"mags":range(0,1),
+    output_dir = 'C:/Users/ht20/Documents/Files/STAR_training_data/INDP_random_disruption/'
+    failSce_param = {"type":"random","sample_range":range(0,2),"mags":range(0,1),
                     'filtered_List':None,'Base_dir':base_dir,'Damage_dir':damage_dir}
-    v_r = [1,2,3,4,5,6,8,10,12,15,18,20,30,40,50,60,70,80,90,100]
-    # 
+    v_r = [3] #[1,2,3,4,5,6,8,10,12,15,18,20,30,40,50,60,70,80,90,100]
     layers=[1,2,3,4]
  
     ''' Read all data '''
-    # samples_all={}
-    # costs_all={}
-    # print('Importing data:')
-    # for res in v_r:
-    #     params={"NUM_ITERATIONS":10,"OUTPUT_DIR":output_dir+'results/indp_results',
-    #             "V":res,"ALGORITHM":"INDP"}
+    samples_all = {}
+    costs_all = {}
+    print('Importing data:')
+    for res in v_r:
+        params={"NUM_ITERATIONS":10,"OUTPUT_DIR":output_dir+'results/indp_results',
+                "V":res,"ALGORITHM":"INDP"}
         
-    #     samples,costs,initial_net,_,_=importData(params,failSce_param,layers) 
-    #     samples_all[res]=samples
-    #     costs_all[res]=costs
-    # save_initial_data(initial_net,samples_all,costs_all)
+        samples,costs,initial_net,_,_=importData(params,failSce_param,layers) 
+        samples_all[res]=samples
+        costs_all[res]=costs
+    save_initial_data(initial_net,samples_all,costs_all)
 
     ''' Prepare training and testing datsets '''    
     # keys = ['y_(8, 2),(15, 2)','y_(15, 2),(8, 2)']
@@ -61,19 +60,19 @@ if __name__ == "__main__":
     # save_prepared_data(train_data,test_data)
     
     ''' train and test model'''
-    exclusions=['w_t_1','y_t_1','w_h_t_1','time','Total','Under_Supply_Perc','Over_Supply','Space_Prep'] 
-    ##,'y_t_1','w_n_t_1','w_a_t_1', 'w_d_t_1','time','w_h_t_1','Total','Flow','Under_Supply_layer'
+    # exclusions=['w_t_1','y_t_1','w_h_t_1','time','Total','Under_Supply_Perc','Over_Supply','Space_Prep'] 
+    # ##,'y_t_1','w_n_t_1','w_a_t_1', 'w_d_t_1','time','w_h_t_1','Total','Flow','Under_Supply_layer'
     
-    mypath='parameters20200501/'
-    files = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f))]
-    keys= [x for x in train_data.keys() if (x not in files)] 
+    # mypath='parameters20200501/'
+    # files = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f))]
+    # keys= [x for x in train_data.keys() if (x not in files)] 
     
-    for key in keys:  
-        print '\n'+key
-        trace,model = train_model({key:train_data[key]},exclusions) 
-        save_traces(trace)
-        _,_ = test_model({key:train_data[key]},{key:test_data[key]},
-                          trace,model,exclusions,plot=False)
+    # for key in keys:  
+    #     print('\n'+key)
+    #     trace,model = train_model({key:train_data[key]},exclusions) 
+    #     save_traces(trace)
+    #     _,_ = test_model({key:train_data[key]},{key:test_data[key]},
+    #                       trace,model,exclusions,plot=False)
     
     # plot_correlation(node_data_all,keys,['w_t_1'])
     
