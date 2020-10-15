@@ -286,15 +286,17 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
         if co_location:
             for s in S:
                 for n,d in N_hat_prime:
-                    if T == 1:
-                        m.addConstr(m.getVarByName('w_'+str(n)+","+str(t))*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for node "+str(n)+","+str(t))
-                    else:
-                        m.addConstr(m.getVarByName('w_tilde_'+str(n)+","+str(t))*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for node "+str(n)+","+str(t))
+                    if d['data']['inf_data'].in_space(s.id):
+                        if T == 1:
+                            m.addConstr(m.getVarByName('w_'+str(n)+","+str(t))*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for node "+str(n)+","+str(t))
+                        else:
+                            m.addConstr(m.getVarByName('w_tilde_'+str(n)+","+str(t))*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for node "+str(n)+","+str(t))
                 for u,v,a in A_hat_prime:
-                    if T== 1:
-                        m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
-                    else:
-                        m.addConstr(m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
+                    if a['data']['inf_data'].in_space(s.id):
+                        if T== 1:
+                            m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
+                        else:
+                            m.addConstr(m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
 
 #    print "Solving..."
     m.update()
@@ -494,7 +496,11 @@ def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependen
     v_temp = 0
     if shelby_data:
     #    print "Loading Shelby County data..." #!!!
-        InterdepNet=load_infrastructure_data(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,sim_number=sim_number,cost_scale=cost_scale,magnitude=magnitude,v=v)
+        InterdepNet=load_infrastructure_data(BASE_DIR=BASE_DIR,
+                                             external_interdependency_dir=external_interdependency_dir,
+                                             sim_number=sim_number, cost_scale=cost_scale,
+                                             magnitude=magnitude, v=v,
+                                             shelby_data=shelby_data)
     #    print "Data loaded." #!!!
     else:
         InterdepNet,v_temp,layers_temp=load_synthetic_network(BASE_DIR=BASE_DIR,topology=topology,config=magnitude,sample=sample,cost_scale=cost_scale)

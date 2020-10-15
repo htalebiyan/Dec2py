@@ -4,8 +4,9 @@ import os
 import multiprocessing
 import pandas as pd
 import indp
-import dindp
+import dindputils
 import gametree
+# import gameutils
 
 def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
     '''
@@ -30,17 +31,18 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
     base_dir = fail_sce_param['BASE_DIR']
     damage_dir = fail_sce_param['DAMAGE_DIR']
     topology = None
-    shelby_data = True
+    shelby_data = None
     ext_interdependency = None
     if fail_sce_param['TYPE'] == 'Andres':
+        shelby_data = 'shelby_old'
         ext_interdependency = "../data/INDP_4-12-2016"
     elif fail_sce_param['TYPE'] == 'WU':
+        shelby_data = 'shelby_extended'
         if fail_sce_param['FILTER_SCE'] is not None:
             list_high_dam = pd.read_csv(fail_sce_param['FILTER_SCE'])
     elif fail_sce_param['TYPE'] == 'random':
-        pass
+        shelby_data = 'shelby_extended'
     elif fail_sce_param['TYPE'] == 'synthetic':
-        shelby_data = False
         topology = fail_sce_param['TOPO']
 
     print('----Running for resources: '+str(params['V']))
@@ -68,11 +70,11 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                             topology=topology)
             params["SIM_NUMBER"] = i
             params["MAGNITUDE"] = m
-
+            # Check if the results exist
             output_dir_full = ''
             if params["ALGORITHM"] != "JC":
                 output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
-                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'/actions_'+str(i)+'_.csv'
+                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'/agents/actions_'+str(i)+'_L1_.csv'
             if os.path.exists(output_dir_full):
                 print('results are already there\n')
                 continue
@@ -91,18 +93,21 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                                                     topology=topology, config=m, sample=i)
 
             if params["ALGORITHM"] == "INDP":
-                indp.run_indp(params, validate=False, T=params["T"], layers=params["L"],
-                              controlled_layers=params["L"], saveModel=False, print_cmd_line=False)
+                indp.run_indp(params, validate=False, T=params["T"], layers=params['L'],
+                              controlled_layers=params['L'], saveModel=False, print_cmd_line=False)
             elif params["ALGORITHM"] == "INFO_SHARE":
-                indp.run_info_share(params, layers=params["L"], T=params["T"])
+                indp.run_info_share(params, layers=params['L'], T=params["T"])
             elif params["ALGORITHM"] == "INRG":
-                indp.run_inrg(params, layers=params["L"], player_ordering=player_ordering)
+                indp.run_inrg(params, layers=params['L'], player_ordering=player_ordering)
             elif params["ALGORITHM"] == "BACKWARDS_INDUCTION":
-                gametree.run_backwards_induction(params["N"], i, players=params["L"],
+                gametree.run_backwards_induction(params["N"], i, players=params['L'],
                                                  player_ordering=player_ordering,
                                                  T=params["T"], outdir=params["OUTPUT_DIR"])
             elif params["ALGORITHM"] == "JC":
-                dindp.run_judgment_call(params, save_jc_model=False, print_cmd=False)
+                dindputils.run_judgment_call(params, save_jc_model=False, print_cmd=False)
+            elif params["ALGORITHM"] == "NORMALGAME":
+                gameutils.run_game(params, save_results=True, print_cmd=True,
+                                   save_model=True, plot2D=True)
 
 def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
                res_alloc_type=None, valuation_type=None, output_dir='..', misc =None):
@@ -140,18 +145,22 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
     '''
     for v in v_r:
         if method == 'INDP':
-            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'/results/indp_results',
+            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'/indp_results',
                       "V":v, "T":1, 'L':layers, "ALGORITHM":"INDP"}
         elif method == 'JC':
-            params = {"NUM_ITERATIONS":10,
-                      "OUTPUT_DIR":output_dir+'/results/jc_results',
+            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'/jc_results',
                       "V":v, "T":1, 'L':layers, "ALGORITHM":"JC",
                       "JUDGMENT_TYPE":judgment_type, "RES_ALLOC_TYPE":res_alloc_type,
                       "VALUATION_TYPE":valuation_type}
             if 'STM' in valuation_type:
                 params['STM_MODEL_DICT'] = misc['STM_MODEL_DICT']
+        elif method == 'NORMALGAME':
+            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'/ng_results',
+                      "V":v, "T":1, "L":layers, "ALGORITHM":"NORMALGAME",
+                      'EQUIBALG':'enumpure_solve', "JUDGMENT_TYPE":judgment_type,
+                      "RES_ALLOC_TYPE":res_alloc_type, "VALUATION_TYPE":valuation_type}
         elif method == 'TD_INDP':
-            params = {"NUM_ITERATIONS":1, "OUTPUT_DIR":output_dir+'/results/tdindp_results',
+            params = {"NUM_ITERATIONS":1, "OUTPUT_DIR":output_dir+'/tdindp_results',
                       "V":v, "T":10, "WINDOW_LENGTH":3, 'L':layers, "ALGORITHM":"INDP"}
         else:
             sys.exit('Wrong method name: '+method)
@@ -171,14 +180,10 @@ def run_parallel(i):
     None.
 
     '''
-    filter_sce = '/scratch/ht20/damagedElements_sliceQuantile_0.90.csv'
-    #'../../data/damagedElements_sliceQuantile_0.95.csv'
-    base_dir = '/scratch/ht20/Extended_Shelby_County/'
-    #"../../data/Extended_Shelby_County/"
-    damage_dir = '/scratch/ht20/Wu_Damage_scenarios/'
-    #"../../data/Wu_Damage_scenarios/"
+    filter_sce = None#'/scratch/ht20/Damage_scenarios/damagedElements_sliceQuantile_0.90.csv'
+    base_dir = '/scratch/ht20/Node_arc_info/'
+    damage_dir = '/scratch/ht20/Damage_scenarios/'
     output_dir = '/scratch/ht20/'
-    #'../../'
     sample_no = i//96
     mag_no = i%96
     fail_sce_param = {'TYPE':"WU", 'SAMPLE_RANGE':range(sample_no, sample_no+1),
@@ -186,8 +191,8 @@ def run_parallel(i):
                       'FILTER_SCE':filter_sce, 'BASE_DIR':base_dir, 'DAMAGE_DIR':damage_dir}
     rc = [3, 6, 8, 12]
     layers = [1, 2, 3, 4]
-    judge_type = ["PESSIMISTIC"] #OPTIMISTIC #'DET-DEMAND'
-    res_alloc_type = ["MDA", "MAA", "MCA", 'UNIFORM']
+    judge_type = ["OPTIMISTIC"] #OPTIMISTIC #'DET-DEMAND' #"PESSIMISTIC"
+    res_alloc_type = ["MCA", 'UNIFORM'] #"MDA", "MAA", 
     val_type = ['DTC']
     #model_dir = '/scratch/ht20/ST_models'
     #stm_model_dict = {'num_pred':1, 'model_dir':model_dir+'/traces',

@@ -13,7 +13,9 @@ import sys
 #if platform.system() == "Linux":
 #    HOME_DIR="/home/andrew/"
 
-def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_actions=False, print_cmd=True, time_limit=None):
+def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
+         forced_actions=False, fixed_nodes={}, print_cmd=True, time_limit=None,
+         co_location=True):
     """INDP optimization problem. Also solves td-INDP if T > 1.
     :param N: An InfrastructureNetwork instance (created in infrastructure.py)
     :param v_r: Vector of number of resources given to each layer in each timestep. If the size of the vector is 1, it shows the total number of resources for all layers.
@@ -39,7 +41,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
     # Damaged nodes in whole network
     N_prime = [n for n in G_prime.nodes(data=True) if n[1]['data']['inf_data'].repaired==0.0]
     # Nodes in controlled network.
-    N_hat_nodes   = [n[0] for n in G_prime.nodes(data=True) if n[1]['data']['inf_data'].net_id in controlled_layers]
+    N_hat_nodes = [n[0] for n in G_prime.nodes(data=True) if n[1]['data']['inf_data'].net_id in controlled_layers]
     N_hat = G_prime.subgraph(N_hat_nodes)
     # Damaged nodes in controlled network.
     N_hat_prime= [n for n in N_hat.nodes(data=True) if n[1]['data']['inf_data'].repaired==0.0]
@@ -75,8 +77,9 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
     #print "N'=",[n for (n,d) in N_prime]
     for t in range(T):
         # Add geographical space variables.
-        for s in S:
-            m.addVar(name='z_'+str(s.id)+","+str(t),vtype=GRB.BINARY)
+        if co_location:
+            for s in S:
+                m.addVar(name='z_'+str(s.id)+","+str(t),vtype=GRB.BINARY)
         # Add over/undersupply variables for each node.
         for n,d in N_hat.nodes(data=True):
             m.addVar(name='delta+_'+str(n)+","+str(t),lb=0.0)
@@ -85,7 +88,12 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
         for n,d in N_hat.nodes(data=True):
             m.addVar(name='w_'+str(n)+","+str(t),vtype=GRB.BINARY)
             if T > 1:
-                m.addVar(name='w_tilde_'+str(n)+","+str(t),vtype=GRB.BINARY)
+                m.addVar(name='w_tilde_'+str(n)+","+str(t),vtype=GRB.BINARY) 
+        # Fix node values (only for iINDP)
+        m.update()
+        for key, val in fixed_nodes.items():
+            m.getVarByName('w_'+str(key)+","+str(0)).lb=val
+            m.getVarByName('w_'+str(key)+","+str(0)).ub=val
         # Add flow variables for each arc.
         for u,v,a in N_hat.edges(data=True):
             m.addVar(name='x_'+str(u)+","+str(v)+","+str(t),lb=0.0)
@@ -99,8 +107,9 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
     # Populate objective function.
     objFunc=LinExpr()
     for t in range(T):
-        for s in S:
-            objFunc+=s.cost*m.getVarByName('z_'+str(s.id)+","+str(t))
+        if co_location:
+            for s in S:
+                objFunc+=s.cost*m.getVarByName('z_'+str(s.id)+","+str(t))
         for u,v,a in A_hat_prime:
             if T == 1:
                 objFunc+=(float(a['data']['inf_data'].reconstruction_cost)/2.0)*m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))
@@ -181,24 +190,21 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                 m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G[u][v]['data']['inf_data'].functionality,"Flow arc functionality constraint("+str(u)+","+str(v)+","+str(t)+")")
 
         #Resource availability constraints.
-        isSepResource = 0
+        isSepResource = False
         if isinstance(v_r, int):
             totalResource = v_r
         else:
-            if len(v_r) != 1:
-                isSepResource = 1
-                totalResource = sum(v_r)
-                if len(v_r) != len(layers):
-                    sys.exit("The number of resource cap values does not match the number of layers.\n")
-            else:
-                totalResource = v_r[0]
+            isSepResource = True
+            totalResource = sum([val for _, val in v_r.items()])
+            if len(v_r.keys()) != len(layers):
+                sys.exit("The number of resource cap values does not match the number of layers.\n")
 
         resourceLeftConstr=LinExpr()
         if isSepResource:
-            resourceLeftConstrSep = [LinExpr() for i in range(len(v_r))]
+            resourceLeftConstrSep = {key:LinExpr() for key, _ in v_r.items()}
 
         for u,v,a in A_hat_prime:
-            indexLayer = a['data']['inf_data'].layer - 1
+            indexLayer = a['data']['inf_data'].layer
             if T == 1:
                 resourceLeftConstr+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))
                 if isSepResource:
@@ -209,7 +215,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                     resourceLeftConstrSep[indexLayer]+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))
 
         for n,d in N_hat_prime:
-            indexLayer = n[1] - 1
+            indexLayer = n[1]
             if T == 1:
                 resourceLeftConstr+=d['data']['inf_data'].resource_usage*m.getVarByName('w_'+str(n)+","+str(t))
                 if isSepResource:
@@ -221,7 +227,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
 
         m.addConstr(resourceLeftConstr,GRB.LESS_EQUAL,totalResource,"Resource availability constraint at "+str(t)+".")
         if isSepResource:
-            for k in range(len(v_r)):
+            for k,_ in v_r.items():
                 m.addConstr(resourceLeftConstrSep[k],GRB.LESS_EQUAL,v_r[k],"Resource availability constraint at "+str(t)+" for layer "+str(k)+".")
 
         # Interdependency constraints
@@ -277,17 +283,20 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                 m.addConstr(recovery_sum,GRB.GREATER_EQUAL,1,"Forced action constraint")
 
         # Geographic space constraints
-        for s in S:
-            for n,d in N_hat_prime:
-                if T == 1:
-                    m.addConstr(m.getVarByName('w_'+str(n)+","+str(t))*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for node "+str(n)+","+str(t))
-                else:
-                    m.addConstr(m.getVarByName('w_tilde_'+str(n)+","+str(t))*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for node "+str(n)+","+str(t))
-            for u,v,a in A_hat_prime:
-                if T== 1:
-                    m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
-                else:
-                    m.addConstr(m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
+        if co_location:
+            for s in S:
+                for n,d in N_hat_prime:
+                    if d['data']['inf_data'].in_space(s.id):
+                        if T == 1:
+                            m.addConstr(m.getVarByName('w_'+str(n)+","+str(t))*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for node "+str(n)+","+str(t))
+                        else:
+                            m.addConstr(m.getVarByName('w_tilde_'+str(n)+","+str(t))*d['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for node "+str(n)+","+str(t))
+                for u,v,a in A_hat_prime:
+                    if a['data']['inf_data'].in_space(s.id):
+                        if T== 1:
+                            m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
+                        else:
+                            m.addConstr(m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
 
 #    print "Solving..."
     m.update()
@@ -297,7 +306,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
     if m.getAttr("Status")==GRB.OPTIMAL or m.status==9:
         if m.status==9:
             print ('\nOptimizer time limit, gap = %1.3f\n' % m.MIPGap)
-        results=collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S)
+        results=collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=co_location)
         results.add_run_time(t,run_time)
         return [m,results]
     else:
@@ -309,7 +318,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},forced_
                 print('%s' % c.constrName)
         return None
 
-def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
+def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=True):
     layers = controlled_layers
     indp_results=INDPResults(layers)
     # compute total demand of all layers and each layer
@@ -356,8 +365,9 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S):
                 #if T == 1:
                 #N.G[u][v]['data']['inf_data'].functionality=1.0
         # Calculate space preparation costs.
-        for s in S:
-            spacePrepCost+=s.cost*m.getVarByName('z_'+str(s.id)+","+str(t)).x
+        if coloc:
+            for s in S:
+                spacePrepCost+=s.cost*m.getVarByName('z_'+str(s.id)+","+str(t)).x
         indp_results.add_cost(t,"Space Prep",spacePrepCost,spacePrepCost_layer)
         # Calculate arc preparation costs.
         for u,v,a in A_hat_prime:
@@ -486,64 +496,15 @@ def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependen
     v_temp = 0
     if shelby_data:
     #    print "Loading Shelby County data..." #!!!
-        InterdepNet=load_infrastructure_data(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,sim_number=sim_number,cost_scale=cost_scale,magnitude=magnitude,v=v)
+        InterdepNet=load_infrastructure_data(BASE_DIR=BASE_DIR,
+                                             external_interdependency_dir=external_interdependency_dir,
+                                             sim_number=sim_number, cost_scale=cost_scale,
+                                             magnitude=magnitude, v=v,
+                                             shelby_data=shelby_data)
     #    print "Data loaded." #!!!
     else:
         InterdepNet,v_temp,layers_temp=load_synthetic_network(BASE_DIR=BASE_DIR,topology=topology,config=magnitude,sample=sample,cost_scale=cost_scale)
     return InterdepNet,v_temp,layers_temp
-
-
-def initialize_sample_network(params={},layers=[1,2]):
-    """ Initializes sample 2x6 network
-    :param params: (Currently not used).
-    :param layers: (Currently not used).
-    :returns: An interdependent InfrastructureNetwork.
-    """
-    InterdepNet=InfrastructureNetwork("2x8_centralized")
-    node_to_demand_dict={(1,1):5,(2,1):-1,(3,1):-2,(4,1):-2,(5,1):-4,(6,1):4,
-                         (7,2):-2,(8,2):6,(9,2):1,(10,2):-5,(11,2):4,(12,2):-4}
-    space_to_nodes_dict={1:[(1,1),(7,2)],2:[(2,1),(8,2)],
-                    3:[(3,1),(5,1),(9,2),(11,2)],4:[(4,1),(6,1),(10,2),(12,2)]}
-    arc_list= [((1,1),(2,1)),((1,1),(4,1)),((1,1),(3,1)),((6,1),(4,1)),((6,1),(5,1)),
-               ((8,2),(7,2)),((8,2),(10,2)),((9,2),(7,2)),((9,2),(10,2)),((9,2),(12,2)),((11,2),(12,2))]
-    interdep_list=[((1,1),(7,2)),((2,1),(8,2)),((9,2),(3,1)),((4,1),(10,2))]
-    failed_nodes=[(1,1),(2,1),(3,1),(5,1),(6,1),
-                  (7,2),(8,2),(9,2),(11,2),(12,2)]
-    global_index=1
-    for n in node_to_demand_dict:
-        nn=InfrastructureNode(global_index,n[1],n[0])
-        nn.demand=node_to_demand_dict[n]
-        nn.reconstruction_cost=abs(nn.demand)
-        nn.oversupply_penalty=50
-        nn.undersupply_penalty=50
-        nn.resource_usage=1
-        if n in failed_nodes:
-            nn.functionality=0.0
-            nn.repaired=0.0
-        InterdepNet.G.add_node((nn.local_id,nn.net_id),data={'inf_data':nn})
-        global_index+=1
-    for s in space_to_nodes_dict:
-        InterdepNet.S.append(InfrastructureSpace(s,0))
-        for n in space_to_nodes_dict[s]:
-            InterdepNet.G.node[n]['data']['inf_data'].space=s
-    for a in arc_list:
-        aa=InfrastructureArc(a[0][0],a[1][0],a[0][1])
-        aa.flow_cost=1
-        aa.capacity=50
-        InterdepNet.G.add_edge((aa.source,aa.layer),(aa.dest,aa.layer),data={'inf_data':aa})
-    for g in interdep_list:
-        aa=InfrastructureInterdepArc(g[0][0],g[1][0],g[0][1],g[1][1],1.0)
-        InterdepNet.G.add_edge((aa.source,aa.source_layer),(aa.dest,aa.dest_layer),data={'inf_data':aa})
-    return InterdepNet
-
-def run_sample(params):
-    """ Runs the sample network generated in initialize_sample_network through indp.
-    :param params: Global parameters.
-    """
-    N=initialize_sample_network(params)
-    params["N"]=N
-    params["V"]=2
-    run_indp(params)
 
 def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,validate=False,save=True,suffix="",forced_actions=False,saveModel=False,print_cmd_line=True):
     """ Runs an INDP problem with specified parameters. Outputs to directory specified in params['OUTPUT_DIR'].
@@ -566,10 +527,8 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
     v_r=params["V"]
     if isinstance(v_r, (int)):
         outDirSuffixRes = str(v_r)
-    elif len(v_r)==1:
-        outDirSuffixRes = str(v_r[0])
     else:
-        outDirSuffixRes = str(sum(v_r))+'_fixed_layer_Cap'
+        outDirSuffixRes = str(sum([val for _, val in v_r.items()]))+'_fixed_layer_Cap'
 
     indp_results=INDPResults(params["L"])
     if T == 1:
@@ -793,66 +752,149 @@ def save_INDP_model_to_file(model,outModelDir,t,l=0,suffix=''):
     fileID.write('Obj: %g' % model.objVal)
     fileID.close()
 
+def initialize_sample_network(layers=[1,2]):
+    """ Initializes sample network
+    :param layers: (Currently not used).
+    :returns: An interdependent InfrastructureNetwork.
+    """
+    InterdepNet=InfrastructureNetwork("sample_network")
+    node_to_demand_dict={(1,1):5,(2,1):-1,(3,1):-2,(4,1):-2,(5,1):-4,(6,1):4,
+                         (7,2):-2,(8,2):6,(9,2):1,(10,2):-5,(11,2):4,(12,2):-4}
+    space_to_nodes_dict={1:[(1,1),(7,2)],2:[(2,1),(8,2)],
+                    3:[(3,1),(5,1),(9,2),(11,2)],4:[(4,1),(6,1),(10,2),(12,2)]}
+    arc_list= [((1,1),(2,1)),((1,1),(4,1)),((1,1),(3,1)),((6,1),(4,1)),((6,1),(5,1)),
+               ((8,2),(7,2)),((8,2),(10,2)),((9,2),(7,2)),((9,2),(10,2)),((9,2),(12,2)),
+               ((11,2),(12,2))]
+    interdep_list=[((1,1),(7,2)),((2,1),(8,2)),((9,2),(3,1)),((4,1),(10,2))]
+    failed_nodes=[(1,1),(2,1),(3,1),(5,1),(6,1),
+                  (7,2),(8,2),(9,2),(11,2),(12,2)]
+    if 3 in layers:
+        node_to_demand_dict.update({(13,3):3,(14,3):6,(15,3):-5,(16,3):-6,
+                                    (17,3):4,(18,3):-2})
+        space_to_nodes_dict[1].extend([(13,3),(14,3),(15,3)])
+        space_to_nodes_dict[2].extend([(16,3),(17,3),(18,3)])
+        arc_list.extend([((13,3),(15,3)),((14,3),(15,3)),((14,3),(16,3)),
+                         ((17,3),(15,3)),((17,3),(16,3)),((17,3),(18,3))])
+        interdep_list.extend([((11,2),(17,3)),((9,2),(15,3)),((14,3),(8,2)),((14,3),(9,2))])
+        failed_nodes.extend([(14,3),(15,3),(16,3),(17,3),(18,3)]) 
+    global_index=1
+    for n in node_to_demand_dict:
+        nn=InfrastructureNode(global_index,n[1],n[0])
+        nn.demand=node_to_demand_dict[n]
+        nn.reconstruction_cost=abs(nn.demand)
+        nn.oversupply_penalty=50
+        nn.undersupply_penalty=50
+        nn.resource_usage=1
+        if n in failed_nodes:
+            nn.functionality=0.0
+            nn.repaired=0.0
+        InterdepNet.G.add_node((nn.local_id,nn.net_id),data={'inf_data':nn})
+        global_index+=1
+    for s in space_to_nodes_dict:
+        InterdepNet.S.append(InfrastructureSpace(s,0))
+        for n in space_to_nodes_dict[s]:
+            InterdepNet.G.nodes[n]['data']['inf_data'].space=s
+    for a in arc_list:
+        aa=InfrastructureArc(a[0][0],a[1][0],a[0][1])
+        aa.flow_cost=1
+        aa.capacity=50
+        InterdepNet.G.add_edge((aa.source,aa.layer),(aa.dest,aa.layer),data={'inf_data':aa})
+    for g in interdep_list:
+        aa=InfrastructureInterdepArc(g[0][0],g[1][0],g[0][1],g[1][1],1.0)
+        InterdepNet.G.add_edge((aa.source,aa.source_layer),(aa.dest,aa.dest_layer),data={'inf_data':aa})
+    return InterdepNet
+
+def run_sample(params):
+    """ Runs the sample network generated in initialize_sample_network through indp.
+    :param params: Global parameters.
+    """
+    N=initialize_sample_network(params)
+    params["N"]=N
+    params["V"]=2
+    run_indp(params)
+
 def plot_indp_sample(params,folderSuffix="",suffix=""):
     plt.figure(figsize=(16,8))
-    InterdepNet=initialize_sample_network()
+    if 3 in params["L"]:
+        plt.figure(figsize=(16,10))
+    InterdepNet=initialize_sample_network(layers=params["L"])
     pos=nx.spring_layout(InterdepNet.G)
-    for key,value in pos.items():
-         pos[(1,1)][0] =  0.5
-         pos[(7,2)][0] =  0.5
-         pos[(2,1)][0] =  0.0
-         pos[(8,2)][0] =  0.0
-         pos[(3,1)][0] =  2.0
-         pos[(9,2)][0] =  2.0
-         pos[(4,1)][0] =  1.5
-         pos[(10,2)][0] =  1.5
-         pos[(5,1)][0] =  3.0
-         pos[(11,2)][0] =  3.0
-         pos[(6,1)][0] =  2.5
-         pos[(12,2)][0] =  2.5
-         pos[(8,2)][1] =  0.0
-         pos[(10,2)][1] =  0.0
-         pos[(12,2)][1] =  0.0
-         pos[(7,2)][1] =  1.0
-         pos[(9,2)][1] =  1.0
-         pos[(11,2)][1] =  1.0
-         pos[(2,1)][1] =  2.0
-         pos[(4,1)][1] =  2.0
-         pos[(6,1)][1] =  2.0
-         pos[(1,1)][1] =  3.0
-         pos[(3,1)][1] =  3.0
-         pos[(5,1)][1] =  3.0
+    pos[(1,1)][0] =  0.5
+    pos[(7,2)][0] =  0.5
+    pos[(2,1)][0] =  0.0
+    pos[(8,2)][0] =  0.0
+    pos[(3,1)][0] =  2.0
+    pos[(9,2)][0] =  2.0
+    pos[(4,1)][0] =  1.5
+    pos[(10,2)][0] =  1.5
+    pos[(5,1)][0] =  3.0
+    pos[(11,2)][0] =  3.0
+    pos[(6,1)][0] =  2.5
+    pos[(12,2)][0] =  2.5
+    pos[(2,1)][1] =  0.0
+    pos[(4,1)][1] =  0.0
+    pos[(6,1)][1] =  0.0
+    pos[(1,1)][1] =  1.0
+    pos[(3,1)][1] =  1.0
+    pos[(5,1)][1] =  1.0
+    pos[(8,2)][1] =  2.0
+    pos[(10,2)][1] =  2.0
+    pos[(12,2)][1] =  2.0
+    pos[(7,2)][1] =  3.0
+    pos[(9,2)][1] =  3.0
+    pos[(11,2)][1] =  3.0
+    node_dict={1:[(1,1),(2,1),(3,1),(4,1),(5,1),(6,1)], 
+               11:[(4,1)], #Undamaged
+               12:[(1,1),(2,1),(3,1),(5,1),(6,1)], #Damaged
+               2:[(7,2),(8,2),(9,2),(10,2),(11,2),(12,2)], 
+               21:[(10,2)], 
+               22:[(7,2),(8,2),(9,2),(11,2),(12,2)]}
+    arc_dict= {1: [((1,1),(2,1)),((1,1),(3,1)),((1,1),(4,1)),((6,1),(4,1)),
+                   ((6,1),(5,1))],
+               2: [((8,2),(7,2)),((8,2),(10,2)),((9,2),(7,2)),((9,2),(10,2)),
+                   ((9,2),(12,2)),((11,2),(12,2))]}
+    if 3 in params["L"]:
+         pos[(13,3)][0] =  0.5
+         pos[(14,3)][0] =  0.0
+         pos[(15,3)][0] =  2.0
+         pos[(16,3)][0] =  1.5
+         pos[(17,3)][0] =  3.0
+         pos[(18,3)][0] =  2.5
+         pos[(13,3)][1] =  5.0
+         pos[(14,3)][1] =  4.0
+         pos[(15,3)][1] =  5.0
+         pos[(16,3)][1] =  4.0
+         pos[(17,3)][1] =  5.0
+         pos[(18,3)][1] =  4.0   
+         node_dict[3] = [(13,3),(14,3),(15,3),(16,3),(17,3),(18,3)]
+         node_dict[31] = [(13,3)]
+         node_dict[32] = [(14,3),(15,3),(16,3),(17,3),(18,3)]
+         arc_dict[3] = [((13,3),(15,3)),((14,3),(15,3)),((14,3),(16,3)),
+                         ((17,3),(15,3)),((17,3),(16,3)),((17,3),(18,3))]
 
-    node_dict={1:[(1,1),(2,1),(3,1),(4,1),(5,1),(6,1)], 11:[(4,1)], 12:[(1,1),(2,1),(3,1),(5,1),(6,1)],
-               2:[(7,2),(8,2),(9,2),(10,2),(11,2),(12,2)], 21:[(10,2)], 22:[(7,2),(8,2),(9,2),(11,2),(12,2)]}
-    arc_dict= {1: [((1,1),(2,1)),((1,1),(3,1)),((1,1),(4,1)),((6,1),(4,1)),((6,1),(5,1))],
-                   2: [((8,2),(7,2)),((8,2),(10,2)),((9,2),(7,2)),((9,2),(10,2)),((9,2),(12,2)),((11,2),(12,2))]}
     labels = {}
     for n,d in InterdepNet.G.nodes(data=True):
         labels[n]= "%d[%d]" % (n[0],d['data']['inf_data'].demand)
     pos_moved={}
-    for key,value in pos.iteritems():
+    for key,value in pos.items():
         pos_moved[key] = [0,0]
         pos_moved[key][0] = pos[key][0]-0.2
         pos_moved[key][1] = pos[key][1]+0.2
 
     v_r = params["V"]
-    if isinstance(v_r, (int, long)):
+    if isinstance(v_r, (int)):
         totalResource = v_r
     else:
-        if len(v_r) != 1:
-            totalResource = sum(v_r)
-        else:
-            totalResource = v_r[0]
+        totalResource = sum([val for _, val in v_r.items()])
 
-    output_dir=params["OUTPUT_DIR"]+'_m'+str(params["MAGNITUDE"])+"_v"+str(totalResource)+folderSuffix
+    output_dir=params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+str(params["MAGNITUDE"])+"_v"+str(totalResource)+folderSuffix
     action_file =output_dir+"/actions_"+str(params["SIM_NUMBER"])+"_"+suffix+".csv"
     actions = {0:[]}
     if os.path.isfile(action_file):
         with open(action_file) as f:
             lines=f.readlines()[1:]
             for line in lines:
-                data=string.split(str.strip(line),",")
+                data=line.split(",")
                 t=int(data[0])
                 action=str.strip(data[1])
                 if t not in actions:
@@ -864,17 +906,21 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
         plt.subplot(2, (T+1)/2+1 ,t+1, aspect='equal')
         plt.title('Time = %d' % t)
         for a in value:
-            data=string.split(str.strip(a),".")
+            data=a.split(".")
             node_dict[int(data[1])*10+1].append((int(data[0]),int(data[1])))
             node_dict[int(data[1])*10+2].remove((int(data[0]),int(data[1])))
         nx.draw(InterdepNet.G, pos,node_color='w')
         nx.draw_networkx_labels(InterdepNet.G,labels=labels,pos=pos,
-                                font_color='w',font_family='CMU Serif',font_weight='bold')
+                                font_color='w',font_family='CMU Serif')#,font_weight='bold'
         nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[1],node_color='#b51717',node_size=1100,alpha=0.7)
         nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[2],node_color='#005f98',node_size=1100,alpha=0.7)
         nx.draw_networkx_nodes(InterdepNet.G,pos_moved,nodelist=node_dict[12],node_color='k',node_shape="X",node_size=150)
         nx.draw_networkx_nodes(InterdepNet.G,pos_moved,nodelist=node_dict[22],node_color='k',node_shape="X",node_size=150)
         nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[1],width=1,alpha=0.9,edge_color='r')
         nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[2],width=1,alpha=0.9,edge_color='b')
+        if 3 in params["L"]:
+            nx.draw_networkx_nodes(InterdepNet.G,pos,nodelist=node_dict[3],node_color='#009181',node_size=1100,alpha=0.7)
+            nx.draw_networkx_nodes(InterdepNet.G,pos_moved,nodelist=node_dict[32],node_color='k',node_shape="X",node_size=150)
+            nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[3],width=1,alpha=0.9,edge_color='g')
     plt.tight_layout()
-    plt.savefig(output_dir+'/plot_net'+folderSuffix+'.png',dpi=600)
+    plt.savefig(output_dir+'/plot_net'+suffix+'.png',dpi=300)

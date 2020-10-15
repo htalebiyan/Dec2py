@@ -4,6 +4,7 @@ import re
 import string
 import numpy as np
 import os
+import sys
 import pandas as pd
 
 class InfrastructureNode(object):
@@ -201,18 +202,20 @@ def load_percolation_model(supply_net):
         G.G.add_edge((v,0),(u,0),data={'inf_data':a})
     return G
 
-def load_infrastructure_data(BASE_DIR="../data/INDP_7-20-2015/",external_interdependency_dir=None,magnitude=6,v=3,sim_number=1,cost_scale=1.0):
-    if "INDP_7-20-2015" in BASE_DIR:
+def load_infrastructure_data(BASE_DIR="../data/INDP_7-20-2015/", external_interdependency_dir=None,
+                             magnitude=6, v=3, sim_number=1, cost_scale=1.0, shelby_data='shelby_extended'):
+    if shelby_data == 'shelby_old':
 #        print "Loading a network.." #!!!
         G = load_infrastructure_array_format(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,magnitude=magnitude,v=v,sim_number=sim_number,cost_scale=cost_scale)
 #        print G #!!!
         return G
-    if "Extended_Shelby_County" in BASE_DIR:
+    elif shelby_data == 'shelby_extended':
 #        print "Loading a network.." #!!!
         G = load_infrastructure_array_format_extended(BASE_DIR=BASE_DIR,v=v,sim_number=sim_number,cost_scale=cost_scale)
 #        print G #!!!
         return G        
-        
+    else:
+        sys.exit('Error: no interdepndent network is found')
     #elif BASE_DIR == "../data/INDP_4-12-2016":
     #    load_infrastructure_csv_format(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,magnitude=magnitude,v=v,sim_number=sim_number,cost_scale=cost_scale)
 

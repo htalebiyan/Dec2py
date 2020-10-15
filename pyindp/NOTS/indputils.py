@@ -48,6 +48,9 @@ class INDPComponents:
         return indp_components
 
 class INDPResults:
+    '''
+    Saves INDP results including actions, costs, run time, and components
+    '''
     cost_types=["Space Prep","Arc","Node","Over Supply","Under Supply","Flow","Total","Under Supply Perc"]
     def __init__(self,layers=[]):
         self.results={}

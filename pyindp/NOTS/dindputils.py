@@ -670,7 +670,7 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
                 for rc in no_resources:
                     for dt, jt, at, vt in itertools.product(decision_type, judgment_type,
                                                             res_alloc_type, valuation_type):
-                        if dt == 'jc':
+                        if dt == 'JC':
                             sf = 'real'
                         else:
                             sf = ''

@@ -69,8 +69,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
                             figsize=(4000/dpi, 2500/dpi))
-    # colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
-    colors = ['r', 'b', 'k']
+    colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
     pal = sns.color_palette(colors[:len(hue_type[0])])
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):

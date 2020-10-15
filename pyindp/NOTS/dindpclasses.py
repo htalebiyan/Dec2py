@@ -133,7 +133,7 @@ class JcModel:
         total_demand_layer = {l:0.0 for l in self.layers}
         for n, d in self.net.G.nodes(data=True):
             demand_value = d['data']['inf_data'].demand
-            if demand_value < 0:
+            if demand_value < 0 and n[1] in self.layers:
                 total_demand += demand_value
                 total_demand_layer[n[1]] += demand_value
 
@@ -255,7 +255,7 @@ class JudgmentModel:
 
         '''
         for u, v, a in obj.net.G.edges(data=True):
-            if a['data']['inf_data'].is_interdep and u[1] != lyr and v[1] == lyr:
+            if a['data']['inf_data'].is_interdep and u[1] != lyr and v[1] == lyr and u[1] in obj.layers:
                 if obj.net.G.nodes[u]['data']['inf_data'].functionality == 0.0:
                     self.judged_nodes[t_step][lyr][u] = [judge_dict[0][u]]
                     #!!! td-INDP: 0 in judge_dict[0] should be replaced
@@ -414,7 +414,7 @@ class ResourceModel:
             self.type = 'LAYER_FIXED'
             self.set_lf_res(params)
         else:
-            sys.exit('Unsupported resource allocation type: '+params['RES_ALLOC_TYPE'])
+            sys.exit('Unsupported resource allocation type: '+str(params['RES_ALLOC_TYPE']))
     def set_uniform_res(self, params):
         '''
 
@@ -503,10 +503,14 @@ class AuctionModel():
 
         Parameters
         ----------
-        obj : JcModel
-            DESCRIPTION.
+        obj : :class:`~.JcModel` or :class:`~gameclasses.InfrastructureGame`
+            The object that stores the overall decentralized method for which the
+            resource allocation is computed using :class:`~dindpclasses.AuctionModel`.
+            The object type that can be passed here should have five attributes: 
+            net, layers, results (or results_real for :class:`~.JcModel`), and
+            judgments (for computing the valuations).
         time_step : int
-            DESCRIPTION.
+            Time step for which the auction is computed and resoures are allocated.
         print_cmd : bool, optional
             DESCRIPTION. The default is True.
         compute_poa : bool, optional
@@ -653,21 +657,28 @@ class AuctionModel():
         time_limit = 2*60 #!!! Maybe adjusted
         current_total_cost = {}
         for l in obj.layers:
-            current_total_cost[l] = obj.results_real.results_layer[l][t_step-1]['costs']['Total']
+            if type(obj) is JcModel:
+                current_total_cost[l] = obj.results_real.results_layer[l][t_step-1]['costs']['Total']
+            else:
+                current_total_cost[l] = obj.results.results_layer[l][t_step-1]['costs']['Total']
         #: Optimal Valuation, which the optimal walfare value. Used to compute POA ###
         if compute_optimal_valuation:
-            current_optimal_tc = obj.results_real.results[t_step-1]['costs']['Total']
+            if type(obj) is JcModel:
+                current_optimal_tc = obj.results_real.results[t_step-1]['costs']['Total']
+            else:
+                current_optimal_tc = obj.results.results[t_step-1]['costs']['Total']
             indp_results = indp.indp(obj.net, v_r=obj.resource.sum_resource, T=1,
                                      layers=obj.layers, controlled_layers=obj.layers)
             optimal_tc = indp_results[1][0]['costs']['Total']
             self.poa[t_step] = current_optimal_tc - optimal_tc
         #: Compute valuations
         for l in obj.layers:
-            start_time_val = time.time()
+            max_val_time = 0.0
             if print_cmd:
                 print("Bidder-%d"%(l))
             if self.valuation_type == 'DTC':
                 for v in range(obj.resource.sum_resource):
+                    start_time_val = time.time()
                     neg_layer = [x for x in obj.layers if x != l]
                     functionality = obj.judgments.create_judgment_dict(obj, neg_layer)
                     indp_results = indp.indp(obj.net, v_r=v+1, T=1, layers=obj.layers,
@@ -679,8 +690,11 @@ class AuctionModel():
                         current_total_cost[l] = new_total_cost
                     else:
                         self.valuations[t_step][l][v+1] = 0.0
+                    if time.time()-start_time_val > max_val_time:
+                        max_val_time = time.time()-start_time_val
             elif self.valuation_type == 'DTC_uniform':
                 for v in range(obj.resource.sum_resource):
+                    start_time_val = time.time()
                     total_cost_bounds = []
                     for jt in ["PESSIMISTIC", "OPTIMISTIC"]:
                         neg_layer = [x for x in obj.layers if x != l]
@@ -697,7 +711,10 @@ class AuctionModel():
                         current_total_cost[l] = new_total_cost
                     else:
                         self.valuations[t_step][l][v+1] = 0.0
+                    if time.time()-start_time_val > max_val_time:
+                        max_val_time = time.time()-start_time_val
             elif self.valuation_type == 'MDDN':
+                start_time_val = time.time()
                 g_prime_nodes = [n[0] for n in obj.net.G.nodes(data=True)\
                                  if n[1]['data']['inf_data'].net_id == l]
                 g_prime = obj.net.G.subgraph(g_prime_nodes)
@@ -716,9 +733,10 @@ class AuctionModel():
                         self.valuations[t_step][l][v+1] = 0.0
                     else:
                         self.valuations[t_step][l][v+1] = penalty_rsorted[v]
+                max_val_time = time.time()-start_time_val
             elif self.valuation_type == 'STM':
                 pred_dict = obj.resource.auction_model.stm_pred_dict
-                max_equiv_rtime = 0.0
+                max_val_time = 0.0
                 for v in range(obj.resource.sum_resource):
                     pred_dict['V'] = v+1
                     pred_results = stm.predict_resotration(obj, l, t_step, pred_dict)
@@ -733,10 +751,11 @@ class AuctionModel():
                         current_total_cost[l] = new_total_cost
                     else:
                         self.valuations[t_step][l][v+1] = 0.0
-                        
-                    if equiv_run_time/pred_dict['num_pred'] > max_equiv_rtime:
-                        max_equiv_rtime = equiv_run_time/pred_dict['num_pred']
+
+                    if equiv_run_time/pred_dict['num_pred'] > max_val_time:
+                        max_val_time = equiv_run_time/pred_dict['num_pred']
             elif self.valuation_type == 'DTC-LP':
+                start_time_val = time.time()
                 for v in range(obj.resource.sum_resource):
                     neg_layer = [x for x in obj.layers if x != l]
                     functionality = obj.judgments.create_judgment_dict(obj, neg_layer)
@@ -749,7 +768,6 @@ class AuctionModel():
                         current_total_cost[l] = new_total_cost
                     else:
                         self.valuations[t_step][l][v+1] = 0.0
-            if self.valuation_type != 'STM':
-                self.valuation_time[t_step][l] = (time.time()-start_time_val)/obj.resource.sum_resource
-            else:
-                self.valuation_time[t_step][l] = max_equiv_rtime
+                    if time.time()-start_time_val > max_val_time:
+                        max_val_time = time.time()-start_time_val
+            self.valuation_time[t_step][l] = max_val_time
