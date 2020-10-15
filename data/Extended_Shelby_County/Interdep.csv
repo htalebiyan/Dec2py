@@ -20,14 +20,12 @@ Dependee Node,Depender Node,Dependee Network,Depender Network,Type
 6,12,Power,Water,Physical
 7,13,Power,Water,Physical
 7,14,Power,Water,Physical
-5,2,Water,Power,Physical
-5,3,Water,Power,Physical
+30,3,Water,Power,Physical
 26,0,Power,Gas,Physical
 49,1,Power,Gas,Physical
 8,2,Power,Gas,Physical
 9,0,Gas,Power,Physical
 3,2,Gas,Power,Physical
-3,1,Gas,Power,Physical
 25,0,Power,Telecommunication,Physical
 6,1,Power,Telecommunication,Physical
 49,2,Power,Telecommunication,Physical
