@@ -7,7 +7,7 @@ import string
 import pymc3 as pm
 import sklearn.metrics
 import time
-import _pickle as pickle
+import pickle
 from infrastructure import *
 from operator import itemgetter
 import seaborn as sns
@@ -49,6 +49,16 @@ def importData(params, failSce_param, suffix=''):
 
     for m in failSce_param['mags']:
         for i in failSce_param['sample_range']:
+            # Check samples that do not exist
+            results_dir=params['OUTPUT_DIR']+'_L'+str(len(layers))+'_m'+str(m)+'_v'+str(params['V'])
+            action_file=results_dir+"/actions_"+str(i)+"_"+suffix+".csv"
+            cost_file=results_dir+"/costs_"+str(i)+"_"+suffix+".csv"
+            if not os.path.isfile(action_file) or not os.path.isfile(cost_file):
+                with open(folder_name+'/missing_scenarios.txt', 'a') as filehandle:
+                    filehandle.write(str(params["V"])+'\t'+str(m)+'\t'+str(i)+'\n')
+                    filehandle.close()
+                continue
+            # Check samples that are excluded
             try:
                 list_high_dam
                 if len(list_high_dam.loc[(list_high_dam.set == i)&\
@@ -57,11 +67,9 @@ def importData(params, failSce_param, suffix=''):
                         filehandle.write(str(params["V"])+'\t'+str(m)+'\t'+str(i)+'\n')
                         filehandle.close()
                     continue
+
             except NameError:
                 pass
-            results_dir=params['OUTPUT_DIR']+'_L'+str(len(layers))+'_m'+str(m)+'_v'+str(params['V'])
-            action_file=results_dir+"/actions_"+str(i)+"_"+suffix+".csv"
-            cost_file=results_dir+"/costs_"+str(i)+"_"+suffix+".csv"
 
             if (i-failSce_param['sample_range'][0]+1)%2==0:
                 update_progress(i-failSce_param['sample_range'][0]+1,len(failSce_param['sample_range']))
@@ -456,142 +464,6 @@ def test_model(train_data,test_data,trace_all,model_all,exclusions,plot=True):
 
     return ppc,ppc_test
 
-def compare_resotration(pred_s,samples,costs,s,s_itr,res,network_object,failSce_param,
-                        initial_net,layers,real_results_dir,model_folder,param_folder):
-    print( '\nPrediction '+str(pred_s)+': time step ',)
-
-    # Define a few vars and lists
-    no_samples = samples[samples.keys()[0]].shape[1]
-    T = samples[samples.keys()[0]].shape[0]
-    keys=samples.keys()
-    cost_names=costs.keys()
-    node_cols=['w_t','w_t_1','sample','time','Rc','w_n_t_1','w_a_t_1','w_d_t_1','w_h_t_1','w_c_t_1','y_c_t_1']
-    arc_cols=['y_t','y_t_1','sample','time','Rc','y_n_t_1','y_c_t_1']
-
-    '''Isolate input data for the current sample'''
-    costs_iso={}
-    for i in cost_names:
-        costs_iso[i]=np.asarray([x  for x in costs[i][:,s_itr]]).reshape((T, -1))
-    samples_iso={}
-    for key in keys:
-        samples_iso[key]=np.asarray([x  for x in samples[key][:,s_itr]]).reshape((T, -1))
-
-    ''' read cost from the actual data computed by INDP '''
-    if pred_s==0:
-        real_results=indputils.INDPResults()
-        real_results=real_results.from_csv(real_results_dir,s,suffix="")
-        for t in range(T):
-            row = np.array([s,t,res,-1,'data',costs_iso[key]['Total'][t,0],
-                real_results[t]['run_time'],costs_iso[key]['Under_Supply_Perc'][t,0]])
-            write_results_to_file(row)
-
-    '''Writ initial costs to file'''
-    print('0.',)
-    row = np.array([s,0,res,pred_s,'predicted',costs_iso['Total'][0,0],0.0,costs_iso['Under_Supply_Perc'][0,0]])
-    write_results_to_file(row)
-
-    '''Predict restoration plans'''
-    run_times=[]
-    for t in range(T-1):
-        '''Predict a full scenario'''
-        print( str(t+1)+'.',)
-        start_time = time.time()
-
-        w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1=extract_features(samples_iso,initial_net,keys,prog_bar=False)
-
-        costs_normed={}
-        for i in cost_names:
-            costs_normed[i] = normalize_costs(costs_iso[i],i,costs_iso['Total'][0])
-
-        decision_vars={0:{}} #0 becasue iINDP
-        for key in keys:
-            if key[0]=='w':
-                decision_vars[0][key]=predict_next_step(key,s,t,samples_iso,param_folder,
-                            model_folder,node_cols,arc_cols,costs_normed,res,
-                            w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1)
-            if key[0]=='y' and key not in decision_vars[0].keys():
-                decision_vars[0][key]=samples_iso[key][t+1,0]
-                u,v=arc_to_node(key)
-                decision_vars[0]['y_'+v+','+u]=samples_iso[key][t+1,0]
-            samples_iso[key][t+1,0]=decision_vars[0][key]
-
-        '''Calculate the cost of scenario'''
-        flow_results=flow.flow_problem(network_object,v_r=0,
-                        layers=layers,controlled_layers=layers,
-                      decision_vars=decision_vars,print_cmd=True, time_limit=None)
-        apply_recovery(network_object,flow_results[1],0)
-        run_times.append(time.time()-start_time)
-        row = np.array([s,t+1,res,pred_s,'predicted',flow_results[1][0]['costs']['Total'],
-                        run_times[-1],flow_results[1][0]['costs']['Under Supply Perc']])
-        write_results_to_file(row)
-
-        '''Update the cost dict for the next time step'''
-        for h in cost_names:
-            costs_iso[h][t+1]=flow_results[1][0]['costs'][h.replace('_', ' ')]
-
-        #'''Write models to file'''
-        # indp.save_INDP_model_to_file(flow_results[0],'./models',t,l=0)
-
-    sum_real_rep_perc=np.zeros((T))
-    sum_pred_rep_perc=np.zeros((T))
-    for key in keys:
-        if samples_iso[key][0,0]!=1.0:
-            real_rep_time = T-sum(samples[key][:,s_itr])
-            pred_rep_time = T-sum(samples_iso[key][:,0])
-            row = np.array([s,key,res,pred_s,real_rep_time,pred_rep_time,
-                            real_rep_time-pred_rep_time])
-            write_results_to_file(row,filename='pred_error')
-        sum_real_rep_perc+=samples[key][:,s_itr]
-        sum_pred_rep_perc+=samples_iso[key][:,0]
-
-    for t in range(T):
-        no_elements = len(keys)
-        row = np.array([s,t,res,pred_s,sum_real_rep_perc[t]/no_elements,
-                        sum_pred_rep_perc[t]/no_elements])
-        write_results_to_file(row,filename='rep_prec')
-
-    return run_times
-
-def predict_next_step(key,s,t,samples_iso,param_folder,model_folder,
-                      node_cols,arc_cols,costs_normed,res,
-                      w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1):
-    l = int(key[-2])
-    T = samples_iso[samples_iso.keys()[0]].shape[0]
-    cost_names=costs_normed.keys()
-    pred_decision=0.0
-    if samples_iso[key][t,0]==1:
-        pred_decision=1.0
-    else:
-        # Making model formula
-        parameters=pd.read_csv(param_folder+'/model_parameters_'+key+'.txt',delimiter=' ')
-        varibales = list(parameters['Unnamed: 0'])
-        varibales.remove('Intercept')
-
-        if key[0]=='w':
-            dependent =['w_t']
-            cols=node_cols+cost_names
-            special_feature=[w_n_t_1[key][t,0],w_a_t_1[key][t,0],w_d_t_1[key][t,0],
-                      w_h_t_1[l][t,0],w_c_t_1[l][t,0],y_c_t_1[l][t,0]]
-        elif key[0]=='y':
-            dependent =['y_t']
-            cols=arc_cols+cost_names
-            special_feature=[y_n_t_1[key][t,0],y_c_t_1[l][t,0]]
-        formula = make_formula(varibales,[],dependent)
-        norm_cost_values=[costs_normed[x][t,0] for x in cost_names]
-        basic_features=[samples_iso[key][t+1,0],samples_iso[key][t,0],s,(t+1)/float(T-1),res/100.0]
-        row = np.array(basic_features+special_feature+norm_cost_values)
-
-        with pm.Model() as logistic_model_pred:
-            pm.glm.GLM.from_formula(formula,
-                                    pd.Series(row,index=cols),
-                                    family=pm.glm.families.Binomial())
-            trace = pm.load_trace(model_folder+'/'+key)
-            ppc_test = pm.sample_posterior_predictive(trace,samples=1,
-                                                      progressbar=False)
-            pred_decision=ppc_test['y'][0][0]
-            # print `samples_iso[key][t,0]`+'->'+`pred_decision`
-    return pred_decision
-
 def train_test_split(node_data,arc_data,keys):
     train_data={}
     test_data={}
@@ -623,14 +495,16 @@ def save_initial_data(initial_net,samples,costs):
     folder_name = 'data'+t_suf
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
-    pickle.dump([samples,costs,initial_net], open(folder_name+'/initial_data.pkl', "wb" ))
+    pickle.dump([samples,costs,initial_net], open(folder_name+'/initial_data.pkl', "wb" ),
+                protocol=pickle.HIGHEST_PROTOCOL)
 
 def save_prepared_data(train_data,test_data):
     t_suf = time.strftime("%Y%m%d")
     folder_name = 'data'+t_suf
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
-    pickle.dump([train_data,test_data], open(folder_name+'/train_test_data.pkl', "wb" ))
+    pickle.dump([train_data,test_data], open(folder_name+'/train_test_data.pkl', "wb" ),
+                protocol=pickle.HIGHEST_PROTOCOL)
 
 def save_traces(trace):
     t_suf = time.strftime("%Y%m%d")
@@ -724,7 +598,7 @@ def find_sce_index(s, res, mis_sce_file):
             mis_sce_before_s=[x for x in mis_sce_filtered_by_res[:,2] if x<s]
             return s-len(mis_sce_before_s)
     else:
-        sys.exit('No nissing scenario file: '+mis_sce_file)
+        sys.exit('No missing scenario file: '+mis_sce_file)
 
 def update_progress(progress,total):
     print('\r[%s] %1.1f%%' % ('#'*int(progress/float(total)*20), (progress/float(total)*100)),
