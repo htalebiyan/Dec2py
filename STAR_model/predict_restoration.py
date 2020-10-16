@@ -12,7 +12,7 @@ import seaborn as sns
 import pymc3 as pm
 import indp
 import indputils
-import flow
+import indpalt
 import STAR_utils
 
 class NodeModel():
@@ -99,12 +99,18 @@ def import_initial_data(params, fail_sce_param):
     sample = fail_sce_param['sample']
     mag = fail_sce_param['mag']
     topology = None
-    shelby_data = True
+    shelby_data = None
     ext_interdependency = None
-    if fail_sce_param['type'] == 'Andres':
-        ext_interdependency = '../data/INDP_4-12-2016'
-    elif fail_sce_param['type'] == 'synthetic':
-        shelby_data = False
+    if fail_sce_param['type']=='Andres':
+        shelby_data = 'shelby_old'
+        ext_interdependency = "../data/INDP_4-12-2016"
+    elif fail_sce_param['type']=='WU':
+        shelby_data = 'shelby_extended'
+        if fail_sce_param['filtered_List']!=None:
+            list_high_dam = pd.read_csv(fail_sce_param['filtered_List'])
+    elif fail_sce_param['type']=='random':
+        shelby_data = 'shelby_extended'
+    elif fail_sce_param['type']=='synthetic':
         topology = fail_sce_param['topology']
 
     if not shelby_data:
@@ -135,7 +141,7 @@ def import_initial_data(params, fail_sce_param):
     objs = {}
     for v in interdep_net.G.nodes():
         objs['w_'+str(v)] = NodeModel('w_'+str(v), v[1])
-        objs['w_'+str(v)].initial_state = interdep_net.G.node[v]['data']['inf_data'].functionality
+        objs['w_'+str(v)].initial_state = interdep_net.G.nodes[v]['data']['inf_data'].functionality
     for u, v, a in interdep_net.G.edges(data=True):
         if not a['data']['inf_data'].is_interdep:
             if 'y_'+str(v)+','+str(u) not in list(objs.keys()):
@@ -168,14 +174,13 @@ def predict_resotration(pred_dict, fail_sce_param, params):
     run_times[0][0] = indp_results[1][0]['run_time']
     for pred_s in range(num_pred):
         pred_results[pred_s].extend(indp_results[1], t_offset=0)
-        pred_results[pred_s].extend_layer(indp_results[2], t_offset=0)
     costs = {x:{} for x in params['L']+[0]}
     for h in list(indp_results[1][0]['costs'].keys()):
         costs[0][h.replace(' ', '_')] = np.zeros((T+1, num_pred))
-        costs[0][h.replace(' ', '_')][0, :] = indp_results[1][0]['costs'][h]
+        costs[0][h.replace(' ', '_')][0, :] = indp_results[1].results[0]['costs'][h]
         for l in params['L']:
             costs[l][h.replace(' ', '_')] = np.zeros((T+1, num_pred))
-            costs[l][h.replace(' ', '_')][0, :] = indp_results[2][l][0]['costs'][h]
+            costs[l][h.replace(' ', '_')][0, :] = indp_results[1].results_layer[l][0]['costs'][h]
     ###Predict restoration plans###
     print('Predicting, time step:')
     for t in range(T): # t is the time index for previous time step
@@ -198,12 +203,11 @@ def predict_resotration(pred_dict, fail_sce_param, params):
                 decision_vars[0][val.name] = val.state_hist[t+1, pred_s]
                 if val.type == 'a':
                     decision_vars[0][val.dupl_name] = val.state_hist[t+1, pred_s]
-            flow_results = flow.flow_problem(net_obj[pred_s], v_r=0, layers=params['L'],
-                                             controlled_layers=params['L'],
-                                             decision_vars=decision_vars,
-                                             print_cmd=True, time_limit=None)
+            flow_results = indpalt.flow_problem(net_obj[pred_s], v_r=0, layers=params['L'],
+                                                controlled_layers=params['L'],
+                                                decision_vars=decision_vars,
+                                                print_cmd=True, time_limit=None)
             pred_results[pred_s].extend(flow_results[1], t_offset=t+1)
-            pred_results[pred_s].extend_layer(flow_results[2], t_offset=t+1)
             indp.apply_recovery(net_obj[pred_s], flow_results[1], 0)
             # run_times.append(time.time()-start_time)
             # row = np.array([s, t+1, res, pred_s,'predicted',flow_results[1][0]['costs']['Total'],
@@ -215,12 +219,13 @@ def predict_resotration(pred_dict, fail_sce_param, params):
                 costs[0][h][t+1, pred_s] = flow_results[1][0]['costs'][h.replace('_', ' ')]
                 pred_results[pred_s].results[t+1]['run_time'] = equiv_run_time
                 for l in params['L']:
-                    costs[l][h][t+1, pred_s] = flow_results[2][l][0]['costs'][h.replace('_', ' ')]
+                    costs[l][h][t+1, pred_s] = flow_results[1].results_layer[l][0]['costs'][h.replace('_', ' ')]
                     pred_results[pred_s].results_layer[l][t+1]['run_time'] = equiv_run_time
             ###Write results to file###
-            output_dir = check_folder(pred_dict['output_dir'])
+            subfolder_results = 'stm_results_L'+str(len(params['L']))+'_m'+str(fail_sce_param['mag'])+'_v'+str(params['V'])
+            output_dir = check_folder(pred_dict['output_dir']+'/'+subfolder_results)
             pred_results[pred_s].to_csv(output_dir, fail_sce_param["sample"], suffix='ps'+str(pred_s))
-            output_dir_l = check_folder(pred_dict['output_dir']+'/layer')
+            output_dir_l = check_folder(pred_dict['output_dir']+'/'+subfolder_results+'/agents')
             pred_results[pred_s].to_csv_layer(output_dir_l, fail_sce_param["sample"], suffix='ps'+str(pred_s))
             ####Write models to file###
             # indp.save_INDP_model_to_file(flow_results[0], './models',t, l = 0)
@@ -229,7 +234,7 @@ def predict_next_step(t, T, objs, pred_dict, costs_normed, res, layer_dict, prin
     """define vars and lists"""
     cost_names = list(costs_normed.keys())
     num_pred = pred_dict['num_pred']
-    no_pred_itr = 10
+    no_pred_itr = 10 #Number of samples to compute each prediction sample
     node_cols = ['w_t', 'w_t_1', 'time', 'Rc', 'w_n_t_1', 'w_a_t_1', 'w_d_t_1',
                  'w_h_t_1', 'w_c_t_1', 'y_c_t_1']
     arc_cols = ['y_t', 'y_t_1', 'time', 'Rc', 'y_n_t_1', 'w_c_t_1', 'y_c_t_1']
@@ -351,8 +356,8 @@ def plot_df(fail_sce_param, pred_dict, params, tc_df, opt_dir=None):
     """Prepares the dataframes to plot results"""
 
     ### Read data ###
-    t_suf = ''
-    folder_name = 'results'+t_suf
+    subfolder_results = 'stm_results_L'+str(len(params['L']))+'_m'+str(fail_sce_param['mag'])+'_v'+str(params['V'])
+    folder_name = 'results/'+subfolder_results
     for pred_s in range(pred_dict['num_pred']):
         suffix = 'ps'+str(pred_s)
         cost_file = folder_name+"/costs_"+str(fail_sce_param["sample"])+"_"+suffix+".csv"
@@ -373,7 +378,7 @@ def plot_df(fail_sce_param, pred_dict, params, tc_df, opt_dir=None):
             tc_df = pd.concat([tc_df, temp])
         for l in params['L']:
             suffix = 'l'+str(l)+'_ps'+str(pred_s)
-            cost_file = folder_name+"/layer/costs_"+str(fail_sce_param["sample"])+"_"+suffix+".csv"
+            cost_file = folder_name+"/agents/costs_"+str(fail_sce_param["sample"])+"_"+suffix+".csv"
             temp = pd.read_csv(cost_file, delimiter=',')
             temp_dict = {'pred sample':pred_s, 'layer':l, 'cost scope':'Layer',
                          'sample':fail_sce_param["sample"], 'mag':fail_sce_param["mag"],
@@ -383,7 +388,8 @@ def plot_df(fail_sce_param, pred_dict, params, tc_df, opt_dir=None):
             tc_df = pd.concat([tc_df, temp])
     if opt_dir:
         suffix = ''
-        cost_file = OPT_DIR+"/costs_"+str(fail_sce_param["sample"])+"_"+suffix+".csv"
+        subfolder_results = 'indp_results_L'+str(len(params['L']))+'_m'+str(fail_sce_param['mag'])+'_v'+str(params['V'])
+        cost_file = OPT_DIR+'/'+subfolder_results+"/costs_"+str(fail_sce_param["sample"])+"_"+suffix+".csv"
         temp = pd.read_csv(cost_file, delimiter=',')
         temp_dict = {'pred sample':-1, 'layer':-1, 'cost scope':'Overall',
                      'sample':fail_sce_param["sample"], 'mag':fail_sce_param["mag"],
@@ -404,14 +410,14 @@ if __name__ == '__main__':
     MAGS = range(0, 1)
     T_SUF = ''
     MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
-    OPT_DIR = 'C:/Users/ht20/Documents/Files/STAR_training_data/INDP_random_disruption/results/indp_results_L4_m0_v5'
+    OPT_DIR = 'C:/Users/ht20/Documents/Files/STAR_training_data/INDP_random_disruption/results/'
     # FAIL_SCE_PARAM = {"type":"WU", "sample":1, "mag":52,
     #                   'Base_dir':"../data/Extended_Shelby_County/",
     #                   'Damage_dir':"../data/Wu_Damage_scenarios/", 'topology':None}
     FAIL_SCE_PARAM = {"type":"random", "sample":None, "mag":None, 'filtered_List':None,
                       'Base_dir':"../data/Extended_Shelby_County/",
                       'Damage_dir':"../data/random_disruption_shelby/"}
-    PRED_DICT = {'num_pred':5, 'model_dir':MODEL_DIR+'/traces'+T_SUF,
+    PRED_DICT = {'num_pred':2, 'model_dir':MODEL_DIR+'/traces'+T_SUF,
                  'param_folder':MODEL_DIR+'/parameters'+T_SUF,
                  'output_dir':'./results'}
     PARAMS = {"NUM_ITERATIONS":10, "V":5, "ALGORITHM":"INDP", 'L':[1, 2, 3, 4]}
@@ -444,8 +450,8 @@ if __name__ == '__main__':
     plt.close('all')
     # tc_df = tc_df.replace('predicted','Logistic Model Prediction')
     # tc_df = tc_df.replace('data','Optimal Scenario')
-    FIGURE_DF = COST_DF#[COST_DF['sample'] == 550]
-    sns.lineplot(x="t", y="Total", style='layer', hue='type',
+    FIGURE_DF = COST_DF[COST_DF['layer'] == -1]
+    sns.lineplot(x="t", y="Total", style='pred sample', hue='type',
                   data=FIGURE_DF, markers=True, ci=95)
     # plt.savefig('Total_cost_vs_time.png',dpi = 600, bbox_inches='tight') 
            
