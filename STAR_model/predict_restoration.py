@@ -14,6 +14,8 @@ import indp
 import indputils
 import indpalt
 import STAR_utils
+import plot_star
+import pickle
 
 class NodeModel():
     """Stores information for a node model """
@@ -81,14 +83,13 @@ class ArcModel():
     def check_model_exist(self, param_folder):
         """Find and checks the model for the element"""
         param_file = param_folder+'/model_parameters_'+self.name+'.txt'
+        param_file_dupl = param_folder+'/model_parameters_'+self.dupl_name+'.txt'
         if os.path.exists(param_file):
             self.model_status = 1
             self.model_params = pd.read_csv(param_file, delimiter=' ')
-        else:
-            param_file_new = param_folder+'/model_parameters_'+self.dupl_name+'.txt'
-            if os.path.exists(param_file_new):
+        elif os.path.exists(param_file_dupl):
                 self.model_status = 2
-                self.model_params = pd.read_csv(param_file_new, delimiter=' ')
+                self.model_params = pd.read_csv(param_file_dupl, delimiter=' ')
 
 def import_initial_data(params, fail_sce_param):
     """Imports initial data and initializes element objects"""
@@ -153,9 +154,10 @@ def import_initial_data(params, fail_sce_param):
             objs['w_'+str(v)].add_dependee('w_'+str(u))
     return objs
 
-def predict_resotration(pred_dict, fail_sce_param, params):
+def predict_resotration(pred_dict, fail_sce_param, params, samples_opt):
     """ Predicts restoration plans and writes to file"""
-    print('\nMagnitude '+str(fail_sce_param['mag'])+' sample '+str(fail_sce_param['sample']))
+    print('\nMagnitude '+str(fail_sce_param['mag'])+' sample '+str(fail_sce_param['sample'])+\
+          ' Rc '+str(params['V']))
     ### Define a few vars and lists ###
     num_pred = pred_dict['num_pred']
     T = params['NUM_ITERATIONS']
@@ -209,12 +211,11 @@ def predict_resotration(pred_dict, fail_sce_param, params):
                                                 print_cmd=True, time_limit=None)
             pred_results[pred_s].extend(flow_results[1], t_offset=t+1)
             indp.apply_recovery(net_obj[pred_s], flow_results[1], 0)
-            # run_times.append(time.time()-start_time)
-            # row = np.array([s, t+1, res, pred_s,'predicted',flow_results[1][0]['costs']['Total'],
-            #                 run_times[-1],flow_results[1][0]['costs']['Under Supply Perc']])
-            # write_results_to_file(row)
+
             ### Update the cost dict for the next time step and run times ###
-            equiv_run_time = run_times[t+1][0]/run_times[t+1][1]+(time.time()-start_time)
+            equiv_run_time = 0
+            if run_times[t+1][1] != 0:
+                equiv_run_time = run_times[t+1][0]/run_times[t+1][1]+(time.time()-start_time)
             for h in list(costs[0].keys()):
                 costs[0][h][t+1, pred_s] = flow_results[1][0]['costs'][h.replace('_', ' ')]
                 pred_results[pred_s].results[t+1]['run_time'] = equiv_run_time
@@ -230,11 +231,38 @@ def predict_resotration(pred_dict, fail_sce_param, params):
             ####Write models to file###
             # indp.save_INDP_model_to_file(flow_results[0], './models',t, l = 0)
 
+    # Extract prediction results
+    pred_error = pd.DataFrame(columns=['name','pred sample', 'pred rep time',
+                                       'real rep time', 'prediction error'])
+    rep_prec = pd.DataFrame(columns=['t','pred sample', 'pred rep prec','real rep prec'])
+    sum_pred_rep_prec=np.zeros((T+1,num_pred))
+    sum_real_rep_prec=np.zeros((T+1))
+    for key, val in objs.items():
+        real_rep_sequence = samples_opt[key][:T+1,fail_sce_param['sample']-50] #!!!number 50 is for the current dtabase
+        sum_real_rep_prec += real_rep_sequence
+        for pred_s in range(num_pred):
+            if real_rep_sequence[0] != val.state_hist[0,pred_s]:
+                sys.exit('Error: Unmatched intial state')
+            temp_dict = {'name':key, 'pred sample':pred_s,
+                         'real rep time':T+1-sum(real_rep_sequence),
+                         'pred rep time':T+1-sum(val.state_hist[:,pred_s])}
+            temp_dict['prediction error'] = temp_dict['real rep time'] - temp_dict['pred rep time']
+            pred_error = pred_error.append(temp_dict, ignore_index=True)
+            sum_pred_rep_prec[:,pred_s] += val.state_hist[:,pred_s]
+    for pred_s in range(num_pred):
+        for t in range(T):
+            no_elements = len(objs.keys())
+            temp_dict = {'t':t, 'pred sample':pred_s,
+                         'pred rep prec':sum_pred_rep_prec[t,pred_s]/no_elements,
+                         'real rep prec':sum_real_rep_prec[t]/no_elements}
+            rep_prec = rep_prec.append(temp_dict, ignore_index=True)
+    return pred_results, pred_error, rep_prec
+
 def predict_next_step(t, T, objs, pred_dict, costs_normed, res, layer_dict, print_cmd=True):
     """define vars and lists"""
     cost_names = list(costs_normed.keys())
     num_pred = pred_dict['num_pred']
-    no_pred_itr = 10 #Number of samples to compute each prediction sample
+    no_pred_itr = 50 #Number of samples to compute each prediction sample
     node_cols = ['w_t', 'w_t_1', 'time', 'Rc', 'w_n_t_1', 'w_a_t_1', 'w_d_t_1',
                  'w_h_t_1', 'w_c_t_1', 'y_c_t_1']
     arc_cols = ['y_t', 'y_t_1', 'time', 'Rc', 'y_n_t_1', 'w_c_t_1', 'y_c_t_1']
@@ -299,12 +327,11 @@ def predict_next_step(t, T, objs, pred_dict, costs_normed, res, layer_dict, prin
                             sum_state += ppc_test['y'][psr][pred_idx.index(idx)]
                         pred_decision[idx] = round(sum_state/float(no_pred_itr))
                 pass
-
             elif val.model_status == 0:
+                if print_cmd:
+                    print('Predicting '+str(key)+', randomly')
                 for pred_s in pred_idx:
                     pred_decision[pred_s] = np.random.randint(2)
-                    if print_cmd:
-                        print('Predicting '+str(key)+', sample: '+str(pred_s)+', randomly')
             else:
                 sys.exit('Wrong model status: '+key)
         val.state_hist[t+1, :] = pred_decision
@@ -352,53 +379,6 @@ def extract_features(objs, net_obj, t, layers, num_pred):
                 layer_dict[val.net_id]['w_h_t_1'][pred_s] += val.state_hist[t, pred_s]/no_high_nodes
     return layer_dict
 
-def plot_df(fail_sce_param, pred_dict, params, tc_df, opt_dir=None):
-    """Prepares the dataframes to plot results"""
-
-    ### Read data ###
-    subfolder_results = 'stm_results_L'+str(len(params['L']))+'_m'+str(fail_sce_param['mag'])+'_v'+str(params['V'])
-    folder_name = 'results/'+subfolder_results
-    for pred_s in range(pred_dict['num_pred']):
-        suffix = 'ps'+str(pred_s)
-        cost_file = folder_name+"/costs_"+str(fail_sce_param["sample"])+"_"+suffix+".csv"
-        if pred_s == 0 and tc_df.empty:
-            tc_df = pd.read_csv(cost_file, delimiter=',')
-            temp_dict = {'pred sample':pred_s, 'layer':-1, 'cost scope':'Overall',
-                         'sample':fail_sce_param["sample"], 'mag':fail_sce_param["mag"],
-                         'type':'predicted'}
-            for i, val in temp_dict.items():
-                tc_df[i] = val
-        else:
-            temp = pd.read_csv(cost_file, delimiter=',')
-            temp_dict = {'pred sample':pred_s, 'layer':-1, 'cost scope':'Overall',
-                         'sample':fail_sce_param["sample"], 'mag':fail_sce_param["mag"],
-                         'type':'predicted'}
-            for i, val in temp_dict.items():
-                temp[i] = val
-            tc_df = pd.concat([tc_df, temp])
-        for l in params['L']:
-            suffix = 'l'+str(l)+'_ps'+str(pred_s)
-            cost_file = folder_name+"/agents/costs_"+str(fail_sce_param["sample"])+"_"+suffix+".csv"
-            temp = pd.read_csv(cost_file, delimiter=',')
-            temp_dict = {'pred sample':pred_s, 'layer':l, 'cost scope':'Layer',
-                         'sample':fail_sce_param["sample"], 'mag':fail_sce_param["mag"],
-                         'type':'predicted'}
-            for i, val in temp_dict.items():
-                temp[i] = val
-            tc_df = pd.concat([tc_df, temp])
-    if opt_dir:
-        suffix = ''
-        subfolder_results = 'indp_results_L'+str(len(params['L']))+'_m'+str(fail_sce_param['mag'])+'_v'+str(params['V'])
-        cost_file = OPT_DIR+'/'+subfolder_results+"/costs_"+str(fail_sce_param["sample"])+"_"+suffix+".csv"
-        temp = pd.read_csv(cost_file, delimiter=',')
-        temp_dict = {'pred sample':-1, 'layer':-1, 'cost scope':'Overall',
-                     'sample':fail_sce_param["sample"], 'mag':fail_sce_param["mag"],
-                     'type':'optimal'}
-        for i, val in temp_dict.items():
-            temp[i] = val
-        tc_df = pd.concat([tc_df, temp])
-    return tc_df
-
 def check_folder(output_dir):
     """Creates a new folder"""
     if not os.path.exists(output_dir):
@@ -406,9 +386,11 @@ def check_folder(output_dir):
     return output_dir
 
 if __name__ == '__main__':
-    SAMPLE_RANGE = [50]# range(50, 551, 100) #[50, 70, 90]
+    rooy_folder = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc/data'
+    samples_all, costs_all, _ = pickle.load(open(rooy_folder+'/initial_data.pkl', "rb" ))
+    SAMPLE_RANGE = range(50, 551, 100) #[50, 70, 90]
     MAGS = range(0, 1)
-    T_SUF = ''
+    Rc = [10]
     MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
     OPT_DIR = 'C:/Users/ht20/Documents/Files/STAR_training_data/INDP_random_disruption/results/'
     # FAIL_SCE_PARAM = {"type":"WU", "sample":1, "mag":52,
@@ -417,41 +399,48 @@ if __name__ == '__main__':
     FAIL_SCE_PARAM = {"type":"random", "sample":None, "mag":None, 'filtered_List':None,
                       'Base_dir':"../data/Extended_Shelby_County/",
                       'Damage_dir':"../data/random_disruption_shelby/"}
-    PRED_DICT = {'num_pred':2, 'model_dir':MODEL_DIR+'/traces'+T_SUF,
-                 'param_folder':MODEL_DIR+'/parameters'+T_SUF,
-                 'output_dir':'./results'}
+    PRED_DICT = {'num_pred':5, 'model_dir':MODEL_DIR+'/traces',
+                 'param_folder':MODEL_DIR+'/parameters', 'output_dir':'./results'}
     PARAMS = {"NUM_ITERATIONS":10, "V":5, "ALGORITHM":"INDP", 'L':[1, 2, 3, 4]}
 
-    ### Run models ###
-    for mag_num in MAGS:
-        for sample_num in SAMPLE_RANGE:
-            FAIL_SCE_PARAM['sample'] = sample_num
-            FAIL_SCE_PARAM['mag'] = mag_num
-            predict_resotration(PRED_DICT, FAIL_SCE_PARAM, PARAMS)
+    ''' Run models '''
+    prediction_error = pd.DataFrame(columns=['magnitude', 'sample', 'Rc', 'name',
+                                              'pred sample', 'pred rep time',
+                                              'real rep time', 'prediction error'])
+    repair_precentage = pd.DataFrame(columns=['magnitude', 'sample', 'Rc', 't',
+                                              'pred sample', 'pred rep prec', 'real rep prec'])
+    cost_all_df = pd.DataFrame()
+    for res in Rc:
+        for mag_num in MAGS:
+            for sample_num in SAMPLE_RANGE:
+                FAIL_SCE_PARAM['sample'] = sample_num
+                FAIL_SCE_PARAM['mag'] = mag_num
+                PARAMS['V'] = res
+                pred_results, pred_error, rep_prec = predict_resotration(PRED_DICT,
+                                                                          FAIL_SCE_PARAM,
+                                                                          PARAMS,
+                                                                          samples_all[res])
+                cost_df, pred_error, rep_prec = plot_star.plot_df(mag_num, sample_num,
+                                                                  len(PARAMS['L']), res,
+                                                                  pred_results, pred_error,
+                                                                  rep_prec, costs_all[res])
+                prediction_error = pd.concat([prediction_error, pred_error])
+                repair_precentage = pd.concat([repair_precentage, rep_prec])
+                cost_all_df = pd.concat([cost_all_df, cost_df])
+                ''' Save results '''
+                folder_name = PRED_DICT['output_dir']
+                if not os.path.exists(folder_name):
+                    os.makedirs(folder_name)
+                pickle.dump([cost_all_df, prediction_error, repair_precentage],
+                            open(folder_name+'/results.pkl', "wb" ),
+                            protocol=pickle.HIGHEST_PROTOCOL)
 
-    # ### Run models in parallel ###
+    ''' Run models in parallel '''
     # import run_parallel
     # with multiprocessing.Pool(processes=len(SAMPLE_RANGE)) as p:
     #     p.map(run_parallel.run_parallel, SAMPLE_RANGE)
     #     p.join()
 
-    ###Plot results###
-    COST_DF = pd.DataFrame()
-    for mag_num in MAGS:
-        for sample_num in SAMPLE_RANGE:
-            FAIL_SCE_PARAM['sample'] = sample_num
-            FAIL_SCE_PARAM['mag'] = mag_num
-            COST_DF = plot_df(FAIL_SCE_PARAM, PRED_DICT, PARAMS, tc_df=COST_DF,
-                              opt_dir=OPT_DIR)
-
-    sns.set(context='notebook', style='darkgrid')
-    # plt.rc('text', usetex = True)
-    # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-    plt.close('all')
-    # tc_df = tc_df.replace('predicted','Logistic Model Prediction')
-    # tc_df = tc_df.replace('data','Optimal Scenario')
-    FIGURE_DF = COST_DF[COST_DF['layer'] == -1]
-    sns.lineplot(x="t", y="Total", style='pred sample', hue='type',
-                  data=FIGURE_DF, markers=True, ci=95)
-    # plt.savefig('Total_cost_vs_time.png',dpi = 600, bbox_inches='tight') 
-           
+    ''' Plot results '''
+    plot_star.plot_cost(cost_all_df)
+    plot_star.plot_results(prediction_error, repair_precentage)

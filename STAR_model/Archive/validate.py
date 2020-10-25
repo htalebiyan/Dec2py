@@ -19,7 +19,7 @@ def damage_key(key):
 
 def read_actions(results_dir,i,suffix=''):
     actions={}
-    results_dir+='/results/indp_results_L'+`4`+'_m'+`0`+'_v'+`4`
+    results_dir+='/results/indp_results_L'+str(4)+'_m'+'0'+'_v'+`4`
     action_file=results_dir+"/actions_"+`i`+"_"+suffix+".csv" 
     if os.path.isfile(action_file):
         with open(action_file) as f:
