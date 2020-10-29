@@ -123,16 +123,19 @@ def dislocation_models(input_data):
     return disloc_results
 
 def dynamic_demand(disloc_results, service_intersect_file, node_column, time_steps,
-                   set_num, sce_num, return_type):
+                   set_num, sce_num, return_type, service_node_file):
     print('Demand calculation for sce', sce_num, ', set', set_num)
     service_intersect_data = pd.read_csv(service_intersect_file)
+    service_node_data = pd.read_csv(service_node_file)
     nodes = service_intersect_data[node_column].unique()
     dynamic_demand_df = pd.DataFrame()
     for t in time_steps:
         temp_df = pd.DataFrame()
         for n in nodes:
             data = service_intersect_data[service_intersect_data[node_column]==n]
-            temp = {'time':t, 'node':n, 'set': set_num, 'sce':sce_num, 'total pop':0, 'current pop':0}
+            temp = {'time':t, 'service area':n, 'set': set_num, 'sce':sce_num,
+                    'node':service_node_data.loc[service_node_data['Service Area']==n, 'Node'].iloc[0],
+                    'total pop':0, 'current pop':0}
             for idx, row in data.iterrows():
                 disloc_data = disloc_results[(disloc_results['census id']==row['CensusData_Id'])&\
                                              (disloc_results['sce']==sce_num)&\

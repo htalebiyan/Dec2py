@@ -544,7 +544,8 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
         for i in range(params["NUM_ITERATIONS"]):
             print("-Time Step (iINDP)",i+1,"/",params["NUM_ITERATIONS"])
-            results=indp(InterdepNet,v_r,T,layers,controlled_layers=controlled_layers,forced_actions=forced_actions)
+            results=indp(InterdepNet,v_r,T,layers,controlled_layers=controlled_layers,
+                         forced_actions=forced_actions)
             indp_results.extend(results[1],t_offset=i+1)
             if saveModel:
                 save_INDP_model_to_file(results[0],output_dir+"/Model",i+1)
