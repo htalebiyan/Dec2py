@@ -1,8 +1,8 @@
 import pickle
 import pandas as pd
 
-return_type = 'linear'
-net_type = 'gas'
+return_type = 'step_function'
+net_type = 'telecom'
 filename = 'C:/Users/ht20/Documents/Files/dynamic_demand/dynamic_demand_'+return_type+'_'+net_type+'.pkl'
 with open(filename, 'rb') as f:
     dynamic_demand_df = pickle.load(f)
