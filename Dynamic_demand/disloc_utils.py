@@ -4,29 +4,27 @@ import numpy as np
 from scipy.stats import norm
 import random
 
-def census_pga_values(intersect_file, hazard_file, set_range=range(1,2)):
+def census_pga_values(intersect_file, hazard_root, list_scenarios):
     print('Finding PGA values for each census tract')
     mean_pga_census_df = pd.DataFrame()
     intersect_data = pd.read_csv(intersect_file)
     census_names = intersect_data['censustractclip_NAME'].unique()
-    for set_num in set_range:
-        print('Reading set',set_num,'...')
-        set_file = hazard_file+'PGA_Set'+str(set_num)+'.txt'
+    for _, sce_data in list_scenarios.iterrows():
+        set_file = hazard_root+'PGA_Set'+str(int(sce_data['set']+1))+'.txt'
         hazard_data = pd.read_csv(set_file, delimiter='\t', header=None).dropna(axis=1)
         for ct in census_names:
             data = intersect_data[intersect_data['censustractclip_NAME']==ct]
             census_id = list(data['CensusData_Id'].unique())
             if len(census_id) != 1:
                 sys.exit ('duplicate ID for the census tract')
-            pga_col = 0
+            pga_sum = 0
             num_poins = len(data.index)
             for idx, row in data.iterrows():
                 pga_point = row['FID_XYHazardSce95']
-                pga_col += hazard_data[pga_point].to_numpy()
-            for idx, pga in enumerate(pga_col):
-                temp = {'census':ct, 'census id': census_id[0], 'set':set_num,
-                        'sce':idx, 'mean_pga':pga/num_poins}
-                mean_pga_census_df = mean_pga_census_df.append(temp, ignore_index=True)
+                pga_sum += hazard_data.loc[int(sce_data['sce']), pga_point]
+            temp = {'census':ct, 'census id': census_id[0], 'set':int(sce_data['set']),
+                    'sce':int(sce_data['sce']), 'mean_pga':pga_sum/num_poins}
+            mean_pga_census_df = mean_pga_census_df.append(temp, ignore_index=True)
     return mean_pga_census_df
 
 def damage_state(census_tract_data):
@@ -129,7 +127,7 @@ def dynamic_demand(disloc_results, service_intersect_file, node_column, time_ste
     service_node_data = pd.read_csv(service_node_file)
     nodes = service_intersect_data[node_column].unique()
     dynamic_demand_df = pd.DataFrame()
-    for t in time_steps:
+    for t in range(time_steps+1):
         temp_df = pd.DataFrame()
         for n in nodes:
             data = service_intersect_data[service_intersect_data[node_column]==n]

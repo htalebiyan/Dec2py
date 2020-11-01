@@ -5,7 +5,7 @@ import string
 #import platform
 import networkx as nx
 import matplotlib.pyplot as plt
-#import copy
+import copy
 import random
 import time
 import sys
@@ -389,8 +389,8 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=
         for n,d in N_hat.nodes(data=True):
             overSuppCost+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t)).x
             overSuppCost_layer[n[1]]+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t)).x
-            underSupp+= m.getVarByName('delta+_'+str(n)+","+str(t)).x
-            underSupp_layer[n[1]]+= m.getVarByName('delta+_'+str(n)+","+str(t)).x/total_demand_layer[n[1]]
+            underSupp+= m.getVarByName('delta-_'+str(n)+","+str(t)).x
+            underSupp_layer[n[1]]+= m.getVarByName('delta-_'+str(n)+","+str(t)).x/total_demand_layer[n[1]]
             underSuppCost+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t)).x
             underSuppCost_layer[n[1]]+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t)).x
         indp_results.add_cost(t,"Over Supply",overSuppCost,overSuppCost_layer)
@@ -482,7 +482,6 @@ def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
                             functionality[t][n]=0.0
     return functionality
 
-
 def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependency_dir=None,sim_number=1,cost_scale=1,magnitude=6,sample=0,v=3,shelby_data=True,topology='Random'):
     """ Initializes an InfrastructureNetwork from Shelby County data.
     :param BASE_DIR: Base directory of Shelby County data.
@@ -506,7 +505,9 @@ def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependen
         InterdepNet,v_temp,layers_temp=load_synthetic_network(BASE_DIR=BASE_DIR,topology=topology,config=magnitude,sample=sample,cost_scale=cost_scale)
     return InterdepNet,v_temp,layers_temp
 
-def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,validate=False,save=True,suffix="",forced_actions=False,saveModel=False,print_cmd_line=True):
+def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,validate=False,
+             save=True,suffix="",forced_actions=False,saveModel=False,print_cmd_line=True,
+             dynamic_params=None):
     """ Runs an INDP problem with specified parameters. Outputs to directory specified in params['OUTPUT_DIR'].
     :param params: Global parameters.
     :param layers: Layers to consider in the infrastructure network.
@@ -539,11 +540,16 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         # Run INDP for 1 time step (original INDP).
         output_dir=params["OUTPUT_DIR"]+'_L'+str(len(layers))+'_m'+str(params["MAGNITUDE"])+"_v"+outDirSuffixRes
         # Initial calculations.
+        if dynamic_params:
+            original_N = copy.deepcopy(InterdepNet) #!!! deepcopy
+            dynamic_parameters(InterdepNet, original_N, 0, dynamic_params)
         results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers)
         indp_results=results[1]
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
         for i in range(params["NUM_ITERATIONS"]):
             print("-Time Step (iINDP)",i+1,"/",params["NUM_ITERATIONS"])
+            if dynamic_params:
+                dynamic_parameters(InterdepNet, original_N, i+1, dynamic_params)
             results=indp(InterdepNet,v_r,T,layers,controlled_layers=controlled_layers,
                          forced_actions=forced_actions)
             indp_results.extend(results[1],t_offset=i+1)
@@ -692,7 +698,6 @@ def run_inrg(params,layers=[1,2,3],validate=False,player_ordering=[3,1],suffix="
     for P in layers:
         player_strategies[P].to_csv(output_dir,params["SIM_NUMBER"],suffix="P"+str(P)+"_"+suffix)
 
-
 def run_seqeq(params,layers=[1,2,3],validate=False,player_ordering=[3,1],suffix=""):
     InterdepNet=None
     output_dir=params["OUTPUT_DIR"]+"_m"+str(params["MAGNITUDE"])+"_v"+str(params["V"])
@@ -702,8 +707,6 @@ def run_seqeq(params,layers=[1,2,3],validate=False,player_ordering=[3,1],suffix=
     else:
         InterdepNet=params["N"]
     v_r=params["V"]
-
-
 
 def baseline_metrics(BASE_DIR="/Users/Andrew/Dropbox/iINDP",layers=[1,2,3]):
     """ Calculate and print baseline metrics of undamaged network.
@@ -737,6 +740,15 @@ def baseline_metrics(BASE_DIR="/Users/Andrew/Dropbox/iINDP",layers=[1,2,3]):
     print( "Costs w/o disconnection: ",costs_no_disconnection)
     print ("Nominal flow cost:       ",opt_flow_cost)
 #baseline_metrics(layers=[1,3],BASE_DIR=HOME_DIR+"/Dropbox/iINDP")
+
+def dynamic_parameters(N, original_N, t, dynamic_params):
+    for n,d in N.G.nodes(data=True):
+        data = dynamic_params[d['data']['inf_data'].net_id]
+        if d['data']['inf_data'].demand<0:
+            current_pop = data.loc[(data['node']==n[0])&(data['time']==t), 'current pop'].iloc[0]
+            total_pop = data.loc[(data['node']==n[0])&(data['time']==t), 'total pop'].iloc[0]
+            original_demand = original_N.G.nodes[n]['data']['inf_data'].demand
+            d['data']['inf_data'].demand = original_demand*current_pop/total_pop
 
 def save_INDP_model_to_file(model,outModelDir,t,l=0,suffix=''):
     if not os.path.exists(outModelDir):

@@ -656,7 +656,7 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
     '''
     combinations = []
     optimal_combinations = []
-    optimal_method = ['tdindp', 'indp', 'sample_indp_12Node']
+    optimal_method = ['tdindp', 'indp', 'sample_indp_12Node', 'dp_indp']
     print('\nCombination Generation\n', end='')
     idx = 0
     no_total = len(mags)*len(sample)
