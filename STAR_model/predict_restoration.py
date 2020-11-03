@@ -404,36 +404,36 @@ if __name__ == '__main__':
     PARAMS = {"NUM_ITERATIONS":10, "V":5, "ALGORITHM":"INDP", 'L':[1, 2, 3, 4]}
 
     ''' Run models '''
-    prediction_error = pd.DataFrame(columns=['magnitude', 'sample', 'Rc', 'name',
-                                              'pred sample', 'pred rep time',
-                                              'real rep time', 'prediction error'])
-    repair_precentage = pd.DataFrame(columns=['magnitude', 'sample', 'Rc', 't',
-                                              'pred sample', 'pred rep prec', 'real rep prec'])
-    cost_all_df = pd.DataFrame()
-    for res in Rc:
-        for mag_num in MAGS:
-            for sample_num in SAMPLE_RANGE:
-                FAIL_SCE_PARAM['sample'] = sample_num
-                FAIL_SCE_PARAM['mag'] = mag_num
-                PARAMS['V'] = res
-                pred_results, pred_error, rep_prec = predict_resotration(PRED_DICT,
-                                                                          FAIL_SCE_PARAM,
-                                                                          PARAMS,
-                                                                          samples_all[res])
-                cost_df, pred_error, rep_prec = plot_star.plot_df(mag_num, sample_num,
-                                                                  len(PARAMS['L']), res,
-                                                                  pred_results, pred_error,
-                                                                  rep_prec, costs_all[res])
-                prediction_error = pd.concat([prediction_error, pred_error])
-                repair_precentage = pd.concat([repair_precentage, rep_prec])
-                cost_all_df = pd.concat([cost_all_df, cost_df])
-                ''' Save results '''
-                folder_name = PRED_DICT['output_dir']
-                if not os.path.exists(folder_name):
-                    os.makedirs(folder_name)
-                pickle.dump([cost_all_df, prediction_error, repair_precentage],
-                            open(folder_name+'/results.pkl', "wb" ),
-                            protocol=pickle.HIGHEST_PROTOCOL)
+    # prediction_error = pd.DataFrame(columns=['magnitude', 'sample', 'Rc', 'name',
+    #                                           'pred sample', 'pred rep time',
+    #                                           'real rep time', 'prediction error'])
+    # repair_precentage = pd.DataFrame(columns=['magnitude', 'sample', 'Rc', 't',
+    #                                           'pred sample', 'pred rep prec', 'real rep prec'])
+    # cost_all_df = pd.DataFrame()
+    # for res in Rc:
+    #     for mag_num in MAGS:
+    #         for sample_num in SAMPLE_RANGE:
+    #             FAIL_SCE_PARAM['sample'] = sample_num
+    #             FAIL_SCE_PARAM['mag'] = mag_num
+    #             PARAMS['V'] = res
+    #             pred_results, pred_error, rep_prec = predict_resotration(PRED_DICT,
+    #                                                                       FAIL_SCE_PARAM,
+    #                                                                       PARAMS,
+    #                                                                       samples_all[res])
+    #             cost_df, pred_error, rep_prec = plot_star.plot_df(mag_num, sample_num,
+    #                                                               len(PARAMS['L']), res,
+    #                                                               pred_results, pred_error,
+    #                                                               rep_prec, costs_all[res])
+    #             prediction_error = pd.concat([prediction_error, pred_error])
+    #             repair_precentage = pd.concat([repair_precentage, rep_prec])
+    #             cost_all_df = pd.concat([cost_all_df, cost_df])
+    #             ''' Save results '''
+    #             folder_name = PRED_DICT['output_dir']
+    #             if not os.path.exists(folder_name):
+    #                 os.makedirs(folder_name)
+    #             pickle.dump([cost_all_df, prediction_error, repair_precentage],
+    #                         open(folder_name+'/results.pkl', "wb" ),
+    #                         protocol=pickle.HIGHEST_PROTOCOL)
 
     ''' Run models in parallel '''
     # import run_parallel
