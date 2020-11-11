@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 import multiprocessing
 from functools import partial
 print('Running with PyMC3 version v.{}'.format(pm.__version__))
+import networkx as nx
+print('Running with Networkx version v.{}'.format(nx.__version__))
 
 def importData(params, failSce_param, suffix=''):
     print('\nNumber of resources: '+str(params["V"]))
@@ -42,8 +44,7 @@ def importData(params, failSce_param, suffix=''):
     costs = {}
     initial_net = {}
 
-    t_suf = time.strftime("%Y%m%d")
-    folder_name = 'data'+t_suf
+    folder_name = 'data'
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
 
@@ -188,9 +189,9 @@ def prepare_data(samples, costs, initial_net, res, keys):
     noSamples = int(samples[names[0]].shape[1])
     T = int(samples[names[0]].shape[0])
 
-    w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1=extract_features(samples,
-                                                                             initial_net,
-                                                                             keys)
+    w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1,w_c_t=extract_features(samples,
+                                                                                   initial_net, 
+                                                                                   keys)
 
     print('\nBuilding Dataframes:')
     cost_names=list(costs.keys())
@@ -199,7 +200,7 @@ def prepare_data(samples, costs, initial_net, res, keys):
         costs_normed[i] = normalize_costs(costs[i], i)
 
     node_cols=['w_t','w_t_1','sample','time','Rc','w_n_t_1','w_a_t_1','w_d_t_1','w_h_t_1','w_c_t_1','y_c_t_1']
-    arc_cols=['y_t','y_t_1','sample','time','Rc','y_n_t_1','w_c_t_1','y_c_t_1']
+    arc_cols=['y_t','y_t_1','sample','time','Rc','y_n_t_1','w_c_t_1','y_c_t_1','w_c_t']
     node_data={}
     arc_data={}
     for key in keys:
@@ -223,7 +224,8 @@ def prepare_data(samples, costs, initial_net, res, keys):
                                         w_d_t_1[key][t,s],w_h_t_1[l][t,s],
                                         w_c_t_1[l][t,s],y_c_t_1[l][t,s]]
                     elif key[0]=='y':
-                        special_feature=[y_n_t_1[key][t,s],w_c_t_1[l][t,s],y_c_t_1[l][t,s]]
+                        special_feature=[y_n_t_1[key][t,s],w_c_t_1[l][t,s],
+                                         y_c_t_1[l][t,s],w_c_t[l][t,s]]
                     row = np.array(basic_features+special_feature+norm_cost_values)
                     temp = pd.Series(row,index=cols)
                     train_df=train_df.append(temp,ignore_index=True)
@@ -263,6 +265,7 @@ def extract_features(samples,initial_net,keys,prog_bar=True):
     w_a_t_1={}  # connected arcs
     w_h_t_1={}  # highest demand nodes
     w_c_t_1={}  # all nodes
+    w_c_t={}  # all nodes
     y_c_t_1={}  # all arcs
     no_w_n={}
     no_w_d={}
@@ -315,9 +318,11 @@ def extract_features(samples,initial_net,keys,prog_bar=True):
         if n[1] not in node_demand.keys():
             node_demand[n[1]]={}
             w_c_t_1[n[1]] = np.zeros((T-1,noSamples))
+            w_c_t[n[1]] = np.zeros((T-1,noSamples))
             no_w_c[n[1]]=0
         node_demand[n[1]]['w_'+str(n)]=abs(d['data']['inf_data'].demand)
         w_c_t_1[n[1]]+=w_t_1['w_'+str(n)]
+        w_c_t[n[1]]+=w_t['w_'+str(n)]
         no_w_c[n[1]]+=1
 
     for u,v,a in selected_g.edges(data=True):
@@ -336,6 +341,7 @@ def extract_features(samples,initial_net,keys,prog_bar=True):
         for nhd in node_demand_highest.keys():
              w_h_t_1[nn]+=w_t_1[nhd]/no_high_nodes
 
+        w_c_t[nn]/=no_w_c[nn]
         w_c_t_1[nn]/=no_w_c[nn]
         y_c_t_1[nn]/=no_y_c[nn]
     if prog_bar:
@@ -351,14 +357,13 @@ def extract_features(samples,initial_net,keys,prog_bar=True):
     if prog_bar:
         update_progress(7.0,7.0)
 
-    return w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1
+    return w_n_t_1,w_d_t_1,w_a_t_1,w_h_t_1,w_c_t_1,y_n_t_1,y_c_t_1,w_c_t
 
 def train_model(train_data,exclusions):
     print('\nTraining models:')
     logistic_model={}
     trace={}
-    t_suf = time.strftime("%Y%m%d")
-    folder_name = 'parameters'+t_suf
+    folder_name = 'parameters'
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
     for key, val in train_data.items():
@@ -373,7 +378,7 @@ def train_model(train_data,exclusions):
 
         with pm.Model() as logistic_model[key]:
             pm.glm.GLM.from_formula(formula,val,family=pm.glm.families.Binomial())
-            trace[key] = pm.sample(1500, tune=1000,chains=2, cores=2,init='adapt_diag')
+            trace[key] = pm.sample(750, tune=500,chains=2, cores=2,init='adapt_diag')
             estParam = pm.summary(trace[key]).round(4)
             print(estParam)
             estParam.to_csv(folder_name+'/model_parameters_'+key+'.txt',
@@ -388,8 +393,7 @@ def test_model(train_data,test_data,trace_all,model_all,exclusions,plot=True):
 #    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
     plt.close('all')
-    t_suf = time.strftime("%Y%m%d")
-    folder_name = 'parameters'+t_suf
+    folder_name = 'parameters'
     for key, val in train_data.items():
         trace = trace_all[key]
         model = model_all[key]
@@ -491,25 +495,22 @@ def train_test_split(node_data,arc_data,keys):
     return train_data,test_data
 
 def save_initial_data(initial_net,samples,costs):
-    t_suf = time.strftime("%Y%m%d")
-    folder_name = 'data'+t_suf
+    folder_name = 'data'
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
     pickle.dump([samples,costs,initial_net], open(folder_name+'/initial_data.pkl', "wb" ),
                 protocol=pickle.HIGHEST_PROTOCOL)
 
 def save_prepared_data(train_data,test_data):
-    t_suf = time.strftime("%Y%m%d")
-    folder_name = 'data'+t_suf
+    folder_name = 'data'
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
     pickle.dump([train_data,test_data], open(folder_name+'/train_test_data.pkl', "wb" ),
                 protocol=pickle.HIGHEST_PROTOCOL)
 
 def save_traces(trace):
-    t_suf = time.strftime("%Y%m%d")
     fname={}
-    folder_name = 'traces'+t_suf
+    folder_name = 'traces'
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
     for key,val in trace.items():
@@ -548,11 +549,10 @@ def key_to_tuple(key):
         return (int(raw[0]),int(raw[1])),(int(raw[2]),int(raw[3]))
 
 def write_results_to_file(row,filename='results'):
-    t_suf = time.strftime("%Y%m%d")
-    folder_name = './results'+t_suf
+    folder_name = './results'
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
-    with open('./results'+t_suf+'/'+filename+t_suf+'.txt', 'a') as filehandle:
+    with open('./results'+'/'+filename+'.txt', 'a') as filehandle:
         for i in row:
             filehandle.write('%s\t' % i)
         filehandle.write('\n')

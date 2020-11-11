@@ -12,19 +12,21 @@ from os.path import isfile, join
 # from plot_STAR import plot_correlation
 
 if __name__ == "__main__": 
-    # t_suf = ''
-    # rooy_folder = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc/data'
-    # samples_all, costs_all, initial_net = pickle.load(open(rooy_folder+t_suf+'/initial_data.pkl', "rb" ))
-    # train_data,test_data = pickle.load(open(rooy_folder+t_suf+'/train_test_data_arcs.pkl', "rb" ))
-
     plt.close('all')
+    
+    rooy_folder = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc/data'
+    samples_all, costs_all, initial_net = pickle.load(open(rooy_folder+'/initial_data.pkl', "rb" ))
+    train_data,test_data = pickle.load(open(rooy_folder+'/train_test_data.pkl', "rb" ))
+
+    
     base_dir = "../data/Extended_Shelby_County/"
     damage_dir = "../data/random_disruption_shelby/"
     output_dir = 'C:/Users/ht20/Documents/Files/STAR_training_data/INDP_random_disruption/'
-    failSce_param = {"type":"random","sample_range":range(0,100),"mags":range(0,1),
+    failSce_param = {"type":"random","sample_range":range(0,1000),"mags":range(0,1),
                     'filtered_List':None,'Base_dir':base_dir,'Damage_dir':damage_dir}
     v_r = [1,2,3,4,5,6,8,10,12,15,18,20,30,40,50,60,70,80,90,100]
     layers = [1,2,3,4]
+    
     ''' Read all data '''
     # samples_all = {}
     # costs_all = {}
@@ -37,9 +39,9 @@ if __name__ == "__main__":
     #     costs_all[res] = costs
     # STAR_utils.save_initial_data(initial_net, samples_all, costs_all)
 
-    ''' Prepare training and testing datsets '''    
-    keys = ['y_(65, 3),(21, 3)','y_(21, 3),(65, 3)']
-    # #['w_(1, 4)']   #samples.keys()   #['y_(2, 2),(11, 2)','y_(11, 2),(2, 2)'] 
+    # ''' Prepare training and testing datsets '''    
+    # keys = list(samples_all[1].keys())
+    # #['w_(1, 4)']   #samples.keys()   #['y_(65, 3),(21, 3)','y_(21, 3),(65, 3)'] 
     
     # node_data_all={key:pd.DataFrame() for key in keys if key[0] == 'w'}
     # arc_data_all={key:pd.DataFrame() for key in keys if key[0] == 'y'}
@@ -62,18 +64,17 @@ if __name__ == "__main__":
     # STAR_utils.save_prepared_data(train_data,test_data)
 
     ''' train and test model'''
-    # exclusions=['w_t_1','y_t_1','w_h_t_1','time','Total','Under_Supply_Perc','Over_Supply','Space_Prep'] 
-    # ##,'y_t_1','w_n_t_1','w_a_t_1', 'w_d_t_1','time','w_h_t_1','Total','Flow','Under_Supply_layer'
+    exclusions=['w_t_1','y_t_1','w_h_t_1','time','Total','Under_Supply_Perc','Over_Supply','Space_Prep'] 
+    ##,'y_t_1','w_n_t_1','w_a_t_1', 'w_d_t_1','time','w_h_t_1','Total','Flow','Under_Supply_layer'
     
-    # # mypath='parameters20200501/'
-    # # files = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f))]
-    # # keys= [x for x in train_data.keys() if (x not in files)] 
+    mypath='parameters/'
+    files = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f))]
+    keys= [x for x in train_data.keys() if (x not  in files) and x[0]=='y'] 
+    for key in keys:
+        print('\n'+key)
+        trace,model = STAR_utils.train_model({key:train_data[key]},exclusions) 
+        STAR_utils.save_traces(trace)
+        _,_ = STAR_utils.test_model({key:train_data[key]},{key:test_data[key]},
+                          trace,model,exclusions,plot=False)
     
-    # for key in keys:
-    #     print('\n'+key)
-    #     trace,model = STAR_utils.train_model({key:train_data[key]},exclusions) 
-    #     STAR_utils.save_traces(trace)
-    #     _,_ = STAR_utils.test_model({key:train_data[key]},{key:test_data[key]},
-    #                       trace,model,exclusions,plot=False)
-    
-    # # plot_correlation(node_data_all,keys,['w_t_1'])
+    # plot_correlation(node_data_all,keys,['w_t_1'])
