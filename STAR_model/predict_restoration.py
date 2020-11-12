@@ -265,33 +265,33 @@ def predict_next_step(t, T, objs, pred_dict, costs_normed, res, layer_dict, prin
     no_pred_itr = 50 #Number of samples to compute each prediction sample
     node_cols = ['w_t', 'w_t_1', 'time', 'Rc', 'w_n_t_1', 'w_a_t_1', 'w_d_t_1',
                  'w_h_t_1', 'w_c_t_1', 'y_c_t_1']
-    arc_cols = ['y_t', 'y_t_1', 'time', 'Rc', 'y_n_t_1', 'w_c_t_1', 'y_c_t_1']
+    arc_cols = ['y_t', 'y_t_1', 'time', 'Rc', 'y_n_t_1', 'w_c_t_1', 'y_c_t_1',
+                'w_c_t']
     from_formula_calls = 0
+    extract_current_step = False
     for key, val in objs.items():
-        l = val.net_id
-        ###initialize new predictions###
-        non_pred_idx = []
-        pred_decision = np.zeros(num_pred)
-        for pred_s in range(num_pred):
-            if val.state_hist[t, pred_s] == 1:
-                pred_decision[pred_s] = 1
-                non_pred_idx.append(pred_s)
-        pred_idx = [x for x in range(num_pred) if x not in non_pred_idx]
-        ###if any pred_s needs prediction###
-        if len(pred_idx):
-            if val.model_status:
-                ###Making model formula###
-                if print_cmd:
-                    print('Predicting: '+key+'...')
-                    if val.model_status == 2:
-                        print('A model with the duplicate name exists: '+key)
-                varibales = list(val.model_params['Unnamed: 0'])
-                varibales.remove('Intercept')
-                formula = STAR_utils.make_formula(varibales, [], [key[0]+'_t'])
-                ###Make input datframe###
-                data = pd.DataFrame()
-                for pred_s in pred_idx:
-                    if val.type == 'n':
+        if val.type == 'n':
+            l = val.net_id
+            ###initialize new predictions###
+            non_pred_idx = []
+            pred_decision = np.zeros(num_pred)
+            for pred_s in range(num_pred):
+                if val.state_hist[t, pred_s] == 1:
+                    pred_decision[pred_s] = 1
+                    non_pred_idx.append(pred_s)
+            pred_idx = [x for x in range(num_pred) if x not in non_pred_idx]
+            ###if any pred_s needs prediction###
+            if len(pred_idx):
+                if val.model_status:
+                    ###Making model formula###
+                    if print_cmd:
+                        print('Predicting: '+key+'...')
+                    varibales = list(val.model_params['Unnamed: 0'])
+                    varibales.remove('Intercept')
+                    formula = STAR_utils.make_formula(varibales, [], [key[0]+'_t'])
+                    ###Make input datframe###
+                    data = pd.DataFrame()
+                    for pred_s in pred_idx:
                         cols = node_cols+cost_names
                         special_feature = [val.w_n_t_1[t, pred_s],
                                            val.w_a_t_1[t, pred_s],
@@ -299,42 +299,92 @@ def predict_next_step(t, T, objs, pred_dict, costs_normed, res, layer_dict, prin
                                            layer_dict[l]['w_h_t_1'][pred_s],
                                            layer_dict[l]['w_c_t_1'][pred_s],
                                            layer_dict[l]['y_c_t_1'][pred_s]]
-                    elif val.type == 'a':
+                        norm_cost_values = [costs_normed[x][t, pred_s] for x in cost_names]
+                        basic_features = [val.state_hist[t+1, pred_s], val.state_hist[t, pred_s],
+                                          (t+1)/float(T), res/100.0]
+                        row = np.array(basic_features+special_feature+norm_cost_values)
+                        data = data.append(pd.Series(row, index=cols), ignore_index=True)
+                    ###Run models###
+                    with pm.Model() as logi_model:
+                        pm.glm.GLM.from_formula(formula, data, family=pm.glm.families.Binomial())
+                        from_formula_calls += 1
+                        trace = pm.load_trace(pred_dict['model_dir']+'/'+val.name)
+                        ppc_test = pm.sample_posterior_predictive(trace, samples=no_pred_itr,
+                                                                  progressbar=False)
+                        for idx in pred_idx:
+                            sum_state = 0
+                            for psr in range(no_pred_itr):
+                                sum_state += ppc_test['y'][psr][pred_idx.index(idx)]
+                            pred_decision[idx] = round(sum_state/float(no_pred_itr))
+                elif val.model_status == 0:
+                    if print_cmd:
+                        print('Predicting '+str(key)+', randomly')
+                    for pred_s in pred_idx:
+                        pred_decision[pred_s] = np.random.randint(2)
+                else:
+                    sys.exit('Wrong model status: '+key)
+                val.state_hist[t+1, :] = pred_decision 
+    for key, val in objs.items():
+        if val.type == 'a':
+            l = val.net_id
+            ###initialize new predictions###
+            non_pred_idx = []
+            pred_decision = np.zeros(num_pred)
+            for pred_s in range(num_pred):
+                if val.state_hist[t, pred_s] == 1:
+                    pred_decision[pred_s] = 1
+                    non_pred_idx.append(pred_s)
+            pred_idx = [x for x in range(num_pred) if x not in non_pred_idx]
+            ###if any pred_s needs prediction###
+            if len(pred_idx):
+                if val.model_status:
+                    ###Making model formula###
+                    if print_cmd:
+                        print('Predicting: '+key+'...')
+                        if val.model_status == 2:
+                            print('A model with the duplicate name exists: '+key)
+                    varibales = list(val.model_params['Unnamed: 0'])
+                    varibales.remove('Intercept')
+                    formula = STAR_utils.make_formula(varibales, [], [key[0]+'_t'])
+                    ###Make input datframe###
+                    data = pd.DataFrame()
+                    if not extract_current_step:
+                        layer_dict = extract_features_current(objs, t+1, num_pred, layer_dict)
+                        extract_current_step = True
+                    for pred_s in pred_idx:
                         cols = arc_cols+cost_names
                         special_feature = [val.y_n_t_1[t, pred_s],
                                            layer_dict[l]['w_c_t_1'][pred_s],
-                                           layer_dict[l]['y_c_t_1'][pred_s]]
-                    else:
-                        sys.exit('Wrong element type: '+ key)
-                    norm_cost_values = [costs_normed[x][t, pred_s] for x in cost_names]
-                    basic_features = [val.state_hist[t+1, pred_s], val.state_hist[t, pred_s],
-                                      (t+1)/float(T), res/100.0]
-                    row = np.array(basic_features+special_feature+norm_cost_values)
-                    data = data.append(pd.Series(row, index=cols), ignore_index=True)
-                ###Run models###
-                with pm.Model() as logi_model:
-                    pm.glm.GLM.from_formula(formula, data, family=pm.glm.families.Binomial())
-                    from_formula_calls += 1
-                    if val.model_status == 1:
-                        trace = pm.load_trace(pred_dict['model_dir']+'/'+val.name)
-                    elif val.model_status == 2:
-                        trace = pm.load_trace(pred_dict['model_dir']+'/'+val.dupl_name)
-                    ppc_test = pm.sample_posterior_predictive(trace, samples=no_pred_itr,
-                                                              progressbar=False)
-                    for idx in pred_idx:
-                        sum_state = 0
-                        for psr in range(no_pred_itr):
-                            sum_state += ppc_test['y'][psr][pred_idx.index(idx)]
-                        pred_decision[idx] = round(sum_state/float(no_pred_itr))
-                pass
-            elif val.model_status == 0:
-                if print_cmd:
-                    print('Predicting '+str(key)+', randomly')
-                for pred_s in pred_idx:
-                    pred_decision[pred_s] = np.random.randint(2)
-            else:
-                sys.exit('Wrong model status: '+key)
-        val.state_hist[t+1, :] = pred_decision
+                                           layer_dict[l]['y_c_t_1'][pred_s],
+                                           layer_dict[l]['w_c_t'][pred_s]]
+                        norm_cost_values = [costs_normed[x][t, pred_s] for x in cost_names]
+                        basic_features = [val.state_hist[t+1, pred_s], val.state_hist[t, pred_s],
+                                          (t+1)/float(T), res/100.0]
+                        row = np.array(basic_features+special_feature+norm_cost_values)
+                        data = data.append(pd.Series(row, index=cols), ignore_index=True)
+                    ###Run models###
+                    with pm.Model() as logi_model:
+                        pm.glm.GLM.from_formula(formula, data, family=pm.glm.families.Binomial())
+                        from_formula_calls += 1
+                        if val.model_status == 1:
+                            trace = pm.load_trace(pred_dict['model_dir']+'/'+val.name)
+                        elif val.model_status == 2:
+                            trace = pm.load_trace(pred_dict['model_dir']+'/'+val.dupl_name)
+                        ppc_test = pm.sample_posterior_predictive(trace, samples=no_pred_itr,
+                                                                  progressbar=False)
+                        for idx in pred_idx:
+                            sum_state = 0
+                            for psr in range(no_pred_itr):
+                                sum_state += ppc_test['y'][psr][pred_idx.index(idx)]
+                            pred_decision[idx] = round(sum_state/float(no_pred_itr))
+                elif val.model_status == 0:
+                    if print_cmd:
+                        print('Predicting '+str(key)+', randomly')
+                    for pred_s in pred_idx:
+                        pred_decision[pred_s] = np.random.randint(2)
+                else:
+                    sys.exit('Wrong model status: '+key)
+                val.state_hist[t+1, :] = pred_decision            
     return from_formula_calls
 
 def extract_features(objs, net_obj, t, layers, num_pred):
@@ -379,6 +429,17 @@ def extract_features(objs, net_obj, t, layers, num_pred):
                 layer_dict[val.net_id]['w_h_t_1'][pred_s] += val.state_hist[t, pred_s]/no_high_nodes
     return layer_dict
 
+def extract_features_current(objs, t, num_pred, layer_dict):
+    """Extratcs predictors from data for the current step"""
+    ### layer feature extraction ###
+    for l in layer_dict.keys():
+        layer_dict[l]['w_c_t'] = np.zeros(num_pred)
+    for pred_s in range(num_pred):
+        for key, val in objs.items():
+            if val.type == 'n':
+                layer_dict[val.net_id]['w_c_t'][pred_s] += val.state_hist[t, pred_s]/layer_dict[val.net_id]['no_w_c']
+    return layer_dict
+
 def check_folder(output_dir):
     """Creates a new folder"""
     if not os.path.exists(output_dir):
@@ -388,7 +449,7 @@ def check_folder(output_dir):
 if __name__ == '__main__':
     rooy_folder = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc/data'
     samples_all, costs_all, _ = pickle.load(open(rooy_folder+'/initial_data.pkl', "rb" ))
-    SAMPLE_RANGE = [50, 70, 90] #range(50, 551, 100) #[50, 70, 90]
+    SAMPLE_RANGE = [100] #range(50, 551, 100) #[50, 70, 90]
     MAGS = range(0, 1)
     Rc = [10]
     MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
@@ -399,9 +460,9 @@ if __name__ == '__main__':
     FAIL_SCE_PARAM = {"type":"random", "sample":None, "mag":None, 'filtered_List':None,
                       'Base_dir':"../data/Extended_Shelby_County/",
                       'Damage_dir':"../data/random_disruption_shelby/"}
-    PRED_DICT = {'num_pred':5, 'model_dir':MODEL_DIR+'/traces',
+    PRED_DICT = {'num_pred':2, 'model_dir':MODEL_DIR+'/traces',
                  'param_folder':MODEL_DIR+'/parameters', 'output_dir':'./results'}
-    PARAMS = {"NUM_ITERATIONS":10, "V":5, "ALGORITHM":"INDP", 'L':[1, 2, 3, 4]}
+    PARAMS = {"NUM_ITERATIONS":10, "V":None, "ALGORITHM":"INDP", 'L':[1, 2, 3, 4]}
 
     ''' Run models '''
     prediction_error = pd.DataFrame(columns=['magnitude', 'sample', 'Rc', 'name',
@@ -417,9 +478,9 @@ if __name__ == '__main__':
                 FAIL_SCE_PARAM['mag'] = mag_num
                 PARAMS['V'] = res
                 pred_results, pred_error, rep_prec = predict_resotration(PRED_DICT,
-                                                                          FAIL_SCE_PARAM,
-                                                                          PARAMS,
-                                                                          samples_all[res])
+                                                                         FAIL_SCE_PARAM,
+                                                                         PARAMS,
+                                                                         samples_all[res])
                 cost_df, pred_error, rep_prec = plot_star.plot_df(mag_num, sample_num,
                                                                   len(PARAMS['L']), res,
                                                                   pred_results, pred_error,
@@ -442,5 +503,5 @@ if __name__ == '__main__':
     #     p.join()
 
     ''' Plot results '''
-    # plot_star.plot_cost(cost_all_df)
-    # plot_star.plot_results(prediction_error, repair_precentage)
+    plot_star.plot_cost(cost_all_df)
+    plot_star.plot_results(prediction_error, repair_precentage)
