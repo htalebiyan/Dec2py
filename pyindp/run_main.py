@@ -53,7 +53,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             list_high_dam = pd.read_csv(fail_sce_param['FILTER_SCE'])
     elif fail_sce_param['TYPE'] == 'random':
         shelby_data = 'shelby_extended'
-    elif fail_sce_param['TYPE'] == 'synthetic':
+    elif fail_sce_param['TYPE'] == 'synthetic':			   
         topology = fail_sce_param['TOPO']
 
     print('----Running for resources: '+str(params['V']))
