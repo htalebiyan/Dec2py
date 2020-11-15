@@ -1,20 +1,18 @@
-"""Predicts restoration scenarios"""
+"""Functions and classes to predict restoration scenarios"""
 import copy
 import os
 import sys
 import time
 import multiprocessing
 from operator import itemgetter
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import pymc3 as pm
 import indp
 import indputils
+import infrastructure
 import indpalt
 import STAR_utils
-import plot_star
 import pickle
 
 class NodeModel():
@@ -129,14 +127,14 @@ def import_initial_data(params, fail_sce_param):
     params["MAGNITUDE"] = mag
     # Damage the network
     if fail_sce_param['type'] == 'WU':
-        indp.add_Wu_failure_scenario(interdep_net, DAM_DIR=damage_dir, noSet=sample, noSce=mag)
+        infrastructure.add_Wu_failure_scenario(interdep_net, DAM_DIR=damage_dir, noSet=sample, noSce=mag)
     elif fail_sce_param['type'] == 'ANDRES':
-        indp.add_failure_scenario(interdep_net, DAM_DIR=damage_dir, magnitude=mag, v=params["V"],
+        infrastructure.add_failure_scenario(interdep_net, DAM_DIR=damage_dir, magnitude=mag, v=params["V"],
                                   sim_number=sample)
     elif fail_sce_param['type'] == 'random':
-        indp.add_random_failure_scenario(interdep_net, DAM_DIR=damage_dir, sample=sample)
+        infrastructure.add_random_failure_scenario(interdep_net, DAM_DIR=damage_dir, sample=sample)
     elif fail_sce_param['type'] == 'synthetic':
-        indp.add_synthetic_failure_scenario(interdep_net, DAM_DIR=damage_dir, topology=topology,
+        infrastructure.add_synthetic_failure_scenario(interdep_net, DAM_DIR=damage_dir, topology=topology,
                                             config=mag, sample=sample)
     # initialize objects
     objs = {}
@@ -154,7 +152,7 @@ def import_initial_data(params, fail_sce_param):
             objs['w_'+str(v)].add_dependee('w_'+str(u))
     return objs
 
-def predict_resotration(pred_dict, fail_sce_param, params, samples_opt):
+def predict_resotration(pred_dict, fail_sce_param, params, real_rep_sequence):
     """ Predicts restoration plans and writes to file"""
     print('\nMagnitude '+str(fail_sce_param['mag'])+' sample '+str(fail_sce_param['sample'])+\
           ' Rc '+str(params['V']))
@@ -238,19 +236,18 @@ def predict_resotration(pred_dict, fail_sce_param, params, samples_opt):
     sum_pred_rep_prec=np.zeros((T+1,num_pred))
     sum_real_rep_prec=np.zeros((T+1))
     for key, val in objs.items():
-        real_rep_sequence = samples_opt[key][:T+1,fail_sce_param['sample']-50] #!!!number 50 is for the current dtabase
-        sum_real_rep_prec += real_rep_sequence
+        sum_real_rep_prec += real_rep_sequence[key]
         for pred_s in range(num_pred):
-            if real_rep_sequence[0] != val.state_hist[0,pred_s]:
+            if real_rep_sequence[key][0] != val.state_hist[0,pred_s]:
                 sys.exit('Error: Unmatched intial state')
             temp_dict = {'name':key, 'pred sample':pred_s,
-                         'real rep time':T+1-sum(real_rep_sequence),
+                         'real rep time':T+1-sum(real_rep_sequence[key]),
                          'pred rep time':T+1-sum(val.state_hist[:,pred_s])}
             temp_dict['prediction error'] = temp_dict['real rep time'] - temp_dict['pred rep time']
             pred_error = pred_error.append(temp_dict, ignore_index=True)
             sum_pred_rep_prec[:,pred_s] += val.state_hist[:,pred_s]
     for pred_s in range(num_pred):
-        for t in range(T):
+        for t in range(T+1):
             no_elements = len(objs.keys())
             temp_dict = {'t':t, 'pred sample':pred_s,
                          'pred rep prec':sum_pred_rep_prec[t,pred_s]/no_elements,
@@ -445,63 +442,3 @@ def check_folder(output_dir):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     return output_dir
-
-if __name__ == '__main__':
-    rooy_folder = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc/data'
-    samples_all, costs_all, _ = pickle.load(open(rooy_folder+'/initial_data.pkl', "rb" ))
-    SAMPLE_RANGE = [100] #range(50, 551, 100) #[50, 70, 90]
-    MAGS = range(0, 1)
-    Rc = [10]
-    MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
-    OPT_DIR = 'C:/Users/ht20/Documents/Files/STAR_training_data/INDP_random_disruption/results/'
-    # FAIL_SCE_PARAM = {"type":"WU", "sample":1, "mag":52,
-    #                   'Base_dir':"../data/Extended_Shelby_County/",
-    #                   'Damage_dir':"../data/Wu_Damage_scenarios/", 'topology':None}
-    FAIL_SCE_PARAM = {"type":"random", "sample":None, "mag":None, 'filtered_List':None,
-                      'Base_dir':"../data/Extended_Shelby_County/",
-                      'Damage_dir':"../data/random_disruption_shelby/"}
-    PRED_DICT = {'num_pred':2, 'model_dir':MODEL_DIR+'/traces',
-                 'param_folder':MODEL_DIR+'/parameters', 'output_dir':'./results'}
-    PARAMS = {"NUM_ITERATIONS":10, "V":None, "ALGORITHM":"INDP", 'L':[1, 2, 3, 4]}
-
-    ''' Run models '''
-    prediction_error = pd.DataFrame(columns=['magnitude', 'sample', 'Rc', 'name',
-                                              'pred sample', 'pred rep time',
-                                              'real rep time', 'prediction error'])
-    repair_precentage = pd.DataFrame(columns=['magnitude', 'sample', 'Rc', 't',
-                                              'pred sample', 'pred rep prec', 'real rep prec'])
-    cost_all_df = pd.DataFrame()
-    for res in Rc:
-        for mag_num in MAGS:
-            for sample_num in SAMPLE_RANGE:
-                FAIL_SCE_PARAM['sample'] = sample_num
-                FAIL_SCE_PARAM['mag'] = mag_num
-                PARAMS['V'] = res
-                pred_results, pred_error, rep_prec = predict_resotration(PRED_DICT,
-                                                                         FAIL_SCE_PARAM,
-                                                                         PARAMS,
-                                                                         samples_all[res])
-                cost_df, pred_error, rep_prec = plot_star.plot_df(mag_num, sample_num,
-                                                                  len(PARAMS['L']), res,
-                                                                  pred_results, pred_error,
-                                                                  rep_prec, costs_all[res])
-                prediction_error = pd.concat([prediction_error, pred_error])
-                repair_precentage = pd.concat([repair_precentage, rep_prec])
-                cost_all_df = pd.concat([cost_all_df, cost_df])
-                ''' Save results '''
-                folder_name = PRED_DICT['output_dir']
-                if not os.path.exists(folder_name):
-                    os.makedirs(folder_name)
-                pickle.dump([cost_all_df, prediction_error, repair_precentage],
-                            open(folder_name+'/results.pkl', "wb" ),
-                            protocol=pickle.HIGHEST_PROTOCOL)
-
-    ''' Run models in parallel '''
-    # import run_parallel
-    # with multiprocessing.Pool(processes=len(SAMPLE_RANGE)) as p:
-    #     p.map(run_parallel.run_parallel, SAMPLE_RANGE)
-    #     p.join()
-
-    ''' Plot results '''
-    plot_star.plot_cost(cost_all_df)
-    plot_star.plot_results(prediction_error, repair_precentage)

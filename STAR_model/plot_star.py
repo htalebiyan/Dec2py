@@ -1,3 +1,4 @@
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -25,11 +26,13 @@ def plot_df(mag_num, sample_num, num_layers, res, pred_results, pred_error,
                                     'pred sample', 'type', 'cost'])
     T = len(pred_results[0].results.keys())
     for t in range(T):
-        opt_result = costs_opt[cost_type][:T,sample_num-50] #!!!number 50 is for the current dtabase]
+        opt_result = costs_opt[cost_type]
         temp_dict = {'magnitude':mag_num, 'sample':sample_num, 'Rc':res,
                      't':t, 'pred sample':-1, 'type':'optimal', 'cost':opt_result[t]}
         cost_df = cost_df.append(temp_dict, ignore_index=True)
         for pred_s in pred_results:
+            if opt_result[0] != pred_results[pred_s].results[0]['costs'][cost_type]:
+                sys.exit('Error: Unmatched intial cost')
             temp_dict = {'magnitude':mag_num, 'sample':sample_num, 'Rc':res,
                          't':t, 'pred sample':pred_s, 'type':'predicted',
                          'cost':pred_results[pred_s].results[t]['costs'][cost_type]}
@@ -61,7 +64,7 @@ def plot_correlation(node_data,keys,exclusions):
         # if key[0]=='y':
         #     corr_matrices[key]=arc_data[key].drop([], axis=1).corr()
     corr_mean= pd.DataFrame().reindex_like(corr_matrices[key])
-    corr_cov= pd.DataFrame().reindex_like(corr_matrices[key])
+    corr_std= pd.DataFrame().reindex_like(corr_matrices[key])
     for v in list(node_data[keys[0]].columns):
         for vv in list(node_data[keys[0]].columns):
             corr_vec = []
@@ -75,13 +78,10 @@ def plot_correlation(node_data,keys,exclusions):
                 mean = sum(corr_vec)/len(corr_vec)
                 variance = sum([((x-mean)**2) for x in corr_vec])/len(corr_vec)
                 corr_mean[v][vv]=mean
-                corr_cov[v][vv]=0.0
-                if mean!=0.0:
-                    corr_cov[v][vv]=variance**0.5/mean
-
+                corr_std[v][vv]=variance**0.5
 
     plot_df = corr_mean.drop(exclusions, axis=1).drop(exclusions, axis=0)
-    #node_data[key] #corr_mean #corr_cov
+    #node_data[key] #corr_mean #corr_std
     # sns.pairplot(node_data[key].drop(columns=[x for x in exclusions if x not in ['y_t_1','index']]),
     #     kind='reg', plot_kws={'line_kws':{'color':'red'}, 'scatter_kws': {'alpha': 0.1}})
     plt.figure()

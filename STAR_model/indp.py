@@ -389,8 +389,8 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=
         for n,d in N_hat.nodes(data=True):
             overSuppCost+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t)).x
             overSuppCost_layer[n[1]]+= d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t)).x
-            underSupp+= m.getVarByName('delta+_'+str(n)+","+str(t)).x
-            underSupp_layer[n[1]]+= m.getVarByName('delta+_'+str(n)+","+str(t)).x/total_demand_layer[n[1]]
+            underSupp+= m.getVarByName('delta-_'+str(n)+","+str(t)).x
+            underSupp_layer[n[1]]+= m.getVarByName('delta-_'+str(n)+","+str(t)).x/total_demand_layer[n[1]]
             underSuppCost+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t)).x
             underSuppCost_layer[n[1]]+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t)).x
         indp_results.add_cost(t,"Over Supply",overSuppCost,overSuppCost_layer)
