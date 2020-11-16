@@ -31,29 +31,15 @@ def plot_df(mag_num, sample_num, num_layers, res, pred_results, pred_error,
                      't':t, 'pred sample':-1, 'type':'optimal', 'cost':opt_result[t]}
         cost_df = cost_df.append(temp_dict, ignore_index=True)
         for pred_s in pred_results:
-            if opt_result[0] != pred_results[pred_s].results[0]['costs'][cost_type]:
-                sys.exit('Error: Unmatched intial cost')
+            if t == 0:
+                rel_err = (pred_results[pred_s].results[0]['costs'][cost_type]-opt_result[0])/opt_result[0]
+                if abs(rel_err)>0.001:
+                    sys.exit('Error: Unmatched intial cost. Relative error: %1.2f'%rel_err)
             temp_dict = {'magnitude':mag_num, 'sample':sample_num, 'Rc':res,
                          't':t, 'pred sample':pred_s, 'type':'predicted',
                          'cost':pred_results[pred_s].results[t]['costs'][cost_type]}
             cost_df = cost_df.append(temp_dict, ignore_index=True)
     return cost_df, pred_error, rep_prec
-
-def replace_labels(df, col):
-    rename_dict={"Intercept": r'$\alpha$',
-                 "w_n_t_1": r'$\beta_{1,i}$ (Neighbor nodes)',
-                 "w_a_t_1": r'$\beta_{2,i}$ (Connected arcs)',
-                 "w_d_t_1": r'$\beta_{3,i}$ (Dependee nodes)',
-                 "w_c_t_1": r'$\beta_{4,i}$ (All nodes)',
-                 "y_c_t_1": r'$\beta_{5,i}$ (All arcs)',
-                 "Node": r'$\gamma_{1,i}$ (Node cost)',
-                 "Arc": r'$\gamma_{2,i}$ (Arc cost)',
-                 "Under_Supply": r'$\gamma_{3,i}$ (Demand deficit)',
-                 "Flow": r'$\gamma_{4,i}$ (Flow cost)',
-                 "Rc": r'$R_c$ (Resource)'}
-    for i in df[col].unique():
-        df=df.replace(i,rename_dict[i])
-    return df
 
 def plot_correlation(node_data,keys,exclusions):
     import math
@@ -92,7 +78,7 @@ def plot_cost(df):
     df = df.replace('predicted','Logistic Model Prediction')
     df = df.replace('data','Optimal Scenario')
     FIGURE_DF = df
-    sns.lineplot(x="t", y='cost', style='Rc', hue='type', data=FIGURE_DF, markers=True, ci=95)
+    sns.lineplot(x="t", y='cost', style='type', hue='type', data=FIGURE_DF, markers=True, ci=95)
     plt.savefig('Total_cost_vs_time.png',dpi = 600, bbox_inches='tight')
 
 def plot_results(pe_df, rp_df):
@@ -128,10 +114,8 @@ def plot_results(pe_df, rp_df):
     plt.savefig('repaired_element.png',dpi=600,bbox_inches='tight')
     ###############################################################################
 '''R2'''
-def plot_R2():
-    t_suf = ''
-    root = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc/'
-    mypath=root+'parameters'+t_suf+'/R2.txt'
+def plot_R2(root_param_folder):
+    mypath=root_param_folder+'parameters'+'/R2.txt'
     plt.figure()
     cols=['node','layer','type','i','j','$R^2$']
     r2 = result_df=pd.read_csv(mypath,delimiter=' ',index_col=False, header=None,
@@ -146,24 +130,19 @@ def plot_R2():
     return figure_data
     ###############################################################################
 '''Analyze the coefficients'''
-def plot_coef():
-    # t_suf = '20200415'
-    # samples,costs,costs_local,initial_net = pickle.load(open('data'+t_suf+'/initial_data.pkl', "rb" ))
-    # keys=samples.keys()
-
-    t_suf = ''
-    root = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc/'
-    mypath=root+'parameters'+t_suf+'/'
+def plot_coef(root_param_folder):
+    mypath=root_param_folder+'parameters'
     keys = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f)) and f[:2]!='R2']
-    plt.figure()
-    node_params=pd.DataFrame(columns=['key','name','mean','sd','mc_error','hpd_2.5','hpd_97.5','n_eff','Rhat'])
-    arc_params=pd.DataFrame(columns=['key','name','mean','sd','mc_error','hpd_2.5','hpd_97.5','n_eff','Rhat'])
+    plt.figure(figsize=(10, 8))
+    node_params=pd.DataFrame()
+    arc_params=pd.DataFrame()
     for key in keys:
         if key[0]=='w':
             filename= mypath+'/model_parameters_'+key+'.txt'
             paramters = result_df=pd.read_csv(filename,delimiter=' ',index_col=False)
             paramters=paramters.rename(columns={'Unnamed: 0': 'name'})
             paramters['key']=key
+            paramters['layer']=int(key[-2])
             node_params=pd.concat([node_params,paramters], axis=0, ignore_index=True)
         if key[0]=='y':
             filename= mypath+'/model_parameters_'+key+'.txt'
@@ -175,42 +154,61 @@ def plot_coef():
             except:
                 pass
     node_params['cov'] =abs(node_params['sd']/node_params['mean'])
-    node_params_filtered=node_params[(node_params['mc_error']<0.01) & (abs(node_params['Rhat']-1)<0.005)]
-    node_params_filtered=replace_labels(node_params_filtered, 'name')
+    filter_crit = (node_params['cov']<0.5) & (abs(node_params['r_hat']-1)<0.01)
+    node_params_filtered=node_params[filter_crit]
+    node_params_filtered=replace_labels(node_params_filtered, 'name', node_params)
     node_params_filtered=node_params_filtered.rename(columns={'name':'Predictors','mean':'Estimated Mean'})
 
-    ax=sns.boxplot(y="Predictors", x="Estimated Mean",data=node_params_filtered, whis=1,
-                    linewidth=0.75, fliersize=3, palette=sns.cubehelix_palette(20))
-    ax.set_xlim((-25,25))
-    ax.set_xticks(np.arange(-25,25, 5.0))
+    ax = sns.violinplot(y="Predictors", x="Estimated Mean",data=node_params_filtered,
+                     whis=2, linewidth=0.75, scale="count",
+                     palette=sns.cubehelix_palette(20))
+    ax = sns.stripplot(x="Estimated Mean", y="Predictors", data=node_params_filtered,
+                       hue="layer", dodge=True, size=3)
+    ax.set_xlim((-50,75))
+    ax.set_xticks(np.arange(-50,75, 10))
     plt.savefig('Node_mean_predictors.png',dpi=600,bbox_inches='tight')
-    # # plt.figure()
-    arc_params['cov'] =abs(arc_params['sd']/arc_params['mean'])
-    # # ax=sns.boxplot(y="name", x="mean",data=arc_params, whis=1,fliersize=1,linewidth=1,
-    # #                 palette=sns.cubehelix_palette(25))
-    # # ax.set_xlim((-25,25))
+    
+    plt.figure()
+    ax = sns.violinplot(y="Predictors", x="cov",data=node_params_filtered,
+                     whis=2, linewidth=0.75, scale="count",
+                     palette=sns.cubehelix_palette(20))
+    ax = sns.stripplot(x="cov", y="Predictors", data=node_params_filtered,
+                       hue="layer", dodge=True, size=3)
+    # plt.savefig('Node_cov_predictors.png',dpi=600,bbox_inches='tight')
 
-    # # sns.pairplot(node_params_filtered.drop(columns=['hpd_2.5','hpd_97.5']),
-    # #     kind='reg', plot_kws={'line_kws':{'color':'red'}, 'scatter_kws': {'alpha': 0.1}})
+    # sns.pairplot(node_params_filtered.drop(columns=['hpd_3%','hpd_97%']),
+    #     kind='reg', plot_kws={'line_kws':{'color':'red'}, 'scatter_kws': {'alpha': 0.1}})
     return node_params,arc_params
+
+def replace_labels(df, col, df_unfilt):
+    rename_dict={"Intercept": r'$\alpha$',
+                 "w_n_t_1": r'$\beta_{1,i}$ (Neighbor nodes)',
+                 "w_a_t_1": r'$\beta_{2,i}$ (Connected arcs)',
+                 "w_d_t_1": r'$\beta_{3,i}$ (Dependee nodes)',
+                 "w_h_t_1": r'$\beta_{4,i}$ (High dem. nodes)',
+                 "w_c_t_1": r'$\beta_{5,i}$ (All nodes)',
+                 "Node": r'$\gamma_{1,i}$ (Node cost)',
+                 "Total": r'$\gamma_{2,i}$ (Total cost)',
+                 "Flow": r'$\gamma_{3,i}$ (Flow cost)',
+                 "Rc": r'$R_c$ (Resource)'}
+    #"y_c_t_1": r'$\beta_{5,i}$ (All arcs)',"Arc": r'$\gamma_{2,i}$ (Arc cost)',
+    #"Under_Supply": r'$\gamma_{3,i}$ (Demand deficit)',
+    for i in df[col].unique():
+        num_param = df[df[col]==i].shape[0]
+        num_models = df_unfilt[df_unfilt[col]==i].shape[0]
+        df=df.replace(i,rename_dict[i]+' [%1.1f%%]'%(num_param/num_models*100))
+    return df
     ###############################################################################
 
+root = 'C:/Users/ht20/Documents/Files/STAR_models/\Shelby_final_all_Rc_only_nodes_damaged/'
+# node_params,arc_params=plot_coef(root)
+# r2 = plot_R2(root)
 
-# node_params,arc_params=plot_coef()
-# plot_results()
-# r2 = plot_R2()
+# filter_crit = (node_params['cov']<0.5) & (abs(node_params['r_hat']-1)<1)
+# node_params=node_params[filter_crit]
 
-# rmv_key=arc_params[(abs(arc_params['Rhat']-1)>.005)|(arc_params['mc_error']>0.05)]['key'].unique()
-# keys=[x for x in train_data.keys() if x not in rmv_key]
-# data=pd.DataFrame(index=keys)
-# for key in keys:
-#     temp=arc_params[arc_params['key']==key]
-#     data.loc[key,'train_mean']=train_data[key]['y_t'].mean()
-#     data.loc[key,'mean']=temp['mean'].mean()
-#     data.loc[key,'Rhat']=temp['Rhat'].mean()-1
-#     data.loc[key,'mc_error']=temp['mc_error'].mean()
-#     data.loc[key,'sd']=temp['sd'].mean()
-#     data.loc[key,'cov']=temp['cov'].mean()
-#     data.loc[key,'ratio']=float(temp[(temp['name']=='Rc')]['mean'])#/max(abs(temp['mean'])))
-# corr=data.corr()
+# corr=node_params.corr()
 # sns.heatmap(corr,annot=True, center=0, cmap="vlag",linewidths=.75)
+
+# figure_df = node_params.pivot(index='key', columns='name', values='mean')
+# sns.heatmap(figure_df.corr(),annot=True, center=0, cmap="vlag",linewidths=.75)
