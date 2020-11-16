@@ -18,9 +18,12 @@ from functools import partial
 print('Running with PyMC3 version v.{}'.format(pm.__version__))
 import networkx as nx
 print('Running with Networkx version v.{}'.format(nx.__version__))
+import seaborn as sns
+print('Running with Networkx version v.{}'.format(sns.__version__))
 
-def importData(params, failSce_param, suffix=''):
-    print('\nNumber of resources: '+str(params["V"]))
+def importData(params, failSce_param, suffix='', print_cmd=True):
+    if print_cmd:
+        print('\nNumber of resources: '+str(params["V"]))
     # Set root directories
     layers = params['L']
     base_dir = failSce_param['Base_dir']
@@ -72,7 +75,7 @@ def importData(params, failSce_param, suffix=''):
             except NameError:
                 pass
 
-            if (i-failSce_param['sample_range'][0]+1)%2==0:
+            if (i-failSce_param['sample_range'][0]+1)%2==0 and print_cmd:
                 update_progress(i-failSce_param['sample_range'][0]+1,len(failSce_param['sample_range']))
 
             if shelby_data:
@@ -107,7 +110,8 @@ def importData(params, failSce_param, suffix=''):
             samples = initialize_matrix(params["N"], samples, m, i, 10)
             samples,costs = read_restoration_plans(samples, costs, params["N"], m, i,
                                                    results_dir, suffix='')
-    update_progress(i-failSce_param['sample_range'][0]+1,len(failSce_param['sample_range']))
+    if print_cmd:
+        update_progress(i-failSce_param['sample_range'][0]+1,len(failSce_param['sample_range']))
     return samples, costs, initial_net, params["V"], params["L"]
 
 def initialize_matrix(N, sample, m, i, time_steps):

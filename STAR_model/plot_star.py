@@ -19,8 +19,8 @@ def plot_df(mag_num, sample_num, num_layers, res, pred_results, pred_error,
     pred_error['magnitude'] = mag_num
     pred_error['sample'] = sample_num
     pred_error['Rc'] = res
-    rep_prec['rep_prec'] = mag_num
-    rep_prec['rep_prec'] = sample_num
+    rep_prec['magnitude'] = mag_num
+    rep_prec['sample'] = sample_num
     rep_prec['Rc'] = res
     cost_df = pd.DataFrame(columns=['magnitude', 'sample', 'Rc', 't',
                                     'pred sample', 'type', 'cost'])

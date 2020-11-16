@@ -95,8 +95,8 @@ def import_initial_data(params, fail_sce_param):
     # Set root directories and params
     base_dir = fail_sce_param['Base_dir']
     damage_dir = fail_sce_param['Damage_dir']
-    sample = fail_sce_param['sample']
-    mag = fail_sce_param['mag']
+    sample = fail_sce_param['sample_range']
+    mag = fail_sce_param['mags']
     topology = None
     shelby_data = None
     ext_interdependency = None
@@ -154,7 +154,7 @@ def import_initial_data(params, fail_sce_param):
 
 def predict_resotration(pred_dict, fail_sce_param, params, real_rep_sequence):
     """ Predicts restoration plans and writes to file"""
-    print('\nMagnitude '+str(fail_sce_param['mag'])+' sample '+str(fail_sce_param['sample'])+\
+    print('\nMagnitude '+str(fail_sce_param['mags'])+' sample '+str(fail_sce_param['sample_range'])+\
           ' Rc '+str(params['V']))
     ### Define a few vars and lists ###
     num_pred = pred_dict['num_pred']
@@ -221,11 +221,11 @@ def predict_resotration(pred_dict, fail_sce_param, params, real_rep_sequence):
                     costs[l][h][t+1, pred_s] = flow_results[1].results_layer[l][0]['costs'][h.replace('_', ' ')]
                     pred_results[pred_s].results_layer[l][t+1]['run_time'] = equiv_run_time
             ###Write results to file###
-            subfolder_results = 'stm_results_L'+str(len(params['L']))+'_m'+str(fail_sce_param['mag'])+'_v'+str(params['V'])
+            subfolder_results = 'stm_results_L'+str(len(params['L']))+'_m'+str(fail_sce_param['mags'])+'_v'+str(params['V'])
             output_dir = check_folder(pred_dict['output_dir']+'/'+subfolder_results)
-            pred_results[pred_s].to_csv(output_dir, fail_sce_param["sample"], suffix='ps'+str(pred_s))
+            pred_results[pred_s].to_csv(output_dir, fail_sce_param["sample_range"], suffix='ps'+str(pred_s))
             output_dir_l = check_folder(pred_dict['output_dir']+'/'+subfolder_results+'/agents')
-            pred_results[pred_s].to_csv_layer(output_dir_l, fail_sce_param["sample"], suffix='ps'+str(pred_s))
+            pred_results[pred_s].to_csv_layer(output_dir_l, fail_sce_param["sample_range"], suffix='ps'+str(pred_s))
             ####Write models to file###
             # indp.save_INDP_model_to_file(flow_results[0], './models',t, l = 0)
 
@@ -236,12 +236,12 @@ def predict_resotration(pred_dict, fail_sce_param, params, real_rep_sequence):
     sum_pred_rep_prec=np.zeros((T+1,num_pred))
     sum_real_rep_prec=np.zeros((T+1))
     for key, val in objs.items():
-        sum_real_rep_prec += real_rep_sequence[key]
+        sum_real_rep_prec += real_rep_sequence[key][:T+1]
         for pred_s in range(num_pred):
             if real_rep_sequence[key][0] != val.state_hist[0,pred_s]:
                 sys.exit('Error: Unmatched intial state')
             temp_dict = {'name':key, 'pred sample':pred_s,
-                         'real rep time':T+1-sum(real_rep_sequence[key]),
+                         'real rep time':T+1-sum(real_rep_sequence[key][:T+1]),
                          'pred rep time':T+1-sum(val.state_hist[:,pred_s])}
             temp_dict['prediction error'] = temp_dict['real rep time'] - temp_dict['pred rep time']
             pred_error = pred_error.append(temp_dict, ignore_index=True)
@@ -442,3 +442,28 @@ def check_folder(output_dir):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     return output_dir
+
+def actual_repair_data(fail_sce_param, params, data_specific):
+    real_rep_sequence = {}
+    real_cost = {}
+    if fail_sce_param['type'] == 'random':
+        column_number = STAR_utils.find_sce_index(fail_sce_param['sample_range'], params['V'],
+                                                  data_specific['miss_sce_dir'])
+        for key, val in data_specific['samples_all'][params['V']].items():
+            real_rep_sequence[key] = val[:params["NUM_ITERATIONS"]+1, column_number]
+        for key, val in data_specific['costs_all'][params['V']].items():
+            real_cost[key] = val[:params["NUM_ITERATIONS"]+1, column_number]
+    elif fail_sce_param['type'] == 'WU':
+        sample_num = fail_sce_param['sample_range']
+        mag_num = fail_sce_param['mags']
+        fail_sce_param['sample_range'] = range(sample_num, sample_num+1)
+        fail_sce_param['mags'] = range(mag_num, mag_num+1)
+        real_rep_sequence, real_cost, _, _, _ = STAR_utils.importData(params, fail_sce_param, print_cmd=False)
+        
+        fail_sce_param['sample_range'] = sample_num
+        fail_sce_param['mags'] = mag_num
+        for key, val in real_rep_sequence.items():
+            real_rep_sequence[key] = val.ravel()
+        for key, val in real_cost.items():
+            real_cost[key] = val.ravel()
+    return real_rep_sequence, real_cost
