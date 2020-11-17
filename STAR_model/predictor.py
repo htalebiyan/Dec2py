@@ -7,9 +7,9 @@ import plot_star
 import itertools
 import pickle
 
-SAMPLE_RANGE = range(1, 50) #range(1, 50) #range(50, 551, 100) #[50, 70, 90]
-MAGS = range(0, 1)
-Rc = [12]
+SAMPLE_RANGE = range(50) #range(1, 50) #range(50, 551, 100) #[50, 70, 90]
+MAGS = range(96)
+Rc = [3, 6, 8, 12]
 MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc_only_nodes_damaged'
 OPT_DIR = 'C:/Users/ht20/Documents/Files/STAR_training_data/INDP_random_disruption/results_only_nodes_damaged/'
 FAIL_SCE_PARAM = {"type":"WU", "sample_range":None, "mags_range":None,
@@ -21,7 +21,7 @@ FAIL_SCE_PARAM = {"type":"WU", "sample_range":None, "mags_range":None,
 #                   'Damage_dir':"../data/random_disruption_shelby/"}
 PRED_DICT = {'num_pred':5, 'model_dir':MODEL_DIR+'/traces',
              'param_folder':MODEL_DIR+'/parameters', 'output_dir':'./results'}
-PARAMS = {"NUM_ITERATIONS":2, "V":None, "ALGORITHM":"INDP", 'L':[1, 2, 3, 4]}
+PARAMS = {"NUM_ITERATIONS":10, "V":None, "ALGORITHM":"INDP", 'L':[1, 2, 3, 4]}
 
 ''' Run models '''
 prediction_error = pd.DataFrame(columns=['magnitude', 'sample', 'Rc', 'name',
@@ -42,7 +42,7 @@ for res, mag_num, sample_num in itertools.product(Rc, MAGS, SAMPLE_RANGE):
         samples_all, costs_all, _ = pickle.load(open(real_result_dir+'/initial_data.pkl', "rb" ))
         data_specific = {'samples_all':samples_all, 'costs_all':costs_all, 'miss_sce_dir':miss_sce_dir}
     if FAIL_SCE_PARAM['type'] == 'WU':
-        PARAMS['OUTPUT_DIR'] = 'C:/Users/ht20/Documents/Files/dynamic_demand/results/indp_results'
+        PARAMS['OUTPUT_DIR'] = 'C:/Users/ht20/Documents//Files/STAR_models/Shelby_final_all_Rc_only_nodes_damaged/results_shelby/actual_results/indp_results'
         data_specific = {}
     
     real_rep_seq, real_cost = actual_repair_data(FAIL_SCE_PARAM, PARAMS, data_specific)

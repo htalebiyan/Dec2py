@@ -127,15 +127,18 @@ def import_initial_data(params, fail_sce_param):
     params["MAGNITUDE"] = mag
     # Damage the network
     if fail_sce_param['type'] == 'WU':
-        infrastructure.add_Wu_failure_scenario(interdep_net, DAM_DIR=damage_dir, noSet=sample, noSce=mag)
+        infrastructure.add_Wu_failure_scenario(interdep_net, DAM_DIR=damage_dir,
+                                               noSet=sample, noSce=mag, no_arc_damage=True)
     elif fail_sce_param['type'] == 'ANDRES':
-        infrastructure.add_failure_scenario(interdep_net, DAM_DIR=damage_dir, magnitude=mag, v=params["V"],
-                                  sim_number=sample)
+        infrastructure.add_failure_scenario(interdep_net, DAM_DIR=damage_dir, magnitude=mag,
+                                            v=params["V"], sim_number=sample)
     elif fail_sce_param['type'] == 'random':
-        infrastructure.add_random_failure_scenario(interdep_net, DAM_DIR=damage_dir, sample=sample)
+        infrastructure.add_random_failure_scenario(interdep_net, DAM_DIR=damage_dir,
+                                                   sample=sample, no_arc_damage=False)
     elif fail_sce_param['type'] == 'synthetic':
-        infrastructure.add_synthetic_failure_scenario(interdep_net, DAM_DIR=damage_dir, topology=topology,
-                                            config=mag, sample=sample)
+        infrastructure.add_synthetic_failure_scenario(interdep_net, DAM_DIR=damage_dir,
+                                                      topology=topology, config=mag,
+                                                      sample=sample)
     # initialize objects
     objs = {}
     for v in interdep_net.G.nodes():

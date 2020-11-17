@@ -97,12 +97,14 @@ def importData(params, failSce_param, suffix='', print_cmd=True):
                 initial_net[0] = copy.deepcopy(params["N"])
 
             if failSce_param['type']=='WU':
-                add_Wu_failure_scenario(params["N"], DAM_DIR=damage_dir, noSet=i, noSce=m)
+                add_Wu_failure_scenario(params["N"], DAM_DIR=damage_dir, noSet=i, noSce=m,
+                                        no_arc_damage=True)
             elif failSce_param['type']=='ANDRES':
                 add_failure_scenario(params["N"], DAM_DIR=damage_dir, magnitude=m,
                                      v=params["V"], sim_number=i)
             elif failSce_param['type']=='random':
-                add_random_failure_scenario(params["N"], DAM_DIR=damage_dir, sample=i)
+                add_random_failure_scenario(params["N"], DAM_DIR=damage_dir, sample=i,
+                                            no_arc_damage=False)
             elif failSce_param['type']=='synthetic':
                 add_synthetic_failure_scenario(params["N"], DAM_DIR=damage_dir,
                                                topology=topology, config=m, sample=i)

@@ -490,9 +490,11 @@ def add_failure_scenario(G,DAM_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim
                 #if float(func[1]) == 0.0:
                 #    print "Arc ((",`func[0][1]`+","+`func[0][3]`+"),("+`func[0][2]`+","+`func[0][3]`+")) broken."
 
-def add_random_failure_scenario(G, sample, config=0, DAM_DIR=""):
+def add_random_failure_scenario(G, sample, config=0, DAM_DIR="", no_arc_damage=False):
     import csv
-    # print("Initiallize Random Damage...")
+    print("Initiallize Random Damage...")
+    if no_arc_damage:
+        print("ARCS are NOT DAMAGED in this scenario")
     with open(DAM_DIR+'Initial_node.csv') as csvfile:
         data = csv.reader(csvfile, delimiter=',')
         for row in data:
@@ -502,24 +504,26 @@ def add_random_failure_scenario(G, sample, config=0, DAM_DIR=""):
             state = float(row[sample+1])
             G.G.nodes[n]['data']['inf_data'].functionality=state
             G.G.nodes[n]['data']['inf_data'].repaired=state
-            
-    with open(DAM_DIR+'Initial_links.csv') as csvfile:
-        data = csv.reader(csvfile, delimiter=',')
-        for row in data:
-            rawUV = row[0]
-            rawUV = rawUV.split(',')
-            u = (int(rawUV[0].strip(' )(')),int(rawUV[1].strip(' )(')))
-            v = (int(rawUV[2].strip(' )(')),int(rawUV[3].strip(' )(')))
-            state = float(row[sample+1])
-            if state==0.0:
-                G.G[u][v]['data']['inf_data'].functionality=state
-                G.G[u][v]['data']['inf_data'].repaired=state
-            
-                G.G[v][u]['data']['inf_data'].functionality=state
-                G.G[v][u]['data']['inf_data'].repaired=state  
+    if not no_arc_damage:       
+        with open(DAM_DIR+'Initial_links.csv') as csvfile:
+            data = csv.reader(csvfile, delimiter=',')
+            for row in data:
+                rawUV = row[0]
+                rawUV = rawUV.split(',')
+                u = (int(rawUV[0].strip(' )(')),int(rawUV[1].strip(' )(')))
+                v = (int(rawUV[2].strip(' )(')),int(rawUV[3].strip(' )(')))
+                state = float(row[sample+1])
+                if state==0.0:
+                    G.G[u][v]['data']['inf_data'].functionality=state
+                    G.G[u][v]['data']['inf_data'].repaired=state
+                
+                    G.G[v][u]['data']['inf_data'].functionality=state
+                    G.G[v][u]['data']['inf_data'].repaired=state  
                
-def add_Wu_failure_scenario(G,DAM_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
+def add_Wu_failure_scenario(G,DAM_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1, no_arc_damage=False):
     print("Initiallize Wu failure scenarios...")
+    if no_arc_damage:
+        print("ARCS are NOT DAMAGED in this scenario")
     dam_nodes = {}
     dam_arcs = {}
     folderDir = DAM_DIR+'Set%d/Sce%d/' % (noSet,noSce)
@@ -540,7 +544,7 @@ def add_Wu_failure_scenario(G,DAM_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
                     G.G.nodes[(v+ofst,k)]['data']['inf_data'].functionality=0.0
                     G.G.nodes[(v+ofst,k)]['data']['inf_data'].repaired=0.0
 #                    print "Node (",`v+ofst`+","+`k`+") broken."
-            if dam_arcs[k].size!=0:
+            if dam_arcs[k].size!=0 and not no_arc_damage:
                 if dam_arcs[k].size==2:
                     dam_arcs[k] = [dam_arcs[k]]
                 for a in dam_arcs[k]:
