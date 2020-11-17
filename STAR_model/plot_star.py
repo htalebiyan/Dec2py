@@ -78,7 +78,7 @@ def plot_cost(df):
     df = df.replace('predicted','Logistic Model Prediction')
     df = df.replace('data','Optimal Scenario')
     FIGURE_DF = df
-    sns.lineplot(x="t", y='cost', style='type', hue='type', data=FIGURE_DF, markers=True, ci=95)
+    sns.lineplot(x="t", y='cost', style='type', hue='Rc', data=FIGURE_DF, markers=True, ci=None)
     plt.savefig('Total_cost_vs_time.png',dpi = 600, bbox_inches='tight')
 
 def plot_results(pe_df, rp_df):
