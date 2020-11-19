@@ -7,8 +7,8 @@ import pandas as pd
 from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 sns.set(context='notebook', style='darkgrid', font_scale=1.2)
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+# plt.rc('text', usetex=True)
+# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                    decision_type=None, judgment_type=None,
@@ -61,9 +61,9 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
     #sns.color_palette("husl", len(auction_type)+1)
-    row_plot = [auction_type, 'auction_type']
+    row_plot = [valuation_type, 'valuation_type']
     col_plot = [no_resources, 'no_resources']#no_resources, judgment_type
-    hue_type = [decision_type, 'decision_type']
+    hue_type = [auction_type, 'auction_type']
     style_type = 'decision_type'
     # Initialize plot properties
     dpi = 300
@@ -99,7 +99,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                     sns.barplot(x=x, y=l, hue=hue_type[1], ax=ax, linewidth=0.5, ci=None,
                                 data=cost_lyr_pivot, hue_order=hue_type[0],
                                 palette=pal_adj, **{'alpha':0.35})
-            ax.set(xlabel=r'time step $t$', ylabel= r'\% Unmet Demand')#!!!cost_type+' Cost'
+            ax.set(xlabel=r'time step $t$', ylabel= cost_type+' Cost')
             ax.get_legend().set_visible(False)
             ax.xaxis.set_ticks(np.arange(0, T, 1.0))#ax.get_xlim()
             if plot_resilience:
@@ -140,7 +140,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     handles, labels = ax.get_legend_handles_labels()
     handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
     labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='center right', ncol=1, framealpha=0.35) #!!!
+    fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.35)
     # Add overll x- and y-axis titles
     _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
@@ -210,15 +210,15 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
                 ax.set_xlabel(r'$R_c$')
                 if idx_r != len(valuation_type)-1:
                     ax.set_xlabel('')
-                #!!!ax.set_ylabel(r'E[$\lambda_{%s}$], $%s$'%(lambda_type, row_plot[0][idx_r]))
+                ax.set_ylabel(r'E[$\lambda_{%s}$], $%s$'%(lambda_type, row_plot[0][idx_r]))
                 ax.set_ylabel(r'E[$\lambda_{%s}$]'%lambda_type)
                 if idx_c != 0:
                     ax.set_ylabel('')
                 ax.xaxis.set_label_position('bottom')
-    #!!! handles, labels = ax.get_legend_handles_labels()
-    # labels = correct_legend_labels(labels)
-    # fig.legend(handles, labels, loc='lower right', bbox_to_anchor = (0.9,0.1),
-    #            frameon=True, framealpha=.75, ncol=1)
+    handles, labels = ax.get_legend_handles_labels()
+    labels = correct_legend_labels(labels)
+    fig.legend(handles, labels, loc='lower right', bbox_to_anchor = (0.9,0.1),
+                frameon=True, framealpha=.75, ncol=1)
     _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
         corrected_label = correct_legend_labels([col_plot[0][idx]])[0]
@@ -251,13 +251,13 @@ def plot_auction_allocation(df_res, ci=None):
     if 'nan' in auction_type:
         auction_type.remove('nan')
     valuation_type = df_res.valuation_type.unique().tolist()
-    #!!! if 'nan' in valuation_type:
-    #     valuation_type.remove('nan')
-    figs = [valuation_type, 'valuation_type']#valuation_type, 'valuation_type'
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
+    figs = [judgment_type, 'judgment_type']#valuation_type, 'valuation_type'
     row_plot = [layer, 'layer']
     col_plot = [no_resources, 'no_resources']#no_resources, judgment_type
     hue_type = [decision_type, 'decision_type']
-    style_type = [decision_type, 'decision_type']
+    style_type = [auction_type, 'auction_type']
     # Initialize plot properties
     dpi = 300
     for idxat, idx_f in enumerate(figs[0]):
@@ -282,7 +282,7 @@ def plot_auction_allocation(df_res, ci=None):
         labels = correct_legend_labels(labels)
         fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5, labelspacing=0.2)
         _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
-        #!!! fig.suptitle('Judgment Type: '+figs[0][idxat])
+        fig.suptitle('Judgment Type: '+figs[0][idxat])
         for idx, ax in enumerate(axs_c):
             ax.set_title(r'Resource Cap: %s'%str(col_plot[0][idx]))
         for idx, ax in enumerate(axs_r):
@@ -338,7 +338,7 @@ def plot_relative_allocation(gap_res, distance_type='gap'):
                 sns.barplot(x=x, y=distance_type, hue=hue_type[1], ax=ax,
                             data=data_ftp, linewidth=0.5,
                             edgecolor=[.25, .25, .25], capsize=.05,
-                            errcolor=[.25, .25, .25], errwidth=.75) #no_resources
+                            errcolor=[.25, .25, .25], errwidth=.75)
             ax.get_legend().set_visible(False)
             ax.set_xlabel(r'$R_c$')
             if idx_r != len(row_plot[0])-1:
@@ -356,8 +356,8 @@ def plot_relative_allocation(gap_res, distance_type='gap'):
     lgd = fig.legend(handles, labels, loc='upper right', bbox_to_anchor=(0.85, 0.97),
                      frameon=True, framealpha=0.5, ncol=1, fontsize='x-small')
     _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
-    #!!! for idx, ax in enumerate(axs_c):
-    #     ax.set_title(r'Res. Alloc. Type: %s'%(col_plot[0][idx]))
+    for idx, ax in enumerate(axs_c):
+        ax.set_title(r'Res. Alloc. Type: %s'%(col_plot[0][idx]))
     plt.savefig('Allocation_Gap.png', dpi=dpi, bbox_inches='tight',
                 bbox_extra_artists=(lgd, ))#
 
@@ -483,35 +483,35 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
     # pal = sns.color_palette(colors[:len(auction_type)-1]+['k'])
     pal = sns.color_palette(['r', 'b'])
     dpi = 300
-    fig, axs = plt.subplots(2, 2, sharex=True, sharey=True, tight_layout=False,
-                            figsize=(2000/dpi, 1500/dpi)) #!!!
+    fig, axs = plt.subplots(3, 2, sharex=True, sharey=True, tight_layout=False,
+                            figsize=(4000/dpi, 3000/dpi))
     cost_data = df[df.cost_type == cost_type]
     for idx, lyr in enumerate(layers):
         ax = axs[idx//2, idx%2]
-        sns.lineplot(x=x, y=y, hue="decision_type", style='decision_type', markers=True,
+        sns.lineplot(x=x, y=y, hue="decision_type", style='auction_type', markers=True,
                      ci=ci, ax=ax, palette=pal,
                      data=cost_data[cost_data.layer == lyr], **{'markersize':5})
-        ax.set(xlabel=r'time step $t$', ylabel=r'\% Unmet Demand')#!!!cost_type+' Cost')
+        ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
         ax.set_title(r'Layer: %s'%(layer_names[lyr]))
         ax.get_legend().set_visible(False)
         ax.xaxis.set_ticks(np.arange(0, 11, 1.0))   #ax.get_xlim()
 
-    # ax = fig.add_subplot(3, 2, 6) #!!!
-    # sns.lineplot(x=x, y=y, hue="decision_type", style='decision_type',
-    #              markers=True, ci=ci, palette=pal, ax=ax,
-    #              data=cost_data[cost_data.layer == 'nan'], **{'markersize':5})
-    # ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
-    # ax.set_title(r'Overall')
-    # ax.get_legend().set_visible(False)
-    # ax.xaxis.set_ticks(np.arange(0, 10, 1.0))   #ax.get_xlim()
-    # if 'nan' in valuation_type:
-    #     valuation_type.remove('nan')
-    # head = 'Resource Cap: '+str(res_caps).strip('[]')+', Valuation: '+\
-    #     str(valuation_type).strip('[]')
-    # fig.suptitle(head)
-    # handles, labels = ax.get_legend_handles_labels()
-    # labels = correct_legend_labels(labels)
-    # fig.legend(handles, labels, loc='best', ncol=1, framealpha=0.5)
+    ax = fig.add_subplot(3, 2, 6)
+    sns.lineplot(x=x, y=y, hue="decision_type", style='auction_type',
+                  markers=True, ci=ci, palette=pal, ax=ax,
+                  data=cost_data[cost_data.layer == 'nan'], **{'markersize':5})
+    ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
+    ax.set_title(r'Overall')
+    ax.get_legend().set_visible(False)
+    ax.xaxis.set_ticks(np.arange(0, 10, 1.0))   #ax.get_xlim()
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
+    head = 'Resource Cap: '+str(res_caps).strip('[]')+', Valuation: '+\
+        str(valuation_type).strip('[]')
+    fig.suptitle(head)
+    handles, labels = ax.get_legend_handles_labels()
+    labels = correct_legend_labels(labels)
+    fig.legend(handles, labels, loc='best', ncol=1, framealpha=0.5)
     plt.savefig('sep_perf.png', dpi=dpi, bbox_inches='tight')
 
 def correct_legend_labels(labels):

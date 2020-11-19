@@ -656,7 +656,7 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
     '''
     combinations = []
     optimal_combinations = []
-    optimal_method = ['tdindp', 'indp', 'sample_indp_12Node']
+    optimal_method = ['tdindp', 'indp', 'sample_indp_12Node', 'dp_indp']
     print('\nCombination Generation\n', end='')
     idx = 0
     no_total = len(mags)*len(sample)
@@ -670,7 +670,7 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
                 for rc in no_resources:
                     for dt, jt, at, vt in itertools.product(decision_type, judgment_type,
                                                             res_alloc_type, valuation_type):
-                        if dt == 'JC':
+                        if dt == 'jc':
                             sf = 'real'
                         else:
                             sf = ''
