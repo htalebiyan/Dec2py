@@ -17,7 +17,7 @@ import dindpclasses
 import indpalt
 import indp
 import indputils
-import plots
+# import plots
 
 class NormalGame:
     '''
@@ -651,11 +651,11 @@ class InfrastructureGame:
                     game_time = time.time()-game_start
                     if compute_optimal:
                         self.objs[t].find_optimal_solution()
-                    if plot and len(self.layers)==2:
-                        if not os.path.exists(self.output_dir+'/payoff_matrix'):
-                            os.makedirs(self.output_dir+'/payoff_matrix')
-                        plots.plot_ne_sol_2player(self.objs[t], suffix=str(self.sample)+'_t'+str(t),
-                                                  plot_dir=self.output_dir+'/payoff_matrix')
+                    # if plot and len(self.layers)==2:
+                    #     if not os.path.exists(self.output_dir+'/payoff_matrix'):
+                    #         os.makedirs(self.output_dir+'/payoff_matrix')
+                    #     plots.plot_ne_sol_2player(self.objs[t], suffix=str(self.sample)+'_t'+str(t),
+                    #                               plot_dir=self.output_dir+'/payoff_matrix')
                     ne_results = self.objs[t].chosen_equilibrium['full results'][mixed_index]
                     ne_results[1].results[0]['run_time'] = game_time
                     self.results.extend(ne_results[1], t_offset=t)
