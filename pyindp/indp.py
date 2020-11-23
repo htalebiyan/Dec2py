@@ -133,24 +133,24 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
     #Constraints.
     # Time-dependent constraints.
     if T > 1:
-        for n,d in N_hat.nodes(data=True):
-            m.addConstr(m.getVarByName('w_'+str(n)+",0"),GRB.EQUAL,0)
+        for n,d in N_hat_prime:
+            m.addConstr(m.getVarByName('w_'+str(n)+",0"),GRB.EQUAL,0, "Initial state at node "+str(n)+","+str(0))
         for u,v,a in A_hat_prime:
-            m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+",0"),GRB.EQUAL,0)
+            m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+",0"),GRB.EQUAL,0,"Initial state at arc "+str(u)+","+str(v)+","+str(0))
 
 
     for t in range(T):
         # Time-dependent constraint.
-        for n,d in N_hat.nodes(data=True):
+        for n,d in N_hat_prime:
             if t > 0:
                 wTildeSum=LinExpr()
-                for t_prime in range(1,t):
+                for t_prime in range(1,t+1):
                     wTildeSum+=m.getVarByName('w_tilde_'+str(n)+","+str(t_prime))
                 m.addConstr(m.getVarByName('w_'+str(n)+","+str(t)),GRB.LESS_EQUAL,wTildeSum,"Time dependent recovery constraint at node "+str(n)+","+str(t))
         for u,v,a in A_hat_prime:
             if t > 0:
                 yTildeSum=LinExpr()
-                for t_prime in range(1,t):
+                for t_prime in range(1,t+1):
                     yTildeSum+=m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t_prime))
                 m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,yTildeSum,"Time dependent recovery constraint at arc "+str(u)+","+str(v)+","+str(t))
         # Enforce a_i,j to be fixed if a_j,i is fixed (and vice versa).
@@ -352,8 +352,6 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=
             if round(m.getVarByName(nodeVar).x)==1:
                 action=str(n[0])+"."+str(n[1])
                 indp_results.add_action(t,action)
-                    #if T == 1:
-                    #N.G.node[n]['data']['inf_data'].functionality=1.0
         # Record edge recovery actions.
         for u,v,a in A_hat_prime:
             arcVar='y_tilde_'+str(u)+","+str(v)+","+str(t)
@@ -362,8 +360,6 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=
             if round(m.getVarByName(arcVar).x)==1:
                 action=str(u[0])+"."+str(u[1])+"/"+str(v[0])+"."+str(v[1])
                 indp_results.add_action(t,action)
-                #if T == 1:
-                #N.G[u][v]['data']['inf_data'].functionality=1.0
         # Calculate space preparation costs.
         if coloc:
             for s in S:
@@ -428,13 +424,6 @@ def apply_recovery(N,indp_results,t):
             #print "Applying recovery:",node
             N.G.nodes[node]['data']['inf_data'].repaired=1.0
             N.G.nodes[node]['data']['inf_data'].functionality=1.0
-
-#    for u,v,a in N.G.edges(data=True):
-#        if a['data']['inf_data'].is_interdep:
-#            if N.G.node[u]['data']['inf_data'].functionality == 0.0 and N.G.node[v]['data']['inf_data'].functionality==1.0:
-#                N.G.node[v]['data']['inf_data'].functionality = 0.0
-#            if N.G.node[u]['data']['inf_data'].functionality == 1.0 and N.G.node[v]['data']['inf_data'].repaired==1.0 and N.G.node[v]['data']['inf_data'].functionality==0.0:
-#                N.G.node[v]['data']['inf_data'].functionality = 1.0
 
 def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
     """Creates a functionality map for input into the functionality parameter in the indp function.
@@ -505,9 +494,9 @@ def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependen
         InterdepNet,v_temp,layers_temp=load_synthetic_network(BASE_DIR=BASE_DIR,topology=topology,config=magnitude,sample=sample,cost_scale=cost_scale)
     return InterdepNet,v_temp,layers_temp
 
-def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,validate=False,
-             save=True,suffix="",forced_actions=False,saveModel=False,print_cmd_line=True,
-             dynamic_params=None):
+def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1, validate=False,
+             save=True,suffix="", forced_actions=False, saveModel=False, print_cmd_line=True,
+             dynamic_params=None, co_location=True):
     """ Runs an INDP problem with specified parameters. Outputs to directory specified in params['OUTPUT_DIR'].
     :param params: Global parameters.
     :param layers: Layers to consider in the infrastructure network.
@@ -543,15 +532,16 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
         if dynamic_params:
             original_N = copy.deepcopy(InterdepNet) #!!! deepcopy
             dynamic_parameters(InterdepNet, original_N, 0, dynamic_params)
-        results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers)
+        results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers,
+                     functionality=functionality, co_location=co_location)
         indp_results=results[1]
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
         for i in range(params["NUM_ITERATIONS"]):
             print("-Time Step (iINDP)",i+1,"/",params["NUM_ITERATIONS"])
             if dynamic_params:
                 dynamic_parameters(InterdepNet, original_N, i+1, dynamic_params)
-            results=indp(InterdepNet,v_r,T,layers,controlled_layers=controlled_layers,
-                         forced_actions=forced_actions)
+            results=indp(InterdepNet, v_r, T, layers, controlled_layers=controlled_layers,
+                         forced_actions=forced_actions, co_location=co_location)
             indp_results.extend(results[1],t_offset=i+1)
             if saveModel:
                 save_INDP_model_to_file(results[0],output_dir+"/Model",i+1)
@@ -573,10 +563,12 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
 
         print("Running td-INDP (T="+str(T)+", Window size="+str(time_window_length)+")")
         # Initial percolation calculations.
-        results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers,functionality=functionality)
+        results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers,
+                     functionality=functionality, co_location=co_location)
         indp_results=results[1]
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
         for n in range(num_time_windows):
+            print("-Time window (td-INDP)",n+1,"/",num_time_windows)
             functionality_t={}
             # Slide functionality matrix according to sliding time window.
             if functionality:
@@ -589,21 +581,27 @@ def run_indp(params,layers=[1,2,3],controlled_layers=[],functionality={},T=1,val
                     for d in range(diff):
                         functionality_t[max_t+d+1]=functionality_t[max_t]
             # Run td-INDP.
-            results=indp(InterdepNet,v_r,time_window_length+1,layers,controlled_layers=controlled_layers,functionality=functionality_t,forced_actions=forced_actions)
+            results=indp(InterdepNet, v_r, time_window_length+1, layers, 
+                         controlled_layers=controlled_layers, 
+                         functionality=functionality_t, forced_actions=forced_actions,
+                         co_location=co_location)
             if saveModel:
                 save_INDP_model_to_file(results[0],output_dir+"/Model",n+1)
             if "WINDOW_LENGTH" in params:
                 indp_results.extend(results[1],t_offset=n+1,t_start=1,t_end=2)
                 # Modify network for recovery actions and calculate components.
                 apply_recovery(InterdepNet,results[1],1)
-                indp_results.add_components(n+1,INDPComponents.calculate_components(results[0],InterdepNet,1,layers=controlled_layers))
+                indp_results.add_components(n+1,
+                                            INDPComponents.calculate_components(results[0],
+                                                                                InterdepNet,1,
+                                                                                layers=controlled_layers))
             else:
-                indp_results.extend(results[1],t_offset=1)
+                indp_results.extend(results[1],t_offset=0)
                 for t in range(1,T):
                     # Modify network to account for recovery actions.
                     apply_recovery(InterdepNet,indp_results,t)
                     indp_results.add_components(1,INDPComponents.calculate_components(results[0],InterdepNet,t,layers=controlled_layers))
-    # Save results of INDP run.
+    # Save results of current simulation.
     if save:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -698,49 +696,6 @@ def run_inrg(params,layers=[1,2,3],validate=False,player_ordering=[3,1],suffix="
     for P in layers:
         player_strategies[P].to_csv(output_dir,params["SIM_NUMBER"],suffix="P"+str(P)+"_"+suffix)
 
-def run_seqeq(params,layers=[1,2,3],validate=False,player_ordering=[3,1],suffix=""):
-    InterdepNet=None
-    output_dir=params["OUTPUT_DIR"]+"_m"+str(params["MAGNITUDE"])+"_v"+str(params["V"])
-    if "N" not in params:
-        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",sim_number=params['SIM_NUMBER'],magnitude=params["MAGNITUDE"])
-        params["N"]=InterdepNet
-    else:
-        InterdepNet=params["N"]
-    v_r=params["V"]
-
-def baseline_metrics(BASE_DIR="/Users/Andrew/Dropbox/iINDP",layers=[1,2,3]):
-    """ Calculate and print baseline metrics of undamaged network.
-    :param BASE_DIR: Base directory for INDP/Shelby County data.
-    :param layers: Specifies which layers to calculate metrics for.
-    """
-    N=initialize_network(BASE_DIR,sim_number=0)
-    G=N.G
-    costs_disconnection=0.0
-    costs_no_disconnection=0.0
-    opt_flow_cost=0.0
-    for n,d in G.nodes(data=True):
-        if d['data']['inf_data'].net_id in layers:
-            demand=d['data']['inf_data'].demand
-            if demand > 0.0:
-                costs_disconnection+=d['data']['inf_data'].oversupply_penalty*demand
-            else:
-                costs_disconnection+=d['data']['inf_data'].undersupply_penalty*(-demand)
-            costs_disconnection+=d['data']['inf_data'].reconstruction_cost
-            costs_no_disconnection+=d['data']['inf_data'].reconstruction_cost
-    for u,v,a in G.edges(data=True):
-        if u[1] in layers and v[1] in layers:
-            costs_disconnection+=(a['data']['inf_data'].reconstruction_cost/2.0)
-            costs_no_disconnection+=(a['data']['inf_data'].reconstruction_cost/2.0)
-    for s in N.S:
-        costs_disconnection+=s.cost
-        costs_no_disconnection+=s.cost
-    results=indp(N,1)
-    opt_flow_cost=results[1]["Flow"]
-    print("Costs with disconnection:",costs_disconnection)
-    print( "Costs w/o disconnection: ",costs_no_disconnection)
-    print ("Nominal flow cost:       ",opt_flow_cost)
-#baseline_metrics(layers=[1,3],BASE_DIR=HOME_DIR+"/Dropbox/iINDP")
-
 def dynamic_parameters(N, original_N, t, dynamic_params):
     for n,d in N.G.nodes(data=True):
         data = dynamic_params[d['data']['inf_data'].net_id]
@@ -816,15 +771,6 @@ def initialize_sample_network(layers=[1,2]):
         aa=InfrastructureInterdepArc(g[0][0],g[1][0],g[0][1],g[1][1],1.0)
         InterdepNet.G.add_edge((aa.source,aa.source_layer),(aa.dest,aa.dest_layer),data={'inf_data':aa})
     return InterdepNet
-
-def run_sample(params):
-    """ Runs the sample network generated in initialize_sample_network through indp.
-    :param params: Global parameters.
-    """
-    N=initialize_sample_network(params)
-    params["N"]=N
-    params["V"]=2
-    run_indp(params)
 
 def plot_indp_sample(params,folderSuffix="",suffix=""):
     plt.figure(figsize=(16,8))

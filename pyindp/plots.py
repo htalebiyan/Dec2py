@@ -57,12 +57,12 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
         auction_type = df.auction_type.unique().tolist()
     if not valuation_type:
         valuation_type = df.valuation_type.unique().tolist()
-    if 'nan' in valuation_type:
-        valuation_type.remove('nan')
+    # if 'nan' in valuation_type:
+    #     valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
     #sns.color_palette("husl", len(auction_type)+1)
-    row_plot = [valuation_type, 'valuation_type']
-    col_plot = [no_resources, 'no_resources']#no_resources, judgment_type
+    row_plot = [valuation_type, 'valuation_type'] # valuation_type
+    col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
     hue_type = [auction_type, 'auction_type']
     style_type = 'decision_type'
     # Initialize plot properties
@@ -511,7 +511,7 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
     fig.suptitle(head)
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='best', ncol=1, framealpha=0.5)
+    fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5)
     plt.savefig('sep_perf.png', dpi=dpi, bbox_inches='tight')
 
 def correct_legend_labels(labels):
@@ -539,7 +539,7 @@ def correct_legend_labels(labels):
     labels = ['Time Type' if x == 'variable' else x for x in labels]
     labels = ['iINDP' if x == 'indp' else x for x in labels]
     labels = ['Dynamic Param. iINDP' if x == 'dp_indp' else x for x in labels]
-    labels = ['iINDP' if x == 'nan' else x for x in labels]#!!!
+    labels = ['Optimal' if x == 'nan' else x for x in labels]#!!!
     labels = ['td-INDP' if x == 'tdindp' else x for x in labels]
     labels = ['Judge. Call' if x == 'jc' else x for x in labels]
     labels = ['Judge. Call' if x == 'jc_sample_12Node' else x for x in labels]

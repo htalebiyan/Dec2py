@@ -9,7 +9,7 @@ import dindputils
 import plots
 import gametree
 import itertools
-import gameutils
+# import gameutils #!!!
 
 try:
     # Change the current working Directory
@@ -117,7 +117,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             if params["ALGORITHM"] == "INDP":
                 indp.run_indp(params, validate=False, T=params["T"], layers=params['L'],
                               controlled_layers=params['L'], saveModel=True, print_cmd_line=False,
-                              dynamic_params=dynamic_params)
+                              dynamic_params=dynamic_params, co_location=False)
             elif params["ALGORITHM"] == "INFO_SHARE":
                 indp.run_info_share(params, layers=params['L'], T=params["T"])
             elif params["ALGORITHM"] == "INRG":
@@ -128,15 +128,26 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                                                  T=params["T"], outdir=params["OUTPUT_DIR"])
             elif params["ALGORITHM"] == "JC":
                 dindputils.run_judgment_call(params, save_jc_model=True, print_cmd=False)
-            elif params["ALGORITHM"] == "NORMALGAME":
-                gameutils.run_game(params, save_results=True, print_cmd=True,
-                                   save_model=True, plot2D=True)
+            # elif params["ALGORITHM"] == "NORMALGAME":
+            #     gameutils.run_game(params, save_results=True, print_cmd=True,
+            #                        save_model=True, plot2D=True) #!!!
 
 def run_indp_sample(layers):
     interdep_net= indp.initialize_sample_network(layers=layers)
     params={"NUM_ITERATIONS":7, "OUTPUT_DIR":'../results/indp_sample_12Node_results',
             "V":len(layers), "T":1, "L":layers, "WINDOW_LENGTH":1, "ALGORITHM":"INDP",
             "N":interdep_net, "MAGNITUDE":0, "SIM_NUMBER":0}
+    indp.run_indp(params, layers=layers, T=params["T"], suffix="", saveModel=True,
+              print_cmd_line=True)
+    print('\n\nPlot restoration plan by INDP')
+    indp.plot_indp_sample(params)
+    plt.show()
+
+def run_tdindp_sample(layers):
+    interdep_net= indp.initialize_sample_network(layers=layers)
+    params={"OUTPUT_DIR":'../results/tdindp_sample_12Node_results', "V":len(layers),
+            "T":7, "L":layers, "ALGORITHM":"INDP", "WINDOW_LENGTH":3, 
+            "N":interdep_net, "MAGNITUDE":0, "SIM_NUMBER":0} #"WINDOW_LENGTH":6, 
     indp.run_indp(params, layers=layers, T=params["T"], suffix="", saveModel=True,
               print_cmd_line=True)
     print('\n\nPlot restoration plan by INDP')
@@ -214,6 +225,9 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
         if method == 'INDP':
             params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'indp_results',
                       "V":v, "T":1, 'L':layers, "ALGORITHM":"INDP"}
+        elif method == 'TDINDP':
+            params = {"OUTPUT_DIR":output_dir+'/tdindp_results', "V":v, "T":10,
+                      'L':layers, "ALGORITHM":"INDP"} # "WINDOW_LENGTH":3, 
         elif method == 'JC':
             params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'jc_results',
                       "V":v, "T":1, 'L':layers, "ALGORITHM":"JC",
@@ -226,9 +240,6 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
                       "V":v, "T":1, "L":layers, "ALGORITHM":"NORMALGAME",
                       'EQUIBALG':'enumpure_solve', "JUDGMENT_TYPE":judgment_type,
                       "RES_ALLOC_TYPE":res_alloc_type, "VALUATION_TYPE":valuation_type}
-        elif method == 'TD_INDP':
-            params = {"NUM_ITERATIONS":1, "OUTPUT_DIR":output_dir+'/tdindp_results',
-                      "V":v, "T":10, "WINDOW_LENGTH":3, 'L':layers, "ALGORITHM":"INDP"}
         else:
             sys.exit('Wrong method name: '+method)
         params['DYNAMIC_PARAMS'] = dynamic_params
@@ -240,25 +251,28 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
  
 if __name__ == "__main__":
     ''' Run a toy example for different methods '''
-    plt.close('all')
-    # layers=[1,2,3]
+    # plt.close('all')
+    # layers=[1,2]#,3]
     # auction_type = ["MCA", "UNIFORM"]#, "MAA", "MDA"
     # valuation_type = ["DTC"]
     # judge_types = ["OPTIMISTIC"]#"PESSIMISTIC",
     # run_indp_sample(layers)
-    # run_jc_sample(layers, judge_types, auction_type, valuation_type)
-    # run_game_sample(layers, judge_types, auction_type, valuation_type)
+    # run_tdindp_sample(layers)
+    # # run_jc_sample(layers, judge_types, auction_type, valuation_type)
+    # # run_game_sample(layers, judge_types, auction_type, valuation_type)
     
     # COMBS = []
     # OPTIMAL_COMBS = [[0, 0, len(layers), len(layers), 'indp_sample_12Node', 'nan',
+    #                   'nan', 'nan', ''],
+    #                   [0, 0, len(layers), len(layers), 'tdindp_sample_12Node', 'nan',
     #                   'nan', 'nan', '']]
-    # for jt, rst, vt in itertools.product(judge_types, auction_type, valuation_type):
-    #     if rst == 'UNIFORM':
-    #         COMBS.append([0, 0, len(layers), len(layers), 'jc_sample_12Node', jt, rst, 'nan', 'real'])
-    #         COMBS.append([0, 0, len(layers), len(layers), 'ng_sample_12Node', jt, rst, 'nan', ''])
-    #     else:
-    #         COMBS.append([0, 0, len(layers), len(layers), 'jc_sample_12Node', jt, rst, vt, 'real'])
-    #         COMBS.append([0, 0, len(layers), len(layers), 'ng_sample_12Node', jt, rst, vt, ''])
+    # # for jt, rst, vt in itertools.product(judge_types, auction_type, valuation_type):
+    # #     if rst == 'UNIFORM':
+    # #         COMBS.append([0, 0, len(layers), len(layers), 'jc_sample_12Node', jt, rst, 'nan', 'real'])
+    # #         COMBS.append([0, 0, len(layers), len(layers), 'ng_sample_12Node', jt, rst, 'nan', ''])
+    # #     else:
+    # #         COMBS.append([0, 0, len(layers), len(layers), 'jc_sample_12Node', jt, rst, vt, 'real'])
+    # #         COMBS.append([0, 0, len(layers), len(layers), 'ng_sample_12Node', jt, rst, vt, ''])
     # BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, ['Total'],
     #                                     root_result_dir='../results/', deaggregate=True)
     # LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
@@ -271,10 +285,6 @@ if __name__ == "__main__":
     # plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
     # plots.plot_auction_allocation(RES_ALLOC_DF, ci=None)
     # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
-
-    # obj_dir = "../results/ng_sample_12Node_results_L2_m0_v2_OPTIMISTIC_AUCTION_MCA_DTC/"
-    # with open(obj_dir+'objs_0.pkl', 'rb') as f:
-    #     obj = pickle.load(f)
     ''' ^^^ '''
     
     #: The address to the list of scenarios that should be included in the analyses.
@@ -314,7 +324,7 @@ if __name__ == "__main__":
     #:     sce range: FAIL_SCE_PARAM['MAGS']
     #: For Synthetic nets: sample range: FAIL_SCE_PARAM['SAMPLE_RANGE'],
     #:     configurations: FAIL_SCE_PARAM['MAGS']
-    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(50), 'MAGS':range(3),
+    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(50), 'MAGS':range(96),
                       'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
@@ -330,7 +340,7 @@ if __name__ == "__main__":
         OUTPUT_DIR += FAIL_SCE_PARAM['TOPO']+'/results/'
 
     # No restriction on number of resources for each layer
-    RC = [3]
+    RC = [4, 8, 12]
     # Not necessary for synthetic nets
     # [3, 6, 8, 12]
     # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
@@ -349,18 +359,20 @@ if __name__ == "__main__":
     ''' Run different methods '''
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
     #             dynamic_params=DYNAMIC_PARAMS_DIR)
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
-    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
-    #             output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS_DIR)
-    #                 #, misc = {'STM_MODEL_DICT':STM_MODEL_DICT})
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
-    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-    #             dynamic_params=DYNAMIC_PARAMS_DIR)
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
+    #         dynamic_params=DYNAMIC_PARAMS_DIR)
+    # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
+    # #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
+    # #             output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS_DIR)
+    # #                 #, misc = {'STM_MODEL_DICT':STM_MODEL_DICT})
+    # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
+    # #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+    # #             dynamic_params=DYNAMIC_PARAMS_DIR)
 
     ''' Post-processing '''
     # COST_TYPES = ['Total', 'Under Supply', 'Over Supply']
     # REF_METHOD = 'indp'
-    # METHOD_NAMES = ['indp', 'ng'] #'ng', 'jc', 'dp_indp'
+    # METHOD_NAMES = ['indp', 'tdindp'] #'ng', 'jc', 'dp_indp', 'tdindp'
 
     # COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
     #             FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
@@ -394,15 +406,15 @@ if __name__ == "__main__":
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
     #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE] = pickle.load(f)
 
-    # plots.plot_performance_curves(BASE_DF,
-    #                               cost_type='Total', ci=95,
-    #                               deaggregate=False, plot_resilience=True)
+    plots.plot_performance_curves(BASE_DF,
+                                  cost_type='Total', ci=95,
+                                  deaggregate=False, plot_resilience=True)
 
-    # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
-    #                                     ci=95, normalize=False)
+    plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
+                                        ci=95, normalize=False)
 
-    # plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
-    # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
-    # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
+    plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
+    plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
+    plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
     # plots.plot_run_time(RUN_TIME_DF, ci=95)
     # [(RUN_TIME_DF['auction_type']!='MDA')&(RUN_TIME_DF['auction_type']!='MAA')]
