@@ -6,6 +6,7 @@ import pandas as pd
 import indp
 import dindputils
 import gametree
+import gameutils
 
 def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
     '''
@@ -104,7 +105,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
 
             if params["ALGORITHM"] == "INDP":
                 indp.run_indp(params, validate=False, T=params["T"], layers=params['L'],
-                              controlled_layers=params['L'], saveModel=True, print_cmd_line=False,
+                              controlled_layers=params['L'], saveModel=False, print_cmd_line=False,
                               dynamic_params=dynamic_params)
             elif params["ALGORITHM"] == "INFO_SHARE":
                 indp.run_info_share(params, layers=params['L'], T=params["T"])
@@ -115,10 +116,10 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                                                  player_ordering=player_ordering,
                                                  T=params["T"], outdir=params["OUTPUT_DIR"])
             elif params["ALGORITHM"] == "JC":
-                dindputils.run_judgment_call(params, save_jc_model=True, print_cmd=False)
+                dindputils.run_judgment_call(params, save_jc_model=False, print_cmd=False)
             elif params["ALGORITHM"] == "NORMALGAME":
                 gameutils.run_game(params, save_results=True, print_cmd=True,
-                                   save_model=True, plot2D=True)
+                                   save_model=False, plot2D=False)
 
 def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
                res_alloc_type=None, valuation_type=None, output_dir='..', misc =None,
