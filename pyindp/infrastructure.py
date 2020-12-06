@@ -551,14 +551,6 @@ def add_Wu_failure_scenario(G,DAM_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
                     G.G[(a[1]+ofst,k)][(a[0]+ofst,k)]['data']['inf_data'].functionality=0.0
                     G.G[(a[1]+ofst,k)][(a[0]+ofst,k)]['data']['inf_data'].repaired=0.0
 #                    print "Arc ((",`a[1]+ofst`+","+`k`+"),("+`a[0]+ofst`+","+`k`+")) broken."
-#                    
-#        for u,v,a in G.G.edges(data=True):
-#            if a['data']['inf_data'].is_interdep:
-#                if G.G.node[u]['data']['inf_data'].functionality == 0.0:
-#                    G.G.node[v]['data']['inf_data'].functionality = 0.0
-#                else:
-#                    if G.G.node[v]['data']['inf_data'].repaired == 1.0:
-#                        G.G.node[v]['data']['inf_data'].functionality = 1.0
     else:
         pass #Undamaging scenrios are not presesnted with any file or folder in the datasets      
           

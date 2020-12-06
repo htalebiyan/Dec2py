@@ -236,7 +236,7 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
             else:
                 full_suffix += '_'+x[6]
         result_dir = root_result_dir+x[4]+'_results'+full_suffix
-        if os.path.exists(result_dir):
+        if os.path.exists(result_dir+'/actions_'+str(x[1])+'_.csv'):
             # Save all results to Pandas dataframe
             sample_result = indputils.INDPResults()
             sam_rslt_lyr = {l+1:indputils.INDPResults() for l in range(x[2])}
@@ -283,7 +283,8 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
             if idx%(len(joinedlist)//100+1) == 0:
                 update_progress(idx+1, len(joinedlist))
         else:
-            sys.exit('Error: The combination or folder does not exist'+str(x))
+            pass
+            #!!!sys.exit('Error: The combination or folder does not exist'+str(x))
     update_progress(len(joinedlist), len(joinedlist))
     return cmplt_results, objs
 
