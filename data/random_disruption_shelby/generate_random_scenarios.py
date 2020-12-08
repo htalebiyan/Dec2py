@@ -44,22 +44,29 @@ import matplotlib.pyplot as plt
 # plt.xlim(0,500)
 
 import seaborn as sns
+plt.close('all')
 sns.set(context='notebook',style='darkgrid')
 plt.rc('text', usetex=True)
 plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-f,ax=plt.subplots(3,1,sharex=True,gridspec_kw={'height_ratios': [2,2,2.6]})
+f,ax=plt.subplots(2,1,sharex=True,gridspec_kw={'height_ratios': [2,2]})#f,ax=plt.subplots(3,1,sharex=True,gridspec_kw={'height_ratios': [2,2,2.6]})
 folder='C:/Users/ht20\Documents/GitHub/td-DINDP/data/random_disruption_shelby/'
 node_data=np.genfromtxt(folder+'Initial_node.csv',delimiter=',')
 arc_data=np.genfromtxt(folder+'Initial_links.csv',delimiter=',')
+num_sce = 900
 
-sns.heatmap(node_data[:,2:432], xticklabels=25, yticklabels=False,ax=ax[1], cbar=False,  cmap="YlGnBu")
+sns.heatmap(node_data[:,2:], xticklabels=100, yticklabels=False,ax=ax[1], cbar=False,  cmap="YlGnBu")
 ax[1].set_ylabel('Nodes')
-sns.heatmap(arc_data[:,4:434], xticklabels=25, yticklabels=False,ax=ax[2], cbar=False,  cmap="YlGnBu")
-ax[2].set_xlabel('Disruption Scenario')
-ax[2].set_ylabel('Arcs')
-data=np.vstack((node_data[:,2:432],arc_data[:,4:434]))
+ax[1].set_xlabel('Scenario')
+
+# sns.heatmap(arc_data[:,4:], xticklabels=25, yticklabels=False,ax=ax[2], cbar=False,  cmap="YlGnBu")
+# ax[2].set_xlabel('Disruption Scenario')
+# ax[2].set_ylabel('Arcs')
+
+data = node_data[:,2:] #np.vstack((node_data[:,2:],arc_data[:,4:]))
 means=1-data.mean(axis=0)
-sns.lineplot(x=range(0,430),y=means,ax=ax[0],lw=1)
-ax[0].set_ylabel(r'\% Damaged')
-plt.xlim(50,551)
-# plt.savefig('Disruption_scenarios.png',dpi=600,bbox_inches='tight')
+sns.lineplot(x=range(990),y=means,ax=ax[0],lw=1)
+ax[0].set_ylabel(r'\% Nodes Damaged')
+
+ax[1].set_xticklabels(np.arange(-50, -50+num_sce+1, 100))
+plt.xlim(50,num_sce+50+1)
+plt.savefig('Disruption_scenarios.png',dpi=600,bbox_inches='tight')
