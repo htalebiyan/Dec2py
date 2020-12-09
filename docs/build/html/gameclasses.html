@@ -1,8 +1,7 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="Python 3.7.6" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="Python 3.7.6" > <!--<![endif]-->
+<html class="writer-html5" lang="Python 3.7.6" >
 <head>
   <meta charset="utf-8">
   
@@ -12,12 +11,19 @@
   
 
   
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+
+  
   
   
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -25,16 +31,11 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
     
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="prev" title="Judgment Call Classes" href="dindpclasses.html" /> 
@@ -51,7 +52,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home"> Decenalized Decision Making
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> Decenalized Decision Making
           
 
           
@@ -74,6 +75,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -95,6 +97,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -133,7 +136,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="index.html">Docs</a> &raquo;</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
       <li>Restoration Game Classes</li>
     
@@ -399,7 +402,7 @@ all time steps of the restoration process</p>
 
 <dl class="py method">
 <dt id="gameclasses.InfrastructureGame.run_game">
-<code class="sig-name descname">run_game</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">print_cmd</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">compute_optimal</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">save_results</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">plot</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">save_payoff</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.run_game" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">run_game</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">print_cmd</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">compute_optimal</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">save_results</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">plot</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">save_model</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.run_game" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs the infrastructure restoarion game for a given number of <a class="reference internal" href="#gameclasses.InfrastructureGame.time_steps" title="gameclasses.InfrastructureGame.time_steps"><code class="xref py py-attr docutils literal notranslate"><span class="pre">time_steps</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -408,7 +411,7 @@ all time steps of the restoration process</p>
 <li><p><strong>compute_optimal</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Should the optimal restoarion action be found in each time step. The default is False.</p></li>
 <li><p><strong>save_results</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Should the results and game be written to file. The default is True.</p></li>
 <li><p><strong>plot</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Should the payoff matrix be plotted (only for 2-players games). The default is False.</p></li>
-<li><p><strong>save_payoff</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Should the indp modles to compute payoffs be written to file. The default is False.</p></li>
+<li><p><strong>save_model</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Should the games and indp models to compute payoffs be written to file. The default is False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -594,6 +597,17 @@ INDP or the corresponfing flow problem. It is populated by <a class="reference i
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="id0">
+<code class="sig-name descname">payoff_time</code><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time to solve the game using <a class="reference internal" href="#gameclasses.NormalGame.solve_game" title="gameclasses.NormalGame.solve_game"><code class="xref py py-meth docutils literal notranslate"><span class="pre">solve_game()</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
 </dd>
 </dl>
 </dd></dl>
@@ -815,11 +829,19 @@ simpdiv_solve, ipa_solve, gnm_solve</p></li>
 
   <div role="contentinfo">
     <p>
+        
         &copy; Copyright 2020, Hesam Talebiyan
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -830,7 +852,6 @@ simpdiv_solve, ipa_solve, gnm_solve</p></li>
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {

@@ -1,8 +1,7 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="Python 3.7.6" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="Python 3.7.6" > <!--<![endif]-->
+<html class="writer-html5" lang="Python 3.7.6" >
 <head>
   <meta charset="utf-8">
   
@@ -12,12 +11,19 @@
   
 
   
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+
+  
   
   
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -25,16 +31,11 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
     
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Interdependent Network Design Problem (INDP)" href="indp_main.html" />
@@ -52,7 +53,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home"> Decenalized Decision Making
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> Decenalized Decision Making
           
 
           
@@ -75,6 +76,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -96,6 +98,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -134,7 +137,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="index.html">Docs</a> &raquo;</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
       <li>Run INDP and Judgment Call</li>
     
@@ -157,10 +160,34 @@
             
   <div class="section" id="module-run_main">
 <span id="run-indp-and-judgment-call"></span><h1>Run INDP and Judgment Call<a class="headerlink" href="#module-run_main" title="Permalink to this headline">¶</a></h1>
-<p>Runs INDP, td-INDP, and Judgment Call</p>
+<p>Runs INDP, td-INDP, Judgment Call, and infrastructure games</p>
+<dl class="py function">
+<dt id="run_main.batch_run">
+<code class="sig-prename descclassname">run_main.</code><code class="sig-name descname">batch_run</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em>, <em class="sig-param"><span class="n">fail_sce_param</span></em>, <em class="sig-param"><span class="n">player_ordering</span><span class="o">=</span><span class="default_value">[3, 1]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#run_main.batch_run" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Batch run different methods for a given list of damage scenarios,</dt><dd><p>given global parameters.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<em>dict</em>) -- DESCRIPTION.</p></li>
+<li><p><strong>fail_sce_param</strong> (<em>dict</em>) -- DESCRIPTION.</p></li>
+<li><p><strong>player_ordering</strong> (<em>list</em><em>, </em><em>optional</em>) -- DESCRIPTION. The default is [3, 1].</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None. Writes to file</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt id="run_main.run_method">
-<code class="sig-prename descclassname">run_main.</code><code class="sig-name descname">run_method</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fail_sce_param</span></em>, <em class="sig-param"><span class="n">v_r</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">method</span></em>, <em class="sig-param"><span class="n">judgment_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">res_alloc_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">valuation_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output_dir</span><span class="o">=</span><span class="default_value">'..'</span></em>, <em class="sig-param"><span class="n">misc</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#run_main.run_method" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">run_main.</code><code class="sig-name descname">run_method</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fail_sce_param</span></em>, <em class="sig-param"><span class="n">v_r</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">method</span></em>, <em class="sig-param"><span class="n">judgment_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">res_alloc_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">valuation_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output_dir</span><span class="o">=</span><span class="default_value">'..'</span></em>, <em class="sig-param"><span class="n">misc</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">dynamic_params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#run_main.run_method" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function runs a given method for different numbers of resources,
 and a given judge, auction, and valuation type in the case of JC.</p>
 <dl class="field-list simple">
@@ -190,30 +217,6 @@ bounds on the number of resources each layer can use (same for all time step)..<
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt id="run_main.batch_run">
-<code class="sig-prename descclassname">run_main.</code><code class="sig-name descname">batch_run</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em>, <em class="sig-param"><span class="n">fail_sce_param</span></em>, <em class="sig-param"><span class="n">player_ordering</span><span class="o">=</span><span class="default_value">[3, 1]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#run_main.batch_run" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>Batch run different methods for a given list of damage scenarios,</dt><dd><p>given global parameters.</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>params</strong> (<em>dict</em>) -- DESCRIPTION.</p></li>
-<li><p><strong>fail_sce_param</strong> (<em>dict</em>) -- DESCRIPTION.</p></li>
-<li><p><strong>player_ordering</strong> (<em>list</em><em>, </em><em>optional</em>) -- DESCRIPTION. The default is [3, 1].</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None. Writes to file</p>
-</dd>
-</dl>
-</dd></dl>
-
 <div class="toctree-wrapper compound">
 </div>
 </div>
@@ -238,11 +241,19 @@ bounds on the number of resources each layer can use (same for all time step)..<
 
   <div role="contentinfo">
     <p>
+        
         &copy; Copyright 2020, Hesam Talebiyan
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -253,7 +264,6 @@ bounds on the number of resources each layer can use (same for all time step)..<
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {
