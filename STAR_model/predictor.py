@@ -71,8 +71,9 @@ PARAMS = {"NUM_ITERATIONS":10, "V":None, "ALGORITHM":"INDP", 'L':[1, 2, 3, 4]}
 ''' Plot results '''
 # ### Getting back the objects ###
 # direct = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc_only_nodes_damaged/results_random/'
-# with open(direct+'results.pkl', 'rb') as f:
-#     [cost_all_df, prediction_error, repair_precentage] = pickle.load(f)
+direct = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc_only_nodes_damaged/results_shelby/'
+with open(direct+'results.pkl', 'rb') as f:
+    [cost_all_df, prediction_error, repair_precentage] = pickle.load(f)
  
 
 plot_star.plot_cost(cost_all_df)

@@ -19,7 +19,7 @@ print('Running with PyMC3 version v.{}'.format(pm.__version__))
 import networkx as nx
 print('Running with Networkx version v.{}'.format(nx.__version__))
 import seaborn as sns
-print('Running with Networkx version v.{}'.format(sns.__version__))
+print('Running with Seaborn version v.{}'.format(sns.__version__))
 
 def importData(params, failSce_param, suffix='', print_cmd=True):
     if print_cmd:

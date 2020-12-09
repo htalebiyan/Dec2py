@@ -13,10 +13,10 @@ from plot_star import plot_correlation
 
 if __name__ == "__main__": 
     plt.close('all')
-    
-    # rooy_folder = 'data'
-    # samples_all, costs_all, initial_net = pickle.load(open(rooy_folder+'/initial_data.pkl', "rb" ))
-    # train_data,test_data = pickle.load(open(rooy_folder+'/train_test_data.pkl', "rb" ))
+    direct = ''#'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc_only_nodes_damaged/'
+    rooy_folder = direct+'data'
+    samples_all, costs_all, initial_net = pickle.load(open(rooy_folder+'/initial_data.pkl', "rb" ))
+    train_data,test_data = pickle.load(open(rooy_folder+'/train_test_data.pkl', "rb" ))
 
     
     base_dir = "../data/Extended_Shelby_County/"
@@ -26,7 +26,7 @@ if __name__ == "__main__":
                     'filtered_List':None,'Base_dir':base_dir,'Damage_dir':damage_dir}
     v_r = [1,2,3,4,5,6,8,10,12,14,16,18,20,30,40,50,60,70,80,90,100]
     layers = [1,2,3,4]
-    
+
     ''' Read all data '''
     # samples_all = {}
     # costs_all = {}
@@ -64,22 +64,22 @@ if __name__ == "__main__":
     # STAR_utils.save_prepared_data(train_data,test_data)
 
     ''' train and test model'''
-    exclusions=['w_t_1','y_t_1','w_a_t_1','y_c_t_1','Arc','Under_Supply_Perc',
-                'Under_Supply','Over_Supply','Space_Prep','time'] 
-    ## Shared inputs included: ,'Flow','Node','Rc','w_c_t_1', 'w_h_t_1','Total'
-    ## Node model inputs inlcuded: 'w_n_t_1', 'w_d_t_1', 
-    ## Arc model inputs inlcuded: ??? 
+    # exclusions=['w_t_1','y_t_1','w_a_t_1','y_c_t_1','Arc','Under_Supply_Perc',
+    #             'Under_Supply','Over_Supply','Space_Prep','time'] 
+    # ## Shared inputs included: ,'Flow','Node','Rc','w_c_t_1', 'w_h_t_1','Total'
+    # ## Node model inputs inlcuded: 'w_n_t_1', 'w_d_t_1', 
+    # ## Arc model inputs inlcuded: ??? 
     
-    # plot_correlation(node_data_all,keys,['w_t_1','w_a_t_1','y_c_t_1','Arc'])
+    # # plot_correlation(node_data_all,keys,['w_t_1','w_a_t_1','y_c_t_1','Arc'])
         
-    mypath='parameters/'
-    files = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f))]
-    keys= [x for x in train_data.keys() if (x not in files)] 
-    for key in keys:
-        print('\n'+key)
-        trace,model = STAR_utils.train_model({key:train_data[key]},exclusions) 
-        STAR_utils.save_traces(trace)
-        _,_ = STAR_utils.test_model({key:train_data[key]},{key:test_data[key]},
-                          trace,model,exclusions,plot=False)
+    # mypath='parameters/'
+    # files = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f))]
+    # keys= [x for x in train_data.keys() if (x not in files)] 
+    # for key in keys:
+    #     print('\n'+key)
+    #     trace,model = STAR_utils.train_model({key:train_data[key]},exclusions) 
+    #     STAR_utils.save_traces(trace)
+    #     _,_ = STAR_utils.test_model({key:train_data[key]},{key:test_data[key]},
+    #                       trace,model,exclusions,plot=False)
     
 

@@ -1,5 +1,7 @@
 import sys
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as path_effects
+import matplotlib as mpl
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -7,8 +9,8 @@ import pickle
 from os import listdir
 from os.path import isfile, join
 sns.set(context='notebook',style='darkgrid')
-# plt.rc('text', usetex=True)
-# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 plt.close('all')
 
 def plot_df(mag_num, sample_num, num_layers, res, pred_results, pred_error,
@@ -75,42 +77,64 @@ def plot_correlation(node_data,keys,exclusions):
     sns.clustermap(plot_df, cmap="vlag")
 
 def plot_cost(df):
-    df = df.replace('predicted','Logistic Model Prediction')
-    df = df.replace('data','Optimal Scenario')
-    FIGURE_DF = df
-    sns.lineplot(x="t", y='cost', style='type', hue='Rc', data=FIGURE_DF, markers=True, ci=None)
+    fig_df = df.copy()
+    fig_df = fig_df.replace('predicted','Logistic Model Prediction')
+    fig_df = fig_df.replace('optimal','Optimal Scenario')
+    fig_df = fig_df.rename(columns={'type':'Result Type'})
+    plt.figure(figsize=(6,4))
+    g = sns.lineplot(x="t", y='cost', hue='Result Type', style='Result Type',
+                     data=fig_df, palette="muted", markers=True, ci=95)
+    g.set_xlabel('Time Step')
+    g.set_ylabel('Total Cost')
+    g.set_xticks(np.arange(0,11,1))
     plt.savefig('Total_cost_vs_time.png',dpi = 600, bbox_inches='tight')
 
 def plot_results(pe_df, rp_df):
-    f=plt.figure()
     figure_df = pe_df[(pe_df['real rep time']!=0)|(pe_df['pred rep time']!=0)]
     figure_df=figure_df.reset_index()
-    p2=sns.boxplot(x="real rep time", y="prediction error",data=figure_df,
-                   whis=1, linewidth=0.75, fliersize=3,palette=sns.cubehelix_palette(20))
-    p2.text(0.15,0.82, "Positive error: rush\nNegative error: lag",ha="left", va="center",
-            transform = f.transFigure,bbox=dict(boxstyle="round",fc=(.88,.88,.91), ec=(.8,.8,.8)),
-             fontsize=11)
-    plt.savefig('prediction_error_vs_time.png',dpi=600,bbox_inches='tight')
+    
+    fig, ax = plt.subplots(1, 2, sharey=True, figsize=(6,4),
+                            gridspec_kw={'wspace': 0.005, 'width_ratios': [5, 1]}) 
+    
+    sns.boxplot(x="real rep time", y="prediction error",data=figure_df, ax=ax[0],
+                whis=1, linewidth=0.75, fliersize=3, palette=sns.cubehelix_palette(20))
+    
+    medians = figure_df.groupby(['real rep time'])['prediction error'].median()   
+    for xtick in ax[0].get_xticks():
+        text =ax[0].text(xtick, medians[xtick+1], int(medians[xtick+1]), ha='center',
+                          va='center', size='small', color='w', fontweight='bold')
+        text.set_path_effects([path_effects.Stroke(linewidth=1, foreground='#360727'),
+                                path_effects.Normal(),])
+    ax[0].text(0.15,0.82, "Positive error: rush\nNegative error: lag",ha="left", va="center",
+            transform = fig.transFigure,bbox=dict(boxstyle="square",fc=(.88,.88,.91), ec=(.8,.8,.8)),
+              fontsize=11)
+    ax[0].set_ylabel('Prediction Error')
+    ax[0].set_xlabel('Real Repair Time')
+    ax[0].set_xticklabels(list(np.arange(1,11,1))+['NR'])
+    ax[0].set_yticks(np.arange(-10,11,2))
+    
+    sns.histplot(y='prediction error', data=figure_df, bins=np.arange(-10,10,1)-0.5, 
+                  color=(.41,.26,.34), ax=ax[1], stat='density')
+    ax[1].set_ylabel('')
+    ax[1].axis("off")
 
-    f=plt.figure()
-    p3=sns.distplot(figure_df['prediction error'], kde=False, rug=False,norm_hist=False,
-                    bins=np.arange(-10,10,1)-0.5, color=(.41,.26,.34))
-    p3.set_ylabel('Frequency')
-    p3.set_xticks(np.arange(-10,10, 2.0)) #p3.axes.get_xlim()
-    p3.text(0.15,0.82, "Positive error: rush\nNegative error: lag",ha="left", va="center",
-            transform = f.transFigure,bbox=dict(boxstyle="round",fc=(.88,.88,.91), ec=(.8,.8,.8)),
-             fontsize=11)
-    plt.savefig('prediction_error_hist.png',dpi=600,bbox_inches='tight')
+    plt.savefig('prediction_error.png',dpi=600,bbox_inches='tight')
     ###############################################################################
-    plt.figure()
+    plt.figure(figsize=(6,4))
+
     figure_df = pd.melt(rp_df, id_vars=['sample','t','Rc','pred sample'],
-                        value_vars=['real rep prec','pred rep prec'])#[result_df['sample']==200]
+                        value_vars=['real rep prec','pred rep prec'])
+    figure_df['value'] = 1-(1-figure_df['value'])*384/167 #!!! Just to renormalize bu # nodes
     figure_df=figure_df.replace('pred rep prec','Logistic Model Prediction')
     figure_df=figure_df.replace('real rep prec','Optimal Scenario')
     figure_df=figure_df.rename(columns={'variable':'Result Type','value':'Repaired Percentage'})
     g=sns.lineplot(x="t", y="Repaired Percentage",style='Result Type',hue='Result Type',
-                 data=figure_df,palette="muted",markers=True,ci=95)
-    g.legend(loc=2)
+                  data=figure_df,palette="muted", markers=True, ci=95, estimator='mean',
+                  err_style="band")
+    g.legend(loc=0)
+    g.set_xlabel('Time Step')
+    g.set_ylabel('\% Nodes Repaired') #!!!
+    g.set_xticks(np.arange(0,11,1))
     plt.savefig('repaired_element.png',dpi=600,bbox_inches='tight')
     ###############################################################################
 '''R2'''
@@ -120,12 +144,12 @@ def plot_R2(root_param_folder):
     cols=['node','layer','type','i','j','$R^2$']
     r2 = result_df=pd.read_csv(mypath,delimiter=' ',index_col=False, header=None,
                                nrows=334, names=cols)
-    figure_data = r2[r2['type']=='Test']['$R^2$']
-    ax = sns.distplot(figure_data, kde=False, rug=True, norm_hist=True, color='#4a266a')
-    ax.axvline(figure_data.mean(), color='#aacfd0', linestyle='--', label='Mean')
-    ax.axvline(figure_data.median(), color='#7f4a88', linestyle='-', label='Median')
-    ax.legend()
-    ax.set_ylabel('Probability')
+    figure_data = r2#[r2['type']=='Test']['$R^2$']
+    ax = sns.histplot(x='$R^2$', data=figure_data, stat='density', hue="layer",
+                      multiple="stack")#color='#4a266a', 
+    ax.axvline(figure_data['$R^2$'].mean(), color='#aacfd0', linestyle='--', label='Mean')
+    ax.axvline(figure_data['$R^2$'].median(), color='#7f4a88', linestyle='-', label='Median')
+    # ax.legend()
     plt.savefig('R2_node.png',dpi=600,bbox_inches='tight')
     return figure_data
     ###############################################################################
@@ -133,7 +157,6 @@ def plot_R2(root_param_folder):
 def plot_coef(root_param_folder):
     mypath=root_param_folder+'parameters'
     keys = [f[17:-4] for f in listdir(mypath) if isfile(join(mypath, f)) and f[:2]!='R2']
-    plt.figure(figsize=(10, 8))
     node_params=pd.DataFrame()
     arc_params=pd.DataFrame()
     for key in keys:
@@ -153,56 +176,59 @@ def plot_coef(root_param_folder):
                 arc_params=pd.concat([arc_params,paramters], axis=0, ignore_index=True)
             except:
                 pass
-    node_params['cov'] =abs(node_params['sd']/node_params['mean'])
-    filter_crit = (node_params['cov']<0.5) & (abs(node_params['r_hat']-1)<0.01)
-    node_params_filtered=node_params[filter_crit]
-    node_params_filtered=replace_labels(node_params_filtered, 'name', node_params)
-    node_params_filtered=node_params_filtered.rename(columns={'name':'Predictors','mean':'Estimated Mean'})
-
-    ax = sns.violinplot(y="Predictors", x="Estimated Mean",data=node_params_filtered,
-                     whis=2, linewidth=0.75, scale="count",
-                     palette=sns.cubehelix_palette(20))
-    ax = sns.stripplot(x="Estimated Mean", y="Predictors", data=node_params_filtered,
-                       hue="layer", dodge=True, size=3)
-    ax.set_xlim((-50,75))
-    ax.set_xticks(np.arange(-50,75, 10))
-    plt.savefig('Node_mean_predictors.png',dpi=600,bbox_inches='tight')
+    node_params['CoV'] =abs(node_params['sd']/node_params['mean'])
+    filter_crit = (node_params['CoV']<0.25) & (abs(node_params['r_hat']-1)<0.01)
+    node_params_filt=node_params[filter_crit]
+    node_params_filt=replace_labels(node_params_filt, 'name', node_params)
+    node_params_filt['layer']=node_params_filt['layer'].replace({1:'Water', 2:'Gas',
+                                                                 3:'Power', 4:'Tele.'})
+    node_params_filt=node_params_filt.rename(columns={'name':'Predictors','mean':'Estimated Mean',
+                                                      'layer':'Layer'})
     
-    plt.figure()
-    ax = sns.violinplot(y="Predictors", x="cov",data=node_params_filtered,
-                     whis=2, linewidth=0.75, scale="count",
-                     palette=sns.cubehelix_palette(20))
-    ax = sns.stripplot(x="cov", y="Predictors", data=node_params_filtered,
-                       hue="layer", dodge=True, size=3)
-    # plt.savefig('Node_cov_predictors.png',dpi=600,bbox_inches='tight')
-
-    # sns.pairplot(node_params_filtered.drop(columns=['hpd_3%','hpd_97%']),
+    fig, ax = plt.subplots(1, 2, sharey=True, figsize=(10,3),
+                            gridspec_kw={'wspace': 0.01, 'width_ratios': [3, 1]}) 
+    sns.boxplot(y="Predictors", x="Estimated Mean",data=node_params_filt, ax=ax[0],
+                whis=1, linewidth=0.5, showfliers=False, palette=sns.cubehelix_palette(20))
+    sns.stripplot(x="Estimated Mean", y="Predictors", data=node_params_filt,
+                  hue="Layer", dodge=True, size=2, ax=ax[0],
+                  linewidth=.2)
+    ax[0].set_xlim((-50,75))
+    ax[0].set_xticks(np.arange(-50,75, 10))
+    
+    sns.boxplot(y="Predictors", x="CoV",data=node_params_filt, ax=ax[1], 
+                      whis=1, linewidth=0.5, showfliers=False, palette=sns.cubehelix_palette(20))#fliersize=3,
+    # sns.stripplot(x="CoV", y="Predictors", data=node_params_filt, ax = ax[1],
+    #                     hue="Layer", dodge=True, size=3)
+    ax[1].set_ylabel('')
+    plt.savefig('Node_predictors.png',dpi=600,bbox_inches='tight')
+    
+    # sns.pairplot(node_params_filt.drop(columns=['hpd_3%','hpd_97%']),
     #     kind='reg', plot_kws={'line_kws':{'color':'red'}, 'scatter_kws': {'alpha': 0.1}})
     return node_params,arc_params
 
 def replace_labels(df, col, df_unfilt):
     rename_dict={"Intercept": r'$\alpha$',
-                 "w_n_t_1": r'$\beta_{1,i}$ (Neighbor nodes)',
-                 "w_a_t_1": r'$\beta_{2,i}$ (Connected arcs)',
-                 "w_d_t_1": r'$\beta_{3,i}$ (Dependee nodes)',
-                 "w_h_t_1": r'$\beta_{4,i}$ (High dem. nodes)',
-                 "w_c_t_1": r'$\beta_{5,i}$ (All nodes)',
-                 "Node": r'$\gamma_{1,i}$ (Node cost)',
-                 "Total": r'$\gamma_{2,i}$ (Total cost)',
-                 "Flow": r'$\gamma_{3,i}$ (Flow cost)',
-                 "Rc": r'$R_c$ (Resource)'}
+                 "w_n_t_1": r'$\beta_{1,i}$',
+                 # "w_a_t_1": r'$\beta_{2,i}$ (Connected arcs)',
+                 "w_d_t_1": r'$\beta_{2,i}$',
+                 "w_h_t_1": r'$\gamma_{1,i}$',
+                 "w_c_t_1": r'$\gamma_{2,i}$',
+                 "Node": r'$\gamma_{3,i}$',
+                 "Total": r'$\gamma_{5,i}$',
+                 "Flow": r'$\gamma_{4,i}$',
+                 "Rc": r'$\gamma_{6,i}$'}
     #"y_c_t_1": r'$\beta_{5,i}$ (All arcs)',"Arc": r'$\gamma_{2,i}$ (Arc cost)',
     #"Under_Supply": r'$\gamma_{3,i}$ (Demand deficit)',
     for i in df[col].unique():
         num_param = df[df[col]==i].shape[0]
         num_models = df_unfilt[df_unfilt[col]==i].shape[0]
-        df=df.replace(i,rename_dict[i]+' [%1.1f%%]'%(num_param/num_models*100))
+        df=df.replace(i,rename_dict[i]+r' [{:.1f}\%]'.format(num_param/num_models*100))
     return df
     ###############################################################################
 
-root = 'C:/Users/ht20/Documents/Files/STAR_models/\Shelby_final_all_Rc_only_nodes_damaged/'
-# node_params,arc_params=plot_coef(root)
-# r2 = plot_R2(root)
+root = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc_only_nodes_damaged/'
+node_params,arc_params=plot_coef(root)
+# plot_R2(root)
 
 # filter_crit = (node_params['cov']<0.5) & (abs(node_params['r_hat']-1)<1)
 # node_params=node_params[filter_crit]
