@@ -9,8 +9,8 @@ import pickle
 from os import listdir
 from os.path import isfile, join
 sns.set(context='notebook',style='darkgrid')
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+# plt.rc('text', usetex=True)
+# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 plt.close('all')
 
 def plot_df(mag_num, sample_num, num_layers, res, pred_results, pred_error,
@@ -230,11 +230,11 @@ root = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc_only_nodes
 node_params,arc_params=plot_coef(root)
 # plot_R2(root)
 
-# filter_crit = (node_params['cov']<0.5) & (abs(node_params['r_hat']-1)<1)
+# filter_crit = (node_params['CoV']<0.5) & (abs(node_params['r_hat']-1)<1)
 # node_params=node_params[filter_crit]
 
-# corr=node_params.corr()
-# sns.heatmap(corr,annot=True, center=0, cmap="vlag",linewidths=.75)
+corr=node_params.corr()
+sns.heatmap(corr,annot=True, center=0, cmap="vlag",linewidths=.75)
 
 # figure_df = node_params.pivot(index='key', columns='name', values='mean')
 # sns.heatmap(figure_df.corr(),annot=True, center=0, cmap="vlag",linewidths=.75)

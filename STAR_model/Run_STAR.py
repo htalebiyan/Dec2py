@@ -13,7 +13,7 @@ from plot_star import plot_correlation
 
 if __name__ == "__main__": 
     plt.close('all')
-    direct = ''#'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc_only_nodes_damaged/'
+    direct = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc_only_nodes_damaged/'
     rooy_folder = direct+'data'
     samples_all, costs_all, initial_net = pickle.load(open(rooy_folder+'/initial_data.pkl', "rb" ))
     train_data,test_data = pickle.load(open(rooy_folder+'/train_test_data.pkl', "rb" ))
@@ -27,6 +27,11 @@ if __name__ == "__main__":
     v_r = [1,2,3,4,5,6,8,10,12,14,16,18,20,30,40,50,60,70,80,90,100]
     layers = [1,2,3,4]
 
+    aaa =[]
+    for k,v in train_data.items():
+        if v['w_d_t_1'].mean()!=0:
+            aaa.append(k)
+            print(k, v['w_d_t_1'].mean())
     ''' Read all data '''
     # samples_all = {}
     # costs_all = {}
