@@ -233,8 +233,8 @@ node_params,arc_params=plot_coef(root)
 # filter_crit = (node_params['CoV']<0.5) & (abs(node_params['r_hat']-1)<1)
 # node_params=node_params[filter_crit]
 
-corr=node_params.corr()
-sns.heatmap(corr,annot=True, center=0, cmap="vlag",linewidths=.75)
+# corr=node_params.corr()
+# sns.heatmap(corr,annot=True, center=0, cmap="vlag",linewidths=.75)
 
 # figure_df = node_params.pivot(index='key', columns='name', values='mean')
 # sns.heatmap(figure_df.corr(),annot=True, center=0, cmap="vlag",linewidths=.75)
