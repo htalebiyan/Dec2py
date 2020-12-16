@@ -40,6 +40,8 @@ class NormalGame:
         Dictionary of all relavant restoration actions (including 'No Action (NA)' and
         possibly 'Other Action (OA)'), which are used as the possible moves by players,
         set by :meth:`find_actions`
+    actions_reduced : bool
+        Provisional: If true, actions for at least one agent are more than 1000 and hence are reduced
     payoffs : dict
         Dictionary of payoffs for all possible action profiles, calculated by solving 
         INDP or the corresponfing flow problem. It is populated by :meth:`compute_payoffs`.
@@ -74,6 +76,7 @@ class NormalGame:
         self.v_r = v_r
         self.dependee_nodes = {}
         self.actions = self.find_actions()
+        self.actions_reduced = False
         self.payoffs = {}
         self.payoff_time = {}
         self.solving_time = 0.0
@@ -91,10 +94,10 @@ class NormalGame:
         """
         state = self.__dict__.copy()
         state["normgame"] =  {}
-        try:
-            state['chosen_equilibrium']["full results"] = state['chosen_equilibrium']["full results"][0][1]
-        except:
-            pass
+        # try:
+        #     state['chosen_equilibrium']["full results"] = state['chosen_equilibrium']["full results"][0][1]
+        # except:
+        #     pass
         return state
 
     def __setstate__(self, state):
@@ -178,6 +181,7 @@ class NormalGame:
 
         '''
         actions_super_set = []
+        memory_threshold =  10
         for l in self.players:
             actions_super_set.append([])
             actions_super_set[-1].extend(self.actions[l])
@@ -194,15 +198,24 @@ class NormalGame:
                     # Minus sign because we want to minimize the cost
                     payoff_layer = -flow_results[1].results_layer[l][0]['costs']['Total']
                     self.payoffs[idx][l] = [ac[idxl], payoff_layer]
-                    self.temp_storage[idx] = flow_results
+                    self.temp_storage[idx] = flow_results[1]
                     self.payoff_time[idx] = flow_results[1].results[0]['run_time']
             else:
                 for idxl, l in enumerate(self.players):
-                    payoff_layer = -1e100 # Change this to work for general case
+                    payoff_layer = -1e100 #!!! Change this to work for general case
                     self.payoffs[idx][l] = [ac[idxl], payoff_layer]
                     self.temp_storage[idx] = []
                     self.payoff_time[idx] = 0.0
-
+            # if len(action_comb)>memory_threshold and idx%memory_threshold==0 and idx!=0:
+            #     temp_dir = './temp_payoff_objs'
+            #     if not os.path.exists(temp_dir):
+            #         os.makedirs(temp_dir)
+            #     with open(temp_dir+'/temp_payoff_obj_'+str(idx//memory_threshold)+'.pkl', 'wb') as output:
+            #         pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
+            #         self.payoffs = {}
+            #         self.temp_storage = {}
+            #         self.payoff_time = {}
+                    
     def flow_problem(self, action):
         '''
         Solves a flow problem for a given combination of actions
@@ -473,9 +486,9 @@ class GameSolution:
         """
         state = self.__dict__.copy()
         state["gambit_sol"] = {}
-        for _,val in state['sol'].items():
-            if len(val['full results'][0])==2:
-                val['full results'] = val['full results'][0][1]
+        # for _,val in state['sol'].items():
+        #     if len(val['full results'][0])==2:
+        #         val['full results'] = val['full results'][0][1]
         return state
 
     def __setstate__(self, state):
@@ -652,17 +665,17 @@ class InfrastructureGame:
                     if compute_optimal:
                         self.objs[t].find_optimal_solution()
                     # if plot and len(self.layers)==2:
-                    #     if not os.path.exists(self.output_dir+'/payoff_matrix'):
-                    #         os.makedirs(self.output_dir+'/payoff_matrix')
-                    #     plots.plot_ne_sol_2player(self.objs[t], suffix=str(self.sample)+'_t'+str(t),
-                    #                               plot_dir=self.output_dir+'/payoff_matrix')
+                        # if not os.path.exists(self.output_dir+'/payoff_matrix'):
+                            # os.makedirs(self.output_dir+'/payoff_matrix')
+                        # plots.plot_ne_sol_2player(self.objs[t], suffix=str(self.sample)+'_t'+str(t),
+                                                  # plot_dir=self.output_dir+'/payoff_matrix')
                     ne_results = self.objs[t].chosen_equilibrium['full results'][mixed_index]
-                    ne_results[1].results[0]['run_time'] = game_time
-                    self.results.extend(ne_results[1], t_offset=t)
+                    ne_results.results[0]['run_time'] = game_time
+                    self.results.extend(ne_results, t_offset=t)
                     indp.apply_recovery(self.net, self.results, t)
-                    self.results.add_components(t, indputils.INDPComponents.\
-                                                calculate_components(ne_results[0],
-                                                self.net, layers=self.layers))
+                    # self.results.add_components(t, indputils.INDPComponents.\
+                    #                             calculate_components(ne_results[0],
+                    #                             self.net, layers=self.layers))
                 else:
                     print('No further action is feasible')
         if save_results:

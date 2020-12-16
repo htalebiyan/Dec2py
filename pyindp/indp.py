@@ -310,12 +310,13 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
         results.add_run_time(t,run_time)
         return [m,results]
     else:
-        print(m.getAttr("Status"),": SOLUTION NOT FOUND. (Check data and/or violated constraints).")
         m.computeIIS()
-        print ('\nThe following constraint(s) cannot be satisfied:')
-        for c in m.getConstrs():
-            if c.IISConstr:
-                print('%s' % c.constrName)
+        if m.status==9:
+            print(m.getAttr("Status"),": SOLUTION NOT FOUND. (Check data and/or violated constraints).")
+            print ('\nThe following constraint(s) cannot be satisfied:')
+            for c in m.getConstrs():
+                if c.IISConstr:
+                    print('%s' % c.constrName)
         return None
 
 def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=True):

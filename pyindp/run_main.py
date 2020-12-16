@@ -83,7 +83,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             params["MAGNITUDE"] = m
             # Check if the results exist
             output_dir_full = ''
-            if params["ALGORITHM"] != "JC":
+            if params["ALGORITHM"] in ["INDP"]:
                 output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
                     str(params["MAGNITUDE"])+"_v"+str(params["V"])+'/agents/actions_'+str(i)+'_L1_.csv'
             if os.path.exists(output_dir_full):
@@ -129,8 +129,8 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             elif params["ALGORITHM"] == "JC":
                 dindputils.run_judgment_call(params, save_jc_model=True, print_cmd=False)
             elif params["ALGORITHM"] == "NORMALGAME":
-                gameutils.run_game(params, save_results=True, print_cmd=True,
-                                    save_model=True, plot2D=True) #!!!
+                gameutils.run_game(params, save_results=True, print_cmd=False,
+                                    save_model=True, plot2D=False) #!!!
 
 def run_indp_sample(layers):
     interdep_net= indp.initialize_sample_network(layers=layers)
@@ -256,10 +256,10 @@ if __name__ == "__main__":
     # auction_type = ["MCA", "UNIFORM"]#, "MAA", "MDA"
     # valuation_type = ["DTC"]
     # judge_types = ["OPTIMISTIC"]#"PESSIMISTIC",
-    # run_indp_sample(layers)
-    # run_tdindp_sample(layers)
-    # # run_jc_sample(layers, judge_types, auction_type, valuation_type)
-    # # run_game_sample(layers, judge_types, auction_type, valuation_type)
+    # # run_indp_sample(layers)
+    # # run_tdindp_sample(layers)
+    # # # run_jc_sample(layers, judge_types, auction_type, valuation_type)
+    # run_game_sample(layers, judge_types, auction_type, valuation_type)
     
     # COMBS = []
     # OPTIMAL_COMBS = [[0, 0, len(layers), len(layers), 'indp_sample_12Node', 'nan',
@@ -288,7 +288,7 @@ if __name__ == "__main__":
     ''' ^^^ '''
     
     #: The address to the list of scenarios that should be included in the analyses.
-    FILTER_SCE = '../data/damagedElements_sliceQuantile_0.95.csv'
+    FILTER_SCE = '../data/damagedElements_sliceQuantile_0.90.csv'
 
     #: The address to the basic (topology, parameters, etc.) information of the network.
     BASE_DIR = "../data/Extended_Shelby_County/"
@@ -306,7 +306,8 @@ if __name__ == "__main__":
     # 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios'
 
     #: The address to where output are stored.
-    OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Game_Shelby_County/results_0.9_perc/'
+    OUTPUT_DIR = '/home/hesam/Desktop/Files/Game_Shelby_County/results_0.9_perc/'
+    # '/home/hesam/Desktop/Files/Game_Shelby_County/results_0.9_perc'
     #'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
     #'../results/
     # 'C:/Users/ht20/Documents/Files/Auction_synthetic_networks_v3.1/'
@@ -324,7 +325,7 @@ if __name__ == "__main__":
     #:     sce range: FAIL_SCE_PARAM['MAGS']
     #: For Synthetic nets: sample range: FAIL_SCE_PARAM['SAMPLE_RANGE'],
     #:     configurations: FAIL_SCE_PARAM['MAGS']
-    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(50), 'MAGS':range(96),
+    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(48,49), 'MAGS':range(53,54),
                       'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
@@ -340,7 +341,7 @@ if __name__ == "__main__":
         OUTPUT_DIR += FAIL_SCE_PARAM['TOPO']+'/results/'
 
     # No restriction on number of resources for each layer
-    RC = [3, 6, 8, 12]
+    RC = [6, 8, 12]
     # Not necessary for synthetic nets
     # [3, 6, 8, 12]
     # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
@@ -401,7 +402,11 @@ if __name__ == "__main__":
     ''' Plot results '''
     plt.close('all')
 
-    # ### Getting back the objects ###
+    # ## Getting back the objects ###
+    # with open(OUTPUT_DIR+'/ng_results_L4_m5_v6_OPTIMISTIC_AUCTION_MCA_DTC/objs_23.pkl', 'rb') as f:
+    #     a = pickle.load(f)
+        
+    ### Getting back the objects ###
     # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'rb') as f:
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
     #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE] = pickle.load(f)
