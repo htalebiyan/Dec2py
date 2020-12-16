@@ -407,6 +407,10 @@ class ResourceModel:
             self.type = 'AUCTION'
             self.auction_model = AuctionModel(params, self.t_steps)
             self.sum_resource = params['V']
+        elif params['RES_ALLOC_TYPE'] == "OPTIMAL":
+            self.type = 'OPTIMAL'
+            self.set_optimal_res(params)
+            self.sum_resource = params['V']
         elif params['RES_ALLOC_TYPE'] == "UNIFORM":
             self.type = 'UNIFORM'
             self.set_uniform_res(params)
@@ -415,6 +419,41 @@ class ResourceModel:
             self.set_lf_res(params)
         else:
             sys.exit('Unsupported resource allocation type: '+str(params['RES_ALLOC_TYPE']))
+    def set_optimal_res(self, params):
+        '''
+        Parameters
+        ----------
+        params : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+        results_folder = params['OUTPUT_DIR'].replace(params['OUTPUT_DIR'].split('/')[-1],"")
+        action_file = results_folder+'indp_results'+'_L'+str(len(params["L"]))+'_m'+\
+            str(params["MAGNITUDE"])+"_v"+str(params["V"])+'/actions_'+str(params["SIM_NUMBER"])+'_.csv'
+        if os.path.isfile(action_file):
+            with open(action_file) as f:
+                lines = f.readlines()[1:]
+                for line in lines:
+                    data = line.strip().split(',')
+                    t = int(data[0])
+                    action = str.strip(data[1])
+                    l = int(action[-1])
+                    if '/' in action:
+                        addition = 0.5
+                    else:
+                        addition = 1.0
+                    self.v_r[t][l] += addition
+            for t, val in self.v_r.items():
+                for l, val_l in val.items():
+                    self.v_r[t][l] = int(val_l)
+        else:
+            sys.exit('No optimal action file for the resource allocation type OPTIMAL.'+\
+                     ' Mag '+str(params["MAGNITUDE"])+' Sample '+str(params["SIM_NUMBER"])+\
+                     ' Rc '+str(params["V"]))
     def set_uniform_res(self, params):
         '''
 
