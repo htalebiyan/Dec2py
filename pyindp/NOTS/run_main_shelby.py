@@ -91,10 +91,22 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             elif fail_sce_param['TYPE'] == 'synthetic':
                 indp.add_synthetic_failure_scenario(params["N"], DAM_DIR=base_dir,
                                                     topology=topology, config=m, sample=i)
+            
+            dynamic_params = None
+            if params['DYNAMIC_PARAMS']:
+                return_type = 'step_function'
+                net_names = {'water':1,'gas':2,'power':3,'telecom':4}
+                dynamic_params = {}
+                for key, val in net_names.items():
+                    filename = params['DYNAMIC_PARAMS']+'dynamic_demand_'+return_type+'_'+key+'.pkl'
+                    with open(filename, 'rb') as f:
+                        dd_df = pickle.load(f)
+                    dynamic_params[val] = dd_df[(dd_df['sce']==m)&(dd_df['set']==i)]
 
             if params["ALGORITHM"] == "INDP":
                 indp.run_indp(params, validate=False, T=params["T"], layers=params['L'],
-                              controlled_layers=params['L'], saveModel=False, print_cmd_line=False)
+                              controlled_layers=params['L'], saveModel=False, print_cmd_line=False,
+                              dynamic_params=dynamic_params)
             elif params["ALGORITHM"] == "INFO_SHARE":
                 indp.run_info_share(params, layers=params['L'], T=params["T"])
             elif params["ALGORITHM"] == "INRG":
@@ -106,11 +118,12 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             elif params["ALGORITHM"] == "JC":
                 dindputils.run_judgment_call(params, save_jc_model=False, print_cmd=False)
             elif params["ALGORITHM"] == "NORMALGAME":
-                gameutils.run_game(params, save_results=True, print_cmd=True,
-                                   save_model=True, plot2D=True)
+                gameutils.run_game(params, save_results=True, print_cmd=False,
+                                   save_model=False, plot2D=False)
 
 def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
-               res_alloc_type=None, valuation_type=None, output_dir='..', misc =None):
+               res_alloc_type=None, valuation_type=None, output_dir='..', misc =None,
+               dynamic_params=None):
     '''
     This function runs a given method for different numbers of resources,
     and a given judge, auction, and valuation type in the case of JC.
@@ -145,17 +158,17 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
     '''
     for v in v_r:
         if method == 'INDP':
-            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'/indp_results',
+            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'indp_results',
                       "V":v, "T":1, 'L':layers, "ALGORITHM":"INDP"}
         elif method == 'JC':
-            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'/jc_results',
+            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'jc_results',
                       "V":v, "T":1, 'L':layers, "ALGORITHM":"JC",
                       "JUDGMENT_TYPE":judgment_type, "RES_ALLOC_TYPE":res_alloc_type,
                       "VALUATION_TYPE":valuation_type}
             if 'STM' in valuation_type:
                 params['STM_MODEL_DICT'] = misc['STM_MODEL_DICT']
         elif method == 'NORMALGAME':
-            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'/ng_results',
+            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'ng_results',
                       "V":v, "T":1, "L":layers, "ALGORITHM":"NORMALGAME",
                       'EQUIBALG':'enumpure_solve', "JUDGMENT_TYPE":judgment_type,
                       "RES_ALLOC_TYPE":res_alloc_type, "VALUATION_TYPE":valuation_type}
@@ -164,6 +177,11 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
                       "V":v, "T":10, "WINDOW_LENGTH":3, 'L':layers, "ALGORITHM":"INDP"}
         else:
             sys.exit('Wrong method name: '+method)
+        params['DYNAMIC_PARAMS'] = dynamic_params
+        if dynamic_params:
+            prefix = params['OUTPUT_DIR'].split('/')[-1]
+            params['OUTPUT_DIR'] = params['OUTPUT_DIR'].replace(prefix,'dp_'+prefix)
+
         batch_run(params, fail_sce_param)
 
 def run_parallel(i):
@@ -180,28 +198,31 @@ def run_parallel(i):
     None.
 
     '''
-    filter_sce = None#'/scratch/ht20/Damage_scenarios/damagedElements_sliceQuantile_0.90.csv'
+    filter_sce = '/scratch/ht20/damagedElements_sliceQuantile_0.90.csv'
     base_dir = '/scratch/ht20/Extended_Shelby_County/'
-    damage_dir = '/scratch/ht20/Damage_scenarios/'
-    output_dir = '/scratch/ht20/'
+    damage_dir = '/scratch/ht20/Wu_Damage_scenarios/'
+    output_dir = '/scratch/ht20/results/'
+    dynamic_params_dir = None
     sample_no = i//96
     mag_no = i%96
-    fail_sce_param = {'TYPE':"WU", 'SAMPLE_RANGE':range(sample_no, sample_no+1),
-                      'MAGS':range(mag_no, mag_no+1),
-                      'FILTER_SCE':filter_sce, 'BASE_DIR':base_dir, 'DAMAGE_DIR':damage_dir}
+    fail_sce_param = {"TYPE":"WU","SAMPLE_RANGE":range(sample_no,sample_no+1),
+                     "MAGS":range(mag_no,mag_no+1),'FILTER_SCE':filter_sce,
+                     'BASE_DIR':base_dir,'DAMAGE_DIR':damage_dir}
     rc = [3, 6, 8, 12]
     layers = [1, 2, 3, 4]
-    judge_type = ["OPTIMISTIC"] #OPTIMISTIC #'DET-DEMAND' #"PESSIMISTIC"
+    judge_type = ["OPTIMISTIC", 'DET-DEMAND', "PESSIMISTIC"] #OPTIMISTIC #'DET-DEMAND' #"PESSIMISTIC"
     res_alloc_type = ["MCA", 'UNIFORM'] #"MDA", "MAA", 
     val_type = ['DTC']
     #model_dir = '/scratch/ht20/ST_models'
     #stm_model_dict = {'num_pred':1, 'model_dir':model_dir+'/traces',
     #                  'param_folder':model_dir+'/parameters'}
 
-    run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir)
+    # run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir,
+               # dynamic_params=dynamic_params_dir)
     # run_method(fail_sce_param, rc, layers, method='TD_INDP')
     run_method(fail_sce_param, rc, layers, method='JC', judgment_type=judge_type,
-               res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir)
+               res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
+			   dynamic_params=dynamic_params_dir)
     #          misc = {'STM_MODEL_DICT':stm_model_dict})
 
 if __name__ == "__main__":

@@ -42,7 +42,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             list_high_dam = pd.read_csv(fail_sce_param['FILTER_SCE'])
     elif fail_sce_param['TYPE'] == 'random':
         shelby_data = 'shelby_extended'
-    elif fail_sce_param['TYPE'] == 'synthetic':			   
+    elif fail_sce_param['TYPE'] == 'synthetic':
         topology = fail_sce_param['TOPO']
 
     print('----Running for resources: '+str(params['V']))
@@ -118,7 +118,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             elif params["ALGORITHM"] == "JC":
                 dindputils.run_judgment_call(params, save_jc_model=False, print_cmd=False)
             elif params["ALGORITHM"] == "NORMALGAME":
-                gameutils.run_game(params, save_results=True, print_cmd=True,
+                gameutils.run_game(params, save_results=True, print_cmd=False,
                                    save_model=False, plot2D=False)
 
 def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
@@ -198,7 +198,7 @@ def run_parallel(i):
     None.
 
     '''
-    filter_sce = '/scratch/ht20/damagedElements_sliceQuantile_0.90.csv' 
+    filter_sce = '/scratch/ht20/damagedElements_sliceQuantile_0.90.csv'
     #'../../data/damagedElements_sliceQuantile_0.95.csv'
     base_dir = '/scratch/ht20/Extended_Shelby_County/'
     #'../../data/Extended_Shelby_County/'
@@ -226,9 +226,6 @@ def run_parallel(i):
     run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir,
                dynamic_params=dynamic_params_dir)
     # run_method(fail_sce_param, rc, layers, method='TD_INDP')
-    # run_method(fail_sce_param, rc, layers, method='JC', judgment_type=judge_type,
-               # res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir)
-    # #          misc = {'STM_MODEL_DICT':stm_model_dict})
     run_method(fail_sce_param, rc, layers, method='NORMALGAME', judgment_type=judge_type,
                 res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
                 dynamic_params=dynamic_params_dir)
