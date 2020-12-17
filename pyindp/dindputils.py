@@ -279,7 +279,10 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
             #: Getting back the JuCModel objects:
             if x[4][:2] == 'jc' or x[4][:2] == 'ng':
                 with open(result_dir+'/objs_'+str(x[1])+'.pkl', 'rb') as f:
-                    objs[str(x)] = pickle.load(f)
+                    try:
+                        objs[str(x)] = pickle.load(f)
+                    except:
+                        print(x)
             if idx%(len(joinedlist)//100+1) == 0:
                 update_progress(idx+1, len(joinedlist))
         else:
