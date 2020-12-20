@@ -112,3 +112,4 @@ results/
 /STAR_Model/models/
 *.json
 *.npz
+!/pyindp/Basin_of_solutions/results.pkl
