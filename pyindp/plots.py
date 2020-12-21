@@ -53,6 +53,8 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
         decision_type = df.decision_type.unique().tolist()
     if not judgment_type:
         judgment_type = df.judgment_type.unique().tolist()
+    if 'nan' in judgment_type:
+        judgment_type.remove('nan')
     if not auction_type:
         auction_type = df.auction_type.unique().tolist()
     if not valuation_type:
@@ -61,16 +63,16 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
     #sns.color_palette("husl", len(auction_type)+1)
-    row_plot = [valuation_type, 'valuation_type'] # valuation_type
+    row_plot = [judgment_type, 'judgment_type'] # valuation_type
     col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
     hue_type = [auction_type, 'auction_type']
     style_type = 'decision_type'
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
-                            figsize=(5000/dpi, 1500/dpi))
+                            figsize=(2000/dpi, 1500/dpi))
     # colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
-    colors = ['r', 'b', 'k']
+    colors = ['k', 'g', 'b', 'r']
     pal = sns.color_palette(colors[:len(hue_type[0])])
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
@@ -129,7 +131,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                         sns.barplot(x=x, y=l, hue=hue_type[1], ax=ax_2, linewidth=0.5,
                                     ci=None, data=cost_lyr_pivot, hue_order=hue_type[0],
                                     palette=pal_adj, **{'alpha':0.35})
-                ax_2.set(ylabel='% Unmet Demand')
+                ax_2.set(ylabel=r'\% Unmet Demand')
                 ax_2.get_legend().set_visible(False)
                 if idx_c != 0.0:
                     ax_2.set_ylabel('')
@@ -262,7 +264,7 @@ def plot_auction_allocation(df_res, ci=None):
     dpi = 300
     for idxat, idx_f in enumerate(figs[0]):
         fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
-                                sharey=True, figsize=(4000/dpi, 2500/dpi))
+                                sharey=True, figsize=(3000/dpi, 2500/dpi))
         for idx_c, val_c in enumerate(col_plot[0]):
             for idx_r, val_r in enumerate(row_plot[0]):
                 ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
@@ -545,6 +547,8 @@ def correct_legend_labels(labels):
     labels = ['Judge. Call' if x == 'jc_sample_12Node' else x for x in labels]
     labels = ['Normal Game' if x == 'ng' else x for x in labels]
     labels = ['Normal Game' if x == 'ng_sample_12Node' else x for x in labels]
+    labels = ['Total Resources' if x == 'no_resources' else x for x in labels]
+    labels = ['Total Resources' if x == 'no_resource' else x for x in labels]
     return labels
 
 def find_ax(axs, row_plot, col_plot, idx_r=0, idx_c=0):

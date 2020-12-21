@@ -279,10 +279,7 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
             #: Getting back the JuCModel objects:
             if x[4][:2] == 'jc' or x[4][:2] == 'ng':
                 with open(result_dir+'/objs_'+str(x[1])+'.pkl', 'rb') as f:
-                    try:
-                        objs[str(x)] = pickle.load(f)
-                    except:
-                        print(x)
+                    objs[str(x)] = pickle.load(f)
             if idx%(len(joinedlist)//100+1) == 0:
                 update_progress(idx+1, len(joinedlist))
         else:
@@ -683,9 +680,9 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
                             [m, s, L, rc, dt, 'nan', 'nan', 'nan', ''] not in optimal_combinations:
                             optimal_combinations.append([m, s, L, rc, dt, 'nan',
                                                          'nan', 'nan', sf])
-                        elif (dt not in optimal_method) and (at not in ['UNIFORM']):
+                        elif (dt not in optimal_method) and (at not in ['UNIFORM', 'OPTIMAL']):
                             combinations.append([m, s, L, rc, dt, jt, at, vt, sf])
-                        elif (dt not in optimal_method) and (at in ['UNIFORM']):
+                        elif (dt not in optimal_method) and (at in ['UNIFORM', 'OPTIMAL']):
                             if [m, s, L, rc, dt, jt, at, 'nan', sf] not in combinations:
                                 combinations.append([m, s, L, rc, dt, jt, at, 'nan', sf])
             idx += 1
@@ -711,9 +708,9 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
                         [m, s, L, rc, dt, 'nan', 'nan', 'nan', ''] not in optimal_combinations:
                         optimal_combinations.append([m, s, L, rc, dt, 'nan',
                                                      'nan', 'nan', sf])
-                    elif (dt not in optimal_method) and (at not in ['UNIFORM']):
+                    elif (dt not in optimal_method) and (at not in ['UNIFORM', 'OPTIMAL']):
                         combinations.append([m, s, L, rc, dt, jt, at, vt, sf])
-                    elif (dt not in optimal_method) and (at in ['UNIFORM']):
+                    elif (dt not in optimal_method) and (at in ['UNIFORM', 'OPTIMAL']):
                         if [m, s, L, rc, dt, jt, at, 'nan', sf] not in combinations:
                             combinations.append([m, s, L, rc, dt, jt, at, 'nan', sf])
             idx += 1
