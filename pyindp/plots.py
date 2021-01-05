@@ -7,8 +7,8 @@ import pandas as pd
 from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 sns.set(context='notebook', style='darkgrid', font_scale=1.2)
-# plt.rc('text', usetex=True)
-# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                    decision_type=None, judgment_type=None,
@@ -57,6 +57,8 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
         judgment_type.remove('nan')
     if not auction_type:
         auction_type = df.auction_type.unique().tolist()
+    # if 'nan' in auction_type:
+    #     auction_type.remove('nan')
     if not valuation_type:
         valuation_type = df.valuation_type.unique().tolist()
     if 'nan' in valuation_type:
@@ -65,14 +67,14 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     #sns.color_palette("husl", len(auction_type)+1)
     row_plot = [judgment_type, 'judgment_type'] # valuation_type
     col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
-    hue_type = [auction_type, 'auction_type']
-    style_type = 'decision_type'
+    hue_type = [auction_type, 'auction_type'] #auction_type
+    style_type = 'decision_type'  #decision_type
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
-                            figsize=(2000/dpi, 1500/dpi))
+                            figsize=(5000/dpi, 1500/dpi))
     # colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
-    colors = ['k', 'g', 'b', 'r']
+    colors = ['r', 'b', 'k'] #!!!
     pal = sns.color_palette(colors[:len(hue_type[0])])
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
@@ -82,8 +84,8 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                            (df[col_plot[1]] == val_c)&
                            ((df[row_plot[1]] == val_r)|(df[row_plot[1]] == 'nan'))]
             with pal:
-                sns.lineplot(x=x, y=y, hue=hue_type[1], style=style_type, markers=True, ci=ci,
-                             ax=ax, data=cost_data[cost_data.layer == 'nan'],
+                sns.lineplot(x=x, y=y, hue=hue_type[1], style=style_type, markers=True,
+                             ci=ci, ax=ax, data=cost_data[cost_data.layer == 'nan'],
                              **{'markersize':5})
             if deaggregate:
                 cost_lyr = cost_data[cost_data.layer != 'nan']
@@ -101,9 +103,11 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                     sns.barplot(x=x, y=l, hue=hue_type[1], ax=ax, linewidth=0.5, ci=None,
                                 data=cost_lyr_pivot, hue_order=hue_type[0],
                                 palette=pal_adj, **{'alpha':0.35})
-            ax.set(xlabel=r'time step $t$', ylabel= cost_type+' Cost')
+            ax.set(xlabel=r'time step $t$', ylabel= r'\% Unmet Demand')#!!!'cost_type+' Cost')
             ax.get_legend().set_visible(False)
             ax.xaxis.set_ticks(np.arange(0, T, 1.0))#ax.get_xlim()
+            ax.yaxis.set_ticks(np.arange(-.4, 0.05, 0.05))
+
             if plot_resilience:
                 resilience_data = df[(df.cost_type == 'Under Supply Perc')&
                                      (df.decision_type.isin(decision_type))&
@@ -142,7 +146,8 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     handles, labels = ax.get_legend_handles_labels()
     handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
     labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.35)
+    fig.legend(handles, labels, loc='lower right', ncol=1, framealpha=0.35,
+               bbox_to_anchor=(.9, 0.11)) 
     # Add overll x- and y-axis titles
     _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
@@ -186,7 +191,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     valuation_type = lambda_df.valuation_type.unique().tolist()
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
-    row_plot = [decision_type, 'decision_type'] #valuation_type
+    row_plot = [valuation_type, 'valuation_type'] #valuation_type
     col_plot = [decision_type , 'decision_type']
     hue_type = [auction_type , 'auction_type']
     x = 'no_resources' 
@@ -258,39 +263,44 @@ def plot_auction_allocation(df_res, ci=None):
     figs = [judgment_type, 'judgment_type']#valuation_type, 'valuation_type'
     row_plot = [layer, 'layer']
     col_plot = [no_resources, 'no_resources']#no_resources, judgment_type
-    hue_type = [decision_type, 'decision_type']
-    style_type = [auction_type, 'auction_type']
+    hue_type = [auction_type, 'auction_type'] # decision_type
+    style_type = [decision_type, 'decision_type'] # auction_type
     # Initialize plot properties
     dpi = 300
     for idxat, idx_f in enumerate(figs[0]):
         fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
                                 sharey=True, figsize=(3000/dpi, 2500/dpi))
+        plt.subplots_adjust(wspace=0.05, hspace=0.1)
         for idx_c, val_c in enumerate(col_plot[0]):
             for idx_r, val_r in enumerate(row_plot[0]):
                 ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
                 data = df_res[(df_res[row_plot[1]] == val_r)&(df_res[col_plot[1]] == val_c)&
                               ((df_res[figs[1]] == idx_f)|(df_res[figs[1]] == 'nan'))]
-                with sns.xkcd_palette(['red', "windows blue", 'black', "green"]):
+                # with sns.xkcd_palette(['red', "windows blue", 'black', "green"]): #!!!
+                with sns.color_palette(['k', 'r', 'b']):
                     sns.lineplot(x='t', y='resource', hue=hue_type[1], style=style_type[1],
                                  markers=True, ci=ci, ax=ax, legend='full', data=data)
                     ax.get_legend().set_visible(False)
                     ax.set(xlabel=r'time step $t$', ylabel='No. resources')
-                    ax.xaxis.set_ticks(np.arange(1, T, 1.0))   #ax.get_xlim()
+                    ax.xaxis.set_ticks(np.arange(1, T+1, 1.0))   #ax.get_xlim()
 #                    ax.yaxis.set_ticks(np.arange(0, ax.get_ylim()[1], 1.0), minor=True)
                     ax.yaxis.set_ticks(np.arange(0, ax.get_ylim()[1], 1.0))
                     ax.grid(b=True, which='major', color='w', linewidth=1.0)
 #                    ax.grid(b=True, which='minor', color='w', linewidth=0.5)
         handles, labels = ax.get_legend_handles_labels()
         labels = correct_legend_labels(labels)
-        fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5, labelspacing=0.2)
+        fig.legend(handles, labels, loc='center', ncol=4, framealpha=0.5,
+                   labelspacing=0.2, bbox_to_anchor=(.5, .95)) #!!!
         _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
-        fig.suptitle('Judgment Type: '+figs[0][idxat])
+        # fig.suptitle('Judgment Type: '+figs[0][idxat]) #!!!
         for idx, ax in enumerate(axs_c):
             ax.set_title(r'Resource Cap: %s'%str(col_plot[0][idx]))
         for idx, ax in enumerate(axs_r):
-            ax.annotate('Layer '+str(row_plot[0][idx]), xy=(0.1, 0.5),
+            names = ['Water', 'Gas', 'Power', 'Telecom.'] #!!!
+            ax.annotate(names[idx], xy=(0.1, 0.5),
                         xytext=(-ax.yaxis.labelpad - 5, 0), xycoords=ax.yaxis.label,
                         textcoords='offset points', ha='right', va='center', rotation=90)
+                        #!!!'Layer '+str(row_plot[0][idx])
         plt.savefig('Allocations_'+idx_f+'.png', dpi=600)
 
 def plot_relative_allocation(gap_res, distance_type='gap'):
@@ -315,10 +325,14 @@ def plot_relative_allocation(gap_res, distance_type='gap'):
         decision_type.remove('indp_sample_12Node')
     if 'indp' in decision_type:
         decision_type.remove('indp')
+    if 'tdindp' in decision_type:
+        decision_type.remove('tdindp')
     judgment_type = gap_res.judgment_type.unique().tolist()
     if 'nan' in judgment_type:
         judgment_type.remove('nan')
     auction_type = gap_res.auction_type.unique().tolist()
+    if 'nan' in auction_type:
+        auction_type.remove('nan')
     valuation_type = gap_res.valuation_type.unique().tolist()
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
