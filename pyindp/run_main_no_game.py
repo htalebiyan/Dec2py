@@ -119,11 +119,11 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             if params["ALGORITHM"] == "INDP":
                 indp.run_indp(params, validate=False, T=params["T"], layers=params['L'],
                               controlled_layers=params['L'], saveModel=True, print_cmd_line=False,
-                              dynamic_params=dynamic_params, co_location=False)
+                              dynamic_params=dynamic_params, co_location=True)
             if params["ALGORITHM"] == "MH":
                 mh.run_mh(params, validate=False, T=params["T"], layers=params['L'],
                           controlled_layers=params['L'], saveModel=True, print_cmd_line=False,
-                          dynamic_params=dynamic_params, co_location=False)
+                          dynamic_params=dynamic_params, co_location=True)
             elif params["ALGORITHM"] == "INFO_SHARE":
                 indp.run_info_share(params, layers=params['L'], T=params["T"])
             elif params["ALGORITHM"] == "INRG":
@@ -257,6 +257,9 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
                       "V":v, "T":1, "L":layers, "ALGORITHM":"NORMALGAME",
                       'EQUIBALG':'enumpure_solve', "JUDGMENT_TYPE":judgment_type,
                       "RES_ALLOC_TYPE":res_alloc_type, "VALUATION_TYPE":valuation_type}
+        elif method == 'MH':
+            params = {"NUM_ITERATIONS":1, "OUTPUT_DIR":output_dir+'mh_results',
+                      "V":v, "T":1, 'L':layers, "ALGORITHM":"MH"}
         else:
             sys.exit('Wrong method name: '+method)
         params['DYNAMIC_PARAMS'] = dynamic_params
@@ -278,7 +281,7 @@ if __name__ == "__main__":
     # # # run_jc_sample(layers, judge_types, auction_type, valuation_type)
     # run_game_sample(layers, judge_types, auction_type, valuation_type)
     result_mh = run_mh_sample(layers) #!!!
-    result_mh_1 = np.array(result_mh._data).reshape(result_mh.size[::-1]).T
+    
     # COMBS = []
     # OPTIMAL_COMBS = [[0, 0, len(layers), len(layers), 'indp_sample_12Node', 'nan',
     #                   'nan', 'nan', ''],
@@ -326,7 +329,7 @@ if __name__ == "__main__":
     # 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios/'
 
     #: The address to where output are stored.
-    OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Shelby_data_paper/results/'
+    OUTPUT_DIR = '../results/'
     # '/home/hesam/Desktop/Files/Game_Shelby_County/results_0.9_perc'
     # 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
     #'../results/
@@ -345,7 +348,7 @@ if __name__ == "__main__":
     #:     sce range: FAIL_SCE_PARAM['MAGS']
     #: For Synthetic nets: sample range: FAIL_SCE_PARAM['SAMPLE_RANGE'],
     #:     configurations: FAIL_SCE_PARAM['MAGS']
-    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(50), 'MAGS':range(96),
+    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(14), 'MAGS':range(2),
                       'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
@@ -361,7 +364,7 @@ if __name__ == "__main__":
         OUTPUT_DIR += FAIL_SCE_PARAM['TOPO']+'/results/'
 
     # No restriction on number of resources for each layer
-    RC = [4, 8, 12]
+    RC = [12]#[4, 8, 12]
     # Not necessary for synthetic nets
     # [3, 6, 8, 12]
     # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
@@ -380,16 +383,17 @@ if __name__ == "__main__":
     ''' Run different methods '''
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
     #             dynamic_params=DYNAMIC_PARAMS_DIR)
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
-    #         dynamic_params=DYNAMIC_PARAMS_DIR)
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
-    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
-    #             output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS_DIR)
-                    #, misc = {'STM_MODEL_DICT':STM_MODEL_DICT})
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
-    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+    # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
+    # #         dynamic_params=DYNAMIC_PARAMS_DIR)
+    # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
+    # #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
+    # #             output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS_DIR)
+    #                 #, misc = {'STM_MODEL_DICT':STM_MODEL_DICT})
+    # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
+    # #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+    # #             dynamic_params=DYNAMIC_PARAMS_DIR)
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='MH', output_dir=OUTPUT_DIR,
     #             dynamic_params=DYNAMIC_PARAMS_DIR)
-
     ''' Post-processing '''
     # COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
     # REF_METHOD = 'indp'

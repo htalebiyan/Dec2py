@@ -89,12 +89,16 @@ def run_mh(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1, v
                            replace(" ", "").replace(".", ""): c.sense for i, c in enumerate(m.getConstrs())}
             obj_coeffs = m.getAttr('Obj', m.getVars())
             A = m.getA()
+            opt_sol = {}
+            for v in m.getVars():
+                opt_sol[v.varName.replace("(", "").replace(")", "").replace(",", "_").\
+                         replace(" ", "").replace("+", "_p").replace("-", "_m")]= v.x
             scipy.io.savemat('./Metaheuristics/arrdata.mat', mdict={'A': A})
             ### Run GA in Matlab
             eng = matlab.engine.start_matlab("-desktop") #!!! Send as an argument for debugging in MATLAB: "-desktop"
             eng.cd('./Metaheuristics/')
-            eng.eval('dbstop in main.m', nargout=0) #!!! 
-            result_mh = eng.main(var_index, constr_rhs, constr_sense, obj_coeffs)
+            eng.eval('dbstop in main.m at 3', nargout=0) #!!! 
+            result_mh = eng.main(var_index, constr_rhs, constr_sense, obj_coeffs, opt_sol)
     return result_mh #!!!
     #         if saveModel:
     #             save_INDP_model_to_file(results[0],output_dir+"/Model",i+1)

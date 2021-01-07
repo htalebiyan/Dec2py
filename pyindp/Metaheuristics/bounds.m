@@ -10,10 +10,12 @@ for i=1:numVar
     if name(1) == 'z' || name(1) == 'y' || name(1) == 'w'
         ub = [ub; 1];
         lb = [lb; 0];
-%         IntCon = [IntCon; i];
+        IntCon = [IntCon; i];
+    elseif name(1) == 'x' || name(1) == 'd'
+        ub = [ub; Inf];
+        lb = [lb; 0.0];
     else
-        ub = [ub; inf];
-        lb = [lb; 0];
+        sprintf('Unknown variable name')
     end
 end
     

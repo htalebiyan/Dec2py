@@ -13,8 +13,13 @@ for i=1:numConstr
     if sense == '='
         beq = [beq; constrRhs(i)];
         Aeq = [Aeq; Afull(i,:)];
-    else
+    elseif sense == '<'
         b = [b; constrRhs(i)];
         A = [A; Afull(i,:)];
+    elseif sense == '>'
+        b = [b; -constrRhs(i)];
+        A = [A; -Afull(i,:)];
+    else
+        sprintf('Wrong sense for constraints')
     end
 end
