@@ -12,7 +12,7 @@ for i=1:numVar
         lb = [lb; 0];
         IntCon = [IntCon; i];
     elseif name(1) == 'x' || name(1) == 'd'
-        ub = [ub; Inf];
+        ub = [ub; 100];
         lb = [lb; 0.0];
     else
         sprintf('Unknown variable name')
