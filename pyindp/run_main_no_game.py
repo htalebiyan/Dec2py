@@ -87,7 +87,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             output_dir_full = ''
             if params["ALGORITHM"] in ["INDP"]:
                 output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
-                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'/agents/actions_'+str(i)+'_L1_.csv'
+                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'/actions_'+str(i)+'_.csv'
             if os.path.exists(output_dir_full):
                 print('results are already there\n')
                 continue
@@ -276,11 +276,11 @@ if __name__ == "__main__":
     auction_type = ["MCA", "UNIFORM"]#, "MAA", "MDA"
     valuation_type = ["DTC"]
     judge_types = ["OPTIMISTIC"]#"PESSIMISTIC",
-    # run_indp_sample(layers)
-    # # run_tdindp_sample(layers)
-    # # # run_jc_sample(layers, judge_types, auction_type, valuation_type)
+    run_indp_sample(layers)
+    # run_tdindp_sample(layers)
+    # # run_jc_sample(layers, judge_types, auction_type, valuation_type)
     # run_game_sample(layers, judge_types, auction_type, valuation_type)
-    result_mh = run_mh_sample(layers) #!!!
+    # result_mh = run_mh_sample(layers) #!!!
     
     # COMBS = []
     # OPTIMAL_COMBS = [[0, 0, len(layers), len(layers), 'indp_sample_12Node', 'nan',
@@ -314,19 +314,21 @@ if __name__ == "__main__":
     # '../data/damagedElements_sliceQuantile_0.90.csv'
     
     #: The address to the basic (topology, parameters, etc.) information of the network.
-    BASE_DIR = 'C:/Users/ht20/Box Sync/Shelby County Database/Node_arc_info/'
+    BASE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/Node_arc_info/"
     # "../data/Extended_Shelby_County/"
     # 'C:/Users/ht20/Box Sync/Shelby County Database/Node_arc_info/'
     # "C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\"
     # "/home/hesam/Desktop/Files/Generated_Network_Dataset_v3.1"
+    # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/Node_arc_info/"
 
     #: The address to damge scenario data.
-    DAMAGE_DIR = 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios/'
+    DAMAGE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/Damage_scenarios/random_disruption/"
     # ../data/random_disruption_shelby/"
     #"../data/Wu_Damage_scenarios/" 
     # "C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\"
     # "/home/hesam/Desktop/Files/Generated_Network_Dataset_v3.1"
     # 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios/'
+    # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/Damage_scenarios/random_disruption/"
 
     #: The address to where output are stored.
     OUTPUT_DIR = '../results/'
@@ -348,12 +350,12 @@ if __name__ == "__main__":
     #:     sce range: FAIL_SCE_PARAM['MAGS']
     #: For Synthetic nets: sample range: FAIL_SCE_PARAM['SAMPLE_RANGE'],
     #:     configurations: FAIL_SCE_PARAM['MAGS']
-    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(14), 'MAGS':range(2),
-                      'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
+    # FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(14), 'MAGS':range(2),
+    #                   'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    # FAIL_SCE_PARAM = {'TYPE':"random", 'SAMPLE_RANGE':range(10, 11), 'MAGS':range(0, 1),
-    #                   'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
+    FAIL_SCE_PARAM = {'TYPE':"random", 'SAMPLE_RANGE':range(0, 100), 'MAGS':range(0, 1),
+                      'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(68, 69),
     #                   'FILTER_SCE':None, 'TOPO':'Grid',
     #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
@@ -364,11 +366,11 @@ if __name__ == "__main__":
         OUTPUT_DIR += FAIL_SCE_PARAM['TOPO']+'/results/'
 
     # No restriction on number of resources for each layer
-    RC = [12]#[4, 8, 12]
+    RC = [1,2,4,8]#[4, 8, 12]
     # Not necessary for synthetic nets
     # [3, 6, 8, 12]
     # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
-    LAYERS = [1, 2, 3, 4]
+    LAYERS = [3]#[1, 2, 3, 4]
     # Not necessary for synthetic nets
     JUDGE_TYPE = ["PESSIMISTIC", "OPTIMISTIC", "DET-DEMAND"]
     #["PESSIMISTIC", "OPTIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"]
@@ -397,7 +399,7 @@ if __name__ == "__main__":
     ''' Post-processing '''
     # COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
     # REF_METHOD = 'indp'
-    # METHOD_NAMES = ['indp', 'tdindp', 'jc'] #'ng', 'jc', 'dp_indp', 'tdindp'
+    # METHOD_NAMES = ['indp'] #'ng', 'jc', 'dp_indp', 'tdindp'
 
     # COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
     #             FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
@@ -431,15 +433,12 @@ if __name__ == "__main__":
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
     #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE] = pickle.load(f)
 
-    # plots.plot_performance_curves(BASE_DF[(BASE_DF['judgment_type']!='PESSIMISTIC')&\
-    #                                       (BASE_DF['judgment_type']!='DET-DEMAND')&\
-    #                                       (BASE_DF['decision_type']!='indp')&\
-    #                                       (BASE_DF['auction_type']!='OPTIMAL')],
-    #                               cost_type='Under Supply Perc', ci=95,
-    #                               deaggregate=False, plot_resilience=False)
+    # plots.plot_performance_curves(BASE_DF,
+    #                               cost_type='Total', ci=95,
+    #                               deaggregate=False, plot_resilience=True)
 
-    # # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
-    # #                                     ci=95, normalize=False)
+    # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
+    #                                     ci=95, normalize=False)
 
     # plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
     # plots.plot_auction_allocation(RES_ALLOC_DF[(RES_ALLOC_DF['judgment_type']!='PESSIMISTIC')&\
@@ -448,4 +447,11 @@ if __name__ == "__main__":
     #                                       (RES_ALLOC_DF['auction_type']!='OPTIMAL')], ci=None)
     # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
     # plots.plot_run_time(RUN_TIME_DF, ci=95)
+    
+    
+    
     # [(RUN_TIME_DF['auction_type']!='MDA')&(RUN_TIME_DF['auction_type']!='MAA')]
+    # [(BASE_DF['judgment_type']!='PESSIMISTIC')&\
+    #  (BASE_DF['judgment_type']!='DET-DEMAND')&\
+    #      (BASE_DF['decision_type']!='indp')&\
+    #          (BASE_DF['auction_type']!='OPTIMAL')]

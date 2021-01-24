@@ -863,7 +863,7 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
 
     T = max(actions.keys())
     for t, value in actions.items():
-        plt.subplot(2, (T+1)/2+1 ,t+1, aspect='equal')
+        plt.subplot(2, int((T+1)/2)+1 ,t+1, aspect='equal')
         plt.title('Time = %d' % t)
         for a in value:
             data=a.split(".")

@@ -7,8 +7,8 @@ import pandas as pd
 from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 sns.set(context='notebook', style='darkgrid', font_scale=1.2)
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+# plt.rc('text', usetex=True)
+# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                    decision_type=None, judgment_type=None,
@@ -57,8 +57,8 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
         judgment_type.remove('nan')
     if not auction_type:
         auction_type = df.auction_type.unique().tolist()
-    # if 'nan' in auction_type:
-    #     auction_type.remove('nan')
+    if 'nan' in auction_type:
+        auction_type.remove('nan')
     if not valuation_type:
         valuation_type = df.valuation_type.unique().tolist()
     if 'nan' in valuation_type:
@@ -73,8 +73,8 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
                             figsize=(5000/dpi, 1500/dpi))
-    # colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
-    colors = ['r', 'b', 'k'] #!!!
+    colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
+    # colors = ['r', 'b', 'k']
     pal = sns.color_palette(colors[:len(hue_type[0])])
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
@@ -103,10 +103,10 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                     sns.barplot(x=x, y=l, hue=hue_type[1], ax=ax, linewidth=0.5, ci=None,
                                 data=cost_lyr_pivot, hue_order=hue_type[0],
                                 palette=pal_adj, **{'alpha':0.35})
-            ax.set(xlabel=r'time step $t$', ylabel= r'\% Unmet Demand')#!!!'cost_type+' Cost')
+            ax.set(xlabel=r'time step $t$', ylabel= cost_type+' Cost')#r'\% Unmet Demand')
             ax.get_legend().set_visible(False)
             ax.xaxis.set_ticks(np.arange(0, T, 1.0))#ax.get_xlim()
-            ax.yaxis.set_ticks(np.arange(-.4, 0.05, 0.05))
+            # ax.yaxis.set_ticks(np.arange(-.4, 0.05, 0.05))
 
             if plot_resilience:
                 resilience_data = df[(df.cost_type == 'Under Supply Perc')&
@@ -504,22 +504,23 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
     cost_data = df[df.cost_type == cost_type]
     for idx, lyr in enumerate(layers):
         ax = axs[idx//2, idx%2]
-        sns.lineplot(x=x, y=y, hue="decision_type", style='auction_type', markers=True,
-                     ci=ci, ax=ax, palette=pal,
-                     data=cost_data[cost_data.layer == lyr], **{'markersize':5})
-        ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
-        ax.set_title(r'Layer: %s'%(layer_names[lyr]))
-        ax.get_legend().set_visible(False)
-        ax.xaxis.set_ticks(np.arange(0, 11, 1.0))   #ax.get_xlim()
+        with pal:
+            sns.lineplot(x=x, y=y, hue="decision_type", style='auction_type', markers=True,
+                         ci=ci, ax=ax, data=cost_data[cost_data.layer == lyr], **{'markersize':5})
+            ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
+            ax.set_title(r'Layer: %s'%(layer_names[lyr]))
+            ax.get_legend().set_visible(False)
+            ax.xaxis.set_ticks(np.arange(0, 11, 1.0))   #ax.get_xlim()
 
     ax = fig.add_subplot(3, 2, 6)
-    sns.lineplot(x=x, y=y, hue="decision_type", style='auction_type',
-                  markers=True, ci=ci, palette=pal, ax=ax,
-                  data=cost_data[cost_data.layer == 'nan'], **{'markersize':5})
-    ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
-    ax.set_title(r'Overall')
-    ax.get_legend().set_visible(False)
-    ax.xaxis.set_ticks(np.arange(0, 10, 1.0))   #ax.get_xlim()
+    with pal:
+        sns.lineplot(x=x, y=y, hue="decision_type", style='auction_type',
+                      markers=True, ci=ci, ax=ax,
+                      data=cost_data[cost_data.layer == 'nan'], **{'markersize':5})
+        ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
+        ax.set_title(r'Overall')
+        ax.get_legend().set_visible(False)
+        ax.xaxis.set_ticks(np.arange(0, 10, 1.0))   #ax.get_xlim()
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
     head = 'Resource Cap: '+str(res_caps).strip('[]')+', Valuation: '+\
@@ -693,6 +694,67 @@ def plot_ne_sol_2player(game, suffix='', plot_dir=''):
             print('Optimal solution has not been calculated')
     plt.savefig(plot_dir+'/NE_sol_2D_'+suffix+'.png', dpi=dpi, bbox_inches='tight')
     
+def plot_ne_analysis(df, x='t', ci=None):
+    '''
+
+    Parameters
+    ----------
+    df : TYPE
+        DESCRIPTION.
+    ci : TYPE, optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    None.
+
+    '''
+    #: Make lists
+    no_resources = df.no_resources.unique().tolist()
+    decision_type = df.decision_type.unique().tolist()
+    judgment_type = df.judgment_type.unique().tolist()
+    if 'nan' in judgment_type:
+        judgment_type.remove('nan')
+    auction_type = df.auction_type.unique().tolist()
+    # if 'nan' in auction_type:
+    #     auction_type.remove('nan')
+    valuation_type = df.valuation_type.unique().tolist()
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
+    T = len(df[x].unique().tolist())
+    row_plot = ['payoff_similarity', 'action_similarity', 'payoff_ratio', 'no_ne']
+    col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
+    hue_type = [auction_type, 'auction_type'] #auction_type
+    style_type = 'auction_type'  #decision_type
+    # Initialize plot properties
+    dpi = 300
+    fig, axs = plt.subplots(len(row_plot), len(col_plot[0]), sharex=True, sharey=False,
+                            figsize=(5000/dpi, 1500/dpi))
+    colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
+    # colors = ['r', 'b', 'k']
+    pal = sns.color_palette(colors[:len(hue_type[0])])
+    for idx_c, val_c in enumerate(col_plot[0]):
+        for idx_r, val_r in enumerate(row_plot):
+            ax, _, _ = find_ax(axs, row_plot, col_plot[0], idx_r, idx_c)
+            ne_data = df[(df.decision_type.isin(decision_type))&
+                         (df[col_plot[1]] == val_c)]
+            with pal:
+                sns.lineplot(x=x, y=val_r, hue=hue_type[1], style=style_type, markers=True,
+                             ci=ci, ax=ax, data=ne_data, **{'markersize':5})
+            ax.set(xlabel=r'time step $t$', ylabel= val_r)
+            ax.get_legend().set_visible(False)
+            ax.xaxis.set_ticks(np.arange(1, T+1, 1.0))#ax.get_xlim()
+    # Rebuild legend
+    handles, labels = ax.get_legend_handles_labels()
+    handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
+    labels = correct_legend_labels(labels)
+    fig.legend(handles, labels, loc='lower right', ncol=1, framealpha=0.35,
+               bbox_to_anchor=(.9, 0.11)) 
+    # Add overll x- and y-axis titles
+    _, axs_c, axs_r = find_ax(axs, row_plot, col_plot[0])
+    for idx, ax in enumerate(axs_c):
+        ax.set_title(r'Total resources=%s'%(str(col_plot[0][idx])))
+    plt.savefig('ne_analysis.png', dpi=dpi)
 
 # Color repository
 # clrs = [['azure', 'light blue'], ['gold', 'khaki'], ['strawberry', 'salmon pink'],

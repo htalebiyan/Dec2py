@@ -503,7 +503,7 @@ def add_random_failure_scenario(G,sample,config=0,DAM_DIR=""):
             G.G.nodes[n]['data']['inf_data'].functionality=state
             G.G.nodes[n]['data']['inf_data'].repaired=state
             
-    with open(DAM_DIR+'Initial_links.csv') as csvfile:
+    with open(DAM_DIR+'Initial_link.csv') as csvfile:
         data = csv.reader(csvfile, delimiter=',')
         for row in data:
             rawUV = row[0]

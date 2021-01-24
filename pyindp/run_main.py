@@ -130,7 +130,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                 dindputils.run_judgment_call(params, save_jc_model=True, print_cmd=False)
             elif params["ALGORITHM"] == "NORMALGAME":
                 gameutils.run_game(params, save_results=True, print_cmd=False,
-                                    save_model=False, plot2D=False) #!!!
+                                    save_model=False, plot2D=True) #!!!
 
 def run_indp_sample(layers):
     interdep_net= indp.initialize_sample_network(layers=layers)
@@ -240,6 +240,8 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
                       "V":v, "T":1, "L":layers, "ALGORITHM":"NORMALGAME",
                       'EQUIBALG':'enumpure_solve', "JUDGMENT_TYPE":judgment_type,
                       "RES_ALLOC_TYPE":res_alloc_type, "VALUATION_TYPE":valuation_type}
+            if misc:
+                params['PAYOFF_DIR'] = misc['PAYOFF_DIR']
         else:
             sys.exit('Wrong method name: '+method)
         params['DYNAMIC_PARAMS'] = dynamic_params
@@ -306,7 +308,7 @@ if __name__ == "__main__":
     # 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios'
 
     #: The address to where output are stored.
-    OUTPUT_DIR = '/home/hesam/Desktop/Files/Game_Shelby_County/results_0.9_perc/'
+    OUTPUT_DIR = '/home/hesam/Desktop/Files/Game_Shelby_County/results_me/'
     # '/home/hesam/Desktop/Files/Game_Shelby_County/results_0.9_perc'
     # 'C:/Users/ht20/Documents/Files/Game_Shelby_County/results_0.9_perc/'
     # 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
@@ -335,6 +337,11 @@ if __name__ == "__main__":
     # FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(68, 69),
     #                   'FILTER_SCE':None, 'TOPO':'Grid',
     #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
+    
+    MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
+    STM_MODEL_DICT = {'num_pred':1, 'model_dir':MODEL_DIR+'/traces',
+                      'param_folder':MODEL_DIR+'/parameters'}
+    PAYOFF_DIR = '/home/hesam/Desktop/Files/Game_Shelby_County/results/'
     # Oytput and base dir for sythetic database
     SYNTH_DIR = None
     if FAIL_SCE_PARAM['TYPE'] == 'synthetic':
@@ -342,7 +349,7 @@ if __name__ == "__main__":
         OUTPUT_DIR += FAIL_SCE_PARAM['TOPO']+'/results/'
 
     # No restriction on number of resources for each layer
-    RC = [3, 6, 8, 12]
+    RC = [3]#[3, 6, 8, 12]
     # Not necessary for synthetic nets
     # [3, 6, 8, 12]
     # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
@@ -350,14 +357,10 @@ if __name__ == "__main__":
     # Not necessary for synthetic nets
     JUDGE_TYPE = ["OPTIMISTIC"]
     #["PESSIMISTIC", "OPTIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"]
-    RES_ALLOC_TYPE = ["MCA", 'UNIFORM']
+    RES_ALLOC_TYPE = ["MCA", 'UNIFORM', 'OPTIMAL']
     #["MDA", "MAA", "MCA", 'UNIFORM', 'OPTIMAL']
     VAL_TYPE = ['DTC']
     #['DTC', 'DTC_uniform', 'MDDN', 'STM', 'DTC-LP']
-    # MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
-    # STM_MODEL_DICT = {'num_pred':1, 'model_dir':MODEL_DIR+'/traces',
-    #                   'param_folder':MODEL_DIR+'/parameters'}
-
     ''' Run different methods '''
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
     #             dynamic_params=DYNAMIC_PARAMS_DIR)
@@ -367,9 +370,9 @@ if __name__ == "__main__":
     # #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
     # #             output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS_DIR)
     # #                 #, misc = {'STM_MODEL_DICT':STM_MODEL_DICT})
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
-    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-    #             dynamic_params=DYNAMIC_PARAMS_DIR)
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
+                res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+                dynamic_params=DYNAMIC_PARAMS_DIR, misc = {'PAYOFF_DIR':PAYOFF_DIR})
 
     ''' Post-processing '''
     COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
@@ -391,10 +394,10 @@ if __name__ == "__main__":
                                                                   objs, root_result_dir=OUTPUT_DIR,
                                                                   ref_method=REF_METHOD)
     RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
-
+    ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
     ''' Save Variables to file '''
     OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
-                RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES]
+                RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF, objs]
 
     ### Saving the objects ###
     with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
@@ -403,10 +406,10 @@ if __name__ == "__main__":
     ''' Plot results '''
     plt.close('all')
         
-    # ### Getting back the objects ###
+    # ## Getting back the objects ###
     # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'rb') as f:
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
-    #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE] = pickle.load(f)
+    #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF, objs] = pickle.load(f)
 
     plots.plot_performance_curves(BASE_DF,
                                   cost_type='Total', ci=95,
@@ -419,4 +422,5 @@ if __name__ == "__main__":
     plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
     plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
     plots.plot_run_time(RUN_TIME_DF, ci=95)
-    # [(RUN_TIME_DF['auction_type']!='MDA')&(RUN_TIME_DF['auction_type']!='MAA')]
+    plots.plot_ne_analysis(ANALYZE_NE_DF, ci=95)
+    # # [(RUN_TIME_DF['auction_type']!='MDA')&(RUN_TIME_DF['auction_type']!='MAA')]

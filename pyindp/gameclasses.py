@@ -162,7 +162,7 @@ class NormalGame:
             actions[l].extend([('NA',l)])
         return actions
 
-    def compute_payoffs(self, save_model=None):
+    def compute_payoffs(self, save_model=None, payoff_dir=None):
         '''
         This function finds all possible combinations of actions and their corresponding
         payoffs considering resource limitations
@@ -173,7 +173,11 @@ class NormalGame:
             The folder name and the current time step, which are needed to create
             the folder that contains INDP models for computing payoffs. The default
             is None, which prevent saving models to file.
-
+        payoff_dir : list, optional
+            Address to the file containing past results including payoff values
+            for the first time step. For other time steps, the payoff value may 
+            have been computed based on different initial conditions. The default
+            is None.
         Returns
         -------
         :
@@ -186,35 +190,44 @@ class NormalGame:
             actions_super_set.append([])
             actions_super_set[-1].extend(self.actions[l])
         action_comb = list(itertools.product(*actions_super_set))
+        if payoff_dir:
+            with open(payoff_dir, 'rb') as obj_file:
+                past_obj = pickle.load(obj_file)
         # compute payoffs for each possible combinations of actions
-        for idx, ac in enumerate(action_comb):
-            self.payoffs[idx] = {}
-            flow_results = self.flow_problem(ac)
-            if flow_results:
-                if save_model:
-                    indp.save_INDP_model_to_file(flow_results[0], save_model[0],
-                                                 save_model[1], suffix=str(ac))
-                for idxl, l in enumerate(self.players):
-                    # Minus sign because we want to minimize the cost
-                    payoff_layer = -flow_results[1].results_layer[l][0]['costs']['Total']
-                    self.payoffs[idx][l] = [ac[idxl], payoff_layer]
-                    self.temp_storage[idx] = flow_results[1]
-                    self.payoff_time[idx] = flow_results[1].results[0]['run_time']
-            else:
-                for idxl, l in enumerate(self.players):
-                    payoff_layer = -1e100 #!!! Change this to work for general case
-                    self.payoffs[idx][l] = [ac[idxl], payoff_layer]
-                    self.temp_storage[idx] = []
-                    self.payoff_time[idx] = 0.0
-            # if len(action_comb)>memory_threshold and idx%memory_threshold==0 and idx!=0:
-            #     temp_dir = './temp_payoff_objs'
-            #     if not os.path.exists(temp_dir):
-            #         os.makedirs(temp_dir)
-            #     with open(temp_dir+'/temp_payoff_obj_'+str(idx//memory_threshold)+'.pkl', 'wb') as output:
-            #         pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
-            #         self.payoffs = {}
-            #         self.temp_storage = {}
-            #         self.payoff_time = {}
+        if payoff_dir:
+            obj_1 = past_obj.objs[1]
+            self.payoffs = obj_1.payoffs
+            self.payoff_time = obj_1.payoff_time
+            self.temp_storage = {x:[] for x in self.payoffs.keys()}
+        else:
+            for idx, ac in enumerate(action_comb):
+                self.payoffs[idx] = {}
+                flow_results = self.flow_problem(ac)
+                if flow_results:
+                    if save_model:
+                        indp.save_INDP_model_to_file(flow_results[0], save_model[0],
+                                                     save_model[1], suffix=str(ac))
+                    for idxl, l in enumerate(self.players):
+                        # Minus sign because we want to minimize the cost
+                        payoff_layer = -flow_results[1].results_layer[l][0]['costs']['Total']
+                        self.payoffs[idx][l] = [ac[idxl], payoff_layer]
+                        self.temp_storage[idx] = flow_results[1]
+                        self.payoff_time[idx] = flow_results[1].results[0]['run_time']
+                else:
+                    for idxl, l in enumerate(self.players):
+                        payoff_layer = -1e100 #!!! Change this to work for general case
+                        self.payoffs[idx][l] = [ac[idxl], payoff_layer]
+                        self.temp_storage[idx] = []
+                        self.payoff_time[idx] = 0.0
+                # if len(action_comb)>memory_threshold and idx%memory_threshold==0 and idx!=0:
+                #     temp_dir = './temp_payoff_objs'
+                #     if not os.path.exists(temp_dir):
+                #         os.makedirs(temp_dir)
+                #     with open(temp_dir+'/temp_payoff_obj_'+str(idx//memory_threshold)+'.pkl', 'wb') as output:
+                #         pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
+                #         self.payoffs = {}
+                #         self.temp_storage = {}
+                #         self.payoff_time = {}
                     
     def flow_problem(self, action):
         '''
@@ -456,6 +469,7 @@ class NormalGame:
             if len(indp_res.results_layer[l][0]['actions']) == 0:
                 self.optimal_solution['P'+str(l)+' actions'] += ('NA', l)
             self.optimal_solution['P'+str(l)+' payoff'] = indp_res.results_layer[l][0]['costs']['Total']
+        self.optimal_solution['total cost'] = indp_res.results[0]['costs']['Total']
         self.optimal_solution['full result'] = indp_res
 
 class GameSolution:
@@ -486,9 +500,6 @@ class GameSolution:
         """
         state = self.__dict__.copy()
         state["gambit_sol"] = {}
-        # for _,val in state['sol'].items():
-        #     if len(val['full results'][0])==2:
-        #         val['full results'] = val['full results'][0][1]
         return state
 
     def __setstate__(self, state):
@@ -609,6 +620,7 @@ class InfrastructureGame:
         self.res_alloc_type = self.resource.type
         self.v_r = self.resource.v_r
         self.output_dir = self.set_out_dir(params['OUTPUT_DIR'])
+        self.payoff_dir = self.set_payoff_dir(params['PAYOFF_DIR'])
 
     def run_game(self, print_cmd=True, compute_optimal=False, save_results=True,
                  plot=False, save_model=False,):
@@ -650,7 +662,11 @@ class InfrastructureGame:
                 # Compute payoffs
                 if save_model:
                     save_model = [self.output_dir+'/payoff_models', t]
-                self.objs[t].compute_payoffs(save_model=save_model)
+                if t==1 and self.payoff_dir:
+                    self.objs[t].compute_payoffs(save_model=save_model,
+                                                 payoff_dir=self.payoff_dir)
+                else:
+                    self.objs[t].compute_payoffs(save_model=save_model)
                 # Solve game
                 game_start = time.time()
                 if self.objs[t].payoffs:
@@ -690,8 +706,6 @@ class InfrastructureGame:
         ----------
         root : str
             Root directory to write results
-        mag : str
-            Magnitude parameter of current simulation
 
         Returns
         -------
@@ -706,6 +720,33 @@ class InfrastructureGame:
             output_dir += '_'+self.resource.auction_model.auction_type+\
                 '_'+self.resource.auction_model.valuation_type
         return output_dir
+
+    def set_payoff_dir(self, root):
+        '''
+        This function generates and sets the directory to which the past results
+        were written, from which the payoffs for the first time step are read
+
+        Parameters
+        ----------
+        root : str
+            Root directory to read past results
+
+        Returns
+        -------
+        payoff_dir : str
+            Directory from which the payoffs are read
+
+        '''
+        if root:
+            payoff_dir = root+'ng_results_L'+str(len(self.layers))+'_m'+str(self.magnitude)+"_v"+\
+                str(self.resource.sum_resource)+'_'+self.judgments.judgment_type+\
+                '_'+self.res_alloc_type
+            if self.res_alloc_type == 'AUCTION':
+                payoff_dir += '_'+self.resource.auction_model.auction_type+\
+                    '_'+self.resource.auction_model.valuation_type
+            return payoff_dir+'/objs_'+str(self.sample)+'.pkl'
+        else:
+            return None
 
     def set_network(self, params):
         '''
