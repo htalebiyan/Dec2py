@@ -193,12 +193,13 @@ class NormalGame:
         if payoff_dir:
             with open(payoff_dir, 'rb') as obj_file:
                 past_obj = pickle.load(obj_file)
-        # compute payoffs for each possible combinations of actions
-        if payoff_dir:
             obj_1 = past_obj.objs[1]
+            self.actions = obj_1.actions
+            self.v_r = obj_1.v_r
             self.payoffs = obj_1.payoffs
             self.payoff_time = obj_1.payoff_time
             self.temp_storage = {x:[] for x in self.payoffs.keys()}
+                # compute payoffs for each possible combinations of actions
         else:
             for idx, ac in enumerate(action_comb):
                 self.payoffs[idx] = {}
@@ -412,7 +413,7 @@ class NormalGame:
             total_cost_dict[key] = sol['total cost']
         min_val = min(total_cost_dict.items())[1]
         min_keys = [k for k, v in total_cost_dict.items() if v == min_val]
-        # Chosse the lowest cost NE
+        # Chosse the lowest cost NE and randomize among several minimum values
         if len(min_keys) == 1:
             sol_key = min_keys[0]
         else:
@@ -437,6 +438,13 @@ class NormalGame:
 
         self.chosen_equilibrium = self.solution.sol[sol_key]
         self.chosen_equilibrium['chosen mixed profile action'] = mixed_index
+        # Compute complete results for the chosen equilibrium
+        if not isinstance(self.chosen_equilibrium['full results'], indputils.INDPResults):
+            self.chosen_equilibrium['full results'] = [self.flow_problem(self.chosen_equilibrium['solution combination'][0])[1]]
+            original_tc = self.chosen_equilibrium['total cost']
+            re_comp_tc = self.chosen_equilibrium['full results'][0].results[0]['costs']['Total']
+            if abs((re_comp_tc-original_tc)/original_tc)>0.01:
+                sys.exit('Error: the re-computed total cost does not match the original one.')
 
     def find_optimal_solution(self):
         '''
@@ -665,6 +673,12 @@ class InfrastructureGame:
                 if t==1 and self.payoff_dir:
                     self.objs[t].compute_payoffs(save_model=save_model,
                                                  payoff_dir=self.payoff_dir)
+                    if self.v_r[t] != self.objs[t].v_r:
+                        if self.resource.type != 'UNIFORM':
+                            sys.exit('Error: read obj changes v_r invalidly')
+                        else:
+                            self.v_r[t] = self.objs[t].v_r
+                            self.resource.v_r[t] = self.objs[t].v_r
                 else:
                     self.objs[t].compute_payoffs(save_model=save_model)
                 # Solve game
@@ -738,7 +752,7 @@ class InfrastructureGame:
 
         '''
         if root:
-            payoff_dir = root+'ng_results_L'+str(len(self.layers))+'_m'+str(self.magnitude)+"_v"+\
+            payoff_dir = root+'_L'+str(len(self.layers))+'_m'+str(self.magnitude)+"_v"+\
                 str(self.resource.sum_resource)+'_'+self.judgments.judgment_type+\
                 '_'+self.res_alloc_type
             if self.res_alloc_type == 'AUCTION':
