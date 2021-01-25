@@ -84,7 +84,6 @@ class NormalGame:
         self.solution = []
         self.chosen_equilibrium = {}
         self.optimal_solution = {}
-        self.temp_storage = {} # Just a temprory storage for payoff INDP models
 
     def __getstate__(self):
         """
@@ -94,10 +93,6 @@ class NormalGame:
         """
         state = self.__dict__.copy()
         state["normgame"] =  {}
-        # try:
-        #     state['chosen_equilibrium']["full results"] = state['chosen_equilibrium']["full results"][0][1]
-        # except:
-        #     pass
         return state
 
     def __setstate__(self, state):
@@ -191,6 +186,7 @@ class NormalGame:
             actions_super_set[-1].extend(self.actions[l])
         action_comb = list(itertools.product(*actions_super_set))
         if payoff_dir:
+            # Read payoffs for each possible combinations of actions
             with open(payoff_dir, 'rb') as obj_file:
                 past_obj = pickle.load(obj_file)
             obj_1 = past_obj.objs[1]
@@ -198,9 +194,8 @@ class NormalGame:
             self.v_r = obj_1.v_r
             self.payoffs = obj_1.payoffs
             self.payoff_time = obj_1.payoff_time
-            self.temp_storage = {x:[] for x in self.payoffs.keys()}
-                # compute payoffs for each possible combinations of actions
         else:
+            # compute payoffs for each possible combinations of actions
             for idx, ac in enumerate(action_comb):
                 self.payoffs[idx] = {}
                 flow_results = self.flow_problem(ac)
@@ -212,13 +207,11 @@ class NormalGame:
                         # Minus sign because we want to minimize the cost
                         payoff_layer = -flow_results[1].results_layer[l][0]['costs']['Total']
                         self.payoffs[idx][l] = [ac[idxl], payoff_layer]
-                        self.temp_storage[idx] = flow_results[1]
                         self.payoff_time[idx] = flow_results[1].results[0]['run_time']
                 else:
                     for idxl, l in enumerate(self.players):
                         payoff_layer = -1e100 #!!! Change this to work for general case
                         self.payoffs[idx][l] = [ac[idxl], payoff_layer]
-                        self.temp_storage[idx] = []
                         self.payoff_time[idx] = 0.0
                 # if len(action_comb)>memory_threshold and idx%memory_threshold==0 and idx!=0:
                 #     temp_dir = './temp_payoff_objs'
@@ -227,7 +220,6 @@ class NormalGame:
                 #     with open(temp_dir+'/temp_payoff_obj_'+str(idx//memory_threshold)+'.pkl', 'wb') as output:
                 #         pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
                 #         self.payoffs = {}
-                #         self.temp_storage = {}
                 #         self.payoff_time = {}
                     
     def flow_problem(self, action):
@@ -331,16 +323,17 @@ class NormalGame:
             with open(save_model+'/ne_game_'+suffix+".txt", "w") as text_file:
                 text_file.write(self.normgame.write(format='native')[2:-1].replace('\\n', '\n'))
 
-    def solve_game(self, method='enumpure_solve', print_to_cmd=False):
+    def solve_game(self, method='enumerate_pure', print_to_cmd=False):
         '''
         This function solves the normal restoration game given a solving method
 
         Parameters
         ----------
         method : str, optional
-            Method to solve the normal game. The default is 'enumpure_solve'.
-            Options: enumpure_solve, enummixed_solve, lcp_solve, lp_solve,
-            simpdiv_solve, ipa_solve, gnm_solve
+            Method to solve the normal game. The default is 'enumerate_pure'.
+            Options: enumerate_pure, enumerate_mixed_2p, linear_complementarity_2p,
+            linear_programming_2p, simplicial_subdivision,
+            iterated_polymatrix_approximation, global_newton_method
         print_to_cmd : bool, optional
             Should the found equilibria be written to console. The default is False.
 
@@ -351,19 +344,19 @@ class NormalGame:
 
         '''
         start_time = time.time()
-        if method == 'enumpure_solve':
+        if method == 'enumerate_pure':
             gambit_solution = gambit.nash.enumpure_solve(self.normgame)
-        elif method == 'enummixed_solve':
+        elif method == 'enumerate_mixed_2p':
             gambit_solution = gambit.nash.enummixed_solve(self.normgame)
-        elif method == 'lcp_solve':
+        elif method == 'linear_complementarity_2p':
             gambit_solution = gambit.nash.lcp_solve(self.normgame)
-        elif method == 'lp_solve':
+        elif method == 'linear_programming_2p':
             gambit_solution = gambit.nash.lp_solve(self.normgame)
-        elif method == 'simpdiv_solve':
+        elif method == 'simplicial_subdivision':
             gambit_solution = gambit.nash.simpdiv_solve(self.normgame)
-        elif method == 'ipa_solve':
+        elif method == 'iterated_polymatrix_approximation':
             gambit_solution = gambit.nash.ipa_solve(self.normgame)
-        elif method == 'gnm_solve':
+        elif method == 'global_newton_method':
             gambit_solution = gambit.nash.gnm_solve(self.normgame)
         else:
             sys.exit('The solution method is not valid')
@@ -374,22 +367,12 @@ class NormalGame:
 
         self.solving_time = time.time()-start_time
         self.solution = GameSolution(self.players, gambit_solution, self.actions)
-        # Find the INDP results correpsonding to solutions
         for _, sol in self.solution.sol.items():
-            sol['full results'] = []
-            # Find all co,bination of action in the case of mixed strategy
+            # Find all combination of action in the case of mixed strategy
             sol_super_set = []
             for l in self.players:
                 sol_super_set.append(sol['P'+str(l)+' actions'])
             sol['solution combination'] = list(itertools.product(*sol_super_set))
-            for key, ac in self.payoffs.items():
-                pay_vec = []
-                for l in self.players:
-                    pay_vec.append(ac[l][0])
-                for sol_vec in sol['solution combination']:
-                    if pay_vec == list(sol_vec):
-                        sol['full results'].append(self.temp_storage[key])
-        self.temp_storage = {} #Empty the temprory attribute
         # Print to console
         if print_to_cmd:
             print("NE (pure or mixed) Solutions(s)")
@@ -439,10 +422,12 @@ class NormalGame:
         self.chosen_equilibrium = self.solution.sol[sol_key]
         self.chosen_equilibrium['chosen mixed profile action'] = mixed_index
         # Compute complete results for the chosen equilibrium
-        if not isinstance(self.chosen_equilibrium['full results'], indputils.INDPResults):
-            self.chosen_equilibrium['full results'] = [self.flow_problem(self.chosen_equilibrium['solution combination'][0])[1]]
+        self.chosen_equilibrium['full result'] = []
+        for ac in self.chosen_equilibrium['solution combination']:
+            self.chosen_equilibrium['full result'].append(self.flow_problem(ac)[1])
+        if len(self.chosen_equilibrium['full result']) == 1:
             original_tc = self.chosen_equilibrium['total cost']
-            re_comp_tc = self.chosen_equilibrium['full results'][0].results[0]['costs']['Total']
+            re_comp_tc = self.chosen_equilibrium['full result'][0].results[0]['costs']['Total']
             if abs((re_comp_tc-original_tc)/original_tc)>0.01:
                 sys.exit('Error: the re-computed total cost does not match the original one.')
 
@@ -699,7 +684,7 @@ class InfrastructureGame:
                             os.makedirs(self.output_dir+'/payoff_matrix')
                         plots.plot_ne_sol_2player(self.objs[t], suffix=str(self.sample)+'_t'+str(t),
                                                   plot_dir=self.output_dir+'/payoff_matrix')
-                    ne_results = self.objs[t].chosen_equilibrium['full results'][mixed_index]
+                    ne_results = self.objs[t].chosen_equilibrium['full result'][mixed_index]
                     ne_results.results[0]['run_time'] = game_time
                     self.results.extend(ne_results, t_offset=t)
                     indp.apply_recovery(self.net, self.results, t)

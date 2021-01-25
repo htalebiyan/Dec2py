@@ -130,7 +130,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                 dindputils.run_judgment_call(params, save_jc_model=True, print_cmd=False)
             elif params["ALGORITHM"] == "NORMALGAME":
                 gameutils.run_game(params, save_results=True, print_cmd=True,
-                                    save_model=True, plot2D=True) #!!!
+                                    save_model=False, plot2D=False) #!!!
 
 def run_indp_sample(layers):
     interdep_net= indp.initialize_sample_network(layers=layers)
@@ -174,10 +174,10 @@ def run_game_sample(layers, judge_types, auction_type, valuation_type):
     interdep_net= indp.initialize_sample_network(layers=layers)
     params={"NUM_ITERATIONS":7, "OUTPUT_DIR":'../results/ng_sample_12Node_results',
             "V":len(layers), "T":1, "L":layers, "WINDOW_LENGTH":1, "ALGORITHM":"NORMALGAME",
-            'EQUIBALG':'gnm_solve', "N":interdep_net, "MAGNITUDE":0, "SIM_NUMBER":0,
+            'EQUIBALG':'enumerate_pure', "N":interdep_net, "MAGNITUDE":0, "SIM_NUMBER":0,
             "JUDGMENT_TYPE":judge_types, "RES_ALLOC_TYPE":auction_type,
             "VALUATION_TYPE":valuation_type, 'PAYOFF_DIR':None}#'../results/ref/ng_sample_12Node_results'}
-    gameutils.run_game(params, save_results=True, print_cmd=False, save_model=True, plot2D=True)
+    gameutils.run_game(params, save_results=True, print_cmd=True, save_model=True, plot2D=True)
     for jt, rst, vt in itertools.product(judge_types, auction_type, valuation_type):
         print('\n\nPlot restoration plan by Game',jt,rst,vt)
         if rst == 'UNIFORM':
@@ -238,7 +238,7 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
         elif method == 'NORMALGAME':
             params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'ng_results',
                       "V":v, "T":1, "L":layers, "ALGORITHM":"NORMALGAME",
-                      'EQUIBALG':'enumpure_solve', "JUDGMENT_TYPE":judgment_type,
+                      'EQUIBALG':'enumerate_poly', "JUDGMENT_TYPE":judgment_type,
                       "RES_ALLOC_TYPE":res_alloc_type, "VALUATION_TYPE":valuation_type}
             if misc:
                 params['PAYOFF_DIR'] = misc['PAYOFF_DIR']+'ng_results'
@@ -253,15 +253,15 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
  
 if __name__ == "__main__":
     ''' Run a toy example for different methods '''
-    # plt.close('all')
+    plt.close('all')
     layers=[1,2]#,3]
     auction_type = [ "UNIFORM"]#"MCA", "MAA", "MDA"
     valuation_type = ["DTC"]
     judge_types = ["OPTIMISTIC"]#"PESSIMISTIC",
-    # # run_indp_sample(layers)
-    # # run_tdindp_sample(layers)
-    # # # run_jc_sample(layers, judge_types, auction_type, valuation_type)
-    run_game_sample(layers, judge_types, auction_type, valuation_type)
+    # run_indp_sample(layers)
+    # run_tdindp_sample(layers)
+    # # run_jc_sample(layers, judge_types, auction_type, valuation_type)
+    # run_game_sample(layers, judge_types, auction_type, valuation_type)
     
     # COMBS = []
     # OPTIMAL_COMBS = [[0, 0, len(layers), len(layers), 'indp_sample_12Node', 'nan',
@@ -328,7 +328,7 @@ if __name__ == "__main__":
     #:     sce range: FAIL_SCE_PARAM['MAGS']
     #: For Synthetic nets: sample range: FAIL_SCE_PARAM['SAMPLE_RANGE'],
     #:     configurations: FAIL_SCE_PARAM['MAGS']
-    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(50), 'MAGS':range(3),
+    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(50), 'MAGS':range(96),
                       'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
@@ -370,9 +370,9 @@ if __name__ == "__main__":
     # #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
     # #             output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS_DIR)
     # #                 #, misc = {'STM_MODEL_DICT':STM_MODEL_DICT})
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
-    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-    #             dynamic_params=DYNAMIC_PARAMS_DIR, misc = {'PAYOFF_DIR':PAYOFF_DIR})
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
+                res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+                dynamic_params=DYNAMIC_PARAMS_DIR, misc = {'PAYOFF_DIR':PAYOFF_DIR})
 
     ''' Post-processing '''
     # COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
