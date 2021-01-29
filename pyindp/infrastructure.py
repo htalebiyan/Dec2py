@@ -6,6 +6,7 @@ import numpy as np
 import os
 import sys
 import pandas as pd
+import warnings
 
 class InfrastructureNode(object):
     def __init__(self,id,net_id,local_id=""):
@@ -528,10 +529,12 @@ def add_Wu_failure_scenario(G,DAM_DIR="../data/Wu_Scenarios/",noSet=1,noSce=1):
     # Load failure scenarios.
     if os.path.exists(folderDir):  
         for k in range(1,len(netNames.keys())+1):
-            dam_nodes[k] = np.loadtxt(folderDir+
-                                    'Net_%s_Damaged_Nodes.txt' % netNames[k]).astype('int')
-            dam_arcs[k] = np.loadtxt(folderDir+
-                                    'Net_%s_Damaged_Arcs.txt' % netNames[k]).astype('int')        
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                dam_nodes[k] = np.loadtxt(folderDir+ 'Net_%s_Damaged_Nodes.txt'\
+                                          % netNames[k]).astype('int')
+                dam_arcs[k] = np.loadtxt(folderDir+'Net_%s_Damaged_Arcs.txt'\
+                                         % netNames[k]).astype('int')
         for k in range(1,len(netNames.keys())+1):
             if dam_nodes[k].size!=0:
                 if dam_nodes[k].size==1:

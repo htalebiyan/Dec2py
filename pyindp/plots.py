@@ -728,8 +728,8 @@ def plot_ne_analysis(df, x='t', ci=None):
     style_type = 'auction_type'  #decision_type
     # Initialize plot properties
     dpi = 300
-    fig, axs = plt.subplots(len(row_plot), len(col_plot[0]), sharex=True, sharey=False,
-                            figsize=(5000/dpi, 1500/dpi))
+    fig, axs = plt.subplots(len(row_plot), len(col_plot[0]), sharex=True, sharey='row',
+                            figsize=(4000/dpi, 3000/dpi))
     colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
     # colors = ['r', 'b', 'k']
     pal = sns.color_palette(colors[:len(hue_type[0])])
@@ -754,7 +754,7 @@ def plot_ne_analysis(df, x='t', ci=None):
     _, axs_c, axs_r = find_ax(axs, row_plot, col_plot[0])
     for idx, ax in enumerate(axs_c):
         ax.set_title(r'Total resources=%s'%(str(col_plot[0][idx])))
-    plt.savefig('ne_analysis.png', dpi=dpi)
+    plt.savefig('ne_analysis.png', dpi=dpi, bbox_inches='tight')
 
 # Color repository
 # clrs = [['azure', 'light blue'], ['gold', 'khaki'], ['strawberry', 'salmon pink'],

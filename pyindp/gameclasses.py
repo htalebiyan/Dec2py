@@ -180,7 +180,7 @@ class NormalGame:
 
         '''
         actions_super_set = []
-        memory_threshold =  10
+        memory_threshold =  5000
         for l in self.players:
             actions_super_set.append([])
             actions_super_set[-1].extend(self.actions[l])
@@ -213,7 +213,8 @@ class NormalGame:
                         payoff_layer = -1e100 #!!! Change this to work for general case
                         self.payoffs[idx][l] = [ac[idxl], payoff_layer]
                         self.payoff_time[idx] = 0.0
-                # if len(action_comb)>memory_threshold and idx%memory_threshold==0 and idx!=0:
+                if len(action_comb)>memory_threshold and idx%memory_threshold==0 and idx!=0:
+                    print(str(idx//memory_threshold), '*', str(memory_threshold))
                 #     temp_dir = './temp_payoff_objs'
                 #     if not os.path.exists(temp_dir):
                 #         os.makedirs(temp_dir)
@@ -465,6 +466,17 @@ class NormalGame:
         self.optimal_solution['total cost'] = indp_res.results[0]['costs']['Total']
         self.optimal_solution['full result'] = indp_res
 
+class BayesianGame(NormalGame):
+    def __init__(self, L, net, v_r):
+        super().__init__(self, L, net, v_r)
+        self.action_labels = {}
+    
+    def label_actions(self):
+        for ac in self.action:
+            if ac == '(OA':
+                pass
+        
+
 class GameSolution:
     '''
     This class extracts (from the gambit solution) and saves the solution of the normal game
@@ -480,11 +492,12 @@ class GameSolution:
         Dictionary of solutions of the normal game, including actions, their probabilities,
         payoffs, and the total cost,  set by :meth:`extract_solution`.
     '''
+
     def __init__(self, L, sol, actions):
         self.players = L
         self.gambit_sol = sol
         self.sol = self.extract_solution(actions)
-        
+
     def __getstate__(self):
         """
         Return state values to be pickled. gambit_sol is deleted when
@@ -653,6 +666,8 @@ class InfrastructureGame:
                 # Create normal game
                 self.objs[t] = NormalGame(self.layers, self.net, self.v_r[t])
                 # Compute payoffs
+                if print_cmd:
+                    print("Computing (or reading) payoffs...")
                 if save_model:
                     save_model = [self.output_dir+'/payoff_models', t]
                 if t==1 and self.payoff_dir:
@@ -666,11 +681,15 @@ class InfrastructureGame:
                             self.resource.v_r[t] = self.objs[t].v_r
                 else:
                     self.objs[t].compute_payoffs(save_model=save_model)
+                    if save_results: #!!!
+                        self.save_object_to_file()
                 # Solve game
                 game_start = time.time()
                 if self.objs[t].payoffs:
                     if save_model:
                         save_model = self.output_dir+'/games'
+                    if print_cmd:
+                        print("Building and Solving the game...")
                     self.objs[t].build_game(save_model=save_model,
                                             suffix=str(self.sample)+'_t'+str(t))
                     self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd)
