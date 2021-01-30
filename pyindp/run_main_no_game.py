@@ -271,12 +271,12 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
  
 if __name__ == "__main__":
     ''' Run a toy example for different methods '''
-    plt.close('all')
-    layers=[1,2]#,3]
-    auction_type = ["MCA", "UNIFORM"]#, "MAA", "MDA"
-    valuation_type = ["DTC"]
-    judge_types = ["OPTIMISTIC"]#"PESSIMISTIC",
-    run_indp_sample(layers)
+    # plt.close('all')
+    # layers=[1,2]#,3]
+    # auction_type = ["MCA", "UNIFORM"]#, "MAA", "MDA"
+    # valuation_type = ["DTC"]
+    # judge_types = ["OPTIMISTIC"]#"PESSIMISTIC",
+    # run_indp_sample(layers)
     # run_tdindp_sample(layers)
     # # run_jc_sample(layers, judge_types, auction_type, valuation_type)
     # run_game_sample(layers, judge_types, auction_type, valuation_type)

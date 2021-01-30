@@ -7,8 +7,8 @@ import pandas as pd
 from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 sns.set(context='notebook', style='darkgrid', font_scale=1.2)
-# plt.rc('text', usetex=True)
-# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                    decision_type=None, judgment_type=None,
@@ -72,7 +72,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
-                            figsize=(5000/dpi, 1500/dpi))
+                            figsize=(2000/dpi, 1500/dpi))
     colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
     # colors = ['r', 'b', 'k']
     pal = sns.color_palette(colors[:len(hue_type[0])])
@@ -146,8 +146,8 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     handles, labels = ax.get_legend_handles_labels()
     handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
     labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='lower right', ncol=1, framealpha=0.35,
-               bbox_to_anchor=(.9, 0.11)) 
+    fig.legend(handles, labels, loc='lower left', ncol=1, framealpha=0.35,
+               bbox_to_anchor=(.91, 0.11)) 
     # Add overll x- and y-axis titles
     _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
@@ -156,7 +156,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
         ax.annotate(str(row_plot[0][idx]), xy=(0, 0.5),
                     xytext=(-ax.yaxis.labelpad - 4, 0), xycoords=ax.yaxis.label,
                     textcoords='offset points', ha='right', va='center', rotation=90)
-    plt.savefig('Performance_curves.png', dpi=dpi)
+    plt.savefig('Performance_curves.png', dpi=dpi, bbox_inches='tight')
 
 def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     '''
@@ -198,7 +198,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
-                            sharey=True, figsize=(4000/dpi, 1600/dpi))
+                            sharey=True, figsize=(2000/dpi, 1200/dpi))
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
             ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
@@ -224,13 +224,13 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
                 ax.xaxis.set_label_position('bottom')
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='lower right', bbox_to_anchor = (0.9,0.1),
+    fig.legend(handles, labels, loc='lower right', bbox_to_anchor = (0.9,0.15),
                 frameon=True, framealpha=.75, ncol=1)
     _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
         corrected_label = correct_legend_labels([col_plot[0][idx]])[0]
         ax.set_title(r'Decision Type: %s'%(corrected_label))
-    plt.savefig('Relative_perforamnce.png', dpi=dpi)
+    plt.savefig('Relative_perforamnce.png', dpi=dpi, bbox_inches='tight')
 
 def plot_auction_allocation(df_res, ci=None):
     '''
@@ -531,79 +531,6 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
     fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5)
     plt.savefig('sep_perf.png', dpi=dpi, bbox_inches='tight')
 
-def correct_legend_labels(labels):
-    '''
-    Parameters
-    ----------
-    labels : list
-        DESCRIPTION.
-
-    Returns
-    -------
-    labels : list
-        DESCRIPTION.
-
-    '''
-    labels = ['iINDP' if x == 'indp_sample_12Node' else x for x in labels]
-    labels = ['Res. Alloc. Type' if x == 'auction_type' else x for x in labels]
-    labels = ['Judge. Type' if x == 'judgment_type' else x for x in labels]
-    labels = ['Decision Type' if x == 'decision_type' else x for x in labels]
-    labels = ['Valuation Type' if x == 'valuation_type' else x for x in labels]
-    labels = ['Auction Time' if x == 'auction_time' else x for x in labels]
-    labels = ['Total Time' if x == 'total_time' else x for x in labels]
-    labels = ['Decision Time' if x == 'decision_time' else x for x in labels]
-    labels = ['Valuation Time' if x == 'valuation_time' else x for x in labels]
-    labels = ['Time Type' if x == 'variable' else x for x in labels]
-    labels = ['iINDP' if x == 'indp' else x for x in labels]
-    labels = ['Dynamic Param. iINDP' if x == 'dp_indp' else x for x in labels]
-    labels = ['Optimal' if x == 'nan' else x for x in labels]#!!!
-    labels = ['td-INDP' if x == 'tdindp' else x for x in labels]
-    labels = ['Judge. Call' if x == 'jc' else x for x in labels]
-    labels = ['Judge. Call' if x == 'jc_sample_12Node' else x for x in labels]
-    labels = ['Normal Game' if x == 'ng' else x for x in labels]
-    labels = ['Normal Game' if x == 'ng_sample_12Node' else x for x in labels]
-    labels = ['Total Resources' if x == 'no_resources' else x for x in labels]
-    labels = ['Total Resources' if x == 'no_resource' else x for x in labels]
-    return labels
-
-def find_ax(axs, row_plot, col_plot, idx_r=0, idx_c=0):
-    '''
-    Parameters
-    ----------
-    axs : TYPE
-        DESCRIPTION.
-    row_plot : TYPE
-        DESCRIPTION.
-    col_plot : TYPE
-        DESCRIPTION.
-    idx_r : TYPE
-        DESCRIPTION.
-    idx_c : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    None.
-
-    '''
-    if len(row_plot) == 1 and len(col_plot) == 1:
-        ax = axs
-        axs_c = [axs]
-        axs_r = [axs]
-    elif len(row_plot) == 1:
-        ax = axs[idx_c]
-        axs_r = [axs[0]]
-        axs_c = axs
-    elif len(col_plot) == 1:
-        ax = axs[idx_r]
-        axs_r = axs
-        axs_c = [axs[0]]
-    else:
-        ax = axs[idx_r, idx_c]
-        axs_c = axs[0, :]
-        axs_r = axs[:, 0]
-    return ax, axs_c, axs_r
-
 def plot_ne_sol_2player(game, suffix='', plot_dir=''):
     '''
     This function plot the payoff functions of a normal game for one time step
@@ -741,20 +668,97 @@ def plot_ne_analysis(df, x='t', ci=None):
             with pal:
                 sns.lineplot(x=x, y=val_r, hue=hue_type[1], style=style_type, markers=True,
                              ci=ci, ax=ax, data=ne_data, **{'markersize':5})
-            ax.set(xlabel=r'time step $t$', ylabel= val_r)
+            ax.set(xlabel=r'time step $t$', ylabel= correct_legend_labels([val_r])[0])
             ax.get_legend().set_visible(False)
             ax.xaxis.set_ticks(np.arange(1, T+1, 1.0))#ax.get_xlim()
     # Rebuild legend
     handles, labels = ax.get_legend_handles_labels()
     handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
     labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='lower right', ncol=1, framealpha=0.35,
-               bbox_to_anchor=(.9, 0.11)) 
+    fig.legend(handles, labels, loc='center right', ncol=1, framealpha=0.35,
+               bbox_to_anchor=(.84, 0.69))
     # Add overll x- and y-axis titles
     _, axs_c, axs_r = find_ax(axs, row_plot, col_plot[0])
     for idx, ax in enumerate(axs_c):
         ax.set_title(r'Total resources=%s'%(str(col_plot[0][idx])))
     plt.savefig('ne_analysis.png', dpi=dpi, bbox_inches='tight')
+
+def correct_legend_labels(labels):
+    '''
+    Parameters
+    ----------
+    labels : list
+        DESCRIPTION.
+
+    Returns
+    -------
+    labels : list
+        DESCRIPTION.
+
+    '''
+    labels = ['iINDP' if x == 'indp_sample_12Node' else x for x in labels]
+    labels = ['Res. Alloc. Type' if x == 'auction_type' else x for x in labels]
+    labels = ['Judge. Type' if x == 'judgment_type' else x for x in labels]
+    labels = ['Decision Type' if x == 'decision_type' else x for x in labels]
+    labels = ['Valuation Type' if x == 'valuation_type' else x for x in labels]
+    labels = ['Auction Time' if x == 'auction_time' else x for x in labels]
+    labels = ['Total Time' if x == 'total_time' else x for x in labels]
+    labels = ['Decision Time' if x == 'decision_time' else x for x in labels]
+    labels = ['Valuation Time' if x == 'valuation_time' else x for x in labels]
+    labels = ['Time Type' if x == 'variable' else x for x in labels]
+    labels = ['iINDP' if x == 'indp' else x for x in labels]
+    labels = ['Dynamic Param. iINDP' if x == 'dp_indp' else x for x in labels]
+    labels = ['Optimal' if x == 'nan' else x for x in labels]#!!!
+    labels = ['td-INDP' if x == 'tdindp' else x for x in labels]
+    labels = ['Judge. Call' if x == 'jc' else x for x in labels]
+    labels = ['Judge. Call' if x == 'jc_sample_12Node' else x for x in labels]
+    labels = ['Normal Game' if x == 'ng' else x for x in labels]
+    labels = ['Normal Game' if x == 'ng_sample_12Node' else x for x in labels]
+    labels = ['Total Resources' if x == 'no_resources' else x for x in labels]
+    labels = ['Total Resources' if x == 'no_resource' else x for x in labels]
+    labels = ['Payoff Similarity' if x == 'payoff_similarity' else x for x in labels]
+    labels = ['Action Similarity' if x == 'action_similarity' else x for x in labels]
+    labels = ['Payoff Ratio' if x == 'payoff_ratio' else x for x in labels]
+    labels = ['\# NE' if x == 'no_ne' else x for x in labels]
+    return labels
+
+def find_ax(axs, row_plot, col_plot, idx_r=0, idx_c=0):
+    '''
+    Parameters
+    ----------
+    axs : TYPE
+        DESCRIPTION.
+    row_plot : TYPE
+        DESCRIPTION.
+    col_plot : TYPE
+        DESCRIPTION.
+    idx_r : TYPE
+        DESCRIPTION.
+    idx_c : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    '''
+    if len(row_plot) == 1 and len(col_plot) == 1:
+        ax = axs
+        axs_c = [axs]
+        axs_r = [axs]
+    elif len(row_plot) == 1:
+        ax = axs[idx_c]
+        axs_r = [axs[0]]
+        axs_c = axs
+    elif len(col_plot) == 1:
+        ax = axs[idx_r]
+        axs_r = axs
+        axs_c = [axs[0]]
+    else:
+        ax = axs[idx_r, idx_c]
+        axs_c = axs[0, :]
+        axs_r = axs[:, 0]
+    return ax, axs_c, axs_r
 
 # Color repository
 # clrs = [['azure', 'light blue'], ['gold', 'khaki'], ['strawberry', 'salmon pink'],
