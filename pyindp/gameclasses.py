@@ -468,14 +468,45 @@ class NormalGame:
 
 class BayesianGame(NormalGame):
     def __init__(self, L, net, v_r):
-        super().__init__(self, L, net, v_r)
+        super().__init__(L, net, v_r)
+        self.fundamental_types = ['C', 'P', 'N']
+        self.states = {}
+        self.type = {}
         self.action_labels = {}
     
-    def label_actions(self):
-        for ac in self.action:
-            if ac == '(OA':
-                pass
-        
+    def label_actions(self, action):
+        label = None
+        if len(action) == 1 and action[0][0] == 'OA':
+            label = 'N'
+        elif action[0] == 'NA':
+            label = 'N'
+        else:
+            label = 'C'
+            for a in action:
+                if a[0] == 'OA':
+                    label = 'P'
+                    break
+        return label
+
+    def set_states(self):
+        comb_w_rep = list(itertools.combinations(self.fundamental_types*len(self.players),2))
+        self.states = list(set(comb_w_rep))
+
+    def set_types(self, signal):
+        for idx, l in enumerate(self.players):
+            if signal=="UC":
+                self.type[l]={x:1/len(self.fundamental_types) for x in self.states if x[idx]=='C'}
+            else:
+                sys.exit('Error: wrong signal name')
+
+    def create_bayesian_players(self):
+        pass
+
+    def compute_bayesian_payoffs(self):
+        pass
+
+    def build_bayesian_game(self):
+        pass
 
 class GameSolution:
     '''
@@ -614,6 +645,7 @@ class InfrastructureGame:
     def __init__(self, params):
         self.layers = params['L']
         self.game_type = params['ALGORITHM']
+        self.signal = params['SIGNAL']
         self.equib_alg = params['EQUIBALG']
         self.magnitude = params['MAGNITUDE']
         self.sample = params["SIM_NUMBER"]
@@ -652,45 +684,50 @@ class InfrastructureGame:
             None
 
         '''
-        if self.game_type == 'NORMALGAME':
-            for t in self.objs.keys():
-                print("-Time Step", t, "/", self.time_steps)
-                #: Resource Allocation
-                res_alloc_time_start = time.time()
-                if self.resource.type == 'AUCTION':
-                    self.resource.auction_model.auction_resources(obj=self,
-                                                                  time_step=t,
-                                                                  print_cmd=print_cmd,
-                                                                  compute_poa=True)
-                self.resource.time[t] = time.time()-res_alloc_time_start
-                # Create normal game
+        for t in self.objs.keys():
+            print("-Time Step", t, "/", self.time_steps)
+            #: Resource Allocation
+            res_alloc_time_start = time.time()
+            if self.resource.type == 'AUCTION':
+                self.resource.auction_model.auction_resources(obj=self,
+                                                              time_step=t,
+                                                              print_cmd=print_cmd,
+                                                              compute_poa=True)
+            self.resource.time[t] = time.time()-res_alloc_time_start
+            # Create game object
+            if self.game_type == 'NORMALGAME':
                 self.objs[t] = NormalGame(self.layers, self.net, self.v_r[t])
-                # Compute payoffs
+            elif self.game_type == 'BAYESGAME':
+                self.objs[t] = BayesianGame(self.layers, self.net, self.v_r[t])
+            else:
+                sys.exit('Error: wrong algorithm name for Infrastructure Game.')
+            # Compute payoffs
+            if print_cmd:
+                print("Computing (or reading) payoffs...")
+            if save_model:
+                save_model_info = [self.output_dir+'/payoff_models', t]
+            if t==1 and self.payoff_dir:
+                self.objs[t].compute_payoffs(save_model=save_model_info,
+                                             payoff_dir=self.payoff_dir)
+                if self.v_r[t] != self.objs[t].v_r:
+                    if self.resource.type != 'UNIFORM':
+                        sys.exit('Error: read obj changes v_r invalidly')
+                    else:
+                        self.v_r[t] = self.objs[t].v_r
+                        self.resource.v_r[t] = self.objs[t].v_r
+            else:
+                self.objs[t].compute_payoffs(save_model=save_model_info)
+                if save_results: #!!!
+                    self.save_object_to_file()
+            # Solve game
+            if self.objs[t].payoffs:
                 if print_cmd:
-                    print("Computing (or reading) payoffs...")
-                if save_model:
-                    save_model = [self.output_dir+'/payoff_models', t]
-                if t==1 and self.payoff_dir:
-                    self.objs[t].compute_payoffs(save_model=save_model,
-                                                 payoff_dir=self.payoff_dir)
-                    if self.v_r[t] != self.objs[t].v_r:
-                        if self.resource.type != 'UNIFORM':
-                            sys.exit('Error: read obj changes v_r invalidly')
-                        else:
-                            self.v_r[t] = self.objs[t].v_r
-                            self.resource.v_r[t] = self.objs[t].v_r
-                else:
-                    self.objs[t].compute_payoffs(save_model=save_model)
-                    if save_results: #!!!
-                        self.save_object_to_file()
-                # Solve game
-                game_start = time.time()
-                if self.objs[t].payoffs:
+                    print("Building and Solving the game...")
+                if self.game_type == 'NORMALGAME':
+                    game_start = time.time()
                     if save_model:
-                        save_model = self.output_dir+'/games'
-                    if print_cmd:
-                        print("Building and Solving the game...")
-                    self.objs[t].build_game(save_model=save_model,
+                        save_model_info = self.output_dir+'/games'
+                    self.objs[t].build_game(save_model=save_model_info,
                                             suffix=str(self.sample)+'_t'+str(t))
                     self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd)
                     self.objs[t].choose_equilibrium()
@@ -707,11 +744,11 @@ class InfrastructureGame:
                     ne_results.results[0]['run_time'] = game_time
                     self.results.extend(ne_results, t_offset=t)
                     indp.apply_recovery(self.net, self.results, t)
-                    # self.results.add_components(t, indputils.INDPComponents.\
-                    #                             calculate_components(ne_results[0],
-                    #                             self.net, layers=self.layers))
-                else:
-                    print('No further action is feasible')
+                elif self.game_type == 'BAYESGAME':
+                    self.objs[t].set_states()
+                    self.objs[t].set_types(self.signal)
+            else:
+                print('No further action is feasible')
         if save_results:
             self.save_object_to_file()
             self.save_results_to_file()

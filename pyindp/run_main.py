@@ -128,7 +128,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                                                  T=params["T"], outdir=params["OUTPUT_DIR"])
             elif params["ALGORITHM"] == "JC":
                 dindputils.run_judgment_call(params, save_jc_model=True, print_cmd=False)
-            elif params["ALGORITHM"] == "NORMALGAME":
+            elif params["ALGORITHM"] in ["NORMALGAME", "BAYESGAME"]:
                 gameutils.run_game(params, save_results=True, print_cmd=True,
                                     save_model=False, plot2D=False) #!!!
 
@@ -170,13 +170,18 @@ def run_jc_sample(layers, judge_types, auction_type, valuation_type):
             indp.plot_indp_sample(params, folderSuffix='_'+jt+'_AUCTION_'+rst+'_'+vt, suffix="real")
         plt.show()
 
-def run_game_sample(layers, judge_types, auction_type, valuation_type):
+def run_game_sample(layers, judge_types, auction_type, valuation_type,
+                    game_type="NORMALGAME", signal=None):
     interdep_net= indp.initialize_sample_network(layers=layers)
-    params={"NUM_ITERATIONS":7, "OUTPUT_DIR":'../results/ng_sample_12Node_results',
-            "V":len(layers), "T":1, "L":layers, "WINDOW_LENGTH":1, "ALGORITHM":"NORMALGAME",
-            'EQUIBALG':'enumerate_pure', "N":interdep_net, "MAGNITUDE":0, "SIM_NUMBER":0,
-            "JUDGMENT_TYPE":judge_types, "RES_ALLOC_TYPE":auction_type,
-            "VALUATION_TYPE":valuation_type, 'PAYOFF_DIR':None}#'../results/ref/ng_sample_12Node_results'}
+    if game_type == "NORMALGAME":
+        out_dir = '../results/ng_sample_12Node_results'
+    elif game_type == "BAYESGAME":
+        out_dir = '../results/bg_sample_12Node_results'
+    params={"NUM_ITERATIONS":7, "OUTPUT_DIR":out_dir, "V":len(layers), "T":1, "L":layers,
+            "WINDOW_LENGTH":1, "ALGORITHM":game_type, 'EQUIBALG':'enumerate_pure',
+            "N":interdep_net, "MAGNITUDE":0, "SIM_NUMBER":0, "JUDGMENT_TYPE":judge_types,
+            "RES_ALLOC_TYPE":auction_type, "VALUATION_TYPE":valuation_type, 'PAYOFF_DIR':None,
+            "SIGNAL":signal}
     gameutils.run_game(params, save_results=True, print_cmd=True, save_model=True, plot2D=True)
     for jt, rst, vt in itertools.product(judge_types, auction_type, valuation_type):
         print('\n\nPlot restoration plan by Game',jt,rst,vt)
@@ -255,15 +260,17 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
  
 if __name__ == "__main__":
     ''' Run a toy example for different methods '''
-    # plt.close('all')
-    # layers=[1,2]#,3]
-    # auction_type = [ "UNIFORM"]#"MCA", "MAA", "MDA"
-    # valuation_type = ["DTC"]
-    # judge_types = ["OPTIMISTIC"]#"PESSIMISTIC",
+    plt.close('all')
+    layers=[1,2]#,3]
+    auction_type = [ "UNIFORM"]#"MCA", "MAA", "MDA"
+    valuation_type = ["DTC"]
+    judge_types = ["OPTIMISTIC"]#"PESSIMISTIC",
     # run_indp_sample(layers)
     # run_tdindp_sample(layers)
-    # # run_jc_sample(layers, judge_types, auction_type, valuation_type)
-    # run_game_sample(layers, judge_types, auction_type, valuation_type)
+    # run_jc_sample(layers, judge_types, auction_type, valuation_type)
+    # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="NORMALGAME")
+    run_game_sample(layers, judge_types, auction_type, valuation_type,
+                    game_type="BAYESGAME", signal="UC")
     
     # COMBS = []
     # OPTIMAL_COMBS = [[0, 0, len(layers), len(layers), 'indp_sample_12Node', 'nan',
@@ -397,6 +404,7 @@ if __name__ == "__main__":
     #                                                               ref_method=REF_METHOD)
     # RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
     # ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
+
     # ''' Save Variables to file '''
     # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
     #             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF, objs]
@@ -424,6 +432,7 @@ if __name__ == "__main__":
     # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
     # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
     # plots.plot_run_time(RUN_TIME_DF, ci=95)
-    plots.plot_ne_analysis(ANALYZE_NE_DF, ci=95)
-    
+    # plots.plot_ne_analysis(ANALYZE_NE_DF, ci=None)
+    # plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=None)
+
     # # [(RUN_TIME_DF['auction_type']!='MDA')&(RUN_TIME_DF['auction_type']!='MAA')]

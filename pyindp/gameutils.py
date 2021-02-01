@@ -2,6 +2,7 @@
 
 '''
 import os
+import sys
 import copy
 import gameclasses
 import indp
@@ -107,7 +108,10 @@ def analyze_NE(objs, combinations, optimal_combinations):
     columns = ['t', 'Magnitude', 'decision_type', 'judgment_type', 'auction_type',
                'valuation_type', 'no_resources', 'sample',
                'ne_total_cost', 'optimal_total_cost', 'payoff_similarity',
-               'action_similarity', 'payoff_ratio', 'no_ne']
+               'action_similarity', 'payoff_ratio', 'no_ne','cooperative',
+               'partially_cooperative', 'non_cooperative', 'idle',
+               'opt_cooperative', 'opt_partially_cooperative', 'opt_non_cooperative',
+               'opt_idle']
     cmplt_analyze = pd.DataFrame(columns=columns, dtype=int)
     print("\nAnalyze NE")
     joinedlist = combinations + optimal_combinations
@@ -121,8 +125,25 @@ def analyze_NE(objs, combinations, optimal_combinations):
                 lyr_act, lyr_payoff, opt_payoff, ne_payoff = compare_sol(optimal_sol, ne_sol, obj.layers)
                 payoff_ratio = ne_payoff/opt_payoff
                 no_ne = len(game.solution.sol.keys())
+
+                cooperation= {'C':0, 'P':0, 'N':0, 'I':0}
+                cooperation_opt= {'C':0, 'P':0, 'N':0, 'I':0}
+                for idx, val in game.solution.sol.items():
+                    for l in game.players:
+                        label = label_action(val['P'+str(l)+' actions'][0])
+                        if not label:
+                            sys.exit('Type of action cannot be found')
+                        cooperation[label] += 1/len(game.players)/len(game.solution.sol.keys())
+                for l in game.players:
+                    label = label_action(game.optimal_solution['P'+str(l)+' actions'])
+                    if not label:
+                        sys.exit('Type of action cannot be found')
+                    cooperation_opt[label] += 1/len(game.players)
                 values = [t+1, x[0], x[4], x[5], x[6], x[7], x[3], x[1], ne_payoff,
-                          opt_payoff, lyr_payoff, lyr_act, payoff_ratio, no_ne]
+                          opt_payoff, lyr_payoff, lyr_act, payoff_ratio, no_ne,
+                          cooperation['C'], cooperation['P'], cooperation['N'],
+                          cooperation['I'], cooperation_opt['C'], cooperation_opt['P'],
+                          cooperation_opt['N'], cooperation_opt['I']]
                 cmplt_analyze = cmplt_analyze.append(dict(zip(columns, values)), ignore_index=True)
             if idx%(len(combinations)//100+1) == 0:
                 dindputils.update_progress(idx+1, len(combinations))
@@ -142,3 +163,18 @@ def compare_sol(opt, ne, layers):
             sum_lyr_payoff += 1
     opt_total_payoff = opt['full result'].results[0]['costs']['Total']
     return sum_lyr_act/len(layers), sum_lyr_payoff/len(layers), opt_total_payoff, ne['total cost']
+
+def label_action(action):
+    label = None
+    if len(action) == 1 and action[0][0] == 'OA':
+        label = 'N'
+    elif action[0] == 'NA':
+        label = 'I'
+    else:
+        label = 'C'
+        for a in action:
+            if a[0] == 'OA':
+                label = 'P'
+                break
+    return label
+ 
