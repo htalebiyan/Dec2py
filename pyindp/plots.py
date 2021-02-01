@@ -576,7 +576,7 @@ def plot_ne_sol_2player(game, suffix='', plot_dir=''):
                     mask.loc[i,col] = False
         sns.heatmap(pivot_dict, annot=False, linewidths=.2, cmap="Blues_r", mask=mask, ax=axs[idxl])
         axs[idxl].set_facecolor("black")
-        axs[idxl].set_title('Player %d\'s payoffs, $R_c=$%d'%(l,game.v_r[l]))
+        axs[idxl].set_title('Player %d\'s payoffs, $v_%d=$%d'%(l,l,game.v_r[l]))
         for _, val in game.solution.sol.items():
             for act in val['solution combination']:
                 p1_act_idx = list(pivot_dict).index(act[0])
@@ -649,7 +649,7 @@ def plot_ne_analysis(df, x='t', ci=None):
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
-    row_plot = ['payoff_similarity', 'action_similarity', 'payoff_ratio', 'no_ne']
+    row_plot=['payoff_similarity', 'action_similarity', 'payoff_ratio', 'no_ne']
     col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
     hue_type = [auction_type, 'auction_type'] #auction_type
     style_type = 'auction_type'  #decision_type
@@ -658,7 +658,6 @@ def plot_ne_analysis(df, x='t', ci=None):
     fig, axs = plt.subplots(len(row_plot), len(col_plot[0]), sharex=True, sharey='row',
                             figsize=(4000/dpi, 3000/dpi))
     colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
-    # colors = ['r', 'b', 'k']
     pal = sns.color_palette(colors[:len(hue_type[0])])
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot):
@@ -680,8 +679,83 @@ def plot_ne_analysis(df, x='t', ci=None):
     # Add overll x- and y-axis titles
     _, axs_c, axs_r = find_ax(axs, row_plot, col_plot[0])
     for idx, ax in enumerate(axs_c):
-        ax.set_title(r'Total resources=%s'%(str(col_plot[0][idx])))
-    plt.savefig('ne_analysis.png', dpi=dpi, bbox_inches='tight')
+        ax.set_title(r'$R_c=$%s'%(str(col_plot[0][idx])))
+    plt.savefig('ne_analysis_.png', dpi=dpi, bbox_inches='tight')
+
+def plot_ne_cooperation(df, x='t', ci=None):
+    '''
+
+    Parameters
+    ----------
+    df : TYPE
+        DESCRIPTION.
+    ci : TYPE, optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    None.
+
+    '''
+    #: Make lists
+    no_resources = df.no_resources.unique().tolist()
+    decision_type = df.decision_type.unique().tolist()
+    judgment_type = df.judgment_type.unique().tolist()
+    if 'nan' in judgment_type:
+        judgment_type.remove('nan')
+    auction_type = df.auction_type.unique().tolist()
+    if 'nan' in auction_type:
+        auction_type.remove('nan')
+    valuation_type = df.valuation_type.unique().tolist()
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
+    T = len(df[x].unique().tolist())
+    row_plot = [auction_type, 'auction_type']
+    col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
+    # hue_type = [auction_type, 'auction_type'] #auction_type
+    # style_type = 'auction_type'  #decision_type
+    value_vars = ['cooperative', 'partially_cooperative', 'non_cooperative', 'idle',
+                  'opt_cooperative', 'opt_partially_cooperative', 'opt_non_cooperative',
+                  'opt_idle']
+    id_vars = [x for x in df.columns if x not in value_vars]
+    # Initialize plot properties
+    dpi = 300
+    fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey='row',
+                            figsize=(4000/dpi, 3000/dpi))
+    colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
+    pal = sns.color_palette(colors)
+    for idx_c, val_c in enumerate(col_plot[0]):
+        for idx_r, val_r in enumerate(row_plot[0]):
+            ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
+            ne_data = df[(df.decision_type.isin(decision_type))&
+                         (df[col_plot[1]] == val_c)&(df[row_plot[1]] == val_r)]
+            ne_data = pd.melt(ne_data, id_vars=id_vars, value_vars=value_vars,
+                              var_name='Cooperation Status')
+            ne_data['Method'] = np.where((ne_data['Cooperation Status'] == 'cooperative')|\
+                                        (ne_data['Cooperation Status'] == 'partially_cooperative')|\
+                                        (ne_data['Cooperation Status'] == 'non_cooperative')|\
+                                        (ne_data['Cooperation Status'] == 'idle'),
+                                        'INRSG', 'INDP')
+            ne_data = ne_data.replace(['opt_cooperative', 'opt_partially_cooperative',
+                                       'opt_non_cooperative', 'opt_idle'], ['cooperative',
+                                       'partially_cooperative', 'non_cooperative', 'idle'])
+            with pal:
+                sns.lineplot(x=x, y='value', hue='Cooperation Status', style='Method',
+                             markers=True, ci=ci, ax=ax, data=ne_data, **{'markersize':5})
+            ax.set(xlabel=r'time step $t$', ylabel= row_plot[0][idx_r])
+            ax.get_legend().set_visible(False)
+            ax.xaxis.set_ticks(np.arange(1, T+1, 1.0))#ax.get_xlim()
+    # Rebuild legend
+    handles, labels = ax.get_legend_handles_labels()
+    handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
+    labels = correct_legend_labels(labels)
+    fig.legend(handles, labels, loc='center right', ncol=1, framealpha=0.35,
+               bbox_to_anchor=(.84, 0.69))
+    # Add overll x- and y-axis titles
+    _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
+    for idx, ax in enumerate(axs_c):
+        ax.set_title(r'$R_c=$%s'%(str(col_plot[0][idx])))
+    plt.savefig('ne_cooperation.png', dpi=dpi, bbox_inches='tight')
 
 def correct_legend_labels(labels):
     '''
@@ -720,6 +794,13 @@ def correct_legend_labels(labels):
     labels = ['Action Similarity' if x == 'action_similarity' else x for x in labels]
     labels = ['Payoff Ratio' if x == 'payoff_ratio' else x for x in labels]
     labels = ['\# NE' if x == 'no_ne' else x for x in labels]
+    labels = ['Cooperative' if x == 'cooperative' else x for x in labels]
+    labels = ['Par. Cooperative' if x == 'partially_cooperative' else x for x in labels]
+    labels = ['Non Cooperative' if x == 'non_cooperative' else x for x in labels]
+    labels = ['Opt. Cooperative' if x == 'opt_cooperative' else x for x in labels]
+    labels = ['Opt. Par. Cooperative' if x == 'opt_partially_cooperative' else x for x in labels]
+    labels = ['Opt. Non Cooperative' if x == 'opt_non_cooperative' else x for x in labels]
+    labels = ['Idle' if x == 'idle' else x for x in labels]
     return labels
 
 def find_ax(axs, row_plot, col_plot, idx_r=0, idx_c=0):
