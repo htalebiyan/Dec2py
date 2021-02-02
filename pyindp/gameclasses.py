@@ -21,8 +21,8 @@ import plots
 
 class NormalGame:
     '''
-    This class models a normal restoration game for a given time step and finds
-    pure and mixed strategy nash equilibria.
+    This class models a normal (strategic) restoration game for a given time step 
+    and finds pure and mixed strategy nash equilibria.
 
     Attributes
     ----------
@@ -47,7 +47,7 @@ class NormalGame:
         INDP or the corresponfing flow problem. It is populated by :meth:`compute_payoffs`.
     payoff_time : dict
         Time to compute each entry in :attr:`payoffs`
-    payoff_time : float
+    solving_time : float
         Time to solve the game using :meth:`solve_game`
     normgame : :class:`gambit.Game`
         Normal game object defined by gambit. It is populated by :meth:`build_game`.
@@ -467,14 +467,58 @@ class NormalGame:
         self.optimal_solution['full result'] = indp_res
 
 class BayesianGame(NormalGame):
+    '''
+    This class models a Bayesian restoration game for a given time step 
+    and finds bayes nash equilibria. This class inherits from :class:`NormalGame`.
+
+    Attributes
+    ----------
+    fundamental_types : list
+        List of fundamental types of players. Currently, it consists of two types:
+
+        - Cooperative(C) player, which prefers cooperative and partially cooperative actions.
+        - Non-cooperative (N) player, which prefers non-cooperative actions.
+    states : dict
+        List of state(s) of the game.
+    states_payoffs : dict
+        List of payoff matrices of state(s) of the game.
+    types : dict
+        List of players' type(s).
+    bayesian_players : list
+        List of bayesian players of the game comprising combiantion of players 
+        and their types.
+    '''
     def __init__(self, L, net, v_r):
         super().__init__(L, net, v_r)
-        self.fundamental_types = ['C', 'P', 'N']
+        self.fundamental_types = ['C', 'N']
         self.states = {}
-        self.type = {}
-        self.action_labels = {}
+        self.states_payoffs = {}
+        self.types = {}
+        self.bayesian_players = []
+        self.bayesian_payoffs = {}
     
     def label_actions(self, action):
+        '''
+        This function return the type of an input action in accordance with
+        :attr:`fundamental_types`:
+
+            - 'C' (cooperative) action consists of one or several actions that
+              some of them are relevent---i.e., reparing damaged nodes that on which
+              other players depend. A 'C' action may include 'OA' action as well,
+              but it cannot be only one 'OA' action. 
+            - 'N' (non-cooperative) action is either 'NA' or 'OA'.
+
+        Parameters
+        ----------
+        action : tuple
+            An action.
+
+        Returns
+        -------
+        label : str
+            The action type.
+        '''
+
         label = None
         if len(action) == 1 and action[0][0] == 'OA':
             label = 'N'
@@ -484,23 +528,79 @@ class BayesianGame(NormalGame):
             label = 'C'
             for a in action:
                 if a[0] == 'OA':
-                    label = 'P'
+                    label = 'C' #'P'
                     break
         return label
 
     def set_states(self):
+        '''
+        This function set the states based on :attr:`fundamental_types` and for
+        each state compute the payoff matrix of all players by doubling the payoff
+        of actions that are not consistant with the player's type.
+
+        .. todo::
+            Games: refine how to reduce importance of action not consistant with
+            the player's type.
+
+        Returns
+        -------
+        None.
+
+        '''
         comb_w_rep = list(itertools.combinations(self.fundamental_types*len(self.players),2))
         self.states = list(set(comb_w_rep))
+        # Assign payoff matrix for each state
+        for s in self.states:
+            self.states_payoffs[s] = copy.deepcopy(self.payoffs) #!!!deepcopy
+            zzz = self.states_payoffs[s]
+            for key, val in self.states_payoffs[s].items():
+                for idx, l in enumerate(self.players):
+                    label = self.label_actions(val[l][0])
+                    if label != s[idx]:
+                        val[l][1] *= 2 #!!!refine how to reduce importance of other types
 
-    def set_types(self, signal):
+    def set_types(self, signals):
+        '''
+        This function set players type based on the signal it receives. Currently,
+        it can interpret the follwoing signnals:
+
+            - Uninformed-cooperative ('UC'): Player know that they are cooperative(C),
+              but they do not hav any information about other players.
+            - Uninformed-non-cooperative ('UN'): Player know that they are non-cooperative(N),
+              but they do not hav any information about other players.
+
+        Parameters
+        ----------
+        signals : dict
+            The collection of signals for all players .
+
+        Returns
+        -------
+        None.
+
+        '''
         for idx, l in enumerate(self.players):
-            if signal=="UC":
-                self.type[l]={x:1/len(self.fundamental_types) for x in self.states if x[idx]=='C'}
-            else:
-                sys.exit('Error: wrong signal name')
+            self.types[l] = {x:{} for x in signals[l]}
+            for s in signals[l]:
+                if s=="UC":
+                    self.types[l][s] = {x:1/len(self.fundamental_types) for x in self.states if x[idx]=='C'}
+                if s=="UN":
+                    self.types[l][s] = {x:1/len(self.fundamental_types) for x in self.states if x[idx]=='N'}
+                else:
+                    sys.exit('Error: wrong signal name')
 
     def create_bayesian_players(self):
-        pass
+        '''
+        This function create one player for each combination of player and its types.
+
+        Returns
+        -------
+        None.
+
+        '''
+        for lyr, val in self.types.items():
+            for typ, valtyp in val.items():
+                self.bayesian_players.append((typ, lyr))
 
     def compute_bayesian_payoffs(self):
         pass
@@ -645,7 +745,7 @@ class InfrastructureGame:
     def __init__(self, params):
         self.layers = params['L']
         self.game_type = params['ALGORITHM']
-        self.signal = params['SIGNAL']
+        self.signals = params['SIGNALS']
         self.equib_alg = params['EQUIBALG']
         self.magnitude = params['MAGNITUDE']
         self.sample = params["SIM_NUMBER"]
@@ -717,7 +817,7 @@ class InfrastructureGame:
                         self.resource.v_r[t] = self.objs[t].v_r
             else:
                 self.objs[t].compute_payoffs(save_model=save_model_info)
-                if save_results: #!!!
+                if save_results: #!!! removewhen don't need to save after payoff
                     self.save_object_to_file()
             # Solve game
             if self.objs[t].payoffs:
@@ -746,7 +846,8 @@ class InfrastructureGame:
                     indp.apply_recovery(self.net, self.results, t)
                 elif self.game_type == 'BAYESGAME':
                     self.objs[t].set_states()
-                    self.objs[t].set_types(self.signal)
+                    self.objs[t].set_types(self.signals)
+                    self.objs[t].create_bayesian_players()
             else:
                 print('No further action is feasible')
         if save_results:

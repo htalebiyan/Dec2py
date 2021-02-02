@@ -714,9 +714,8 @@ def plot_ne_cooperation(df, x='t', ci=None):
     col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
     # hue_type = [auction_type, 'auction_type'] #auction_type
     # style_type = 'auction_type'  #decision_type
-    value_vars = ['cooperative', 'partially_cooperative', 'non_cooperative', 'idle',
-                  'opt_cooperative', 'opt_partially_cooperative', 'opt_non_cooperative',
-                  'opt_idle']
+    value_vars = ['cooperative', 'partially_cooperative', 'OA', 'NA',  'opt_cooperative',
+                  'opt_partially_cooperative', 'opt_OA', 'opt_NA']
     id_vars = [x for x in df.columns if x not in value_vars]
     # Initialize plot properties
     dpi = 300
@@ -733,12 +732,12 @@ def plot_ne_cooperation(df, x='t', ci=None):
                               var_name='Cooperation Status')
             ne_data['Method'] = np.where((ne_data['Cooperation Status'] == 'cooperative')|\
                                         (ne_data['Cooperation Status'] == 'partially_cooperative')|\
-                                        (ne_data['Cooperation Status'] == 'non_cooperative')|\
-                                        (ne_data['Cooperation Status'] == 'idle'),
+                                        (ne_data['Cooperation Status'] == 'OA')|\
+                                        (ne_data['Cooperation Status'] == 'NA'),
                                         'INRSG', 'INDP')
             ne_data = ne_data.replace(['opt_cooperative', 'opt_partially_cooperative',
-                                       'opt_non_cooperative', 'opt_idle'], ['cooperative',
-                                       'partially_cooperative', 'non_cooperative', 'idle'])
+                                       'opt_OA', 'opt_NA'], ['cooperative',
+                                       'partially_cooperative', 'OA', 'NA'])
             with pal:
                 sns.lineplot(x=x, y='value', hue='Cooperation Status', style='Method',
                              markers=True, ci=ci, ax=ax, data=ne_data, **{'markersize':5})
@@ -796,11 +795,12 @@ def correct_legend_labels(labels):
     labels = ['\# NE' if x == 'no_ne' else x for x in labels]
     labels = ['Cooperative' if x == 'cooperative' else x for x in labels]
     labels = ['Par. Cooperative' if x == 'partially_cooperative' else x for x in labels]
-    labels = ['Non Cooperative' if x == 'non_cooperative' else x for x in labels]
-    labels = ['Opt. Cooperative' if x == 'opt_cooperative' else x for x in labels]
-    labels = ['Opt. Par. Cooperative' if x == 'opt_partially_cooperative' else x for x in labels]
-    labels = ['Opt. Non Cooperative' if x == 'opt_non_cooperative' else x for x in labels]
-    labels = ['Idle' if x == 'idle' else x for x in labels]
+    labels = ['Non Cooperative (OA)' if x == 'OA' else x for x in labels]
+    labels = ['Non Cooperative (NA)' if x == 'NA' else x for x in labels]
+    # labels = ['Opt. Cooperative' if x == 'opt_cooperative' else x for x in labels]
+    # labels = ['Opt. Par. Cooperative' if x == 'opt_partially_cooperative' else x for x in labels]
+    # labels = ['Opt. Non Cooperative (OA)' if x == 'opt_OA' else x for x in labels]
+    # labels = ['Opt. Non Cooperative (NA)' if x == 'opt_NA' else x for x in labels]
     return labels
 
 def find_ax(axs, row_plot, col_plot, idx_r=0, idx_c=0):

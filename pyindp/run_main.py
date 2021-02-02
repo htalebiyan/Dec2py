@@ -171,7 +171,7 @@ def run_jc_sample(layers, judge_types, auction_type, valuation_type):
         plt.show()
 
 def run_game_sample(layers, judge_types, auction_type, valuation_type,
-                    game_type="NORMALGAME", signal=None):
+                    game_type="NORMALGAME", signals=None):
     interdep_net= indp.initialize_sample_network(layers=layers)
     if game_type == "NORMALGAME":
         out_dir = '../results/ng_sample_12Node_results'
@@ -181,15 +181,15 @@ def run_game_sample(layers, judge_types, auction_type, valuation_type,
             "WINDOW_LENGTH":1, "ALGORITHM":game_type, 'EQUIBALG':'enumerate_pure',
             "N":interdep_net, "MAGNITUDE":0, "SIM_NUMBER":0, "JUDGMENT_TYPE":judge_types,
             "RES_ALLOC_TYPE":auction_type, "VALUATION_TYPE":valuation_type, 'PAYOFF_DIR':None,
-            "SIGNAL":signal}
+            "SIGNALS":signals}
     gameutils.run_game(params, save_results=True, print_cmd=True, save_model=True, plot2D=True)
-    for jt, rst, vt in itertools.product(judge_types, auction_type, valuation_type):
-        print('\n\nPlot restoration plan by Game',jt,rst,vt)
-        if rst == 'UNIFORM':
-            indp.plot_indp_sample(params, folderSuffix='_'+jt+'_'+rst, suffix="")
-        else:
-            indp.plot_indp_sample(params, folderSuffix='_'+jt+'_AUCTION_'+rst+'_'+vt, suffix="")
-        plt.show()
+    # for jt, rst, vt in itertools.product(judge_types, auction_type, valuation_type):
+    #     print('\n\nPlot restoration plan by Game',jt,rst,vt)
+    #     if rst == 'UNIFORM':
+    #         indp.plot_indp_sample(params, folderSuffix='_'+jt+'_'+rst, suffix="")
+    #     else:
+    #         indp.plot_indp_sample(params, folderSuffix='_'+jt+'_AUCTION_'+rst+'_'+vt, suffix="")
+    #     plt.show()
 
 def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
                res_alloc_type=None, valuation_type=None, output_dir='..', misc =None,
@@ -270,7 +270,7 @@ if __name__ == "__main__":
     # run_jc_sample(layers, judge_types, auction_type, valuation_type)
     # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="NORMALGAME")
     run_game_sample(layers, judge_types, auction_type, valuation_type,
-                    game_type="BAYESGAME", signal="UC")
+                    game_type="BAYESGAME", signals={x:["UC"] for x in layers})
     
     # COMBS = []
     # OPTIMAL_COMBS = [[0, 0, len(layers), len(layers), 'indp_sample_12Node', 'nan',
@@ -405,7 +405,7 @@ if __name__ == "__main__":
     # RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
     # ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
 
-    # ''' Save Variables to file '''
+    ''' Save Variables to file '''
     # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
     #             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF, objs]
 
@@ -415,7 +415,6 @@ if __name__ == "__main__":
 
     ''' Plot results '''
     plt.close('all')
-        
     # ### Getting back the objects ###
     # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'rb') as f:
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
