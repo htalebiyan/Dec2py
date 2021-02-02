@@ -162,6 +162,161 @@
 <p>This module contain the classes used for game theoritical analysis of interdpendent
 network restoration</p>
 <dl class="py class">
+<dt id="gameclasses.BayesianGame">
+<em class="property">class </em><code class="sig-prename descclassname">gameclasses.</code><code class="sig-name descname">BayesianGame</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">L</span></em>, <em class="sig-param"><span class="n">net</span></em>, <em class="sig-param"><span class="n">v_r</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class models a Bayesian restoration game for a given time step
+and finds bayes nash equilibria. This class inherits from <a class="reference internal" href="#gameclasses.NormalGame" title="gameclasses.NormalGame"><code class="xref py py-class docutils literal notranslate"><span class="pre">NormalGame</span></code></a>.</p>
+<dl class="py attribute">
+<dt id="gameclasses.BayesianGame.fundamental_types">
+<code class="sig-name descname">fundamental_types</code><a class="headerlink" href="#gameclasses.BayesianGame.fundamental_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of fundamental types of players. Currently, it consists of two types:</p>
+<ul class="simple">
+<li><p>Cooperative(C) player, which prefers cooperative and partially cooperative actions.</p></li>
+<li><p>Non-cooperative (N) player, which prefers non-cooperative actions.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="gameclasses.BayesianGame.states">
+<code class="sig-name descname">states</code><a class="headerlink" href="#gameclasses.BayesianGame.states" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of state(s) of the game.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="gameclasses.BayesianGame.states_payoffs">
+<code class="sig-name descname">states_payoffs</code><a class="headerlink" href="#gameclasses.BayesianGame.states_payoffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of payoff matrices of state(s) of the game.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="gameclasses.BayesianGame.types">
+<code class="sig-name descname">types</code><a class="headerlink" href="#gameclasses.BayesianGame.types" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of players' type(s).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="gameclasses.BayesianGame.bayesian_players">
+<code class="sig-name descname">bayesian_players</code><a class="headerlink" href="#gameclasses.BayesianGame.bayesian_players" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of bayesian players of the game comprising combiantion of players
+and their types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="gameclasses.BayesianGame.create_bayesian_players">
+<code class="sig-name descname">create_bayesian_players</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame.create_bayesian_players" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function create one player for each combination of player and its types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="gameclasses.BayesianGame.label_actions">
+<code class="sig-name descname">label_actions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">action</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame.label_actions" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function return the type of an input action in accordance with
+<a class="reference internal" href="#gameclasses.BayesianGame.fundamental_types" title="gameclasses.BayesianGame.fundamental_types"><code class="xref py py-attr docutils literal notranslate"><span class="pre">fundamental_types</span></code></a>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>'C' (cooperative) action consists of one or several actions that
+some of them are relevent---i.e., reparing damaged nodes that on which
+other players depend. A 'C' action may include 'OA' action as well,
+but it cannot be only one 'OA' action.</p></li>
+<li><p>'N' (non-cooperative) action is either 'NA' or 'OA'.</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>action</strong> (<em>tuple</em>) -- An action.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>label</strong> -- The action type.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="gameclasses.BayesianGame.set_states">
+<code class="sig-name descname">set_states</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame.set_states" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function set the states based on <a class="reference internal" href="#gameclasses.BayesianGame.fundamental_types" title="gameclasses.BayesianGame.fundamental_types"><code class="xref py py-attr docutils literal notranslate"><span class="pre">fundamental_types</span></code></a> and for
+each state compute the payoff matrix of all players by doubling the payoff
+of actions that are not consistant with the player's type.</p>
+<div class="admonition-todo admonition" id="id1">
+<p class="admonition-title">Todo</p>
+<p>Games: refine how to reduce importance of action not consistant with
+the player's type.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="gameclasses.BayesianGame.set_types">
+<code class="sig-name descname">set_types</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">signals</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame.set_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function set players type based on the signal it receives. Currently,
+it can interpret the follwoing signnals:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Uninformed-cooperative ('UC'): Player know that they are cooperative(C),
+but they do not hav any information about other players.</p></li>
+<li><p>Uninformed-non-cooperative ('UN'): Player know that they are non-cooperative(N),
+but they do not hav any information about other players.</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>signals</strong> (<em>dict</em>) -- The collection of signals for all players .</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt id="gameclasses.GameSolution">
 <em class="property">class </em><code class="sig-prename descclassname">gameclasses.</code><code class="sig-name descname">GameSolution</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">L</span></em>, <em class="sig-param"><span class="n">sol</span></em>, <em class="sig-param"><span class="n">actions</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.GameSolution" title="Permalink to this definition">¶</a></dt>
 <dd><p>This class extracts (from the gambit solution) and saves the solution of the normal game</p>
@@ -226,7 +381,7 @@ payoffs, and the total cost.</p>
 <em class="property">class </em><code class="sig-prename descclassname">gameclasses.</code><code class="sig-name descname">InfrastructureGame</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame" title="Permalink to this definition">¶</a></dt>
 <dd><p>This class is employed to find the restoration strategy for an interdepndent network
 using game theoretic methods over a given time horizon</p>
-<div class="admonition-todo admonition" id="id1">
+<div class="admonition-todo admonition" id="id2">
 <p class="admonition-title">Todo</p>
 <p>Games: Add bayesian games</p>
 </div>
@@ -473,13 +628,28 @@ all simulations , and must not be altered</p>
 <dd><p>This function generates and sets the directory to which the results are written</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>root</strong> (<em>str</em>) -- Root directory to write results</p></li>
-<li><p><strong>mag</strong> (<em>str</em>) -- Magnitude parameter of current simulation</p></li>
-</ul>
+<dd class="field-odd"><p><strong>root</strong> (<em>str</em>) -- Root directory to write results</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><strong>output_dir</strong> -- Directory to which the results are written</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="gameclasses.InfrastructureGame.set_payoff_dir">
+<code class="sig-name descname">set_payoff_dir</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">root</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.set_payoff_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function generates and sets the directory to which the past results
+were written, from which the payoffs for the first time step are read</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>root</strong> (<em>str</em>) -- Root directory to read past results</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>payoff_dir</strong> -- Directory from which the payoffs are read</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>str</p>
@@ -492,7 +662,7 @@ all simulations , and must not be altered</p>
 <em class="property">static </em><code class="sig-name descname">set_time_steps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="n">num_iter</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.set_time_steps" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks if the window length is equal to one as the current version of
 games is devised based on itrative INDP</p>
-<div class="admonition-todo admonition" id="id2">
+<div class="admonition-todo admonition" id="id3">
 <p class="admonition-title">Todo</p>
 <p>Games: Exapnd the code to imitate td-INDP</p>
 </div>
@@ -517,8 +687,8 @@ games is devised based on itrative INDP</p>
 <dl class="py class">
 <dt id="gameclasses.NormalGame">
 <em class="property">class </em><code class="sig-prename descclassname">gameclasses.</code><code class="sig-name descname">NormalGame</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">L</span></em>, <em class="sig-param"><span class="n">net</span></em>, <em class="sig-param"><span class="n">v_r</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame" title="Permalink to this definition">¶</a></dt>
-<dd><p>This class models a normal restoration game for a given time step and finds
-pure and mixed strategy nash equilibria.</p>
+<dd><p>This class models a normal (strategic) restoration game for a given time step
+and finds pure and mixed strategy nash equilibria.</p>
 <dl class="py attribute">
 <dt id="gameclasses.NormalGame.players">
 <code class="sig-name descname">players</code><a class="headerlink" href="#gameclasses.NormalGame.players" title="Permalink to this definition">¶</a></dt>
@@ -579,6 +749,17 @@ set by <a class="reference internal" href="#gameclasses.NormalGame.find_actions"
 </dd></dl>
 
 <dl class="py attribute">
+<dt id="gameclasses.NormalGame.actions_reduced">
+<code class="sig-name descname">actions_reduced</code><a class="headerlink" href="#gameclasses.NormalGame.actions_reduced" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provisional: If true, actions for at least one agent are more than 1000 and hence are reduced</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
 <dt id="gameclasses.NormalGame.payoffs">
 <code class="sig-name descname">payoffs</code><a class="headerlink" href="#gameclasses.NormalGame.payoffs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dictionary of payoffs for all possible action profiles, calculated by solving
@@ -602,8 +783,8 @@ INDP or the corresponfing flow problem. It is populated by <a class="reference i
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="id0">
-<code class="sig-name descname">payoff_time</code><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dt id="gameclasses.NormalGame.solving_time">
+<code class="sig-name descname">solving_time</code><a class="headerlink" href="#gameclasses.NormalGame.solving_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Time to solve the game using <a class="reference internal" href="#gameclasses.NormalGame.solve_game" title="gameclasses.NormalGame.solve_game"><code class="xref py py-meth docutils literal notranslate"><span class="pre">solve_game()</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -647,7 +828,7 @@ chosen randomly.</p>
 <p>If the chosen NE is a mixed strategy, the mixed strategy with the highest
 probability is chosen. If there are more than one of such mixed strategy,
 then one of them is chosen randomly</p>
-<div class="admonition-todo admonition" id="id3">
+<div class="admonition-todo admonition" id="id4">
 <p class="admonition-title">Todo</p>
 <p>Games: refine the way the game solution is chosen in each time step</p>
 </div>
@@ -700,14 +881,20 @@ is None, which prevents writing to file.</p></li>
 
 <dl class="py method">
 <dt id="gameclasses.NormalGame.compute_payoffs">
-<code class="sig-name descname">compute_payoffs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">save_model</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.compute_payoffs" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">compute_payoffs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">save_model</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">payoff_dir</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.compute_payoffs" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function finds all possible combinations of actions and their corresponding
 payoffs considering resource limitations</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>save_model</strong> (<em>list</em><em>, </em><em>optional</em>) -- The folder name and the current time step, which are needed to create
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>save_model</strong> (<em>list</em><em>, </em><em>optional</em>) -- The folder name and the current time step, which are needed to create
 the folder that contains INDP models for computing payoffs. The default
-is None, which prevent saving models to file.</p>
+is None, which prevent saving models to file.</p></li>
+<li><p><strong>payoff_dir</strong> (<em>list</em><em>, </em><em>optional</em>) -- Address to the file containing past results including payoff values
+for the first time step. For other time steps, the payoff value may
+have been computed based on different initial conditions. The default
+is None.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>None.</p>
@@ -719,7 +906,7 @@ is None, which prevent saving models to file.</p>
 <dt id="gameclasses.NormalGame.find_actions">
 <code class="sig-name descname">find_actions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.find_actions" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function finds all relevant restoration actions for each player</p>
-<div class="admonition-todo admonition" id="id4">
+<div class="admonition-todo admonition" id="id5">
 <p class="admonition-title">Todo</p>
 <p>Games: Add the geographical interdependency to find actions, which means
 to consider the arc repaires as indepndent actions rather than aggregate
@@ -772,7 +959,7 @@ the action profile is <span class="math notranslate nohighlight">\(\{[1], [5, 6]
 only the nodes in the action profile are considered repaired.</p>
 <p>Moreover, by removing arcs from the actions, I am ignoring the geographical
 interdependency among layers.</p>
-<div class="admonition-todo admonition" id="id5">
+<div class="admonition-todo admonition" id="id6">
 <p class="admonition-title">Todo</p>
 <p>Games: Add the geographical interdependency to computation of payoff values</p>
 </div>
@@ -788,14 +975,15 @@ interdependency among layers.</p>
 
 <dl class="py method">
 <dt id="gameclasses.NormalGame.solve_game">
-<code class="sig-name descname">solve_game</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">method</span><span class="o">=</span><span class="default_value">'enumpure_solve'</span></em>, <em class="sig-param"><span class="n">print_to_cmd</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.solve_game" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">solve_game</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">method</span><span class="o">=</span><span class="default_value">'enumerate_pure'</span></em>, <em class="sig-param"><span class="n">print_to_cmd</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.solve_game" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function solves the normal restoration game given a solving method</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>method</strong> (<em>str</em><em>, </em><em>optional</em>) -- Method to solve the normal game. The default is 'enumpure_solve'.
-Options: enumpure_solve, enummixed_solve, lcp_solve, lp_solve,
-simpdiv_solve, ipa_solve, gnm_solve</p></li>
+<li><p><strong>method</strong> (<em>str</em><em>, </em><em>optional</em>) -- Method to solve the normal game. The default is 'enumerate_pure'.
+Options: enumerate_pure, enumerate_mixed_2p, linear_complementarity_2p,
+linear_programming_2p, simplicial_subdivision,
+iterated_polymatrix_approximation, global_newton_method</p></li>
 <li><p><strong>print_to_cmd</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Should the found equilibria be written to console. The default is False.</p></li>
 </ul>
 </dd>
