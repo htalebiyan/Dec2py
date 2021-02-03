@@ -321,10 +321,10 @@ class NormalGame:
         if save_model:
             if not os.path.exists(save_model):
                 os.makedirs(save_model)
-            with open(save_model+'/ne_game_'+suffix+".txt", "w") as text_file:
+            with open(save_model+'/norm_game_'+suffix+".txt", "w") as text_file:
                 text_file.write(self.normgame.write(format='native')[2:-1].replace('\\n', '\n'))
 
-    def solve_game(self, method='enumerate_pure', print_to_cmd=False):
+    def solve_game(self, method='enumerate_pure', print_to_cmd=False, game_type='normal'):
         '''
         This function solves the normal restoration game given a solving method
 
@@ -337,6 +337,8 @@ class NormalGame:
             iterated_polymatrix_approximation, global_newton_method
         print_to_cmd : bool, optional
             Should the found equilibria be written to console. The default is False.
+        print_to_cmd : str, optional
+            Type of game that is solved. The default is 'normal'.
 
         Returns
         -------
@@ -344,34 +346,41 @@ class NormalGame:
             None.
 
         '''
+        game = self.normgame
+        if game_type == 'bayesian':
+            game = self.bayesian_game
         start_time = time.time()
         if method == 'enumerate_pure':
-            gambit_solution = gambit.nash.enumpure_solve(self.normgame)
+            gambit_solution = gambit.nash.enumpure_solve(game)
         elif method == 'enumerate_mixed_2p':
-            gambit_solution = gambit.nash.enummixed_solve(self.normgame)
+            gambit_solution = gambit.nash.enummixed_solve(game)
         elif method == 'linear_complementarity_2p':
-            gambit_solution = gambit.nash.lcp_solve(self.normgame)
+            gambit_solution = gambit.nash.lcp_solve(game)
         elif method == 'linear_programming_2p':
-            gambit_solution = gambit.nash.lp_solve(self.normgame)
+            gambit_solution = gambit.nash.lp_solve(game)
         elif method == 'simplicial_subdivision':
-            gambit_solution = gambit.nash.simpdiv_solve(self.normgame)
+            gambit_solution = gambit.nash.simpdiv_solve(game)
         elif method == 'iterated_polymatrix_approximation':
-            gambit_solution = gambit.nash.ipa_solve(self.normgame)
+            gambit_solution = gambit.nash.ipa_solve(game)
         elif method == 'global_newton_method':
-            gambit_solution = gambit.nash.gnm_solve(self.normgame)
+            gambit_solution = gambit.nash.gnm_solve(game)
         else:
             sys.exit('The solution method is not valid')
-        
         if len(gambit_solution)==0:
             print('No solution found: switching to pure enumeratiom method')
-            gambit_solution = gambit.nash.enumpure_solve(self.normgame)
-
+            gambit_solution = gambit.nash.enumpure_solve(game)
         self.solving_time = time.time()-start_time
-        self.solution = GameSolution(self.players, gambit_solution, self.actions)
+
+        player_list = self.players
+        action_list = self.actions
+        if game_type == 'bayesian':
+            player_list = self.bayesian_players
+            action_list = {x:self.actions[x[1]] for x in self.bayesian_players}
+        self.solution = GameSolution(player_list, gambit_solution, action_list)
         for _, sol in self.solution.sol.items():
             # Find all combination of action in the case of mixed strategy
             sol_super_set = []
-            for l in self.players:
+            for l in player_list:
                 sol_super_set.append(sol['P'+str(l)+' actions'])
             sol['solution combination'] = list(itertools.product(*sol_super_set))
         # Print to console
@@ -496,7 +505,19 @@ class BayesianGame(NormalGame):
         self.types = {}
         self.bayesian_players = []
         self.bayesian_payoffs = {}
-    
+        self.bayesian_game = []
+
+    def __getstate__(self):
+        """
+        Return state values to be pickled. Gambit game object is deleted when
+        pickling. To retirve it, user should save the game to file when building 
+        the game and read it later and add it to to the unpickled object
+        """
+        state = self.__dict__.copy()
+        state["normgame"] =  {}
+        state["bayesian_game"] =  {}
+        return state
+
     def label_actions(self, action):
         '''
         This function return the type of an input action in accordance with
@@ -564,10 +585,8 @@ class BayesianGame(NormalGame):
         This function set players type based on the signal it receives. Currently,
         it can interpret the follwoing signnals:
 
-            - Uninformed-cooperative ('UC'): Player know that they are cooperative(C),
-              but they do not hav any information about other players.
-            - Uninformed-non-cooperative ('UN'): Player know that they are non-cooperative(N),
-              but they do not hav any information about other players.
+            - Uninformed ('U'): Players  do not have any information about other players,
+              and assign equal probability to other players' types.
 
         Parameters
         ----------
@@ -580,14 +599,16 @@ class BayesianGame(NormalGame):
 
         '''
         for idx, l in enumerate(self.players):
-            self.types[l] = {x:{} for x in signals[l]}
-            for s in signals[l]:
-                if s=="UC":
-                    self.types[l][s] = {x:1/len(self.fundamental_types) for x in self.states if x[idx]=='C'}
-                if s=="UN":
-                    self.types[l][s] = {x:1/len(self.fundamental_types) for x in self.states if x[idx]=='N'}
-                else:
-                    sys.exit('Error: wrong signal name')
+            self.types[l] = {x:{} for x in self.fundamental_types}
+            if signals[l]=="U":
+                for t in self.fundamental_types:
+                    for s in self.states:
+                        if s[idx]==t:
+                            self.types[l][t][s] = 1/len(self.fundamental_types)
+                        else:
+                            self.types[l][t][s] = 0.0
+            else:
+                sys.exit('Error: wrong signal name')
 
     def create_bayesian_players(self):
         '''
@@ -603,10 +624,72 @@ class BayesianGame(NormalGame):
                 self.bayesian_players.append((typ, lyr))
 
     def compute_bayesian_payoffs(self):
-        pass
+        bayes_actions = []
+        actions_super_set = []
+        for b in self.bayesian_players:
+            actions_super_set.append([])
+            actions_super_set[-1].extend(self.actions[b[1]])
+        action_comb = list(itertools.product(*actions_super_set))
+        # compute payoffs for each possible combinations of actions
+        for idx, ac in enumerate(action_comb):
+            self.bayesian_payoffs[idx] = {}
+            for idxb, b in enumerate(self.bayesian_players):
+                payoff = 0
+                for s in self.states:
+                    prob_state = self.types[b[1]][b[0]][s]
+                    if prob_state>0:
+                        payoff_dict = self.states_payoffs[s]
+                        payoff_keys = list(payoff_dict.keys())
+                        for idxl, l in enumerate(self.players):
+                            temp = []
+                            player_index = self.bayesian_players.index((s[idxl], l))
+                            for key in payoff_keys:
+                                if payoff_dict[key][l][0] == ac[player_index]:
+                                    temp.append(key)
+                            payoff_keys = [x for x in temp]
+                        if len(payoff_keys) != 1:
+                            sys.exit('Error: cannot find the payoff value for', ac)
+                        utility_val = payoff_dict[payoff_keys[0]][b[1]][1]
+                        payoff += prob_state*utility_val
+                self.bayesian_payoffs[idx][b] = [ac[idxb], payoff]
 
-    def build_bayesian_game(self):
-        pass
+    def build_bayesian_game(self, save_model=None, suffix=''):
+        '''
+        This function constructs the bayesian restoratuion game
+
+        Parameters
+        ----------
+        save_model : str, optional
+            Directory to which the game should be written as a .txt file. The default
+            is None, which prevents writing to file.
+        suffix : str, optional
+            An optional suffix thta is added to the file name. The default is ''.
+
+        Returns
+        -------
+        :
+            None.
+
+        '''
+        dimensions = []
+        for b in self.bayesian_players:
+            dimensions.append(len(self.actions[b[1]]))
+        self.bayesian_game = gambit.Game.new_table(dimensions)
+        for idxl, l in enumerate(self.bayesian_players):
+            for idxal, al in enumerate(self.actions[l[1]]):
+                self.bayesian_game.players[idxl].strategies[idxal].label = str(al)
+        for _, ac in self.bayesian_payoffs.items():
+            payoff_cell_corrdinate = []
+            for keyl, l in ac.items():
+                payoff_cell_corrdinate.append(str(l[0]))
+            for keyl, l in ac.items():
+                index = self.bayesian_players.index(keyl)
+                self.bayesian_game[tuple(payoff_cell_corrdinate)][index] = fractions.Fraction(l[1])
+        if save_model:
+            if not os.path.exists(save_model):
+                os.makedirs(save_model)
+            with open(save_model+'/bayes_game_'+suffix+".txt", "w") as text_file:
+                text_file.write(self.bayesian_game.write(format='native')[2:-1].replace('\\n', '\n'))
 
 class GameSolution:
     '''
@@ -829,7 +912,8 @@ class InfrastructureGame:
                         save_model_info = self.output_dir+'/games'
                     self.objs[t].build_game(save_model=save_model_info,
                                             suffix=str(self.sample)+'_t'+str(t))
-                    self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd)
+                    self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd,
+                                            game_type='normal')
                     self.objs[t].choose_equilibrium()
                     mixed_index = self.objs[t].chosen_equilibrium['chosen mixed profile action']
                     game_time = time.time()-game_start
@@ -848,6 +932,13 @@ class InfrastructureGame:
                     self.objs[t].set_states()
                     self.objs[t].set_types(self.signals)
                     self.objs[t].create_bayesian_players()
+                    self.objs[t].compute_bayesian_payoffs()
+                    if save_model:
+                        save_model_info = self.output_dir+'/bayesian_games'
+                    self.objs[t].build_bayesian_game(save_model=save_model_info,
+                                                     suffix=str(self.sample)+'_t'+str(t))
+                    self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd,
+                                            game_type='bayesian')
             else:
                 print('No further action is feasible')
         if save_results:

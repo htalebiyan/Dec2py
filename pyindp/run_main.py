@@ -177,7 +177,7 @@ def run_game_sample(layers, judge_types, auction_type, valuation_type,
         out_dir = '../results/ng_sample_12Node_results'
     elif game_type == "BAYESGAME":
         out_dir = '../results/bg_sample_12Node_results'
-    params={"NUM_ITERATIONS":7, "OUTPUT_DIR":out_dir, "V":len(layers), "T":1, "L":layers,
+    params={"NUM_ITERATIONS":1, "OUTPUT_DIR":out_dir, "V":len(layers), "T":1, "L":layers,
             "WINDOW_LENGTH":1, "ALGORITHM":game_type, 'EQUIBALG':'enumerate_pure',
             "N":interdep_net, "MAGNITUDE":0, "SIM_NUMBER":0, "JUDGMENT_TYPE":judge_types,
             "RES_ALLOC_TYPE":auction_type, "VALUATION_TYPE":valuation_type, 'PAYOFF_DIR':None,
@@ -270,7 +270,7 @@ if __name__ == "__main__":
     # run_jc_sample(layers, judge_types, auction_type, valuation_type)
     # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="NORMALGAME")
     run_game_sample(layers, judge_types, auction_type, valuation_type,
-                    game_type="BAYESGAME", signals={x:["UC"] for x in layers})
+                    game_type="BAYESGAME", signals={x:'U' for x in layers})
     
     # COMBS = []
     # OPTIMAL_COMBS = [[0, 0, len(layers), len(layers), 'indp_sample_12Node', 'nan',
