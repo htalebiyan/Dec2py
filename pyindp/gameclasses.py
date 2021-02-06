@@ -324,7 +324,8 @@ class NormalGame:
             with open(save_model+'/norm_game_'+suffix+".txt", "w") as text_file:
                 text_file.write(self.normgame.write(format='native')[2:-1].replace('\\n', '\n'))
 
-    def solve_game(self, method='enumerate_pure', print_to_cmd=False, game_type='normal'):
+    def solve_game(self, method='enumerate_pure', print_to_cmd=False, 
+                   game_info=None):
         '''
         This function solves the normal restoration game given a solving method
 
@@ -337,8 +338,14 @@ class NormalGame:
             iterated_polymatrix_approximation, global_newton_method
         print_to_cmd : bool, optional
             Should the found equilibria be written to console. The default is False.
-        print_to_cmd : str, optional
-            Type of game that is solved. The default is 'normal'.
+        game_info :list, optional
+            The list of information about the game that should be solved. The first
+            item in the list is a class:`~gambit.Game` object similar to
+            :py:attr:`~NormalGame.normgame`. The second item is  a list of players of
+            the game similar to :py:attr:`~NormalGame.players`. The third item is a
+            dictionary that contatins the actions of each player similar to
+            :py:attr:`~NormalGame.actions`. The default is 'None', which is the
+            equivalent of passing [self.normgame, self.players, self.actions].
 
         Returns
         -------
@@ -347,8 +354,13 @@ class NormalGame:
 
         '''
         game = self.normgame
-        if game_type == 'bayesian':
-            game = self.bayesian_game
+        player_list = self.players
+        action_list = self.actions
+        if game_info:
+            game = game_info[0]
+            player_list = game_info[1]
+            action_list = game_info[2]
+
         start_time = time.time()
         if method == 'enumerate_pure':
             gambit_solution = gambit.nash.enumpure_solve(game)
@@ -371,11 +383,6 @@ class NormalGame:
             gambit_solution = gambit.nash.enumpure_solve(game)
         self.solving_time = time.time()-start_time
 
-        player_list = self.players
-        action_list = self.actions
-        if game_type == 'bayesian':
-            player_list = self.bayesian_players
-            action_list = {x:self.actions[x[1]] for x in self.bayesian_players}
         self.solution = GameSolution(player_list, gambit_solution, action_list)
         for _, sol in self.solution.sol.items():
             # Find all combination of action in the case of mixed strategy
@@ -912,8 +919,7 @@ class InfrastructureGame:
                         save_model_info = self.output_dir+'/games'
                     self.objs[t].build_game(save_model=save_model_info,
                                             suffix=str(self.sample)+'_t'+str(t))
-                    self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd,
-                                            game_type='normal')
+                    self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd)
                     self.objs[t].choose_equilibrium()
                     mixed_index = self.objs[t].chosen_equilibrium['chosen mixed profile action']
                     game_time = time.time()-game_start
@@ -933,12 +939,26 @@ class InfrastructureGame:
                     self.objs[t].set_types(self.signals)
                     self.objs[t].create_bayesian_players()
                     self.objs[t].compute_bayesian_payoffs()
-                    if save_model:
-                        save_model_info = self.output_dir+'/bayesian_games'
+                    # if save_model:
+                    #     save_model_info = self.output_dir+'/bayesian_games'
                     self.objs[t].build_bayesian_game(save_model=save_model_info,
-                                                     suffix=str(self.sample)+'_t'+str(t))
+                                                      suffix=str(self.sample)+'_t'+str(t))
+                    ### Game info needed to pass to the solver
+                    game_info = [self.objs[t].bayesian_game, self.objs[t].bayesian_players]
+                    action_list = {}
+                    for b in self.objs[t].bayesian_players:
+                        action_list[b] = copy.deepcopy(self.objs[t].actions[b[1]])
+                        for idx, ac in enumerate(action_list[b]):
+                            if ac[0] == 'NA':
+                                action_list[b][idx] = (ac[0], b)
+                            else:
+                                temp = ()
+                                for a in ac:
+                                    temp += ((a[0], b),)
+                                action_list[b][idx] = temp
+                    game_info.append(action_list)
                     self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd,
-                                            game_type='bayesian')
+                                            game_info=game_info)
             else:
                 print('No further action is feasible')
         if save_results:
