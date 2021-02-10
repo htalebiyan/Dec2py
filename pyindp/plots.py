@@ -72,7 +72,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
-                            figsize=(2000/dpi, 1500/dpi))
+                            figsize=(4000/dpi, 1500/dpi))
     colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
     # colors = ['r', 'b', 'k']
     pal = sns.color_palette(colors[:len(hue_type[0])])
@@ -147,7 +147,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
     labels = correct_legend_labels(labels)
     fig.legend(handles, labels, loc='lower left', ncol=1, framealpha=0.35,
-               bbox_to_anchor=(.91, 0.11)) 
+               bbox_to_anchor=(.7, 0.11)) 
     # Add overll x- and y-axis titles
     _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):

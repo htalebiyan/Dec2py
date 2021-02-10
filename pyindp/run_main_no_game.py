@@ -44,17 +44,17 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
     base_dir = fail_sce_param['BASE_DIR']
     damage_dir = fail_sce_param['DAMAGE_DIR']
     topology = None
-    shelby_data = None
+    infrastructure_data = None
     ext_interdependency = None
     if fail_sce_param['TYPE'] == 'Andres':
-        shelby_data = 'shelby_old'
+        infrastructure_data = 'shelby_old'
         ext_interdependency = "../data/INDP_4-12-2016"
     elif fail_sce_param['TYPE'] == 'WU':
-        shelby_data = 'shelby_extended'
+        infrastructure_data = 'shelby_extended'
         if fail_sce_param['FILTER_SCE'] is not None:
             list_high_dam = pd.read_csv(fail_sce_param['FILTER_SCE'])
     elif fail_sce_param['TYPE'] == 'random':
-        shelby_data = 'shelby_extended'
+        infrastructure_data = 'shelby_extended'
     elif fail_sce_param['TYPE'] == 'synthetic':			   
         topology = fail_sce_param['TOPO']
 
@@ -71,15 +71,15 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
 
             print('---Running Magnitude '+str(m)+' sample '+str(i)+'...')
             print("Initializing network...")
-            if shelby_data:
+            if infrastructure_data:
                 params["N"], _, _ = indp.initialize_network(BASE_DIR=base_dir,
                             external_interdependency_dir=ext_interdependency,
                             sim_number=0, magnitude=6, sample=0, v=params["V"],
-                            shelby_data=shelby_data)
+                            infrastructure_data=infrastructure_data)
             else:
                 params["N"], params["V"], params['L'] = indp.initialize_network(BASE_DIR=base_dir,
                             external_interdependency_dir=ext_interdependency,
-                            magnitude=m, sample=i, shelby_data=shelby_data,
+                            magnitude=m, sample=i, infrastructure_data=infrastructure_data,
                             topology=topology)
             params["SIM_NUMBER"] = i
             params["MAGNITUDE"] = m
@@ -104,26 +104,16 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             elif fail_sce_param['TYPE'] == 'synthetic':
                 indp.add_synthetic_failure_scenario(params["N"], DAM_DIR=base_dir,
                                                     topology=topology, config=m, sample=i)
-            
-            dynamic_params = None
-            if params['DYNAMIC_PARAMS']:
-                return_type = 'step_function'
-                net_names = {'water':1,'gas':2,'power':3,'telecom':4}
-                dynamic_params = {}
-                for key, val in net_names.items():
-                    filename = params['DYNAMIC_PARAMS']+'dynamic_demand_'+return_type+'_'+key+'.pkl'
-                    with open(filename, 'rb') as f:
-                        dd_df = pickle.load(f)
-                    dynamic_params[val] = dd_df[(dd_df['sce']==m)&(dd_df['set']==i)]
+
 
             if params["ALGORITHM"] == "INDP":
                 indp.run_indp(params, validate=False, T=params["T"], layers=params['L'],
-                              controlled_layers=params['L'], saveModel=True, print_cmd_line=False,
-                              dynamic_params=dynamic_params, co_location=True)
+                              controlled_layers=params['L'], saveModel=False, print_cmd_line=False,
+                              co_location=True)
             if params["ALGORITHM"] == "MH":
                 mh.run_mh(params, validate=False, T=params["T"], layers=params['L'],
                           controlled_layers=params['L'], saveModel=True, print_cmd_line=False,
-                          dynamic_params=dynamic_params, co_location=True)
+                          co_location=True)
             elif params["ALGORITHM"] == "INFO_SHARE":
                 indp.run_info_share(params, layers=params['L'], T=params["T"])
             elif params["ALGORITHM"] == "INRG":
@@ -307,7 +297,7 @@ if __name__ == "__main__":
     # plots.plot_auction_allocation(RES_ALLOC_DF, ci=None)
     # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
     ''' ^^^ '''
-    
+    ''' Set analysis directories '''
     #: The address to the list of scenarios that should be included in the analyses.
     FILTER_SCE = 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios/damagedElements_sliceQuantile_0.95.csv'
     # 'C:/Users/ht20/Box Sync/Shelby County Database/damagedElements_sliceQuantile_0.90.csv'
@@ -338,9 +328,8 @@ if __name__ == "__main__":
     # 'C:/Users/ht20/Documents/Files/Auction_synthetic_networks_v3.1/'
     # 'C:/Users/ht20/Documents/Files/Shelby_data_paper/results/'
     # FAIL_SCE_PARAM['TOPO']+'/results/'
-
-    DYNAMIC_PARAMS_DIR = None #'C:/Users/ht20/Documents/Files/dynamic_demand/'
-
+    
+    ''' Set analysis dictionaries '''
     #: Informatiom on the ype of the failure scenario (Andres or Wu)
     #: and network dataset (shelby or synthetic)
     #: Help:
@@ -359,12 +348,21 @@ if __name__ == "__main__":
     # FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(68, 69),
     #                   'FILTER_SCE':None, 'TOPO':'Grid',
     #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    # Oytput and base dir for sythetic database
+
+    # Dynamic parameters dict
+    # DYNAMIC_PARAMS = None
+    # DYNAMIC_PARAMS = {'TYPE': 'shelby_adopted', 'RETURN': 'step_function',
+    #                   'DIR': 'C:/Users/ht20/Documents/Files/dynamic_demand/'}
+    DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'Joplin',
+                      'DIR': "C:/Users/ht20/Documents/GitHub/NIST_testbeds/"}
+
+    # Output and base dir for sythetic database
     SYNTH_DIR = None
     if FAIL_SCE_PARAM['TYPE'] == 'synthetic':
         SYNTH_DIR = BASE_DIR+FAIL_SCE_PARAM['TOPO']+'Networks/'
         OUTPUT_DIR += FAIL_SCE_PARAM['TOPO']+'/results/'
 
+    ''' Set analysis parameters '''
     # No restriction on number of resources for each layer
     RC = [1,2,4,8]#[4, 8, 12]
     # Not necessary for synthetic nets
@@ -384,7 +382,7 @@ if __name__ == "__main__":
 
     ''' Run different methods '''
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
-    #             dynamic_params=DYNAMIC_PARAMS_DIR)
+    #             dynamic_params=DYNAMIC_PARAMS)
     # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
     # #         dynamic_params=DYNAMIC_PARAMS_DIR)
     # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
@@ -397,9 +395,9 @@ if __name__ == "__main__":
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='MH', output_dir=OUTPUT_DIR,
     #             dynamic_params=DYNAMIC_PARAMS_DIR)
     ''' Post-processing '''
-    # COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
-    # REF_METHOD = 'indp'
-    # METHOD_NAMES = ['indp'] #'ng', 'jc', 'dp_indp', 'tdindp'
+    COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
+    REF_METHOD = 'indp'
+    METHOD_NAMES = ['indp', 'dp_indp'] #'ng', 'jc', 'dp_indp', 'tdindp'
 
     # COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
     #             FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
@@ -408,7 +406,7 @@ if __name__ == "__main__":
     #             synthetic_dir=SYNTH_DIR)
 
     # BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
-    #                                     root_result_dir=OUTPUT_DIR, deaggregate=False)
+    #                                     root_result_dir=OUTPUT_DIR, deaggregate=True)
 
     # LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
     #                                         ref_method=REF_METHOD, cost_type=COST_TYPES[0])
@@ -433,18 +431,15 @@ if __name__ == "__main__":
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
     #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE] = pickle.load(f)
 
-    # plots.plot_performance_curves(BASE_DF,
-    #                               cost_type='Total', ci=95,
-    #                               deaggregate=False, plot_resilience=True)
+    plots.plot_performance_curves(BASE_DF[(BASE_DF['no_resources']<9)],
+                                  cost_type='Total', ci=95,
+                                  deaggregate=False, plot_resilience=True)
 
     # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
     #                                     ci=95, normalize=False)
-
+    
     # plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
-    # plots.plot_auction_allocation(RES_ALLOC_DF[(RES_ALLOC_DF['judgment_type']!='PESSIMISTIC')&\
-    #                                       (RES_ALLOC_DF['judgment_type']!='DET-DEMAND')&\
-    #                                       (RES_ALLOC_DF['decision_type']!='indp')&\
-    #                                       (RES_ALLOC_DF['auction_type']!='OPTIMAL')], ci=None)
+    # plots.plot_auction_allocation(RES_ALLOC_DF, ci=None)
     # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
     # plots.plot_run_time(RUN_TIME_DF, ci=95)
     

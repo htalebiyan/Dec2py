@@ -204,15 +204,15 @@ def load_percolation_model(supply_net):
     return G
 
 def load_infrastructure_data(BASE_DIR="../data/INDP_7-20-2015/", external_interdependency_dir=None,
-                             magnitude=6, v=3, sim_number=1, cost_scale=1.0, shelby_data='shelby_extended'):
-    if shelby_data == 'shelby_old':
+                             magnitude=6, v=3, sim_number=1, cost_scale=1.0, data_format='shelby_extended'):
+    if data_format == 'shelby_old':
 #        print "Loading a network.." #!!!
         G = load_infrastructure_array_format(BASE_DIR=BASE_DIR,external_interdependency_dir=external_interdependency_dir,magnitude=magnitude,v=v,sim_number=sim_number,cost_scale=cost_scale)
 #        print G #!!!
         return G
-    elif shelby_data == 'shelby_extended':
+    elif data_format == 'shelby_extended':
 #        print "Loading a network.." #!!!
-        G = load_infrastructure_array_format_extended(BASE_DIR=BASE_DIR,v=v,sim_number=sim_number,cost_scale=cost_scale)
+        G = load_infrastructure_array_format_extended(BASE_DIR=BASE_DIR, cost_scale=cost_scale)
 #        print G #!!!
         return G        
     else:
@@ -356,9 +356,10 @@ def load_infrastructure_array_format(BASE_DIR="../data/INDP_7-20-2015/",external
                 #    print "Arc ((",`func[0][1]`+","+`func[0][3]`+"),("+`func[0][2]`+","+`func[0][3]`+")) broken."
     return G
                
-def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_County/",v=3,sim_number=1,cost_scale=1.0):
+def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_County/",
+                                              cost_scale=1.0):
     files = [f for f in os.listdir(BASE_DIR) if os.path.isfile(os.path.join(BASE_DIR, f))]
-    netNames = {'Water':1,'Gas':2,'Power':3,'Telecommunication':4}
+    netNames = {'Water':1,'Gas':2,'Power':3,'Telecommunication':4} #!!!
     G=InfrastructureNetwork("Test")
     global_index=0
     for file in files:
@@ -379,6 +380,8 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
                     # Assume only one kind of resource for now and one resource for each repaired element.
                     G.G.nodes[(n.local_id,n.net_id)]['data']['inf_data'].resource_usage=1
                     G.G.nodes[(n.local_id,n.net_id)]['data']['inf_data'].demand=float(v[1]['Demand'])
+                    if 'guid' in v[1].index.values:
+                        G.G.nodes[(n.local_id,n.net_id)]['data']['inf_data'].guid=v[1]['guid']
     for file in files:
         fname = file[0:-4] 
         if fname[-4:]=='Arcs':
