@@ -728,8 +728,8 @@ def create_dynamic_param(params, N=None):
                 dynamic_params = pickle.load(f)
             return dynamic_params
 
-        pop_dislocation = pd.read_csv(file_dir+'pop-dislocation-results.csv')
-        mapping_data = pd.read_csv(file_dir+testbed+'_interdependency_table.csv')
+        pop_dislocation = pd.read_csv(file_dir+'pop-dislocation-results.csv', low_memory=False)
+        mapping_data = pd.read_csv(file_dir+testbed+'_interdependency_table.csv', low_memory=False)
         total_num_bldg = mapping_data.shape[0]
         # total_num_hh = pop_dislocation[~(pd.isna(pop_dislocation['guid']))]
         T = 10
@@ -738,28 +738,38 @@ def create_dynamic_param(params, N=None):
                 dynamic_params[n[1]] = pd.DataFrame(columns=dp_dict_col)
             guid = d['data']['inf_data'].guid
             serv_area = mapping_data[mapping_data['substations_guid']==guid]
-            # check if we use the same mapping as the one used to compute demand values
-            serv_area_bldg = serv_area.shape[0]
-            if d['data']['inf_data'].demand<0 and\
-                math.isclose(-serv_area_bldg/total_num_bldg, d['data']['inf_data'].demand,
-                             rel_tol=0.001):
-                print(serv_area_bldg/total_num_bldg, d['data']['inf_data'].demand, n)
-                sys.exit('The population dislocation initial demand is not the same as the demand value')
             # compute dynamic_params
             num_dilocated = {t:0 for t in range(T+1)}
-            total_hh = 0
+            total_pop = 0
             for _, bldg in serv_area.iterrows():
-                bldg_guid = bldg['buildings_guid']
-                pop_bldg_dict = pop_dislocation[pop_dislocation['guid']==bldg_guid]
-                total_hh += pop_bldg_dict.shape[0]
+                pop_bldg_dict = pop_dislocation[pop_dislocation['guid']==bldg['buildings_guid']]
                 for _, hh in pop_bldg_dict.iterrows():
+                    total_pop += hh['numprec'] if ~np.isnan(hh['numprec']) else 0
                     if hh['dislocated']:
-                        disloc_prob = hh['prdis'] 
-                        return_time = int(T*disloc_prob+.5)
+                        #!!! Lumebrton dislocation time paramters
+                        dt_params = {'DS1':1.00, 'DS2':2.33,'DS3':2.49, 'DS4':3.62,
+                                     'white':0.78, 'black':0.88, 'hispanic':0.83,
+                                     'income':-0.00, 'insurance':1.06}
+                        race_white = 1 if hh['race']==1 else 0
+                        race_balck = 1 if hh['race']==2 else 0
+                        hispan = hh['hispan'] if ~np.isnan(hh['hispan']) else 0
+                        #!!! verfy that the explanatory variable correspond to columns in dt_params
+                        linear_term = hh['insignific']*dt_params['DS1']+\
+                            hh['moderate']*dt_params['DS2']+\
+                            hh['heavy']*dt_params['DS3']+\
+                            hh['complete']*dt_params['DS4']+\
+                            race_white*dt_params['white']+\
+                            race_balck*dt_params['black']+\
+                            hispan*dt_params['hispanic']+\
+                            np.random.choice([0,1], p=[.15, .85])*dt_params['insurance'] #!!! insurance data
+                            # hh['randincome']/1000*dt_params['income']+\#!!! income data
+                        disloc_time = np.exp(linear_term)
+                        return_time = math.ceil(disloc_time/7) #!!! assume each time step is one week
                         for t in range(return_time):
-                            num_dilocated[t] += 1
+                            if t <= T:
+                                num_dilocated[t] += hh['numprec'] if ~np.isnan(hh['numprec']) else 0
             for t in range(T+1):
-                values = [t, n[0], total_hh-num_dilocated[t], total_hh]
+                values = [t, n[0], total_pop-num_dilocated[t], total_pop]
                 dynamic_params[n[1]] = dynamic_params[n[1]].append(dict(zip(dp_dict_col, values)),
                                                                    ignore_index=True)
         with open(file_dir+'pop_dislocation_data.pkl', 'wb') as f:

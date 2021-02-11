@@ -53,12 +53,12 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
         decision_type = df.decision_type.unique().tolist()
     if not judgment_type:
         judgment_type = df.judgment_type.unique().tolist()
-    if 'nan' in judgment_type:
-        judgment_type.remove('nan')
+    # if 'nan' in judgment_type:
+    #     judgment_type.remove('nan')
     if not auction_type:
         auction_type = df.auction_type.unique().tolist()
-    if 'nan' in auction_type:
-        auction_type.remove('nan')
+    # if 'nan' in auction_type:
+    #     auction_type.remove('nan')
     if not valuation_type:
         valuation_type = df.valuation_type.unique().tolist()
     if 'nan' in valuation_type:

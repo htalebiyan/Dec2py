@@ -399,29 +399,29 @@ if __name__ == "__main__":
     REF_METHOD = 'indp'
     METHOD_NAMES = ['indp', 'dp_indp'] #'ng', 'jc', 'dp_indp', 'tdindp'
 
-    # COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
-    #             FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
-    #             RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE,
-    #             list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
-    #             synthetic_dir=SYNTH_DIR)
+    COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
+                FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
+                RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE,
+                list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
+                synthetic_dir=SYNTH_DIR)
 
-    # BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
-    #                                     root_result_dir=OUTPUT_DIR, deaggregate=True)
+    BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
+                                        root_result_dir=OUTPUT_DIR, deaggregate=False)
 
-    # LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
-    #                                         ref_method=REF_METHOD, cost_type=COST_TYPES[0])
-    # RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resourcec_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
-    #                                                               objs, root_result_dir=OUTPUT_DIR,
-    #                                                               ref_method=REF_METHOD)
-    # RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
+    LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
+                                            ref_method=REF_METHOD, cost_type=COST_TYPES[0])
+    RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resourcec_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
+                                                                  objs, root_result_dir=OUTPUT_DIR,
+                                                                  ref_method=REF_METHOD)
+    RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
 
-    # ''' Save Variables to file '''
-    # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
-    #             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES]
+    ''' Save Variables to file '''
+    OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
+                RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES]
 
-    # ### Saving the objects ###
-    # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
-    #     pickle.dump(OBJ_LIST, f)
+    ### Saving the objects ###
+    with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
+        pickle.dump(OBJ_LIST, f)
 
     ''' Plot results '''
     plt.close('all')
@@ -431,7 +431,7 @@ if __name__ == "__main__":
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
     #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE] = pickle.load(f)
 
-    plots.plot_performance_curves(BASE_DF[(BASE_DF['no_resources']<9)],
+    plots.plot_performance_curves(BASE_DF,
                                   cost_type='Total', ci=95,
                                   deaggregate=False, plot_resilience=True)
 
