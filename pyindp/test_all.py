@@ -57,7 +57,7 @@ def bayesian_game_BoS():
             if ac[0] in ['B', 'S']:
                 action_list[b][idx] = (ac[0], b)
     game_info.append(action_list)
-    obj.solve_game(method='enumerate_pure', print_to_cmd=True, game_info=game_info)
+    obj.solve_game(method='enumerate_pure', print_to_cmd=False, game_info=game_info)
     
     solutions = []
     for idx, val in obj.solution.sol.items():
@@ -66,9 +66,10 @@ def bayesian_game_BoS():
             solutions[-1].append(x[0])
     return solutions
 
-print('###Building the Bayesian gane \'BoS\'###')
-solutions = bayesian_game_BoS()
-if (['B','B','B','S'] in solutions) and (['S','B','S','S'] in solutions) and len(solutions)==2:
+def test_bayesian_game_BoS():
+    print('###Building the Bayesian game \'BoS\'###')
+    solutions = bayesian_game_BoS()
+    assert ['B','B','B','S'] in solutions, "['B','B','B','S'] is a solution"
+    assert ['S','B','S','S'] in solutions, "['S','B','S','S'] is a solution"
+    assert len(solutions)==2, "Exactly two solutons"
     print('The Bayesian game \'BoS\' was built and solved correctly')
-else:
-    print('The Bayesian game \'BoS\' was Not built or solved correctly')
