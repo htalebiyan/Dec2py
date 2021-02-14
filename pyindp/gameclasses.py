@@ -297,7 +297,7 @@ class NormalGame:
             Directory to which the game should be written as a .txt file. The default
             is None, which prevents writing to file.
         suffix : str, optional
-            An optional suffix thta is added to the file name. The default is ''.
+            An optional suffix that is added to the file name. The default is ''.
 
         Returns
         -------
@@ -398,19 +398,33 @@ class NormalGame:
                 print([float(y) for y in x])
                 print([float(y) for y in x.payoff()])
 
-    def choose_equilibrium(self):
+    def choose_equilibrium(self, preferred_players=None):
         '''
         Choose one action frm pure or mixed strtegies
 
+        Parameters
+        ----------
+        excluded_players : dict, optional
+            The dictionary of player that should be included and excluded from NE
+            choosing process. The default is None, which means all
+            players are considered in choosing payoffs.
+
         Returns
         -------
-        :
-            None.
+        None.
 
         '''
+        if preferred_players:
+            included_palyers = preferred_players['included']
+            excluded_palyers = preferred_players['excluded']
+        else:
+            included_palyers = self.players
+            excluded_palyers = []
+
         total_cost_dict = {}
         for key, sol in self.solution.sol.items():
-            total_cost_dict[key] = sol['total cost']
+            exclude_payoffs = sum([-sol['P'+str(x)+' payoff'] for x in excluded_palyers])
+            total_cost_dict[key] = sol['total cost'] - exclude_payoffs
         min_val = min(total_cost_dict.items())[1]
         min_keys = [k for k, v in total_cost_dict.items() if v == min_val]
         # Chosse the lowest cost NE and randomize among several minimum values
@@ -418,14 +432,14 @@ class NormalGame:
             sol_key = min_keys[0]
         else:
             sol_key = random.choice(min_keys)
-        # Chosse a ranodm action from the action profile if it is a mixed NE
+        # Chosse a ranodm action from the action profile if the chosen solution is a mixed NE
         num_profile_actions = len(self.solution.sol[sol_key]['solution combination'])
         if num_profile_actions == 1:
             mixed_index = 0
         else:
             max_prob_idx = {}
             chosen_profile = ()
-            for l in self.players:
+            for l in included_palyers:
                 probs = self.solution.sol[sol_key]['P'+str(l)+' action probs']
                 max_prob = max(probs)[1]
                 max_keys = [c for c in range(len(probs)) if probs[c] == max_prob]
@@ -440,13 +454,26 @@ class NormalGame:
         self.chosen_equilibrium['chosen mixed profile action'] = mixed_index
         # Compute complete results for the chosen equilibrium
         self.chosen_equilibrium['full result'] = []
-        for ac in self.chosen_equilibrium['solution combination']:
+        for idx, ac in enumerate(self.chosen_equilibrium['solution combination']):
+            if preferred_players:
+                if self.chosen_equilibrium['total cost'] is list:
+                    self.chosen_equilibrium['total cost'][idx] = total_cost_dict[sol_key]
+                else:
+                    self.chosen_equilibrium['total cost'] = total_cost_dict[sol_key]
+                ac_old = tuple(x for x in ac if x[0][1] in included_palyers)
+                ac = ()
+                for x in ac_old:
+                    new_a = ()
+                    for y in x:
+                        new_a += ((y[0], y[1][1]) ,)
+                    ac += (new_a,)
+                self.chosen_equilibrium['solution combination'][idx] = ac
             self.chosen_equilibrium['full result'].append(self.flow_problem(ac)[1])
-        if len(self.chosen_equilibrium['full result']) == 1:
+        if len(self.chosen_equilibrium['full result']) == 1 and not preferred_players:
             original_tc = self.chosen_equilibrium['total cost']
             re_comp_tc = self.chosen_equilibrium['full result'][0].results[0]['costs']['Total']
-            if abs((re_comp_tc-original_tc)/original_tc)>0.01:
-                sys.exit('Error: the re-computed total cost does not match the original one.')
+            assert abs((re_comp_tc-original_tc)/original_tc)<0.01,\
+            'Error: the re-computed total cost does not match the original one.'
 
     def find_optimal_solution(self):
         '''
@@ -587,9 +614,9 @@ class BayesianGame(NormalGame):
                     if label != s[idx]:
                         val[l][1] *= 2 #!!!refine how to reduce importance of other types
 
-    def set_types(self, signals):
+    def set_types(self, beliefs):
         '''
-        This function set players type based on the signal it receives. Currently,
+        This function set players type based on the beliefs it receives. Currently,
         it can interpret the follwoing signnals:
 
             - Uninformed ('U'): Players  do not have any information about other players,
@@ -597,8 +624,8 @@ class BayesianGame(NormalGame):
 
         Parameters
         ----------
-        signals : dict
-            The collection of signals for all players .
+        beliefs : dict
+            The collection of beliefs for all players .
 
         Returns
         -------
@@ -607,7 +634,7 @@ class BayesianGame(NormalGame):
         '''
         for idx, l in enumerate(self.players):
             self.types[l] = {x:{} for x in self.fundamental_types}
-            if signals[l]=="U":
+            if beliefs[l]=="U":
                 for t in self.fundamental_types:
                     for s in self.states:
                         if s[idx]==t:
@@ -835,6 +862,7 @@ class InfrastructureGame:
     def __init__(self, params):
         self.layers = params['L']
         self.game_type = params['ALGORITHM']
+        self.beliefs = params['BELIEFS']
         self.signals = params['SIGNALS']
         self.equib_alg = params['EQUIBALG']
         self.magnitude = params['MAGNITUDE']
@@ -895,9 +923,9 @@ class InfrastructureGame:
             if print_cmd:
                 print("Computing (or reading) payoffs...")
             if save_model:
-                save_model_info = [self.output_dir+'/payoff_models', t]
+                save_payoff_info = [self.output_dir+'/payoff_models', t]
             if t==1 and self.payoff_dir:
-                self.objs[t].compute_payoffs(save_model=save_model_info,
+                self.objs[t].compute_payoffs(save_model=save_payoff_info,
                                              payoff_dir=self.payoff_dir)
                 if self.v_r[t] != self.objs[t].v_r:
                     if self.resource.type != 'UNIFORM':
@@ -906,43 +934,39 @@ class InfrastructureGame:
                         self.v_r[t] = self.objs[t].v_r
                         self.resource.v_r[t] = self.objs[t].v_r
             else:
-                self.objs[t].compute_payoffs(save_model=save_model_info)
+                self.objs[t].compute_payoffs(save_model=save_payoff_info)
                 if save_results: #!!! removewhen don't need to save after payoff
                     self.save_object_to_file()
             # Solve game
             if self.objs[t].payoffs:
                 if print_cmd:
                     print("Building and Solving the game...")
+                if compute_optimal:
+                    self.objs[t].find_optimal_solution()
+
                 if self.game_type == 'NORMALGAME':
-                    game_start = time.time()
                     if save_model:
-                        save_model_info = self.output_dir+'/games'
-                    self.objs[t].build_game(save_model=save_model_info,
+                        save_model_dir = self.output_dir+'/games'
+                    self.objs[t].build_game(save_model=save_model_dir,
                                             suffix=str(self.sample)+'_t'+str(t))
+                    game_start = time.time()
                     self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd)
-                    self.objs[t].choose_equilibrium()
-                    mixed_index = self.objs[t].chosen_equilibrium['chosen mixed profile action']
                     game_time = time.time()-game_start
-                    if compute_optimal:
-                        self.objs[t].find_optimal_solution()
+                    self.objs[t].choose_equilibrium()
                     if plot and len(self.layers)==2:
                         if not os.path.exists(self.output_dir+'/payoff_matrix'):
                             os.makedirs(self.output_dir+'/payoff_matrix')
                         plots.plot_ne_sol_2player(self.objs[t], suffix=str(self.sample)+'_t'+str(t),
                                                   plot_dir=self.output_dir+'/payoff_matrix')
-                    ne_results = self.objs[t].chosen_equilibrium['full result'][mixed_index]
-                    ne_results.results[0]['run_time'] = game_time
-                    self.results.extend(ne_results, t_offset=t)
-                    indp.apply_recovery(self.net, self.results, t)
                 elif self.game_type == 'BAYESGAME':
                     self.objs[t].set_states()
-                    self.objs[t].set_types(self.signals)
+                    self.objs[t].set_types(self.beliefs)
                     self.objs[t].create_bayesian_players()
                     self.objs[t].compute_bayesian_payoffs()
-                    # if save_model:
-                    #     save_model_info = self.output_dir+'/bayesian_games'
-                    self.objs[t].build_bayesian_game(save_model=save_model_info,
-                                                      suffix=str(self.sample)+'_t'+str(t))
+                    if save_model:
+                        save_model_dir = self.output_dir+'/bayesian_games'
+                    self.objs[t].build_bayesian_game(save_model=save_model_dir,
+                                                     suffix=str(self.sample)+'_t'+str(t))
                     ### Game info needed to pass to the solver
                     game_info = [self.objs[t].bayesian_game, self.objs[t].bayesian_players]
                     action_list = {}
@@ -957,8 +981,21 @@ class InfrastructureGame:
                                     temp += ((a[0], b),)
                                 action_list[b][idx] = temp
                     game_info.append(action_list)
+                    game_start = time.time()
                     self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd,
                                             game_info=game_info)
+                    game_time = time.time()-game_start
+                    ### Use signals to find interim NE as the chosen solution
+                    preferred_players = {'included': [(x,i) for i,x in self.signals.items()]}
+                    preferred_players['excluded'] =  [x for x in self.objs[t].bayesian_players\
+                                                      if x not in preferred_players['included']]
+                    self.objs[t].choose_equilibrium(preferred_players=preferred_players)
+
+                mixed_index = self.objs[t].chosen_equilibrium['chosen mixed profile action']
+                ne_results = self.objs[t].chosen_equilibrium['full result'][mixed_index]
+                ne_results.results[0]['run_time'] = game_time
+                self.results.extend(ne_results, t_offset=t)
+                indp.apply_recovery(self.net, self.results, t)
             else:
                 print('No further action is feasible')
         if save_results:
