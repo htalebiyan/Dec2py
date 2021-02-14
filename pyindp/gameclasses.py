@@ -40,6 +40,9 @@ class NormalGame:
         Dictionary of all relavant restoration actions (including 'No Action (NA)' and
         possibly 'Other Action (OA)'), which are used as the possible moves by players,
         set by :meth:`find_actions`
+    first_actions : list
+        List of first action of each player in :attr:`actions`, which is sed to check if
+        any action is left for any one the players.
     actions_reduced : bool
         Provisional: If true, actions for at least one agent are more than 1000 and hence are reduced
     payoffs : dict
@@ -76,6 +79,7 @@ class NormalGame:
         self.v_r = v_r
         self.dependee_nodes = {}
         self.actions = self.find_actions()
+        self.first_actions = [self.actions[l][0][0] for l in self.players]
         self.actions_reduced = False
         self.payoffs = {}
         self.payoff_time = {}
@@ -222,7 +226,6 @@ class NormalGame:
                 #         pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
                 #         self.payoffs = {}
                 #         self.payoff_time = {}
-                    
     def flow_problem(self, action):
         '''
         Solves a flow problem for a given combination of actions
@@ -456,16 +459,27 @@ class NormalGame:
         self.chosen_equilibrium['full result'] = []
         for idx, ac in enumerate(self.chosen_equilibrium['solution combination']):
             if preferred_players:
+                # Rewrite the chosen equlibrium to be cmpatible with the basic normal game and players
                 if self.chosen_equilibrium['total cost'] is list:
                     self.chosen_equilibrium['total cost'][idx] = total_cost_dict[sol_key]
                 else:
                     self.chosen_equilibrium['total cost'] = total_cost_dict[sol_key]
-                ac_old = tuple(x for x in ac if x[0][1] in included_palyers)
+                ac_old = []
+                for x in ac:
+                    if x[0]=='NA':
+                        if x[1] in included_palyers:
+                            ac_old.append(x)
+                    elif x[0][1] in included_palyers:
+                        ac_old.append(x)
+                ac_old = tuple(ac_old)
                 ac = ()
                 for x in ac_old:
                     new_a = ()
-                    for y in x:
-                        new_a += ((y[0], y[1][1]) ,)
+                    if x[0] =='NA':
+                        new_a += ((x[0], x[1][1]))
+                    else:
+                        for y in x:
+                            new_a += ((y[0], y[1][1]),)
                     ac += (new_a,)
                 self.chosen_equilibrium['solution combination'][idx] = ac
             self.chosen_equilibrium['full result'].append(self.flow_problem(ac)[1])
@@ -924,7 +938,9 @@ class InfrastructureGame:
                 print("Computing (or reading) payoffs...")
             if save_model:
                 save_payoff_info = [self.output_dir+'/payoff_models', t]
-            if t==1 and self.payoff_dir:
+            if set(self.objs[t].first_actions) == {'NA'}:
+                print('No further action for any of players')
+            elif t==1 and self.payoff_dir:
                 self.objs[t].compute_payoffs(save_model=save_payoff_info,
                                              payoff_dir=self.payoff_dir)
                 if self.v_r[t] != self.objs[t].v_r:
@@ -996,8 +1012,6 @@ class InfrastructureGame:
                 ne_results.results[0]['run_time'] = game_time
                 self.results.extend(ne_results, t_offset=t)
                 indp.apply_recovery(self.net, self.results, t)
-            else:
-                print('No further action is feasible')
         if save_results:
             self.save_object_to_file()
             self.save_results_to_file()

@@ -176,20 +176,21 @@ def run_game_sample(layers, judge_types, auction_type, valuation_type,
     if game_type == "NORMALGAME":
         out_dir = '../results/ng_sample_12Node_results'
     elif game_type == "BAYESGAME":
-        out_dir = '../results/bg_sample_12Node_results'
-    params={"NUM_ITERATIONS":7, "OUTPUT_DIR":out_dir, "V":len(layers), "T":1, "L":layers,
+        out_dir = '../results/bg'+''.join(signals.values())+''.join(beliefs.values())+\
+            '_sample_12Node_results'
+    params={"NUM_ITERATIONS":7, "OUTPUT_DIR":out_dir, "V":1+len(layers), "T":1, "L":layers,
             "WINDOW_LENGTH":1, "ALGORITHM":game_type, 'EQUIBALG':'enumerate_pure',
             "N":interdep_net, "MAGNITUDE":0, "SIM_NUMBER":0, "JUDGMENT_TYPE":judge_types,
             "RES_ALLOC_TYPE":auction_type, "VALUATION_TYPE":valuation_type, 'PAYOFF_DIR':None,
             "SIGNALS":signals, "BELIEFS":beliefs}
     gameutils.run_game(params, save_results=True, print_cmd=True, save_model=True, plot2D=True)
-    # for jt, rst, vt in itertools.product(judge_types, auction_type, valuation_type):
-    #     print('\n\nPlot restoration plan by Game',jt,rst,vt)
-    #     if rst == 'UNIFORM':
-    #         indp.plot_indp_sample(params, folderSuffix='_'+jt+'_'+rst, suffix="")
-    #     else:
-    #         indp.plot_indp_sample(params, folderSuffix='_'+jt+'_AUCTION_'+rst+'_'+vt, suffix="")
-    #     plt.show()
+    for jt, rst, vt in itertools.product(judge_types, auction_type, valuation_type):
+        print('\n\nPlot restoration plan by Game',jt,rst,vt)
+        if rst == 'UNIFORM':
+            indp.plot_indp_sample(params, folderSuffix='_'+jt+'_'+rst, suffix="")
+        else:
+            indp.plot_indp_sample(params, folderSuffix='_'+jt+'_AUCTION_'+rst+'_'+vt, suffix="")
+        plt.show()
 
 def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
                res_alloc_type=None, valuation_type=None, output_dir='..', misc =None,
@@ -269,10 +270,9 @@ if __name__ == "__main__":
     # run_tdindp_sample(layers)
     # run_jc_sample(layers, judge_types, auction_type, valuation_type)
     # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="NORMALGAME")
-    run_game_sample(layers, judge_types, auction_type, valuation_type,
-                    game_type="BAYESGAME", beliefs={x:'U' for x in layers},
-                    signals={x:'C' for x in layers})
-    
+    run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="BAYESGAME",
+                    beliefs={1:'U', 2:'U'}, signals={1:'N', 2:'C'})
+
     # COMBS = []
     # OPTIMAL_COMBS = [[0, 0, len(layers), len(layers), 'indp_sample_12Node', 'nan',
     #                   'nan', 'nan', ''],
