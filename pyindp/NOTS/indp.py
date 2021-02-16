@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import copy
 import random
 import time
+import math
+import pickle
 import sys
 #HOME_DIR="/Users/Andrew/"
 #if platform.system() == "Linux":
@@ -472,7 +474,9 @@ def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
                             functionality[t][n]=0.0
     return functionality
 
-def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependency_dir=None,sim_number=1,cost_scale=1,magnitude=6,sample=0,v=3,shelby_data=True,topology='Random'):
+def initialize_network(BASE_DIR="../data/INDP_7-20-2015/", external_interdependency_dir=None,
+                       sim_number=1, cost_scale=1, magnitude=6, sample=0, v=3, 
+                       infrastructure_data=True, topology='Random'):
     """ Initializes an InfrastructureNetwork from Shelby County data.
     :param BASE_DIR: Base directory of Shelby County data.
     :param sim_number: Which simulation number to use as input.
@@ -483,21 +487,23 @@ def initialize_network(BASE_DIR="../data/INDP_7-20-2015/",external_interdependen
     """
     layers_temp=[]
     v_temp = 0
-    if shelby_data:
+    if infrastructure_data:
     #    print "Loading Shelby County data..." #!!!
         InterdepNet=load_infrastructure_data(BASE_DIR=BASE_DIR,
                                              external_interdependency_dir=external_interdependency_dir,
                                              sim_number=sim_number, cost_scale=cost_scale,
                                              magnitude=magnitude, v=v,
-                                             shelby_data=shelby_data)
+                                             data_format=infrastructure_data)
     #    print "Data loaded." #!!!
     else:
-        InterdepNet,v_temp,layers_temp=load_synthetic_network(BASE_DIR=BASE_DIR,topology=topology,config=magnitude,sample=sample,cost_scale=cost_scale)
+        InterdepNet,v_temp,layers_temp=load_synthetic_network(BASE_DIR=BASE_DIR, topology=topology,
+                                                              config=magnitude, sample=sample,
+                                                              cost_scale=cost_scale)
     return InterdepNet,v_temp,layers_temp
 
 def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1, validate=False,
              save=True,suffix="", forced_actions=False, saveModel=False, print_cmd_line=True,
-             dynamic_params=None, co_location=True):
+             co_location=True):
     """ Runs an INDP problem with specified parameters. Outputs to directory specified in params['OUTPUT_DIR'].
     :param params: Global parameters.
     :param layers: Layers to consider in the infrastructure network.
@@ -507,7 +513,9 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
     # Initialize failure scenario.
     InterdepNet=None
     if "N" not in params:
-        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",sim_number=params['SIM_NUMBER'],magnitude=params["MAGNITUDE"])
+        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",
+                                       sim_number=params['SIM_NUMBER'],
+                                       magnitude=params["MAGNITUDE"])
     else:
         InterdepNet=params["N"]
     if "NUM_ITERATIONS" not in params:
@@ -530,8 +538,9 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
         # Run INDP for 1 time step (original INDP).
         output_dir=params["OUTPUT_DIR"]+'_L'+str(len(layers))+'_m'+str(params["MAGNITUDE"])+"_v"+outDirSuffixRes
         # Initial calculations.
-        if dynamic_params:
+        if params['DYNAMIC_PARAMS']:
             original_N = copy.deepcopy(InterdepNet) #!!! deepcopy
+            dynamic_params = create_dynamic_param(params, N=original_N)
             dynamic_parameters(InterdepNet, original_N, 0, dynamic_params)
         results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers,
                      functionality=functionality, co_location=co_location)
@@ -539,7 +548,7 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
         indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
         for i in range(params["NUM_ITERATIONS"]):
             print("-Time Step (iINDP)",i+1,"/",params["NUM_ITERATIONS"])
-            if dynamic_params:
+            if params['DYNAMIC_PARAMS']:
                 dynamic_parameters(InterdepNet, original_N, i+1, dynamic_params)
             results=indp(InterdepNet, v_r, T, layers, controlled_layers=controlled_layers,
                          forced_actions=forced_actions, co_location=co_location)
@@ -626,7 +635,9 @@ def run_info_share(params,layers=[1,2,3],T=1,validate=False,suffix=""):
     InterdepNet=None
     num_iterations=params["NUM_ITERATIONS"]
     if "N" not in params:
-        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",sim_number=params['SIM_NUMBER'],magnitude=params["MAGNITUDE"])
+        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",
+                                       sim_number=params['SIM_NUMBER'],
+                                       magnitude=params["MAGNITUDE"])
         params["N"]=InterdepNet
     else:
         InterdepNet=params["N"]
@@ -665,7 +676,9 @@ def run_inrg(params,layers=[1,2,3],validate=False,player_ordering=[3,1],suffix="
     InterdepNet=None
     output_dir=params["OUTPUT_DIR"]+"_m"+str(params["MAGNITUDE"])+"_v"+str(params["V"])
     if "N" not in params:
-        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",sim_number=params['SIM_NUMBER'],magnitude=params["MAGNITUDE"])
+        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",
+                                       sim_number=params['SIM_NUMBER'],
+                                       magnitude=params["MAGNITUDE"])
         params["N"]=InterdepNet
     else:
         InterdepNet=params["N"]
@@ -696,6 +709,78 @@ def run_inrg(params,layers=[1,2,3],validate=False,player_ordering=[3,1],suffix="
         os.makedirs(output_dir)
     for P in layers:
         player_strategies[P].to_csv(output_dir,params["SIM_NUMBER"],suffix="P"+str(P)+"_"+suffix)
+
+def create_dynamic_param(params, N=None):
+    print("Computing dislocation data...")
+    dynamic_param_dict = params['DYNAMIC_PARAMS']
+    return_type = dynamic_param_dict['RETURN']
+    dp_dict_col = ['time', 'node', 'current pop', 'total pop']
+    dynamic_params = {}
+    if dynamic_param_dict['TYPE'] == 'shelby_adopted':
+        print("Reading dislocation data from file...")
+        net_names = {'water':1,'gas':2,'power':3,'telecom':4}
+        for key, val in net_names.items():
+            filename = dynamic_param_dict['DIR']+'dynamic_demand_'+return_type+'_'+key+'.pkl'
+            with open(filename, 'rb') as f:
+                dd_df = pickle.load(f)
+            dynamic_params[val] = dd_df[(dd_df['sce']==params["MAGNITUDE"])&\
+                                        (dd_df['set']==params["SIM_NUMBER"])]
+    elif dynamic_param_dict['TYPE'] == 'incore':
+        testbed = dynamic_param_dict['TESTBED']
+        file_dir = dynamic_param_dict['DIR']+testbed+'/Damage_scenarios/'
+        if os.path.exists(file_dir+'pop_dislocation_data.pkl'):
+            print("Reading dislocation data from file...")
+            with open(file_dir+'pop_dislocation_data.pkl', 'rb') as f:
+                dynamic_params = pickle.load(f)
+            return dynamic_params
+
+        pop_dislocation = pd.read_csv(file_dir+'pop-dislocation-results.csv', low_memory=False)
+        mapping_data = pd.read_csv(file_dir+testbed+'_interdependency_table.csv', low_memory=False)
+        total_num_bldg = mapping_data.shape[0]
+        # total_num_hh = pop_dislocation[~(pd.isna(pop_dislocation['guid']))]
+        T = 10
+        for n,d in N.G.nodes(data=True):
+            if n[1] not in dynamic_params.keys():
+                dynamic_params[n[1]] = pd.DataFrame(columns=dp_dict_col)
+            guid = d['data']['inf_data'].guid
+            serv_area = mapping_data[mapping_data['substations_guid']==guid]
+            # compute dynamic_params
+            num_dilocated = {t:0 for t in range(T+1)}
+            total_pop = 0
+            for _, bldg in serv_area.iterrows():
+                pop_bldg_dict = pop_dislocation[pop_dislocation['guid']==bldg['buildings_guid']]
+                for _, hh in pop_bldg_dict.iterrows():
+                    total_pop += hh['numprec'] if ~np.isnan(hh['numprec']) else 0
+                    if hh['dislocated']:
+                        #!!! Lumebrton dislocation time paramters
+                        dt_params = {'DS1':1.00, 'DS2':2.33,'DS3':2.49, 'DS4':3.62,
+                                     'white':0.78, 'black':0.88, 'hispanic':0.83,
+                                     'income':-0.00, 'insurance':1.06}
+                        race_white = 1 if hh['race']==1 else 0
+                        race_balck = 1 if hh['race']==2 else 0
+                        hispan = hh['hispan'] if ~np.isnan(hh['hispan']) else 0
+                        #!!! verfy that the explanatory variable correspond to columns in dt_params
+                        linear_term = hh['insignific']*dt_params['DS1']+\
+                            hh['moderate']*dt_params['DS2']+\
+                            hh['heavy']*dt_params['DS3']+\
+                            hh['complete']*dt_params['DS4']+\
+                            race_white*dt_params['white']+\
+                            race_balck*dt_params['black']+\
+                            hispan*dt_params['hispanic']+\
+                            np.random.choice([0,1], p=[.15, .85])*dt_params['insurance'] #!!! insurance data
+                            # hh['randincome']/1000*dt_params['income']+\#!!! income data
+                        disloc_time = np.exp(linear_term)
+                        return_time = math.ceil(disloc_time/7) #!!! assume each time step is one week
+                        for t in range(return_time):
+                            if t <= T:
+                                num_dilocated[t] += hh['numprec'] if ~np.isnan(hh['numprec']) else 0
+            for t in range(T+1):
+                values = [t, n[0], total_pop-num_dilocated[t], total_pop]
+                dynamic_params[n[1]] = dynamic_params[n[1]].append(dict(zip(dp_dict_col, values)),
+                                                                   ignore_index=True)
+        with open(file_dir+'pop_dislocation_data.pkl', 'wb') as f:
+            pickle.dump(dynamic_params, f)
+    return dynamic_params
 
 def dynamic_parameters(N, original_N, t, dynamic_params):
     for n,d in N.G.nodes(data=True):
@@ -863,7 +948,7 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
 
     T = max(actions.keys())
     for t, value in actions.items():
-        plt.subplot(2, (T+1)/2+1 ,t+1, aspect='equal')
+        plt.subplot(2, int((T+1)/2)+1 ,t+1, aspect='equal')
         plt.title('Time = %d' % t)
         for a in value:
             data=a.split(".")

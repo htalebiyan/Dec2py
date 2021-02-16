@@ -616,12 +616,12 @@ class BayesianGame(NormalGame):
         None.
 
         '''
-        comb_w_rep = list(itertools.combinations(self.fundamental_types*len(self.players),2))
+        comb_w_rep = list(itertools.combinations(self.fundamental_types*len(self.players),
+                                                 len(self.players)))
         self.states = list(set(comb_w_rep))
         # Assign payoff matrix for each state
         for s in self.states:
             self.states_payoffs[s] = copy.deepcopy(self.payoffs) #!!!deepcopy
-            zzz = self.states_payoffs[s]
             for key, val in self.states_payoffs[s].items():
                 for idx, l in enumerate(self.players):
                     label = self.label_actions(val[l][0])
@@ -916,6 +916,8 @@ class InfrastructureGame:
             None
 
         '''
+        save_model_dir = save_model
+        save_payoff_info = save_model
         for t in self.objs.keys():
             print("-Time Step", t, "/", self.time_steps)
             #: Resource Allocation
@@ -936,7 +938,7 @@ class InfrastructureGame:
             # Compute payoffs
             if print_cmd:
                 print("Computing (or reading) payoffs...")
-            if save_model:
+            if save_payoff_info:
                 save_payoff_info = [self.output_dir+'/payoff_models', t]
             if set(self.objs[t].first_actions) == {'NA'}:
                 print('No further action for any of players')
@@ -961,7 +963,7 @@ class InfrastructureGame:
                     self.objs[t].find_optimal_solution()
 
                 if self.game_type == 'NORMALGAME':
-                    if save_model:
+                    if save_model_dir:
                         save_model_dir = self.output_dir+'/games'
                     self.objs[t].build_game(save_model=save_model_dir,
                                             suffix=str(self.sample)+'_t'+str(t))

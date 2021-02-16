@@ -1,12 +1,13 @@
 '''
-This module contains functions to run decentralized restoration for interdepndent networks
-using Judgment Call method :cite:`Talebiyan2019c,Talebiyan2019`, read the results,
-and compute comparison measures.
+
 '''
 import os
+import sys
 import copy
 import gameclasses
 import indp
+import dindputils
+import pandas as pd
 
 def run_game(params, save_results=True, print_cmd=True, save_model=False, plot2D=False):
     '''
@@ -82,3 +83,97 @@ def run_game(params, save_results=True, print_cmd=True, save_model=False, plot2D
         # Run game
         obj.run_game(compute_optimal=plot2D, plot=plot2D, save_results=save_results,
                      print_cmd=print_cmd, save_model=save_model)
+
+def analyze_NE(objs, combinations, optimal_combinations):
+    '''
+    This function reads the results of analyses (INDP, JC, etc.) and the corresponding
+    objects from file and aggregates the results in a dictionary.
+
+    Parameters
+    ----------
+    objs : dict
+        Dictionary that contains the objects corresponding to the read results.
+    combinations : dict
+        All combinations of magnitude, sample, judgment type, resource allocation type
+        involved in the JC (or any other decentralized results) collected by
+        :func:`generate_combinations`.
+    optimal_combinations : dict
+        All combinations of magnitude, sample, judgment type, resource allocation type
+        involved in the INDP (or any other optimal results) collected by :func:`generate_combinations`.
+
+    Returns
+    -------
+    
+    '''
+    columns = ['t', 'Magnitude', 'decision_type', 'judgment_type', 'auction_type',
+               'valuation_type', 'no_resources', 'sample',
+               'ne_total_cost', 'optimal_total_cost', 'payoff_similarity',
+               'action_similarity', 'payoff_ratio', 'no_ne','cooperative',
+               'partially_cooperative', 'OA', 'NA', 'opt_cooperative',
+               'opt_partially_cooperative', 'opt_OA', 'opt_NA']
+    cmplt_analyze = pd.DataFrame(columns=columns, dtype=int)
+    print("\nAnalyze NE")
+    joinedlist = combinations + optimal_combinations
+    for idx, x in enumerate(combinations):
+        if x[4][:2] == 'ng':
+            obj = objs[str(x)]
+            for t in range(obj.time_steps):
+                game = obj.objs[t+1]
+                optimal_sol = game.optimal_solution
+                ne_sol = game.chosen_equilibrium
+                lyr_act, lyr_payoff, opt_payoff, ne_payoff = compare_sol(optimal_sol, ne_sol, obj.layers)
+                payoff_ratio = ne_payoff/opt_payoff
+                no_ne = len(game.solution.sol.keys())
+
+                cooperation= {'C':0, 'P':0, 'OA':0, 'NA':0}
+                cooperation_opt= {'C':0, 'P':0, 'OA':0, 'NA':0}
+                for idx, val in game.solution.sol.items():
+                    for l in game.players:
+                        label = label_action(val['P'+str(l)+' actions'][0])
+                        if not label:
+                            sys.exit('Type of action cannot be found')
+                        cooperation[label] += 1/len(game.players)/len(game.solution.sol.keys())
+                for l in game.players:
+                    label = label_action(game.optimal_solution['P'+str(l)+' actions'])
+                    if not label:
+                        sys.exit('Type of action cannot be found')
+                    cooperation_opt[label] += 1/len(game.players)
+                values = [t+1, x[0], x[4], x[5], x[6], x[7], x[3], x[1], ne_payoff,
+                          opt_payoff, lyr_payoff, lyr_act, payoff_ratio, no_ne,
+                          cooperation['C'], cooperation['P'], cooperation['OA'],
+                          cooperation['NA'], cooperation_opt['C'], cooperation_opt['P'],
+                          cooperation_opt['OA'], cooperation_opt['NA']]
+                cmplt_analyze = cmplt_analyze.append(dict(zip(columns, values)), ignore_index=True)
+            if idx%(len(combinations)//100+1) == 0:
+                dindputils.update_progress(idx+1, len(combinations))
+        else:
+            pass
+            #!!!sys.exit('Error: The combination or folder does not exist'+str(x))
+    dindputils.update_progress(len(combinations), len(combinations))
+    return cmplt_analyze
+
+def compare_sol(opt, ne, layers):
+    sum_lyr_act = 0
+    sum_lyr_payoff = 0
+    for l in layers:
+        if opt['P'+str(l)+' actions'] == ne['P'+str(l)+' actions'][0]:
+            sum_lyr_act += 1
+        if abs((opt['P'+str(l)+' payoff']-(-ne['P'+str(l)+' payoff']))/opt['P'+str(l)+' payoff'])<0.01:
+            sum_lyr_payoff += 1
+    opt_total_payoff = opt['full result'].results[0]['costs']['Total']
+    return sum_lyr_act/len(layers), sum_lyr_payoff/len(layers), opt_total_payoff, ne['total cost']
+
+def label_action(action):
+    label = None
+    if len(action) == 1 and action[0][0] == 'OA':
+        label = 'OA'
+    elif action[0] == 'NA':
+        label = 'NA'
+    else:
+        label = 'C'
+        for a in action:
+            if a[0] == 'OA':
+                label = 'P'
+                break
+    return label
+ 

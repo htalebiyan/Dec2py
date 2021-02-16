@@ -513,7 +513,9 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
     # Initialize failure scenario.
     InterdepNet=None
     if "N" not in params:
-        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",sim_number=params['SIM_NUMBER'],magnitude=params["MAGNITUDE"])
+        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",
+                                       sim_number=params['SIM_NUMBER'],
+                                       magnitude=params["MAGNITUDE"])
     else:
         InterdepNet=params["N"]
     if "NUM_ITERATIONS" not in params:
@@ -633,7 +635,9 @@ def run_info_share(params,layers=[1,2,3],T=1,validate=False,suffix=""):
     InterdepNet=None
     num_iterations=params["NUM_ITERATIONS"]
     if "N" not in params:
-        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",sim_number=params['SIM_NUMBER'],magnitude=params["MAGNITUDE"])
+        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",
+                                       sim_number=params['SIM_NUMBER'],
+                                       magnitude=params["MAGNITUDE"])
         params["N"]=InterdepNet
     else:
         InterdepNet=params["N"]
@@ -672,7 +676,9 @@ def run_inrg(params,layers=[1,2,3],validate=False,player_ordering=[3,1],suffix="
     InterdepNet=None
     output_dir=params["OUTPUT_DIR"]+"_m"+str(params["MAGNITUDE"])+"_v"+str(params["V"])
     if "N" not in params:
-        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",sim_number=params['SIM_NUMBER'],magnitude=params["MAGNITUDE"])
+        InterdepNet=initialize_network(BASE_DIR="../data/INDP_7-20-2015/",
+                                       sim_number=params['SIM_NUMBER'],
+                                       magnitude=params["MAGNITUDE"])
         params["N"]=InterdepNet
     else:
         InterdepNet=params["N"]

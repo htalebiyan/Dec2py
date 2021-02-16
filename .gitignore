@@ -113,3 +113,5 @@ results/
 *.json
 *.npz
 !/pyindp/Basin_of_solutions/results.pkl
+*.tar
+*.gz
