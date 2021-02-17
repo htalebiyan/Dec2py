@@ -7,8 +7,8 @@ import pandas as pd
 from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 sns.set(context='notebook', style='darkgrid', font_scale=1.2)
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+# plt.rc('text', usetex=True)
+# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                    decision_type=None, judgment_type=None,
@@ -714,15 +714,21 @@ def plot_ne_cooperation(df, x='t', ci=None):
     col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
     # hue_type = [auction_type, 'auction_type'] #auction_type
     # style_type = 'auction_type'  #decision_type
-    value_vars = ['cooperative', 'partially_cooperative', 'OA', 'NA',  'opt_cooperative',
-                  'opt_partially_cooperative', 'opt_OA', 'opt_NA']
+    # value_vars = ['cooperative', 'partially_cooperative', 'OA', 'NA', 'NA_possible',
+    #               'opt_cooperative', 'opt_partially_cooperative', 'opt_OA',
+    #               'opt_NA', 'opt_NA_possible']
+    # value_vars = ['cooperative', 'partially_cooperative',
+    #               'opt_cooperative', 'opt_partially_cooperative']
+    value_vars = ['OA', 'NA', 'NA_possible', 'opt_OA',
+                  'opt_NA', 'opt_NA_possible']
     id_vars = [x for x in df.columns if x not in value_vars]
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey='row',
                             figsize=(4000/dpi, 3000/dpi))
-    colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
-    pal = sns.color_palette(colors)
+    # colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
+    # pal = sns.color_palette(colors)
+    pal = sns.color_palette()
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
             ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
@@ -733,11 +739,13 @@ def plot_ne_cooperation(df, x='t', ci=None):
             ne_data['Method'] = np.where((ne_data['Cooperation Status'] == 'cooperative')|\
                                         (ne_data['Cooperation Status'] == 'partially_cooperative')|\
                                         (ne_data['Cooperation Status'] == 'OA')|\
-                                        (ne_data['Cooperation Status'] == 'NA'),
+                                        (ne_data['Cooperation Status'] == 'NA')|\
+                                        (ne_data['Cooperation Status'] == 'NA_possible'),
                                         'INRSG', 'INDP')
             ne_data = ne_data.replace(['opt_cooperative', 'opt_partially_cooperative',
-                                       'opt_OA', 'opt_NA'], ['cooperative',
-                                       'partially_cooperative', 'OA', 'NA'])
+                                       'opt_OA', 'opt_NA', 'opt_NA_possible'],
+                                      ['cooperative', 'partially_cooperative', 'OA',
+                                       'NA', 'NA_possible'])
             with pal:
                 sns.lineplot(x=x, y='value', hue='Cooperation Status', style='Method',
                              markers=True, ci=ci, ax=ax, data=ne_data, **{'markersize':5})
@@ -797,6 +805,7 @@ def correct_legend_labels(labels):
     labels = ['Par. Cooperative' if x == 'partially_cooperative' else x for x in labels]
     labels = ['Non Cooperative (OA)' if x == 'OA' else x for x in labels]
     labels = ['Non Cooperative (NA)' if x == 'NA' else x for x in labels]
+    labels = ['No More Actions (NA)' if x == 'NA_possible' else x for x in labels]
     # labels = ['Opt. Cooperative' if x == 'opt_cooperative' else x for x in labels]
     # labels = ['Opt. Par. Cooperative' if x == 'opt_partially_cooperative' else x for x in labels]
     # labels = ['Opt. Non Cooperative (OA)' if x == 'opt_OA' else x for x in labels]
