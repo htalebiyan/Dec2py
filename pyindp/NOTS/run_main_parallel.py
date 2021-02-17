@@ -117,7 +117,12 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
             if 'STM' in valuation_type:
                 params['STM_MODEL_DICT'] = misc['STM_MODEL']
         elif method in ['NORMALGAME', 'BAYESGAME']:
-            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'ng_results',
+            if method == "NORMALGAME":
+                output_dir += 'ng_results'
+            elif method == "BAYESGAME":
+                output_dir += 'bg'+''.join(misc['SIGNALS'].values())+\
+                    ''.join(misc['BELIEFS'].values())+'_results'
+            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir,
                       "V":v, "T":1, "L":layers, "ALGORITHM":method,
                       'EQUIBALG':'enumerate_pure', "JUDGMENT_TYPE":judgment_type,
                       "RES_ALLOC_TYPE":res_alloc_type, "VALUATION_TYPE":valuation_type}
