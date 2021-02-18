@@ -174,7 +174,7 @@ def run_parallel(i):
     fail_sce_param = {"TYPE":"WU","SAMPLE_RANGE":range(sample_no,sample_no+1),
                      "MAGS":range(mag_no,mag_no+1),'FILTER_SCE':filter_sce,
                      'BASE_DIR':base_dir,'DAMAGE_DIR':damage_dir}
-    rc = [3]#[3,6,8,12]
+    rc = [3, 6]#[3,6,8,12]
     layers = [1, 2, 3, 4]
     judge_type = ["OPTIMISTIC"] #OPTIMISTIC #'DET-DEMAND' #PESSIMISTIC
     res_alloc_type = ["OPTIMAL"] #"MDA", "MAA", "MCA", 'UNIFORM' "OPTIMAL"

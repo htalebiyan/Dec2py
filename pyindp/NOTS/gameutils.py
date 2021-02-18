@@ -108,9 +108,9 @@ def analyze_NE(objs, combinations, optimal_combinations):
     columns = ['t', 'Magnitude', 'decision_type', 'judgment_type', 'auction_type',
                'valuation_type', 'no_resources', 'sample',
                'ne_total_cost', 'optimal_total_cost', 'payoff_similarity',
-               'action_similarity', 'payoff_ratio', 'no_ne','cooperative',
-               'partially_cooperative', 'OA', 'NA', 'opt_cooperative',
-               'opt_partially_cooperative', 'opt_OA', 'opt_NA']
+               'action_similarity', 'payoff_ratio', 'no_ne', 'no_payoffs', 'cooperative',
+               'partially_cooperative', 'OA', 'NA', 'NA_possible', 'opt_cooperative',
+               'opt_partially_cooperative', 'opt_OA', 'opt_NA', 'opt_NA_possible']
     cmplt_analyze = pd.DataFrame(columns=columns, dtype=int)
     print("\nAnalyze NE")
     joinedlist = combinations + optimal_combinations
@@ -124,25 +124,28 @@ def analyze_NE(objs, combinations, optimal_combinations):
                 lyr_act, lyr_payoff, opt_payoff, ne_payoff = compare_sol(optimal_sol, ne_sol, obj.layers)
                 payoff_ratio = ne_payoff/opt_payoff
                 no_ne = len(game.solution.sol.keys())
-
-                cooperation= {'C':0, 'P':0, 'OA':0, 'NA':0}
-                cooperation_opt= {'C':0, 'P':0, 'OA':0, 'NA':0}
-                for idx, val in game.solution.sol.items():
+                no_payoffs = {l:len(game.actions[l]) for l in game.players}
+                cooperation= {'C':0, 'P':0, 'OA':0, 'NA':0, 'NAP':0}
+                cooperation_opt= {'C':0, 'P':0, 'OA':0, 'NA':0, 'NAP':0}
+                for _, val in game.solution.sol.items():
                     for l in game.players:
-                        label = label_action(val['P'+str(l)+' actions'][0])
+                        label = label_action(val['P'+str(l)+' actions'][0],
+                                             game.actions[l])
                         if not label:
                             sys.exit('Type of action cannot be found')
                         cooperation[label] += 1/len(game.players)/len(game.solution.sol.keys())
                 for l in game.players:
-                    label = label_action(game.optimal_solution['P'+str(l)+' actions'])
+                    label = label_action(game.optimal_solution['P'+str(l)+' actions'],
+                                         game.actions[l])
                     if not label:
                         sys.exit('Type of action cannot be found')
                     cooperation_opt[label] += 1/len(game.players)
                 values = [t+1, x[0], x[4], x[5], x[6], x[7], x[3], x[1], ne_payoff,
-                          opt_payoff, lyr_payoff, lyr_act, payoff_ratio, no_ne,
+                          opt_payoff, lyr_payoff, lyr_act, payoff_ratio, no_ne, no_payoffs,
                           cooperation['C'], cooperation['P'], cooperation['OA'],
-                          cooperation['NA'], cooperation_opt['C'], cooperation_opt['P'],
-                          cooperation_opt['OA'], cooperation_opt['NA']]
+                          cooperation['NA'], cooperation['NAP'], cooperation_opt['C'],
+                          cooperation_opt['P'], cooperation_opt['OA'],
+                          cooperation_opt['NA'], cooperation_opt['NAP']]
                 cmplt_analyze = cmplt_analyze.append(dict(zip(columns, values)), ignore_index=True)
             if idx%(len(combinations)//100+1) == 0:
                 dindputils.update_progress(idx+1, len(combinations))
@@ -163,12 +166,15 @@ def compare_sol(opt, ne, layers):
     opt_total_payoff = opt['full result'].results[0]['costs']['Total']
     return sum_lyr_act/len(layers), sum_lyr_payoff/len(layers), opt_total_payoff, ne['total cost']
 
-def label_action(action):
+def label_action(action, all_actions):
     label = None
     if len(action) == 1 and action[0][0] == 'OA':
         label = 'OA'
     elif action[0] == 'NA':
-        label = 'NA'
+        if len(all_actions)!=1:
+            label = 'NA'
+        else:
+            label = 'NAP' # No more actions possinble either becasue the sustems is repaired completely or Rc=0
     else:
         label = 'C'
         for a in action:

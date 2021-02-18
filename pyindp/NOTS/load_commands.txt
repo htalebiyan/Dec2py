@@ -5,7 +5,7 @@ sbatch Codes/run_job.slurm
 squeue -u ht20
 
 +++++++++Zip folder
--czvf results.tar.gz /scratch/ht20/results
+tar czvf /scratch/ht20/results.tar.gz /scratch/ht20/results
 +++++++++Unzip folder
 tar xf /scratch/ht20/results_NE_only_objs.tar.gz --directory=/scratch/ht20/
 +++++++++Install Gurobi

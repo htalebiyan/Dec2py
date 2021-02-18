@@ -53,12 +53,12 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
         decision_type = df.decision_type.unique().tolist()
     if not judgment_type:
         judgment_type = df.judgment_type.unique().tolist()
-    # if 'nan' in judgment_type:
-    #     judgment_type.remove('nan')
+    if 'nan' in judgment_type:
+        judgment_type.remove('nan')
     if not auction_type:
         auction_type = df.auction_type.unique().tolist()
-    # if 'nan' in auction_type:
-    #     auction_type.remove('nan')
+    if 'nan' in auction_type:
+        auction_type.remove('nan')
     if not valuation_type:
         valuation_type = df.valuation_type.unique().tolist()
     if 'nan' in valuation_type:
@@ -175,7 +175,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
 
     '''
     #: Make lists
-    # no_resources = lambda_df.no_resources.unique().tolist()
+    no_resources = lambda_df.no_resources.unique().tolist()
     decision_type = lambda_df.decision_type.unique().tolist()
     if 'indp_sample_12Node' in decision_type:
         decision_type.remove('indp_sample_12Node')
@@ -184,13 +184,12 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     judgment_type = lambda_df.judgment_type.unique().tolist()
     if 'nan' in judgment_type:
         judgment_type.remove('nan')
-    no_resources = lambda_df.no_resources.unique().tolist()
     auction_type = lambda_df.auction_type.unique().tolist()
     if 'nan' in auction_type:
         auction_type.remove('nan')
     valuation_type = lambda_df.valuation_type.unique().tolist()
-    if 'nan' in valuation_type:
-        valuation_type.remove('nan')
+    # if 'nan' in valuation_type:
+    #     valuation_type.remove('nan')
     row_plot = [valuation_type, 'valuation_type'] #valuation_type
     col_plot = [decision_type , 'decision_type']
     hue_type = [auction_type , 'auction_type']

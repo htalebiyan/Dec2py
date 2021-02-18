@@ -127,7 +127,7 @@ def analyze_NE(objs, combinations, optimal_combinations):
                 no_payoffs = {l:len(game.actions[l]) for l in game.players}
                 cooperation= {'C':0, 'P':0, 'OA':0, 'NA':0, 'NAP':0}
                 cooperation_opt= {'C':0, 'P':0, 'OA':0, 'NA':0, 'NAP':0}
-                for idx, val in game.solution.sol.items():
+                for _, val in game.solution.sol.items():
                     for l in game.players:
                         label = label_action(val['P'+str(l)+' actions'][0],
                                              game.actions[l])

@@ -229,7 +229,7 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
     for idx, x in enumerate(joinedlist):
         #: Make the directory
         full_suffix = '_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])
-        if x[4][:2] == 'jc' or x[4][:2] == 'ng':
+        if x[4][:2] in ['jc', 'ng', 'bg']:
             full_suffix += '_'+x[5]
             if x[6] in ["MDA", "MAA", "MCA"]:
                 full_suffix += '_AUCTION_'+x[6]+'_'+x[7]
@@ -277,14 +277,13 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
                             cmplt_results = cmplt_results.append(dict(zip(columns, values)),
                                                                  ignore_index=True)
             #: Getting back the JuCModel objects:
-            if x[4][:2] == 'jc' or x[4][:2] == 'ng':
+            if x[4][:2] in ['jc', 'ng', 'bg']:
                 with open(result_dir+'/objs_'+str(x[1])+'.pkl', 'rb') as f:
                     objs[str(x)] = pickle.load(f)
             if idx%(len(joinedlist)//100+1) == 0:
                 update_progress(idx+1, len(joinedlist))
         else:
-            pass
-            #!!!sys.exit('Error: The combination or folder does not exist'+str(x))
+            sys.exit('Error: The combination or folder does not exist'+str(x))
     update_progress(len(joinedlist), len(joinedlist))
     return cmplt_results, objs
 
