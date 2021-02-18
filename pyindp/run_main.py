@@ -85,7 +85,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             output_dir_full = ''
             if params["ALGORITHM"] in ["INDP"]:
                 output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
-                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'/agents/actions_'+str(i)+'_L1_.csv'
+                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'/actions_'+str(i)+'_.csv'
             if os.path.exists(output_dir_full):
                 print('results are already there\n')
                 continue
@@ -102,22 +102,15 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             elif fail_sce_param['TYPE'] == 'synthetic':
                 indp.add_synthetic_failure_scenario(params["N"], DAM_DIR=base_dir,
                                                     topology=topology, config=m, sample=i)
-            
-            dynamic_params = None
-            if params['DYNAMIC_PARAMS']:
-                return_type = 'step_function'
-                net_names = {'water':1,'gas':2,'power':3,'telecom':4}
-                dynamic_params = {}
-                for key, val in net_names.items():
-                    filename = params['DYNAMIC_PARAMS']+'dynamic_demand_'+return_type+'_'+key+'.pkl'
-                    with open(filename, 'rb') as f:
-                        dd_df = pickle.load(f)
-                    dynamic_params[val] = dd_df[(dd_df['sce']==m)&(dd_df['set']==i)]
 
             if params["ALGORITHM"] == "INDP":
                 indp.run_indp(params, validate=False, T=params["T"], layers=params['L'],
                               controlled_layers=params['L'], saveModel=True, print_cmd_line=False,
-                              dynamic_params=dynamic_params, co_location=False)
+                              co_location=False)
+            if params["ALGORITHM"] == "MH":
+                mh.run_mh(params, validate=False, T=params["T"], layers=params['L'],
+                          controlled_layers=params['L'], saveModel=True, print_cmd_line=False,
+                          co_location=True)
             elif params["ALGORITHM"] == "INFO_SHARE":
                 indp.run_info_share(params, layers=params['L'], T=params["T"])
             elif params["ALGORITHM"] == "INRG":
@@ -192,6 +185,17 @@ def run_game_sample(layers, judge_types, auction_type, valuation_type,
             indp.plot_indp_sample(params, folderSuffix='_'+jt+'_AUCTION_'+rst+'_'+vt, suffix="")
         plt.show()
 
+def run_mh_sample(layers):
+    interdep_net= indp.initialize_sample_network(layers=layers)
+    params={"NUM_ITERATIONS":1, "OUTPUT_DIR":'../results/mh_sample_12Node_results',
+            "V":len(layers), "T":1, "L":layers, "WINDOW_LENGTH":1, "ALGORITHM":"MH",
+            "N":interdep_net, "MAGNITUDE":0, "SIM_NUMBER":0}
+    result_mh = mh.run_mh(params, layers=layers, T=params["T"], suffix="", saveModel=True,
+              print_cmd_line=True)
+    return result_mh #!!!
+    # print('\n\nPlot restoration plan by INDP')
+    # indp.plot_indp_sample(params)
+    # plt.show()
 def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
                res_alloc_type=None, valuation_type=None, output_dir='..', misc =None):
     '''
@@ -280,6 +284,7 @@ if __name__ == "__main__":
     # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="NORMALGAME")
     # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="BAYESGAME",
     #                 beliefs={1:'U', 2:'U'}, signals={1:'N', 2:'C'})
+    # result_mh = run_mh_sample(layers) #!!!
 
     # COMBS = []
     # OPTIMAL_COMBS = [[0, 0, len(layers), len(layers), 'indp_sample_12Node', 'nan',
@@ -334,9 +339,8 @@ if __name__ == "__main__":
     # 'C:/Users/ht20/Documents/Files/Auction_synthetic_networks_v3.1/'
     # 'C:/Users/ht20/Documents/Files/Shelby_data_paper/Restoration_results/'
     # FAIL_SCE_PARAM['TOPO']+'/results/'
-
-    DYNAMIC_PARAMS_DIR = None #'C:/Users/ht20/Documents/Files/dynamic_demand/'
-
+    
+    ''' Set analysis dictionaries '''
     #: Informatiom on the ype of the failure scenario (Andres or Wu)
     #: and network dataset (shelby or synthetic)
     #: Help:
@@ -356,6 +360,13 @@ if __name__ == "__main__":
     #                   'FILTER_SCE':None, 'TOPO':'Grid',
     #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
 
+    # Dynamic parameters dict
+    # DYNAMIC_PARAMS = None
+    # DYNAMIC_PARAMS = {'TYPE': 'shelby_adopted', 'RETURN': 'step_function',
+    #                   'DIR': 'C:/Users/ht20/Documents/Files/dynamic_demand/'}
+    DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'Joplin',
+                      'DIR': "C:/Users/ht20/Documents/GitHub/NIST_testbeds/"}
+
     ### Dict contains information about the statistical models approximating INDP
     MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
     STM_MODEL_DICT = None
@@ -370,6 +381,7 @@ if __name__ == "__main__":
         SYNTH_DIR = BASE_DIR+FAIL_SCE_PARAM['TOPO']+'Networks/'
         OUTPUT_DIR += FAIL_SCE_PARAM['TOPO']+'/results/'
 
+    ''' Set analysis parameters '''
     # No restriction on number of resources for each layer
     RC = [3]
     # Not necessary for synthetic nets
@@ -447,7 +459,7 @@ if __name__ == "__main__":
     # plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
     # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
     # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
-    # # plots.plot_run_time(RUN_TIME_DF, ci=95)
+    # plots.plot_run_time(RUN_TIME_DF, ci=95)
     # plots.plot_ne_analysis(ANALYZE_NE_DF, ci=None)
     # plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=None)
 
