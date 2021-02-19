@@ -246,11 +246,11 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
                 params['STM_MODEL_DICT'] = misc['STM_MODEL']
         elif method in ['NORMALGAME', 'BAYESGAME']:
             if method == "NORMALGAME":
-                output_dir += 'ng_results'
+                out_dir = output_dir+'ng_results'
             elif method == "BAYESGAME":
-                output_dir += 'bg'+''.join(misc['SIGNALS'].values())+\
+                out_dir = output_dir+'bg'+''.join(misc['SIGNALS'].values())+\
                     ''.join(misc['BELIEFS'].values())+'_results'
-            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir,
+            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":out_dir,
                       "V":v, "T":1, "L":layers, "ALGORITHM":method,
                       'EQUIBALG':'enumerate_pure', "JUDGMENT_TYPE":judgment_type,
                       "RES_ALLOC_TYPE":res_alloc_type, "VALUATION_TYPE":valuation_type}
@@ -350,7 +350,7 @@ if __name__ == "__main__":
     #:     sce range: FAIL_SCE_PARAM['MAGS']
     #: For Synthetic nets: sample range: FAIL_SCE_PARAM['SAMPLE_RANGE'],
     #:     configurations: FAIL_SCE_PARAM['MAGS']
-    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(50), 'MAGS':range(21,22),
+    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(50), 'MAGS':range(96),
                       'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
@@ -361,11 +361,11 @@ if __name__ == "__main__":
     #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
 
     # Dynamic parameters dict
-    # DYNAMIC_PARAMS = None
+    DYNAMIC_PARAMS = None
     # DYNAMIC_PARAMS = {'TYPE': 'shelby_adopted', 'RETURN': 'step_function',
     #                   'DIR': 'C:/Users/ht20/Documents/Files/dynamic_demand/'}
-    DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'Joplin',
-                      'DIR': "C:/Users/ht20/Documents/GitHub/NIST_testbeds/"}
+    # DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'Joplin',
+    #                   'DIR': "C:/Users/ht20/Documents/GitHub/NIST_testbeds/"}
 
     ### Dict contains information about the statistical models approximating INDP
     MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
@@ -383,7 +383,7 @@ if __name__ == "__main__":
 
     ''' Set analysis parameters '''
     # No restriction on number of resources for each layer
-    RC = [3]
+    RC = [3, 6]
     # Not necessary for synthetic nets
     # [3, 6, 8, 12]
     # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
@@ -397,19 +397,19 @@ if __name__ == "__main__":
     #['DTC', 'DTC_uniform', 'MDDN', 'STM', 'DTC-LP']
     ''' Run different methods '''
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
-    #            misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS_DIR})
+    #            misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
-    #            misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS_DIR})
+    #            misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
     # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
     # #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
-    # #             output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS_DIR,
-    # #             misc = {'STM_MODEL':STM_MODEL_DICT, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS_DIR})
+    # #             output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS,
+    # #             misc = {'STM_MODEL':STM_MODEL_DICT, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
     #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-    #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS_DIR})
+    #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
     run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
                 res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-                misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS_DIR,
+                misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
                         "SIGNALS":{x:'C' for x in LAYERS}, "BELIEFS":{x:'U' for x in LAYERS}})
 
     ''' Post-processing '''
