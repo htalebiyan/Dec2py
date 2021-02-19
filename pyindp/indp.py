@@ -76,7 +76,16 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
                             interdep_nodes[t][v]=[]
                         interdep_nodes[t][v].append((u,a['data']['inf_data'].gamma))
 
-    #print "N'=",[n for (n,d) in N_prime]
+    #print "N'=",[n for (n,d) in N_prime] 
+    # # Check if there are multiple commodities
+    # extre_com = {}
+    # for n,d in N_hat.nodes(data=True):
+    #     if n[1] not in extre_com.keys():
+    #         extre_com[n[1]] = []
+    #     for l in d['data']['inf_data'].extra_com.keys():
+    #         if l not in extre_com[n[1]]:
+    #             extre_com[n[1]].append(l) 
+
     for t in range(T):
         # Add geographical space variables.
         if co_location:
@@ -86,6 +95,9 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
         for n,d in N_hat.nodes(data=True):
             m.addVar(name='delta+_'+str(n)+","+str(t),lb=0.0)
             m.addVar(name='delta-_'+str(n)+","+str(t),lb=0.0)
+            for l in d['data']['inf_data'].extra_com.keys():
+                m.addVar(name='delta+_'+str(n)+","+str(t)+","+str(l),lb=0.0)
+                m.addVar(name='delta-_'+str(n)+","+str(t)+","+str(l),lb=0.0)
         # Add functionality binary variables for each node in N'.
         for n,d in N_hat.nodes(data=True):
             m.addVar(name='w_'+str(n)+","+str(t),vtype=GRB.BINARY)
@@ -96,9 +108,11 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
         for key, val in fixed_nodes.items():
             m.getVarByName('w_'+str(key)+","+str(0)).lb=val
             m.getVarByName('w_'+str(key)+","+str(0)).ub=val
-        # Add flow variables for each arc.
+        # Add flow variables for each arc. (main commodity)
         for u,v,a in N_hat.edges(data=True):
             m.addVar(name='x_'+str(u)+","+str(v)+","+str(t),lb=0.0)
+            for l in a['data']['inf_data'].extra_com.keys():
+                m.addVar(name='x_'+str(u)+","+str(v)+","+str(t)+","+str(l),lb=0.0)
         # Add functionality binary variables for each arc in A'.
         for u,v,a in A_hat_prime:
             m.addVar(name='y_'+str(u)+","+str(v)+","+str(t),vtype=GRB.BINARY)
@@ -125,8 +139,14 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
         for n,d in N_hat.nodes(data=True):
             objFunc+=d['data']['inf_data'].oversupply_penalty*m.getVarByName('delta+_'+str(n)+","+str(t))
             objFunc+=d['data']['inf_data'].undersupply_penalty*m.getVarByName('delta-_'+str(n)+","+str(t))
+            for l, val in d['data']['inf_data'].extra_com.items():
+                objFunc+=val['oversupply_penalty']*m.getVarByName('delta+_'+str(n)+","+str(t)+","+str(l))
+                objFunc+=val['undersupply_penalty']*m.getVarByName('delta-_'+str(n)+","+str(t)+","+str(l))
+
         for u,v,a in N_hat.edges(data=True):
             objFunc+=a['data']['inf_data'].flow_cost*m.getVarByName('x_'+str(u)+","+str(v)+","+str(t))
+            for l, val in a['data']['inf_data'].extra_com.items():
+                objFunc+= val['flow_cost']*m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)+","+str(l))
 
 
     m.setObjective(objFunc,GRB.MINIMIZE)
@@ -163,33 +183,63 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
                 m.addConstr(m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t)),GRB.EQUAL,m.getVarByName('y_tilde_'+str(v)+","+str(u)+","+str(t)),"Arc reconstruction equality ("+str(u)+","+str(v)+","+str(t)+")")
         # Conservation of flow constraint. (2) in INDP paper.
         for n,d in N_hat.nodes(data=True):
-            outFlowConstr=LinExpr()
-            inFlowConstr= LinExpr()
-            demandConstr= LinExpr()
+            outFlowConstr = LinExpr()
+            inFlowConstr = LinExpr()
+            demandConstr = LinExpr()
             for u,v,a in N_hat.out_edges(n,data=True):
-                outFlowConstr+=m.getVarByName('x_'+str(u)+","+str(v)+","+str(t))
+                outFlowConstr += m.getVarByName('x_'+str(u)+","+str(v)+","+str(t))
             for u,v,a in N_hat.in_edges(n,data=True):
-                inFlowConstr+= m.getVarByName('x_'+str(u)+","+str(v)+","+str(t))
-            demandConstr+=d['data']['inf_data'].demand - m.getVarByName('delta+_'+str(n)+","+str(t)) + m.getVarByName('delta-_'+str(n)+","+str(t))
-            m.addConstr(outFlowConstr-inFlowConstr,GRB.EQUAL,demandConstr,"Flow conservation constraint "+str(n)+","+str(t))
+                inFlowConstr += m.getVarByName('x_'+str(u)+","+str(v)+","+str(t))
+            demandConstr += d['data']['inf_data'].demand - m.getVarByName('delta+_'+str(n)+","+str(t)) + m.getVarByName('delta-_'+str(n)+","+str(t))
+            m.addConstr(outFlowConstr-inFlowConstr,GRB.EQUAL,demandConstr,
+                        "Flow conservation constraint "+str(n)+","+str(t))
+            for l, val in d['data']['inf_data'].extra_com.items():
+                outFlowConstr = LinExpr()
+                inFlowConstr = LinExpr()
+                demandConstr = LinExpr()
+                for u,v,a in N_hat.out_edges(n,data=True):
+                    outFlowConstr += m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)+","+str(l))
+                for u,v,a in N_hat.in_edges(n,data=True):
+                    inFlowConstr += m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)+","+str(l))
+                demandConstr += val['demand'] -\
+                        m.getVarByName('delta+_'+str(n)+","+str(t)+","+str(l)) +\
+                        m.getVarByName('delta-_'+str(n)+","+str(t)+","+str(l))
+                m.addConstr(outFlowConstr-inFlowConstr, GRB.EQUAL, demandConstr,
+                            "Flow conservation constraint "+str(n)+","+str(t)+","+str(l))
+                
         # Flow functionality constraints.
         if not functionality:
             interdep_nodes_list = interdep_nodes.keys() #Interdepndent nodes with a damaged dependee node
         else:
             interdep_nodes_list = interdep_nodes[t].keys() #Interdepndent nodes with a damaged dependee node
         for u,v,a in N_hat.edges(data=True):
+            lhs = m.getVarByName('x_'+str(u)+","+str(v)+","+str(t))+\
+                sum([m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)+","+str(l))\
+                     for l in a['data']['inf_data'].extra_com.keys()])
             if (u in [n for (n,d) in N_hat_prime]) | (u in interdep_nodes_list):
-                m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*m.getVarByName('w_'+str(u)+","+str(t)),"Flow in functionality constraint("+str(u)+","+str(v)+","+str(t)+")")
+                m.addConstr(lhs, GRB.LESS_EQUAL,
+                            a['data']['inf_data'].capacity*m.getVarByName('w_'+str(u)+","+str(t)),
+                            "Flow in functionality constraint("+str(u)+","+str(v)+","+str(t)+")")
             else:
-                m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G.nodes[u]['data']['inf_data'].functionality,"Flow in functionality constraint ("+str(u)+","+str(v)+","+str(t)+")")
+                m.addConstr(lhs, GRB.LESS_EQUAL,
+                            a['data']['inf_data'].capacity*N.G.nodes[u]['data']['inf_data'].functionality,
+                            "Flow in functionality constraint ("+str(u)+","+str(v)+","+str(t)+")")
             if (v in [n for (n,d) in N_hat_prime]) | (v in interdep_nodes_list):
-                m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*m.getVarByName('w_'+str(v)+","+str(t)),"Flow out functionality constraint("+str(u)+","+str(v)+","+str(t)+")")
+                m.addConstr(lhs, GRB.LESS_EQUAL,
+                            a['data']['inf_data'].capacity*m.getVarByName('w_'+str(v)+","+str(t)),
+                            "Flow out functionality constraint("+str(u)+","+str(v)+","+str(t)+")")
             else:
-                m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G.nodes[v]['data']['inf_data'].functionality,"Flow out functionality constraint ("+str(u)+","+str(v)+","+str(t)+")")
+                m.addConstr(lhs ,GRB.LESS_EQUAL,
+                            a['data']['inf_data'].capacity*N.G.nodes[v]['data']['inf_data'].functionality,
+                            "Flow out functionality constraint ("+str(u)+","+str(v)+","+str(t)+")")
             if (u,v,a) in A_hat_prime:
-                m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*m.getVarByName('y_'+str(u)+","+str(v)+","+str(t)),"Flow arc functionality constraint ("+str(u)+","+str(v)+","+str(t)+")")
+                m.addConstr(lhs, GRB.LESS_EQUAL,
+                            a['data']['inf_data'].capacity*m.getVarByName('y_'+str(u)+","+str(v)+","+str(t)),
+                            "Flow arc functionality constraint ("+str(u)+","+str(v)+","+str(t)+")")
             else:
-                m.addConstr(m.getVarByName('x_'+str(u)+","+str(v)+","+str(t)),GRB.LESS_EQUAL,a['data']['inf_data'].capacity*N.G[u][v]['data']['inf_data'].functionality,"Flow arc functionality constraint("+str(u)+","+str(v)+","+str(t)+")")
+                m.addConstr(lhs, GRB.LESS_EQUAL,
+                            a['data']['inf_data'].capacity*N.G[u][v]['data']['inf_data'].functionality,
+                            "Flow arc functionality constraint("+str(u)+","+str(v)+","+str(t)+")")
 
         #Resource availability constraints.
         isSepResource = False
@@ -476,7 +526,7 @@ def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
 
 def initialize_network(BASE_DIR="../data/INDP_7-20-2015/", external_interdependency_dir=None,
                        sim_number=1, cost_scale=1, magnitude=6, sample=0, v=3, 
-                       infrastructure_data=True, topology='Random'):
+                       infrastructure_data=True, topology='Random', extra_commodity=None):
     """ Initializes an InfrastructureNetwork from Shelby County data.
     :param BASE_DIR: Base directory of Shelby County data.
     :param sim_number: Which simulation number to use as input.
@@ -488,13 +538,12 @@ def initialize_network(BASE_DIR="../data/INDP_7-20-2015/", external_interdepende
     layers_temp=[]
     v_temp = 0
     if infrastructure_data:
-    #    print "Loading Shelby County data..." #!!!
         InterdepNet=load_infrastructure_data(BASE_DIR=BASE_DIR,
                                              external_interdependency_dir=external_interdependency_dir,
                                              sim_number=sim_number, cost_scale=cost_scale,
                                              magnitude=magnitude, v=v,
-                                             data_format=infrastructure_data)
-    #    print "Data loaded." #!!!
+                                             data_format=infrastructure_data,
+                                             extra_commodity=extra_commodity)
     else:
         InterdepNet,v_temp,layers_temp=load_synthetic_network(BASE_DIR=BASE_DIR, topology=topology,
                                                               config=magnitude, sample=sample,
