@@ -61,6 +61,8 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
     print('----Running for resources: '+str(params['V']))
     for m in fail_sce_param['MAGS']:
         for i in fail_sce_param['SAMPLE_RANGE']:
+            params["SIM_NUMBER"] = i
+            params["MAGNITUDE"] = m
             try:
                 list_high_dam
                 if len(list_high_dam.loc[(list_high_dam.set == i)&\
@@ -71,19 +73,20 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
 
             print('---Running Magnitude '+str(m)+' sample '+str(i)+'...')
             print("Initializing network...")
+            if True:
+                indp.time_resource_usage_curves(base_dir, damage_dir)
             if infrastructure_data:
                 params["N"], _, _ = indp.initialize_network(BASE_DIR=base_dir,
                             external_interdependency_dir=ext_interdependency,
-                            sim_number=0, magnitude=6, sample=0, v=params["V"],
+                            sim_number=0, magnitude=m, sample=i, v=params["V"],
                             infrastructure_data=infrastructure_data,
-                            extra_commodity=params["EXTRA_COMMODITY"])
+                            extra_commodity=params["EXTRA_COMMODITY"], time_reosurce=True)
             else:
                 params["N"], params["V"], params['L'] = indp.initialize_network(BASE_DIR=base_dir,
                             external_interdependency_dir=ext_interdependency,
                             magnitude=m, sample=i, infrastructure_data=infrastructure_data,
                             topology=topology)
-            params["SIM_NUMBER"] = i
-            params["MAGNITUDE"] = m
+
             # Check if the results exist
             output_dir_full = ''
             if params["ALGORITHM"] in ["INDP"]:

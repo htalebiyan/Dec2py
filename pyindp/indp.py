@@ -3,6 +3,7 @@ from indputils import *
 from gurobipy import *
 import string
 #import platform
+import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 import copy
@@ -1028,3 +1029,44 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
             nx.draw_networkx_edges(InterdepNet.G,pos,edgelist=arc_dict[3],width=1,alpha=0.9,edge_color='g')
     plt.tight_layout()
     plt.savefig(output_dir+'/plot_net'+suffix+'.png',dpi=300)
+
+def time_resource_usage_curves(base_dir, damage_dir):
+    files = [f for f in os.listdir(base_dir) if os.path.isfile(os.path.join(base_dir, f))]
+    dmg_prob_data = 0 #!!!
+    node_repair_time_data = pd.read_csv(base_dir+'repair_time_curves_nodes.csv')
+    arc_repair_time_data = pd.read_csv(base_dir+'repair_time_curves_arcs.csv')
+    netNames = {'Water':1,'Gas':2,'Power':3,'Telecommunication':4} #!!!
+    for file in files:
+        fname = file[0:-4] 
+        if fname[-5:]=='Nodes':
+            with open(base_dir+file) as f:
+                data = pd.read_csv(f, delimiter=',')
+                for v in data.iterrows():               
+                    node_type = v[1]['Node Type']
+                    dmg_probs = {'slight': 0.1, 'moderate': 0.1, 'extensive': 0.1, 'complete': 0.1}
+                    repair_data = node_repair_time_data[node_repair_time_data['Type']==node_type]
+                    rep_time = 0
+                    for ds, val in dmg_probs.items():
+                        rep_time += val*np.random.normal(repair_data['ds_'+ds+'_mean'],
+                                                         repair_data['ds_'+ds+'_sd'], 1)[0]
+                    data.loc[v[0],'p_time'] = rep_time 
+                data.to_csv(base_dir+file, sep=',', index=False)
+                                      
+    for file in files:
+        fname = file[0:-4] 
+        if fname[-4:] == 'Arcs':
+            if fname[:-4] == 'Power':
+                continue
+            with open(base_dir+file) as f:
+                data = pd.read_csv(f, delimiter=',')
+                for v in data.iterrows():
+                    if v[1]['diameter']>20:
+                        repair_data = arc_repair_time_data[arc_repair_time_data['Type']=='>20 in']
+                    else:
+                        repair_data = arc_repair_time_data[arc_repair_time_data['Type']=='<20 in']
+                    rep_rate = {'breakrate': 2, 'leakrate': 2}
+                    rep_time = (rep_rate['breakrate']*repair_data['# Fixed Breaks/Day/Worker']+\
+                        rep_rate['leakrate']*repair_data['# Fixed Leaks/Day/Worker'])*v[1]['Length (km)']
+                    data.loc[v[0],'h_time'] = float(rep_time)
+                data.to_csv(base_dir+file, sep=',', index=False)
+                    
