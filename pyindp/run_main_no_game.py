@@ -398,10 +398,9 @@ if __name__ == "__main__":
 
     ''' Set analysis parameters '''
     # No restriction on number of resources for each layer
-    RC = [8]#[4, 8, 12]
+    RC = [{'budget':120000, 'time':28}]
     # Not necessary for synthetic nets
-    # [3, 6, 8, 12]
-    # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
+    # Prescribed for each layer -> RC = [{'budget':{1:60000, 3:700}, 'time':{1:2, 3:10}}] 
     LAYERS = [1,3]#[1, 2, 3, 4]
     # Not necessary for synthetic nets
     JUDGE_TYPE = ["PESSIMISTIC", "OPTIMISTIC", "DET-DEMAND"]

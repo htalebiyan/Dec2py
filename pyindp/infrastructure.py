@@ -23,13 +23,16 @@ class InfrastructureNode(object):
         self.undersupply_penalty = 0.0
         self.demand = 0.0
         self.space = 0
-        self.resource_usage = 0
+        self.resource_usage = {}
         self.extra_com = {}
     def set_failure_probability(self,failure_probability):
         self.failure_probability = failure_probability
     def set_extra_commodity(self,extra_commodity):
         for l in extra_commodity:
             self.extra_com[l] = {'demand':0, 'oversupply_penalty':0, 'undersupply_penalty':0}
+    def set_resource_usage(self, resource_names):
+        for rc in resource_names:
+            self.resource_usage[rc] = 0
     def in_space(self,space_id):
         if self.space == space_id:
             return 1
@@ -46,7 +49,7 @@ class InfrastructureArc(object):
         self.repaired=1.0
         self.flow_cost=0.0
         self.reconstruction_cost=0.0
-        self.resource_usage=0.0
+        self.resource_usage = {}
         self.capacity = 0.0
         self.space=0
         self.extra_com = {}
@@ -54,6 +57,9 @@ class InfrastructureArc(object):
     def set_extra_commodity(self,extra_commodity):
         for l in extra_commodity:
             self.extra_com[l] = {'flow_cost':0}
+    def set_resource_usage(self, resource_names):
+        for rc in resource_names:
+            self.resource_usage[rc] = 0
     def in_space(self,space_id):
         if self.space == space_id:
             return 1
@@ -372,23 +378,26 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
         fname = file[0:-4] 
         if fname[-5:]=='Nodes':
             with open(BASE_DIR+file) as f:
-#                print "Opened",file,"."
                 data = pd.read_csv(f, delimiter=',')
                 net = netNames[fname[:-5]]
                 for v in data.iterrows():               
                     n=InfrastructureNode(global_index,net,int(v[1]['ID']))
-                    #print "Adding node",node[0][0],"in layer",node[0][1],"."
                     G.G.add_node((n.local_id,n.net_id),data={'inf_data':n})
                     global_index+=1
                     node_main_data = G.G.nodes[(n.local_id,n.net_id)]['data']['inf_data']
                     node_main_data.reconstruction_cost = float(v[1]['q (complete DS)'])*cost_scale
                     node_main_data.oversupply_penalty = float(v[1]['Mp'])*cost_scale
                     node_main_data.undersupply_penalty = float(v[1]['Mm'])*cost_scale
-                    # Assume only one kind of resource for now and one resource for each repaired element.
-                    node_main_data.resource_usage = 1
                     node_main_data.demand = float(v[1]['Demand'])
                     if 'guid' in v[1].index.values:
                         node_main_data.guid = v[1]['guid']
+                    resource_names = [x for x in list(v[1].index.values) if x[:1]=='p']
+                    if len(resource_names)>0:
+                        n.set_resource_usage(resource_names)
+                        for rc in resource_names:
+                            n.resource_usage[rc] = v[1][rc]
+                    else:
+                        n.resource_usage['p_'] = 1
                     if extra_commodity:
                         n.set_extra_commodity(extra_commodity[net])
                         for l in extra_commodity[net]:
@@ -400,7 +409,6 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
         fname = file[0:-4] 
         if fname[-4:]=='Arcs':
             with open(BASE_DIR+file) as f:
-#                print "Opened",file,"."
                 data = pd.read_csv(f, delimiter=',')
                 net = netNames[fname[:-4]]
                 for v in data.iterrows():  
@@ -414,10 +422,15 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
                         arc_main_data.flow_cost=float(v[1]['c'])*cost_scale
                         arc_main_data.reconstruction_cost=float(v[1]['f'])*cost_scale
                         arc_main_data.capacity=float(v[1]['u'])
-                        # Assume only one kind of resource for now and one resource for each repaired element.
-                        arc_main_data.resource_usage=1   
                         if 'guid' in v[1].index.values:
                             arc_main_data.guid = v[1]['guid']
+                        resource_names = [x for x in list(v[1].index.values) if x[:1]=='h']
+                        if len(resource_names)>0:
+                            a.set_resource_usage(resource_names)
+                            for rc in resource_names:
+                                a.resource_usage[rc] = v[1][rc]
+                        else:
+                            n.resource_usage['h_'] = 1
                         if extra_commodity:
                             a.set_extra_commodity(extra_commodity[net])
                             for l in extra_commodity[net]:
@@ -517,6 +530,7 @@ def add_failure_scenario(G,DAM_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim
                 G.G[(func[0][1],func[0][3])][(func[0][2],func[0][3])]['data']['inf_data'].repaired=float(func[1])
                 #if float(func[1]) == 0.0:
                 #    print "Arc ((",`func[0][1]`+","+`func[0][3]`+"),("+`func[0][2]`+","+`func[0][3]`+")) broken."
+    pass
 
 def add_random_failure_scenario(G,sample,config=0,DAM_DIR=""):
     import csv
@@ -741,10 +755,9 @@ def debug():
     count_interdependencies(N)
     count_nodes(N,1)
     count_nodes(N,3)
-    #count_supply(N,1)
-    #count_supply(N,2)
-    #count_supply(N,3)
-#debug()
+    count_supply(N,1)
+    count_supply(N,2)
+    count_supply(N,3)
 
 def read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim_number=1):
     if sim_number == "INF":

@@ -242,45 +242,51 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
                             "Flow arc functionality constraint("+str(u)+","+str(v)+","+str(t)+")")
 
         #Resource availability constraints.
-        isSepResource = False
-        if isinstance(v_r, int):
-            totalResource = v_r
-        else:
-            isSepResource = True
-            totalResource = sum([val for _, val in v_r.items()])
-            if len(v_r.keys()) != len(layers):
-                sys.exit("The number of resource cap values does not match the number of layers.\n")
-
-        resourceLeftConstr=LinExpr()
-        if isSepResource:
-            resourceLeftConstrSep = {key:LinExpr() for key, _ in v_r.items()}
-
-        for u,v,a in A_hat_prime:
-            indexLayer = a['data']['inf_data'].layer
-            if T == 1:
-                resourceLeftConstr+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))
-                if isSepResource:
-                    resourceLeftConstrSep[indexLayer]+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))
+        for rc, val in v_r.items():
+            is_sep_res = False
+            if isinstance(val, int):
+                totalResource = val
             else:
-                resourceLeftConstr+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))
-                if isSepResource:
-                    resourceLeftConstrSep[indexLayer]+=0.5*a['data']['inf_data'].resource_usage*m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))
+                is_sep_res = True
+                totalResource = sum([lval for _, lval in val.items()])
+                assert len(val.keys()) == len(layers), "The number of resource \
+                    values does not match the number of layers."
 
-        for n,d in N_hat_prime:
-            indexLayer = n[1]
-            if T == 1:
-                resourceLeftConstr+=d['data']['inf_data'].resource_usage*m.getVarByName('w_'+str(n)+","+str(t))
-                if isSepResource:
-                    resourceLeftConstrSep[indexLayer]+=d['data']['inf_data'].resource_usage*m.getVarByName('w_'+str(n)+","+str(t))
-            else:
-                resourceLeftConstr+=d['data']['inf_data'].resource_usage*m.getVarByName('w_tilde_'+str(n)+","+str(t))
-                if isSepResource:
-                    resourceLeftConstrSep[indexLayer]+=d['data']['inf_data'].resource_usage*m.getVarByName('w_tilde_'+str(n)+","+str(t))
+            resourceLeftConstr=LinExpr()
+            if is_sep_res:
+                resLeftConstrSep = {key:LinExpr() for key in val.keys()}
 
-        m.addConstr(resourceLeftConstr,GRB.LESS_EQUAL,totalResource,"Resource availability constraint at "+str(t)+".")
-        if isSepResource:
-            for k,_ in v_r.items():
-                m.addConstr(resourceLeftConstrSep[k],GRB.LESS_EQUAL,v_r[k],"Resource availability constraint at "+str(t)+" for layer "+str(k)+".")
+            for u,v,a in A_hat_prime:
+                idx_lyr = a['data']['inf_data'].layer
+                res_use = 0.5*a['data']['inf_data'].resource_usage['h_'+rc]
+                if T == 1:
+                    resourceLeftConstr += res_use*m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))
+                    if is_sep_res:
+                        resLeftConstrSep[idx_lyr] += res_use*m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))
+                else:
+                    resourceLeftConstr += res_use*m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))
+                    if is_sep_res:
+                        resLeftConstrSep[idx_lyr] += res_use*m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))
+    
+            for n,d in N_hat_prime:
+                idx_lyr = n[1]
+                res_use = d['data']['inf_data'].resource_usage['p_'+rc]
+                if T == 1:
+                    resourceLeftConstr += res_use*m.getVarByName('w_'+str(n)+","+str(t))
+                    if is_sep_res:
+                        resLeftConstrSep[idx_lyr] += res_use*m.getVarByName('w_'+str(n)+","+str(t))
+                else:
+                    resourceLeftConstr += res_use*m.getVarByName('w_tilde_'+str(n)+","+str(t))
+                    if is_sep_res:
+                        resLeftConstrSep[idx_lyr] += res_use*m.getVarByName('w_tilde_'+str(n)+","+str(t))
+    
+            m.addConstr(resourceLeftConstr, GRB.LESS_EQUAL, totalResource,
+                        "Resource availability constraint for "+rc+" at "+str(t)+".")
+            if is_sep_res:
+                for k, lval in val.items():
+                    m.addConstr(resLeftConstrSep[k], GRB.LESS_EQUAL ,lval,
+                                "Resource availability constraint for "+rc+" at "+\
+                                    str(t)+" for layer "+str(k)+".")
 
         # Interdependency constraints
         infeasible_actions=[]
@@ -370,7 +376,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
                 if c.IISConstr:
                     print('%s' % c.constrName)
         return None
-
+   
 def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=True):
     layers = controlled_layers
     indp_results=INDPResults(layers)
@@ -573,10 +579,12 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
         controlled_layers = layers
 
     v_r=params["V"]
-    if isinstance(v_r, (int)):
-        outDirSuffixRes = str(v_r)
-    else:
-        outDirSuffixRes = str(sum([val for _, val in v_r.items()]))+'_fixed_layer_Cap'
+    outDirSuffixRes = ''
+    for rc, val in v_r.items():
+        if isinstance(val, (int)):
+            outDirSuffixRes += rc[0]+str(val)
+        else:
+            outDirSuffixRes += rc[0]+str(sum([lval for _, lval in val.items()]))+'_fixed_layer_Cap'
 
     indp_results=INDPResults(params["L"])
     if T == 1:
@@ -585,16 +593,19 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
             print("Num iters=",params["NUM_ITERATIONS"])
 
         # Run INDP for 1 time step (original INDP).
-        output_dir=params["OUTPUT_DIR"]+'_L'+str(len(layers))+'_m'+str(params["MAGNITUDE"])+"_v"+outDirSuffixRes
+        output_dir=params["OUTPUT_DIR"]+'_L'+str(len(layers))+\
+            '_m'+str(params["MAGNITUDE"])+"_v"+outDirSuffixRes
         # Initial calculations.
         if params['DYNAMIC_PARAMS']:
             original_N = copy.deepcopy(InterdepNet) #!!! deepcopy
             dynamic_params = create_dynamic_param(params, N=original_N)
             dynamic_parameters(InterdepNet, original_N, 0, dynamic_params)
-        results=indp(InterdepNet,0,1,layers,controlled_layers=controlled_layers,
+        v_0 = {x:0 for x in v_r.keys()}
+        results=indp(InterdepNet, v_0, 1, layers, controlled_layers=controlled_layers,
                      functionality=functionality, co_location=co_location)
         indp_results=results[1]
-        indp_results.add_components(0,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
+        indp_results.add_components(0, INDPComponents.calculate_components(results[0],InterdepNet,
+                                                                           layers=controlled_layers))
         for i in range(params["NUM_ITERATIONS"]):
             print("-Time Step (iINDP)",i+1,"/",params["NUM_ITERATIONS"])
             if params['DYNAMIC_PARAMS']:
@@ -603,7 +614,7 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
                          forced_actions=forced_actions, co_location=co_location)
             indp_results.extend(results[1],t_offset=i+1)
             if saveModel:
-                save_INDP_model_to_file(results[0],output_dir+"/Model",i+1)
+                save_INDP_model_to_file(results[0], output_dir+"/Model", i+1)
             # Modify network to account for recovery and calculate components.
             apply_recovery(InterdepNet,indp_results,i+1)
             indp_results.add_components(i+1,INDPComponents.calculate_components(results[0],InterdepNet,layers=controlled_layers))
@@ -669,7 +680,6 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
             os.makedirs(output_dir+'/agents')
         indp_results.to_csv_layer(output_dir+'/agents',params["SIM_NUMBER"],suffix=suffix)
     return indp_results
-
 
 def run_info_share(params,layers=[1,2,3],T=1,validate=False,suffix=""):
     """Applies rounds of information sharing between INDP runs. Assumes each layer is controlled by a separate player.
