@@ -239,13 +239,12 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
         if os.path.exists(result_dir+'/actions_'+str(x[1])+'_.csv'):
             # Save all results to Pandas dataframe
             sample_result = indputils.INDPResults()
-            sam_rslt_lyr = {l+1:indputils.INDPResults() for l in range(x[2])}
-            ### !!! Assume the layer name is l+1
+            sam_rslt_lyr = {l:indputils.INDPResults() for l in x[9]}
             sample_result = sample_result.from_csv(result_dir, x[1], suffix=x[8])
             if deaggregate:
-                for l in range(x[2]):
-                    sam_rslt_lyr[l+1] = sam_rslt_lyr[l+1].from_csv(result_dir+rslt_dir_lyr, x[1],
-                                                                   suffix='L'+str(l+1)+'_'+x[8])
+                for l in x[9]:
+                    sam_rslt_lyr[l] = sam_rslt_lyr[l].from_csv(result_dir+rslt_dir_lyr, x[1],
+                                                               suffix='L'+str(l)+'_'+x[8])
             initial_cost = {}
             for c in cost_types:
                 initial_cost[c] = sample_result[0]['costs'][c]
@@ -261,19 +260,19 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
                     cmplt_results = cmplt_results.append(dict(zip(columns, values)),
                                                          ignore_index=True)
             if deaggregate:
-                for l in range(x[2]):
+                for l in x[9]:
                     initial_cost = {}
                     for c in cost_types:
-                        initial_cost[c] = sam_rslt_lyr[l+1][0]['costs'][c]
+                        initial_cost[c] = sam_rslt_lyr[l][0]['costs'][c]
                     norm_cost = 0
-                    for t in sam_rslt_lyr[l+1].results:
+                    for t in sam_rslt_lyr[l].results:
                         for c in cost_types:
                             if initial_cost[c] != 0.0:
-                                norm_cost = sam_rslt_lyr[l+1][t]['costs'][c]/initial_cost[c]
+                                norm_cost = sam_rslt_lyr[l][t]['costs'][c]/initial_cost[c]
                             else:
                                 norm_cost = -1.0
                             values = [t, x[0], c, x[4], x[5], x[6], x[7], x[3], x[1],
-                                      float(sam_rslt_lyr[l+1][t]['costs'][c]), norm_cost, l+1]
+                                      float(sam_rslt_lyr[l][t]['costs'][c]), norm_cost, l]
                             cmplt_results = cmplt_results.append(dict(zip(columns, values)),
                                                                  ignore_index=True)
             #: Getting back the JuCModel objects:
@@ -668,6 +667,12 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
             if list_high_dam_add is None or len(list_high_dam.loc[(list_high_dam.set == s)&\
                                                                   (list_high_dam.sce == m)].index):
                 for rc in no_resources:
+                    outDirSuffixRes = ''
+                    for res, val in rc.items():
+                        if isinstance(val, (int)):
+                            outDirSuffixRes += res[0]+str(val)
+                        else:
+                            outDirSuffixRes += res[0]+str(sum([lval for _, lval in val.items()]))+'_fixed_layer_Cap'
                     for dt, jt, at, vt in itertools.product(decision_type, judgment_type,
                                                             res_alloc_type, valuation_type):
                         if dt == 'jc':
@@ -676,14 +681,18 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
                             sf = ''
 
                         if (dt in optimal_method) and\
-                            [m, s, L, rc, dt, 'nan', 'nan', 'nan', ''] not in optimal_combinations:
-                            optimal_combinations.append([m, s, L, rc, dt, 'nan',
-                                                         'nan', 'nan', sf])
+                            [m, s, L, outDirSuffixRes, dt, 'nan', 'nan', 'nan',
+                             '', layers, rc] not in optimal_combinations:
+                            optimal_combinations.append([m, s, L, outDirSuffixRes, dt,
+                                                         'nan', 'nan', 'nan', sf, layers, rc])
                         elif (dt not in optimal_method) and (at not in ['UNIFORM', 'OPTIMAL']):
-                            combinations.append([m, s, L, rc, dt, jt, at, vt, sf])
+                            combinations.append([m, s, L, outDirSuffixRes, dt, jt, at,
+                                                 vt, sf, layers, rc])
                         elif (dt not in optimal_method) and (at in ['UNIFORM', 'OPTIMAL']):
-                            if [m, s, L, rc, dt, jt, at, 'nan', sf] not in combinations:
-                                combinations.append([m, s, L, rc, dt, jt, at, 'nan', sf])
+                            if [m, s, L, outDirSuffixRes, dt, jt, at, 'nan', sf,
+                                layers, rc] not in combinations:
+                                combinations.append([m, s, L, outDirSuffixRes, dt, jt, at,
+                                                     'nan', sf, layers, rc])
             idx += 1
             update_progress(idx, no_total)
     elif database == 'synthetic':
@@ -695,8 +704,15 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
         for m, s in itertools.product(mags, sample):
             config_param = config_data.iloc[m]
             L = int(config_param.loc[' No. Layers'])
+            layers = range(1,L+1)
             no_resources = int(config_param.loc[' Resource Cap'])
             for rc in [no_resources]:
+                outDirSuffixRes = ''
+                for res, val in rc.items():
+                    if isinstance(val, (int)):
+                        outDirSuffixRes += res[0]+str(val)
+                    else:
+                        outDirSuffixRes += res[0]+str(sum([lval for _, lval in val.items()]))+'_fixed_layer_Cap'
                 for dt, jt, at, vt in itertools.product(decision_type, judgment_type,
                                                         res_alloc_type, valuation_type):
                     if dt == 'JC':
@@ -704,14 +720,17 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
                     else:
                         sf = ''
                     if (dt in optimal_method) and\
-                        [m, s, L, rc, dt, 'nan', 'nan', 'nan', ''] not in optimal_combinations:
-                        optimal_combinations.append([m, s, L, rc, dt, 'nan',
-                                                     'nan', 'nan', sf])
+                        [m, s, L, outDirSuffixRes, dt, 'nan', 'nan', 'nan', '',
+                         layers, rc] not in optimal_combinations:
+                        optimal_combinations.append([m, s, L, outDirSuffixRes, dt, 'nan',
+                                                     'nan', 'nan', sf, layers, rc])
                     elif (dt not in optimal_method) and (at not in ['UNIFORM', 'OPTIMAL']):
-                        combinations.append([m, s, L, rc, dt, jt, at, vt, sf])
+                        combinations.append([m, s, L, outDirSuffixRes, dt, jt, at,
+                                             vt, sf, layers, rc])
                     elif (dt not in optimal_method) and (at in ['UNIFORM', 'OPTIMAL']):
-                        if [m, s, L, rc, dt, jt, at, 'nan', sf] not in combinations:
-                            combinations.append([m, s, L, rc, dt, jt, at, 'nan', sf])
+                        if [m, s, L, outDirSuffixRes, dt, jt, at, 'nan', sf, layers, rc] not in combinations:
+                            combinations.append([m, s, L, outDirSuffixRes, dt, jt, at,
+                                                 'nan', sf, layers, rc])
             idx += 1
             update_progress(idx, no_total)
     else:

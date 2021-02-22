@@ -71,30 +71,32 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             except NameError:
                 pass
 
+            # Check if the results exist 
+            #!!! move it after initializing network for synthetic nets since L is identified there
+            output_dir_full = ''
+            if params["ALGORITHM"] in ["INDP"]:
+                outDirSuffixRes = indp.get_resource_suffix(params)
+                output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
+                    str(params["MAGNITUDE"])+"_v"+outDirSuffixRes+'/actions_'+str(i)+'_.csv'
+            if os.path.exists(output_dir_full):
+                print('results are already there\n')
+                continue
+
             print('---Running Magnitude '+str(m)+' sample '+str(i)+'...')
+            if params['TIME_RESOURCE']:
+                indp.time_resource_usage_curves(base_dir, damage_dir, i)
             print("Initializing network...")
-            if True:
-                indp.time_resource_usage_curves(base_dir, damage_dir)
             if infrastructure_data:
                 params["N"], _, _ = indp.initialize_network(BASE_DIR=base_dir,
                             external_interdependency_dir=ext_interdependency,
                             sim_number=0, magnitude=m, sample=i, v=params["V"],
                             infrastructure_data=infrastructure_data,
-                            extra_commodity=params["EXTRA_COMMODITY"], time_reosurce=True)
+                            extra_commodity=params["EXTRA_COMMODITY"])
             else:
                 params["N"], params["V"], params['L'] = indp.initialize_network(BASE_DIR=base_dir,
                             external_interdependency_dir=ext_interdependency,
                             magnitude=m, sample=i, infrastructure_data=infrastructure_data,
                             topology=topology)
-
-            # Check if the results exist
-            output_dir_full = ''
-            if params["ALGORITHM"] in ["INDP"]:
-                output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
-                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'/actions_'+str(i)+'_.csv'
-            if os.path.exists(output_dir_full):
-                print('results are already there\n')
-                continue
 
             if fail_sce_param['TYPE'] == 'WU':
                 indp.add_Wu_failure_scenario(params["N"], DAM_DIR=damage_dir,
@@ -236,7 +238,7 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
     '''
     for v in v_r:
         if method == 'INDP':
-            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'indp_results',
+            params = {"NUM_ITERATIONS":20, "OUTPUT_DIR":output_dir+'indp_results',
                       "V":v, "T":1, 'L':layers, "ALGORITHM":"INDP"}
         elif method == 'TDINDP':
             params = {"OUTPUT_DIR":output_dir+'/tdindp_results', "V":v, "T":10,
@@ -269,6 +271,7 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
             sys.exit('Wrong method name: '+method)
 
         params['EXTRA_COMMODITY'] = misc['EXTRA_COMMODITY']
+        params['TIME_RESOURCE'] = misc['TIME_RESOURCE']
         params['DYNAMIC_PARAMS'] = misc['DYNAMIC_PARAMS']
         if misc['DYNAMIC_PARAMS']:
             prefix = params['OUTPUT_DIR'].split('/')[-1]
@@ -337,7 +340,7 @@ if __name__ == "__main__":
     # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/Node_arc_info/"
     # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info/"
     #: The address to damge scenario data.
-    DAMAGE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/random_disruption/"
+    DAMAGE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/eq_1000yr_dmg/"
     # ../data/random_disruption_shelby/"
     #"../data/Wu_Damage_scenarios/" 
     # "C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\"
@@ -368,7 +371,7 @@ if __name__ == "__main__":
     #                   'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    FAIL_SCE_PARAM = {'TYPE':"random", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(0, 1),
+    FAIL_SCE_PARAM = {'TYPE':"random", 'SAMPLE_RANGE':range(0, 10), 'MAGS':range(0, 1),
                       'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(68, 69),
     #                   'FILTER_SCE':None, 'TOPO':'Grid',
@@ -379,6 +382,8 @@ if __name__ == "__main__":
     # DYNAMIC_PARAMS = {'TYPE': 'shelby_adopted', 'RETURN': 'step_function',
     #                   'DIR': 'C:/Users/ht20/Documents/Files/dynamic_demand/'}
     # DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'Joplin',
+    #                   'DIR': "C:/Users/ht20/Documents/GitHub/NIST_testbeds/"}
+    # DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'Seaside',
     #                   'DIR': "C:/Users/ht20/Documents/GitHub/NIST_testbeds/"}
 
     ###  Multicommodity parameters dict
@@ -401,7 +406,9 @@ if __name__ == "__main__":
 
     ''' Set analysis parameters '''
     # No restriction on number of resources for each layer
-    RC = [{'budget':120000, 'time':28}]
+    RC = [{'budget':120000, 'time':35}, {'budget':240000, 'time':35},
+          {'budget':120000, 'time':70}, {'budget':120000, 'time':105},
+          {'budget':240000, 'time':105}]
     # Not necessary for synthetic nets
     # Prescribed for each layer -> RC = [{'budget':{1:60000, 3:700}, 'time':{1:2, 3:10}}] 
     LAYERS = [1,3]#[1, 2, 3, 4]
@@ -415,7 +422,8 @@ if __name__ == "__main__":
     ''' Run different methods '''
     run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
                 misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-                        'EXTRA_COMMODITY':EXTRA_COMMODITY})
+                        'EXTRA_COMMODITY':EXTRA_COMMODITY,
+                        'TIME_RESOURCE':True})
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
     #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
     #                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
@@ -435,34 +443,34 @@ if __name__ == "__main__":
     #                     "SIGNALS":{x:'C' for x in LAYERS}, "BELIEFS":{x:'U' for x in LAYERS}})
 
     ''' Post-processing '''
-    # COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
-    # REF_METHOD = 'indp'
-    # METHOD_NAMES = ['indp', 'dp_indp'] #'ng', 'jc', 'dp_indp', 'tdindp' ''bgCCCCUUUU'
+    COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
+    REF_METHOD = 'indp'
+    METHOD_NAMES = ['indp'] #'ng', 'jc', 'dp_indp', 'tdindp' ''bgCCCCUUUU'
 
-    # COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
-    #             FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
-    #             RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE,
-    #             list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
-    #             synthetic_dir=SYNTH_DIR)
+    COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
+                FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
+                RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE,
+                list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
+                synthetic_dir=SYNTH_DIR)
 
-    # BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
-    #                                     root_result_dir=OUTPUT_DIR, deaggregate=False)
+    BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
+                                        root_result_dir=OUTPUT_DIR, deaggregate=True)
 
     # LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
     #                                         ref_method=REF_METHOD, cost_type=COST_TYPES[0])
-    # RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resourcec_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
-    #                                                               objs, root_result_dir=OUTPUT_DIR,
-    #                                                               ref_method=REF_METHOD)
+    # # RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resourcec_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
+    # #                                                               objs, root_result_dir=OUTPUT_DIR,
+    # #                                                               ref_method=REF_METHOD)
     # RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
-    # ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
+    # # ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
 
-    # ''' Save Variables to file '''
-    # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
-    #             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]
+    # # ''' Save Variables to file '''
+    # # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
+    # #             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]
 
-    # ### Saving the objects ###
-    # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
-    #     pickle.dump(OBJ_LIST, f)
+    # # ### Saving the objects ###
+    # # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
+    # #     pickle.dump(OBJ_LIST, f)
 
     ''' Plot results '''
     plt.close('all')
@@ -472,12 +480,12 @@ if __name__ == "__main__":
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
     #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
 
-    # plots.plot_performance_curves(BASE_DF,
-    #                               cost_type='Total', ci=95,
-    #                               deaggregate=False, plot_resilience=True)
+    plots.plot_performance_curves(BASE_DF,
+                                  cost_type='Total', ci=95,
+                                  deaggregate=False, plot_resilience=True)
 
-    # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
-    #                                     ci=95, normalize=False)
+    plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
+                                        ci=95, normalize=False)
 
     # plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
     # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)

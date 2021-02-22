@@ -53,16 +53,16 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
         decision_type = df.decision_type.unique().tolist()
     if not judgment_type:
         judgment_type = df.judgment_type.unique().tolist()
-    if 'nan' in judgment_type:
-        judgment_type.remove('nan')
+    # if 'nan' in judgment_type:
+    #     judgment_type.remove('nan')
     if not auction_type:
         auction_type = df.auction_type.unique().tolist()
-    if 'nan' in auction_type:
-        auction_type.remove('nan')
+    # if 'nan' in auction_type:
+    #     auction_type.remove('nan')
     if not valuation_type:
         valuation_type = df.valuation_type.unique().tolist()
-    if 'nan' in valuation_type:
-        valuation_type.remove('nan')
+    # if 'nan' in valuation_type:
+    #     valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
     #sns.color_palette("husl", len(auction_type)+1)
     row_plot = [judgment_type, 'judgment_type'] # valuation_type
@@ -491,15 +491,16 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
     valuation_type = df.valuation_type.unique().tolist()
     auction_type = df.auction_type.unique().tolist()
     layers = df.layer.unique().tolist()
+    T = df.t.unique().tolist()
     if 'nan' in layers:
         layers.remove('nan')
-    layer_names = {1:'Water', 2:'Gas', 3:'Power', 4:'Telecom.'}#!!! just for shelby
+    layer_names = {1:'Water', 2:'Gas', 3:'Power', 4:'Telecom.'}#!!! Current convention
     # colors = ['#154352', '#dbb539', '#007268', '#5d9c51']
     # pal = sns.color_palette(colors[:len(auction_type)-1]+['k'])
     pal = sns.color_palette(['r', 'b'])
     dpi = 300
-    fig, axs = plt.subplots(3, 2, sharex=True, sharey=True, tight_layout=False,
-                            figsize=(4000/dpi, 3000/dpi))
+    fig, axs = plt.subplots(len(layers)//2+1, 2, sharex=True, sharey='row',
+                            tight_layout=False, figsize=(4000/dpi, 3000/dpi))
     cost_data = df[df.cost_type == cost_type]
     for idx, lyr in enumerate(layers):
         ax = axs[idx//2, idx%2]
@@ -509,9 +510,9 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
             ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
             ax.set_title(r'Layer: %s'%(layer_names[lyr]))
             ax.get_legend().set_visible(False)
-            ax.xaxis.set_ticks(np.arange(0, 11, 1.0))   #ax.get_xlim()
+            ax.xaxis.set_ticks(np.arange(0, len(T), 2.0))   #ax.get_xlim()
 
-    ax = fig.add_subplot(3, 2, 6)
+    ax = fig.add_subplot(len(layers)//2+1, 2, (len(layers)//2+1)*2)
     with pal:
         sns.lineplot(x=x, y=y, hue="decision_type", style='auction_type',
                       markers=True, ci=ci, ax=ax,
@@ -519,7 +520,7 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
         ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
         ax.set_title(r'Overall')
         ax.get_legend().set_visible(False)
-        ax.xaxis.set_ticks(np.arange(0, 10, 1.0))   #ax.get_xlim()
+        ax.xaxis.set_ticks(np.arange(0, len(T), 2.0))   #ax.get_xlim()
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
     head = 'Resource Cap: '+str(res_caps).strip('[]')+', Valuation: '+\

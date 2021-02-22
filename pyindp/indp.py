@@ -12,9 +12,8 @@ import time
 import math
 import pickle
 import sys
-#HOME_DIR="/Users/Andrew/"
-#if platform.system() == "Linux":
-#    HOME_DIR="/home/andrew/"
+import numpy as np
+import os
 
 def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
          forced_actions=False, fixed_nodes={}, print_cmd=True, time_limit=None,
@@ -579,14 +578,8 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
     if not controlled_layers:
         controlled_layers = layers
 
-    v_r=params["V"]
-    outDirSuffixRes = ''
-    for rc, val in v_r.items():
-        if isinstance(val, (int)):
-            outDirSuffixRes += rc[0]+str(val)
-        else:
-            outDirSuffixRes += rc[0]+str(sum([lval for _, lval in val.items()]))+'_fixed_layer_Cap'
-
+    outDirSuffixRes = get_resource_suffix(params)
+    
     indp_results=INDPResults(params["L"])
     if T == 1:
         print("--Running INDP (T=1) or iterative INDP.")
@@ -601,7 +594,7 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
             original_N = copy.deepcopy(InterdepNet) #!!! deepcopy
             dynamic_params = create_dynamic_param(params, N=original_N)
             dynamic_parameters(InterdepNet, original_N, 0, dynamic_params)
-        v_0 = {x:0 for x in v_r.keys()}
+        v_0 = {x:0 for x in params["V"].keys()}
         results=indp(InterdepNet, v_0, 1, layers, controlled_layers=controlled_layers,
                      functionality=functionality, co_location=co_location)
         indp_results=results[1]
@@ -611,7 +604,7 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
             print("-Time Step (iINDP)",i+1,"/",params["NUM_ITERATIONS"])
             if params['DYNAMIC_PARAMS']:
                 dynamic_parameters(InterdepNet, original_N, i+1, dynamic_params)
-            results=indp(InterdepNet, v_r, T, layers, controlled_layers=controlled_layers,
+            results=indp(InterdepNet, params["V"], T, layers, controlled_layers=controlled_layers,
                          forced_actions=forced_actions, co_location=co_location)
             indp_results.extend(results[1],t_offset=i+1)
             if saveModel:
@@ -652,7 +645,7 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
                     for d in range(diff):
                         functionality_t[max_t+d+1]=functionality_t[max_t]
             # Run td-INDP.
-            results=indp(InterdepNet, v_r, time_window_length+1, layers, 
+            results=indp(InterdepNet, params["V"], time_window_length+1, layers, 
                          controlled_layers=controlled_layers, 
                          functionality=functionality_t, forced_actions=forced_actions,
                          co_location=co_location)
@@ -1030,43 +1023,114 @@ def plot_indp_sample(params,folderSuffix="",suffix=""):
     plt.tight_layout()
     plt.savefig(output_dir+'/plot_net'+suffix+'.png',dpi=300)
 
-def time_resource_usage_curves(base_dir, damage_dir):
+def get_resource_suffix(params):
+    outDirSuffixRes = ''
+    for rc, val in params["V"].items():
+        if isinstance(val, (int)):
+            outDirSuffixRes += rc[0]+str(val)
+        else:
+            outDirSuffixRes += rc[0]+str(sum([lval for _, lval in val.items()]))+'_fixed_layer_Cap'
+    return outDirSuffixRes
+
+def time_resource_usage_curves(base_dir, damage_dir, sample_num):
+    '''
+    This module calculate the repair time for nodes and arcs for the current
+    scenario based on their damage state and write them to the input files of 
+    INDP. Currently , it is only compatible with NIST testbeds.
+
+    Parameters
+    ----------
+    base_dir : TYPE
+        DESCRIPTION.
+    damage_dir : TYPE
+        DESCRIPTION.
+    sample_num : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    '''
+    print('Computing repair times...')
     files = [f for f in os.listdir(base_dir) if os.path.isfile(os.path.join(base_dir, f))]
-    dmg_prob_data = 0 #!!!
-    node_repair_time_data = pd.read_csv(base_dir+'repair_time_curves_nodes.csv')
-    arc_repair_time_data = pd.read_csv(base_dir+'repair_time_curves_arcs.csv')
-    netNames = {'Water':1,'Gas':2,'Power':3,'Telecommunication':4} #!!!
+    nodes_reptime_func = pd.read_csv(base_dir+'repair_time_curves_nodes.csv')
+    nodes_damge_ratio = pd.read_csv(base_dir+'damage_ratio_nodes.csv')
+    arcs_reptime_func = pd.read_csv(base_dir+'repair_time_curves_arcs.csv')
+    arcs_damge_ratio = pd.read_csv(base_dir+'damage_ratio_arcs.csv')
+    dmg_sce_data = pd.read_csv(damage_dir+'Initial_node_ds.csv', delimiter=',', header=None)
+    net_names = {'Water':1, 'Power':3}
+
     for file in files:
         fname = file[0:-4] 
         if fname[-5:]=='Nodes':
             with open(base_dir+file) as f:
-                data = pd.read_csv(f, delimiter=',')
-                for v in data.iterrows():               
-                    node_type = v[1]['Node Type']
-                    dmg_probs = {'slight': 0.1, 'moderate': 0.1, 'extensive': 0.1, 'complete': 0.1}
-                    repair_data = node_repair_time_data[node_repair_time_data['Type']==node_type]
+                node_data = pd.read_csv(f, delimiter=',')
+                for v in node_data.iterrows():               
+                    reptime_func_node = nodes_reptime_func[nodes_reptime_func['Type']==v[1]['Node Type']]
+                    dr_data = nodes_damge_ratio[nodes_damge_ratio['Type']==v[1]['Node Type']]
                     rep_time = 0
-                    for ds, val in dmg_probs.items():
-                        rep_time += val*np.random.normal(repair_data['ds_'+ds+'_mean'],
-                                                         repair_data['ds_'+ds+'_sd'], 1)[0]
-                    data.loc[v[0],'p_time'] = rep_time 
-                data.to_csv(base_dir+file, sep=',', index=False)
-                                      
+                    repair_cost = 0
+                    if not reptime_func_node.empty:
+                        node_name = '('+str(v[1]['ID'])+','+str(net_names[fname[:5]])+')'
+                        ds = dmg_sce_data[dmg_sce_data[0]==node_name].iloc[0][sample_num+1]
+                        rep_time = reptime_func_node.iloc[0]['ds_'+ds+'_mean']
+                        #!!! Add repair time uncertainity here 
+                        # rep_time = np.random.normal(reptime_func_node['ds_'+ds+'_mean'],
+                        #                             reptime_func_node['ds_'+ds+'_sd'], 1)[0]
+                        
+                        dr = dr_data.iloc[0]['dr_'+ds+'_be']
+                        #!!! Add damage ratio uncertainity here
+                        # dr = np.random.uniform(dr_data.iloc[0]['dr_'+ds+'_min'],
+                        #                       dr_data.iloc[0]['dr_'+ds+'_max'], 1)[0]
+                        repair_cost = v[1]['q (complete DS)']*dr
+                    node_data.loc[v[0],'p_time'] = rep_time if rep_time>0 else 0
+                    node_data.loc[v[0],'p_budget'] = repair_cost
+                    node_data.loc[v[0],'q'] = repair_cost
+                node_data.to_csv(base_dir+file, sep=',', index=False)
+
     for file in files:
         fname = file[0:-4] 
         if fname[-4:] == 'Arcs':
-            if fname[:-4] == 'Power':
-                continue
             with open(base_dir+file) as f:
                 data = pd.read_csv(f, delimiter=',')
+                dmg_data_all = pd.read_csv(damage_dir+'pipe_dmg.csv', delimiter=',')
                 for v in data.iterrows():
-                    if v[1]['diameter']>20:
-                        repair_data = arc_repair_time_data[arc_repair_time_data['Type']=='>20 in']
-                    else:
-                        repair_data = arc_repair_time_data[arc_repair_time_data['Type']=='<20 in']
-                    rep_rate = {'breakrate': 2, 'leakrate': 2}
-                    rep_time = (rep_rate['breakrate']*repair_data['# Fixed Breaks/Day/Worker']+\
-                        rep_rate['leakrate']*repair_data['# Fixed Leaks/Day/Worker'])*v[1]['Length (km)']
+                    dmg_data_arc = dmg_data_all[dmg_data_all['guid']==v[1]['guid']]
+                    rep_time = 0
+                    repair_cost = 0
+                    if not dmg_data_arc.empty:
+                        if v[1]['diameter']>20:
+                            reptime_func_arc = arcs_reptime_func[arcs_reptime_func['Type']=='>20 in']
+                            dr_data = arcs_damge_ratio[arcs_damge_ratio['Type']=='>20 in']
+                        else:
+                            reptime_func_arc = arcs_reptime_func[arcs_reptime_func['Type']=='<20 in']
+                            dr_data = arcs_damge_ratio[arcs_damge_ratio['Type']=='<20 in']
+                        rep_rate = {'break': dmg_data_arc.iloc[0]['breakrate'],
+                                    'leak': dmg_data_arc.iloc[0]['leakrate']}
+                        rep_time = (rep_rate['break']*reptime_func_arc['# Fixed Breaks/Day/Worker']+\
+                                    rep_rate['leak']*reptime_func_arc['# Fixed Leaks/Day/Worker'])*\
+                                    v[1]['Length (km)']/4 #assuming a 4-person crew per HAZUS
+                        dr = {'break': dr_data.iloc[0]['break_be'], 'leak': dr_data.iloc[0]['leak_be']}
+                        #!!! Add damage ratio uncertainity here
+                        # dr = {'break': np.random.uniform(dr_data.iloc[0]['break_min'],
+                        #                                  dr_data.iloc[0]['break_max'], 1)[0],
+                        #       'leak': np.random.uniform(dr_data.iloc[0]['leak_min'],
+                        #                                  dr_data.iloc[0]['leak_max'], 1)[0]}
+                        
+                        num_20_ft_seg = v[1]['Length (ft)']/20
+                        num_breaks = rep_rate['break']*v[1]['Length (km)']
+                        if num_breaks>num_20_ft_seg:
+                            repair_cost += v[1]['f (complete)']*dr['break']
+                        else:
+                            repair_cost += v[1]['f (complete)']/num_20_ft_seg*num_breaks*dr['break']
+                        num_leaks = rep_rate['leak']*v[1]['Length (km)']
+                        if num_leaks>num_20_ft_seg:
+                            repair_cost += v[1]['f (complete)']*dr['leak']
+                        else:
+                            repair_cost += v[1]['f (complete)']/num_20_ft_seg*num_leaks*dr['leak']
+                        repair_cost = min(repair_cost, v[1]['f (complete)'])
                     data.loc[v[0],'h_time'] = float(rep_time)
+                    data.loc[v[0],'h_budget'] = repair_cost
+                    data.loc[v[0],'f'] = repair_cost
                 data.to_csv(base_dir+file, sep=',', index=False)
-                    
