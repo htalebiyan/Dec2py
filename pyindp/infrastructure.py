@@ -438,29 +438,29 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
                                 ext_com_data['flow_cost'] = float(v[1]['c_'+l])*cost_scale
     for file in files:
         fname = file[0:-4]
-        with open(BASE_DIR+file) as f:
-#            print "Opened",file,"."
-            data = pd.read_csv(f, delimiter=',')
-            for v in data.iterrows():
-                if fname=='beta':
-                    net = netNames[v[1]['Network']]
-                    G.G[(int(v[1]['Start Node']),net)][(int(v[1]['End Node']),net)]['data']['inf_data'].space=int(int(v[1]['Subspace']))
-                    G.G[(int(v[1]['End Node']),net)][(int(v[1]['Start Node']),net)]['data']['inf_data'].space=int(int(v[1]['Subspace']))
-                if fname=='alpha':
-                    net = netNames[v[1]['Network']]
-                    G.G.node[(int(v[1]['ID']),net)]['data']['inf_data'].space=int(int(v[1]['Subspace']))
-                if fname=='g':
-                    G.S.append(InfrastructureSpace(int(v[1]['Subspace_ID']),float(v[1]['g'])))   
-                if fname=='Interdep' and v[1]['Type']=='Physical':
-                    i = int(v[1]['Dependee Node'])
-                    net_i = netNames[v[1]['Dependee Network']]
-                    j = int(v[1]['Depender Node'])
-                    net_j = netNames[v[1]['Depender Network']]
-                    a=InfrastructureInterdepArc(i,j,net_i,net_j,gamma=1.0)
-                    G.G.add_edge((a.source,a.source_layer),(a.dest,a.dest_layer),data={'inf_data':a})
-                    if extra_commodity:
-                        a.set_extra_commodity(extra_commodity[net_i])
-                        a.set_extra_commodity(extra_commodity[net_j])
+        if fname[-4:] in ['beta', 'alpha', 'g', 'Interdep']:
+            with open(BASE_DIR+file) as f:
+                data = pd.read_csv(f, delimiter=',')
+                for v in data.iterrows():
+                    if fname=='beta':
+                        net = netNames[v[1]['Network']]
+                        G.G[(int(v[1]['Start Node']),net)][(int(v[1]['End Node']),net)]['data']['inf_data'].space=int(int(v[1]['Subspace']))
+                        G.G[(int(v[1]['End Node']),net)][(int(v[1]['Start Node']),net)]['data']['inf_data'].space=int(int(v[1]['Subspace']))
+                    if fname=='alpha':
+                        net = netNames[v[1]['Network']]
+                        G.G.node[(int(v[1]['ID']),net)]['data']['inf_data'].space=int(int(v[1]['Subspace']))
+                    if fname=='g':
+                        G.S.append(InfrastructureSpace(int(v[1]['Subspace_ID']),float(v[1]['g'])))   
+                    if fname=='Interdep' and v[1]['Type']=='Physical':
+                        i = int(v[1]['Dependee Node'])
+                        net_i = netNames[v[1]['Dependee Network']]
+                        j = int(v[1]['Depender Node'])
+                        net_j = netNames[v[1]['Depender Network']]
+                        a=InfrastructureInterdepArc(i,j,net_i,net_j,gamma=1.0)
+                        G.G.add_edge((a.source,a.source_layer),(a.dest,a.dest_layer),data={'inf_data':a})
+                        if extra_commodity:
+                            a.set_extra_commodity(extra_commodity[net_i])
+                            a.set_extra_commodity(extra_commodity[net_j])
     return G
 
 def add_failure_scenario(G,DAM_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim_number=1):

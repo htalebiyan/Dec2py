@@ -378,13 +378,22 @@ if __name__ == "__main__":
     #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
 
     ### Dynamic parameters dict
-    DYNAMIC_PARAMS = None
+    # DYNAMIC_PARAMS = None
     # DYNAMIC_PARAMS = {'TYPE': 'shelby_adopted', 'RETURN': 'step_function',
     #                   'DIR': 'C:/Users/ht20/Documents/Files/dynamic_demand/'}
-    # DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'Joplin',
-    #                   'DIR': "C:/Users/ht20/Documents/GitHub/NIST_testbeds/"}
-    # DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'Seaside',
-    #                   'DIR': "C:/Users/ht20/Documents/GitHub/NIST_testbeds/"}
+    
+    # ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/"
+    # DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'joplin', 'OUT_DIR': BASE_DIR,
+    #                   'POP_DISLOC_DATA': ROOT_DISLOC+'Joplin_testbed/pop-dislocation-results.csv',
+    #                   'MAPPING': {'POWER': ROOT_DISLOC+'/Power/Joplin interdependency table - buildings,\
+    #                               substations, and poles/Joplin_interdependency_table.csv'}}
+    
+    ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
+    POP_DISLOC_DATA = ROOT_DISLOC+'Seaside_testbed/IN-CORE_1bv6_population_dislocation_1000yr.csv'
+    DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'seaside',
+                      'OUT_DIR': BASE_DIR, 'POP_DISLOC_DATA': POP_DISLOC_DATA,
+                      'MAPPING': {'POWER': ROOT_DISLOC+'Power/bldgs2elec_Seaside.csv',
+                                  'WATER': ROOT_DISLOC+'Water/bldgs2wter_Seaside.csv'}}    
 
     ###  Multicommodity parameters dict
     # EXTRA_COMMODITY = None
@@ -409,6 +418,7 @@ if __name__ == "__main__":
     RC = [{'budget':120000, 'time':35}, {'budget':240000, 'time':35},
           {'budget':120000, 'time':70}, {'budget':120000, 'time':105},
           {'budget':240000, 'time':105}]
+
     # Not necessary for synthetic nets
     # Prescribed for each layer -> RC = [{'budget':{1:60000, 3:700}, 'time':{1:2, 3:10}}] 
     LAYERS = [1,3]#[1, 2, 3, 4]
@@ -445,7 +455,7 @@ if __name__ == "__main__":
     ''' Post-processing '''
     COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
     REF_METHOD = 'indp'
-    METHOD_NAMES = ['indp'] #'ng', 'jc', 'dp_indp', 'tdindp' ''bgCCCCUUUU'
+    METHOD_NAMES = ['indp', 'dp_indp'] #'ng', 'jc', 'dp_indp', 'tdindp' ''bgCCCCUUUU'
 
     COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
                 FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
