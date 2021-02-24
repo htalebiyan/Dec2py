@@ -340,7 +340,7 @@ if __name__ == "__main__":
     # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/Node_arc_info/"
     # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info/"
     #: The address to damge scenario data.
-    DAMAGE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/eq_1000yr_dmg/"
+    DAMAGE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/eq_100yr_dmg/"
     # ../data/random_disruption_shelby/"
     #"../data/Wu_Damage_scenarios/" 
     # "C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\"
@@ -378,7 +378,8 @@ if __name__ == "__main__":
     #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
 
     ### Dynamic parameters dict
-    # DYNAMIC_PARAMS = None
+    DYNAMIC_PARAMS = None
+
     # DYNAMIC_PARAMS = {'TYPE': 'shelby_adopted', 'RETURN': 'step_function',
     #                   'DIR': 'C:/Users/ht20/Documents/Files/dynamic_demand/'}
     
@@ -389,7 +390,7 @@ if __name__ == "__main__":
     #                               substations, and poles/Joplin_interdependency_table.csv'}}
     
     ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
-    POP_DISLOC_DATA = ROOT_DISLOC+'Seaside_testbed/IN-CORE_1bv6_population_dislocation_1000yr.csv'
+    POP_DISLOC_DATA = ROOT_DISLOC+'Seaside_testbed/housingunit_eq_100yr_popdis_result.csv'
     DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'seaside',
                       'OUT_DIR': BASE_DIR, 'POP_DISLOC_DATA': POP_DISLOC_DATA,
                       'MAPPING': {'POWER': ROOT_DISLOC+'Power/bldgs2elec_Seaside.csv',
@@ -474,15 +475,16 @@ if __name__ == "__main__":
     # RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
     # # ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
 
-    # # ''' Save Variables to file '''
-    # # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
-    # #             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]
+    ''' Save Variables to file '''
+    # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
+    #             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]
+    OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, COST_TYPES]
 
-    # # ### Saving the objects ###
-    # # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
-    # #     pickle.dump(OBJ_LIST, f)
+    ### Saving the objects ###
+    with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
+        pickle.dump(OBJ_LIST, f)
 
-    ''' Plot results '''
+    # ''' Plot results '''
     plt.close('all')
         
     # ### Getting back the objects ###
@@ -491,11 +493,11 @@ if __name__ == "__main__":
     #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
 
     plots.plot_performance_curves(BASE_DF,
-                                  cost_type='Total', ci=95,
-                                  deaggregate=False, plot_resilience=True)
+                                  cost_type='Total', ci=None,
+                                  deaggregate=True, plot_resilience=True)
 
-    plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
-                                        ci=95, normalize=False)
+    # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
+    #                                     ci=95, normalize=False)
 
     # plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
     # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)

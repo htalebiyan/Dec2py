@@ -67,15 +67,16 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     #sns.color_palette("husl", len(auction_type)+1)
     row_plot = [judgment_type, 'judgment_type'] # valuation_type
     col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
-    hue_type = [auction_type, 'auction_type'] #auction_type
+    hue_type = [decision_type, 'decision_type'] #auction_type
     style_type = 'decision_type'  #decision_type
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
-                            figsize=(4000/dpi, 1500/dpi))
+                            figsize=(6000/dpi, 1500/dpi))
     colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
     # colors = ['r', 'b', 'k']
     pal = sns.color_palette(colors[:len(hue_type[0])])
+    x_ticks = np.arange(0, T+1, 2.0)
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
             ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
@@ -94,18 +95,20 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                     columns='layer')
                 cost_lyr_pivot.reset_index(inplace=True)
                 layers = cost_lyr['layer'].unique().tolist()
-                for l in layers:
-                    if l != 1:
-                        cost_lyr_pivot[l] += cost_lyr_pivot[l-1]
+                for idxl, l in enumerate(layers):
+                    if idxl != 0:
+                        cost_lyr_pivot[l] += cost_lyr_pivot[layers[idxl-1]]
                 layers.sort(reverse=True)
                 for l in layers:
                     pal_adj = sns.color_palette([[xx*l/len(layers) for xx in x] for x in pal])
                     sns.barplot(x=x, y=l, hue=hue_type[1], ax=ax, linewidth=0.5, ci=None,
                                 data=cost_lyr_pivot, hue_order=hue_type[0],
                                 palette=pal_adj, **{'alpha':0.35})
+                    ax.xaxis.grid(True)
             ax.set(xlabel=r'time step $t$', ylabel= cost_type+' Cost')#r'\% Unmet Demand')
             ax.get_legend().set_visible(False)
-            ax.xaxis.set_ticks(np.arange(0, T, 1.0))#ax.get_xlim()
+            ax.xaxis.set_ticks(x_ticks)
+            
             # ax.yaxis.set_ticks(np.arange(-.4, 0.05, 0.05))
 
             if plot_resilience:
@@ -126,32 +129,35 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                         columns='layer')
                     cost_lyr_pivot.reset_index(inplace=True)
                     layers = cost_lyr['layer'].unique().tolist()
-                    for l in layers:
-                        if l != 1:
-                            cost_lyr_pivot[l] += cost_lyr_pivot[l-1]
+                    for idxl, l in enumerate(layers):
+                        if idxl != 0:
+                            cost_lyr_pivot[l] += cost_lyr_pivot[layers[idxl-1]]
                     layers.sort(reverse=True)
                     for l in layers:
                         pal_adj = sns.color_palette([[xx*l/len(layers) for xx in x] for x in pal])
                         sns.barplot(x=x, y=l, hue=hue_type[1], ax=ax_2, linewidth=0.5,
                                     ci=None, data=cost_lyr_pivot, hue_order=hue_type[0],
                                     palette=pal_adj, **{'alpha':0.35})
+                    ax_2.xaxis.grid(True)
                 ax_2.set(ylabel=r'\% Unmet Demand')
                 ax_2.get_legend().set_visible(False)
                 if idx_c != 0.0:
                     ax_2.set_ylabel('')
                     ax_2.set_yticklabels([])
                 ax.xaxis.set_ticks([])
-                ax_2.xaxis.set_ticks(np.arange(0, T, 1.0))#ax.get_xlim()
+                ax_2.xaxis.set_ticks(x_ticks)#ax.get_xlim()
+                ax_2.yaxis.set_ticks(np.arange(-1.4, 0.01, 0.2))
     # Rebuild legend
     handles, labels = ax.get_legend_handles_labels()
     handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
-    labels = correct_legend_labels(labels)
+    labels = correct_labels(labels)
     fig.legend(handles, labels, loc='lower left', ncol=1, framealpha=0.35,
                bbox_to_anchor=(.7, 0.11)) 
     # Add overll x- and y-axis titles
     _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
-        ax.set_title(r'Total resources=%s'%(str(col_plot[0][idx])))
+        label = correct_labels([str(col_plot[0][idx])])[0]
+        ax.set_title(r'$R_c:$ %s'%(label))
     for idx, ax in enumerate(axs_r):
         ax.annotate(str(row_plot[0][idx]), xy=(0, 0.5),
                     xytext=(-ax.yaxis.labelpad - 4, 0), xycoords=ax.yaxis.label,
@@ -222,12 +228,12 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
                     ax.set_ylabel('')
                 ax.xaxis.set_label_position('bottom')
     handles, labels = ax.get_legend_handles_labels()
-    labels = correct_legend_labels(labels)
+    labels = correct_labels(labels)
     fig.legend(handles, labels, loc='lower right', bbox_to_anchor = (0.9,0.15),
                 frameon=True, framealpha=.75, ncol=1)
     _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
-        corrected_label = correct_legend_labels([col_plot[0][idx]])[0]
+        corrected_label = correct_labels([col_plot[0][idx]])[0]
         ax.set_title(r'Decision Type: %s'%(corrected_label))
     plt.savefig('Relative_perforamnce.png', dpi=dpi, bbox_inches='tight')
 
@@ -287,7 +293,7 @@ def plot_auction_allocation(df_res, ci=None):
                     ax.grid(b=True, which='major', color='w', linewidth=1.0)
 #                    ax.grid(b=True, which='minor', color='w', linewidth=0.5)
         handles, labels = ax.get_legend_handles_labels()
-        labels = correct_legend_labels(labels)
+        labels = correct_labels(labels)
         fig.legend(handles, labels, loc='center', ncol=4, framealpha=0.5,
                    labelspacing=0.2, bbox_to_anchor=(.5, .95)) #!!!
         _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
@@ -358,13 +364,13 @@ def plot_relative_allocation(gap_res, distance_type='gap'):
             ax.set_xlabel(r'$R_c$')
             if idx_r != len(row_plot[0])-1:
                 ax.set_xlabel('')
-            corrected_label = correct_legend_labels([row_plot[0][idx_r]])[0]
+            corrected_label = correct_labels([row_plot[0][idx_r]])[0]
             ax.set_ylabel(r'$E[\omega^k]$, %s' % (corrected_label))
             if idx_c != 0:
                 ax.set_ylabel('')
             ax.xaxis.set_label_position('bottom')
     handles, labels = ax.get_legend_handles_labels()
-    labels = correct_legend_labels(labels)
+    labels = correct_labels(labels)
     for idx, lab in enumerate(labels):
         layer_label = {1:'Water', 2:'Gas', 3:'Power', 4:'Telecomm.'} #!!! only for shelby
         labels[idx] = layer_label[idx+1]
@@ -456,7 +462,7 @@ def plot_run_time(df, ci=None):
         if x == 'judgment_type':
             labels[labels.index(x)] = value_vars[i]
             i += 1
-    labels = correct_legend_labels(labels)
+    labels = correct_labels(labels)
     fig.legend(handles, labels, loc='upper right', bbox_to_anchor=(0.95,0.88),
                ncol=1, framealpha=0.5, fontsize='x-small')
     _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
@@ -527,7 +533,7 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
         str(valuation_type).strip('[]')
     fig.suptitle(head)
     handles, labels = ax.get_legend_handles_labels()
-    labels = correct_legend_labels(labels)
+    labels = correct_labels(labels)
     fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5)
     plt.savefig('sep_perf.png', dpi=dpi, bbox_inches='tight')
 
@@ -667,13 +673,13 @@ def plot_ne_analysis(df, x='t', ci=None):
             with pal:
                 sns.lineplot(x=x, y=val_r, hue=hue_type[1], style=style_type, markers=True,
                              ci=ci, ax=ax, data=ne_data, **{'markersize':5})
-            ax.set(xlabel=r'time step $t$', ylabel= correct_legend_labels([val_r])[0])
+            ax.set(xlabel=r'time step $t$', ylabel= correct_labels([val_r])[0])
             ax.get_legend().set_visible(False)
             ax.xaxis.set_ticks(np.arange(1, T+1, 1.0))#ax.get_xlim()
     # Rebuild legend
     handles, labels = ax.get_legend_handles_labels()
     handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
-    labels = correct_legend_labels(labels)
+    labels = correct_labels(labels)
     fig.legend(handles, labels, loc='center right', ncol=1, framealpha=0.35,
                bbox_to_anchor=(.84, 0.69))
     # Add overll x- and y-axis titles
@@ -755,7 +761,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
     # Rebuild legend
     handles, labels = ax.get_legend_handles_labels()
     handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
-    labels = correct_legend_labels(labels)
+    labels = correct_labels(labels)
     fig.legend(handles, labels, loc='center right', ncol=1, framealpha=0.35,
                bbox_to_anchor=(.84, 0.69))
     # Add overll x- and y-axis titles
@@ -764,7 +770,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
         ax.set_title(r'$R_c=$%s'%(str(col_plot[0][idx])))
     plt.savefig('ne_cooperation.png', dpi=dpi, bbox_inches='tight')
 
-def correct_legend_labels(labels):
+def correct_labels(labels):
     '''
     Parameters
     ----------
@@ -806,10 +812,11 @@ def correct_legend_labels(labels):
     labels = ['Non Cooperative (OA)' if x == 'OA' else x for x in labels]
     labels = ['Non Cooperative (NA)' if x == 'NA' else x for x in labels]
     labels = ['No More Actions (NA)' if x == 'NA_possible' else x for x in labels]
-    # labels = ['Opt. Cooperative' if x == 'opt_cooperative' else x for x in labels]
-    # labels = ['Opt. Par. Cooperative' if x == 'opt_partially_cooperative' else x for x in labels]
-    # labels = ['Opt. Non Cooperative (OA)' if x == 'opt_OA' else x for x in labels]
-    # labels = ['Opt. Non Cooperative (NA)' if x == 'opt_NA' else x for x in labels]
+    
+    for idx, x in enumerate(labels):
+        if 'b' in x and 't' in x:
+            splited_x = x[1:].split('t')
+            labels[idx] = 'b='+str(splited_x[0])+' t='+str(splited_x[1])
     return labels
 
 def find_ax(axs, row_plot, col_plot, idx_r=0, idx_c=0):
