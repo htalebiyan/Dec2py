@@ -431,10 +431,10 @@ if __name__ == "__main__":
     VAL_TYPE = ['DTC']
     #['DTC', 'DTC_uniform', 'MDDN', 'STM', 'DTC-LP']
     ''' Run different methods '''
-    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
-                misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-                        'EXTRA_COMMODITY':EXTRA_COMMODITY,
-                        'TIME_RESOURCE':True})
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
+    #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+    #                     'EXTRA_COMMODITY':EXTRA_COMMODITY,
+    #                     'TIME_RESOURCE':True})
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
     #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
     #                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
@@ -454,47 +454,48 @@ if __name__ == "__main__":
     #                     "SIGNALS":{x:'C' for x in LAYERS}, "BELIEFS":{x:'U' for x in LAYERS}})
 
     ''' Post-processing '''
-    COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
-    REF_METHOD = 'indp'
-    METHOD_NAMES = ['indp', 'dp_indp'] #'ng', 'jc', 'dp_indp', 'tdindp' ''bgCCCCUUUU'
+    # COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
+    # REF_METHOD = 'indp'
+    # METHOD_NAMES = ['indp', 'dp_indp'] #'ng', 'jc', 'dp_indp', 'tdindp' ''bgCCCCUUUU'
 
-    COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
-                FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
-                RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE,
-                list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
-                synthetic_dir=SYNTH_DIR)
+    # COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
+    #             FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
+    #             RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE,
+    #             list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
+    #             synthetic_dir=SYNTH_DIR)
 
-    BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
-                                        root_result_dir=OUTPUT_DIR, deaggregate=True)
+    # BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
+    #                                     root_result_dir=OUTPUT_DIR, deaggregate=True)
 
-    # LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
-    #                                         ref_method=REF_METHOD, cost_type=COST_TYPES[0])
-    # # RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resourcec_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
-    # #                                                               objs, root_result_dir=OUTPUT_DIR,
-    # #                                                               ref_method=REF_METHOD)
-    # RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
-    # # ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
+    # # LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
+    # #                                         ref_method=REF_METHOD, cost_type=COST_TYPES[0])
+    # # # RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resourcec_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
+    # # #                                                               objs, root_result_dir=OUTPUT_DIR,
+    # # #                                                               ref_method=REF_METHOD)
+    # # RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
+    # # # ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
 
-    ''' Save Variables to file '''
-    # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
-    #             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]
-    OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, COST_TYPES]
+    # ''' Save Variables to file '''
+    # # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
+    # #             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]
+    # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, COST_TYPES]
 
-    ### Saving the objects ###
-    with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
-        pickle.dump(OBJ_LIST, f)
+    # ### Saving the objects ###
+    # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
+    #     pickle.dump(OBJ_LIST, f)
 
     # ''' Plot results '''
     plt.close('all')
         
-    # ### Getting back the objects ###
+    ### Getting back the objects ###
     # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'rb') as f:
-    #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
-    #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
+    #     # [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
+    #     #   ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
+    #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, COST_TYPES] = pickle.load(f)
 
-    plots.plot_performance_curves(BASE_DF,
+    plots.plot_performance_curves(BASE_DF[(BASE_DF['decision_type']=='dp_indp')],
                                   cost_type='Total', ci=None,
-                                  deaggregate=True, plot_resilience=True)
+                                  deaggregate=False, plot_resilience=True)
 
     # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
     #                                     ci=95, normalize=False)

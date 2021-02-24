@@ -7,8 +7,8 @@ import pandas as pd
 from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 sns.set(context='notebook', style='darkgrid', font_scale=1.2)
-# plt.rc('text', usetex=True)
-# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                    decision_type=None, judgment_type=None,
@@ -49,6 +49,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     '''
     #: Make lists
     no_resources = df.no_resources.unique().tolist()
+    return_period = df.return_period.unique().tolist()
     if not decision_type:
         decision_type = df.decision_type.unique().tolist()
     if not judgment_type:
@@ -67,15 +68,16 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     #sns.color_palette("husl", len(auction_type)+1)
     row_plot = [judgment_type, 'judgment_type'] # valuation_type
     col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
-    hue_type = [decision_type, 'decision_type'] #auction_type
-    style_type = 'decision_type'  #decision_type
+    hue_type = [return_period, 'return_period'] #auction_type
+    style_type = 'return_period'  #decision_type
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
                             figsize=(6000/dpi, 1500/dpi))
     colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
     # colors = ['r', 'b', 'k']
-    pal = sns.color_palette(colors[:len(hue_type[0])])
+    # pal = sns.color_palette(colors[:len(hue_type[0])])
+    pal = sns.diverging_palette(250, 1000, l=65, center="dark")
     x_ticks = np.arange(0, T+1, 2.0)
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
@@ -105,10 +107,10 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                 data=cost_lyr_pivot, hue_order=hue_type[0],
                                 palette=pal_adj, **{'alpha':0.35})
                     ax.xaxis.grid(True)
-            ax.set(xlabel=r'time step $t$', ylabel= cost_type+' Cost')#r'\% Unmet Demand')
+            
             ax.get_legend().set_visible(False)
             ax.xaxis.set_ticks(x_ticks)
-            
+            ax.set(xlabel=r'time step $t$', ylabel= cost_type+' Cost')#r'\% Unmet Demand')
             # ax.yaxis.set_ticks(np.arange(-.4, 0.05, 0.05))
 
             if plot_resilience:
@@ -139,20 +141,20 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                     ci=None, data=cost_lyr_pivot, hue_order=hue_type[0],
                                     palette=pal_adj, **{'alpha':0.35})
                     ax_2.xaxis.grid(True)
-                ax_2.set(ylabel=r'\% Unmet Demand')
+                ax_2.set(xlabel=r'time step $t$ (weeks)', ylabel=r'\% Unmet Demand')
                 ax_2.get_legend().set_visible(False)
                 if idx_c != 0.0:
                     ax_2.set_ylabel('')
                     ax_2.set_yticklabels([])
                 ax.xaxis.set_ticks([])
                 ax_2.xaxis.set_ticks(x_ticks)#ax.get_xlim()
-                ax_2.yaxis.set_ticks(np.arange(-1.4, 0.01, 0.2))
+                ax_2.yaxis.set_ticks(np.arange(-.8, 0.01, 0.2))
     # Rebuild legend
     handles, labels = ax.get_legend_handles_labels()
     handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
     labels = correct_labels(labels)
-    fig.legend(handles, labels, loc='lower left', ncol=1, framealpha=0.35,
-               bbox_to_anchor=(.7, 0.11)) 
+    fig.legend(handles, labels, loc='lower right', ncol=1, framealpha=0.35,
+               bbox_to_anchor=(.9, 0.11)) 
     # Add overll x- and y-axis titles
     _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
@@ -812,11 +814,11 @@ def correct_labels(labels):
     labels = ['Non Cooperative (OA)' if x == 'OA' else x for x in labels]
     labels = ['Non Cooperative (NA)' if x == 'NA' else x for x in labels]
     labels = ['No More Actions (NA)' if x == 'NA_possible' else x for x in labels]
-    
+    labels = ['Return Period' if x == 'return_period' else x for x in labels]
     for idx, x in enumerate(labels):
         if 'b' in x and 't' in x:
             splited_x = x[1:].split('t')
-            labels[idx] = 'b='+str(splited_x[0])+' t='+str(splited_x[1])
+            labels[idx] = 'b='+str(splited_x[0])+' c-t='+str(splited_x[1])
     return labels
 
 def find_ax(axs, row_plot, col_plot, idx_r=0, idx_c=0):
