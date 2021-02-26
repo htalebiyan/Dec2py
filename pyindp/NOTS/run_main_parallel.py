@@ -118,11 +118,11 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
                 params['STM_MODEL_DICT'] = misc['STM_MODEL']
         elif method in ['NORMALGAME', 'BAYESGAME']:
             if method == "NORMALGAME":
-                output_dir += 'ng_results'
+                out_dir = output_dir+'ng_results'
             elif method == "BAYESGAME":
-                output_dir += 'bg'+''.join(misc['SIGNALS'].values())+\
+                out_dir = output_dir+'bg'+''.join(misc['SIGNALS'].values())+\
                     ''.join(misc['BELIEFS'].values())+'_results'
-            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir,
+            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":out_dir,
                       "V":v, "T":1, "L":layers, "ALGORITHM":method,
                       'EQUIBALG':'enumerate_pure', "JUDGMENT_TYPE":judgment_type,
                       "RES_ALLOC_TYPE":res_alloc_type, "VALUATION_TYPE":valuation_type}
@@ -181,7 +181,7 @@ def run_parallel(i):
     val_type = ['DTC'] #'DTC'
     payoff_dir = '/scratch/ht20/results_NE_only_objs/'
     misc = {'PAYOFF_DIR':payoff_dir, 'DYNAMIC_PARAMS':dynamic_params_dir,
-            "SIGNALS":{x:'C' for x in layers}, "BELIEFS":{x:'U' for x in layers}}
+            "SIGNALS":{1:'C', 2:'C', 3:'N', 4:'C'}, "BELIEFS":{x:'U' for x in layers}} #{x:'N' for x in layers}
 
     # run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir,
                # misc = {'DYNAMIC_PARAMS':dynamic_params_dir})

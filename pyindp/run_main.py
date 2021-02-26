@@ -391,7 +391,7 @@ if __name__ == "__main__":
     # Not necessary for synthetic nets
     JUDGE_TYPE = ["OPTIMISTIC"]
     #["PESSIMISTIC", "OPTIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"]
-    RES_ALLOC_TYPE = ['OPTIMAL']
+    RES_ALLOC_TYPE = ['OPTIMAL', 'UNIFORM']
     #["MDA", "MAA", "MCA", 'UNIFORM', 'OPTIMAL']
     VAL_TYPE = ['DTC']
     #['DTC', 'DTC_uniform', 'MDDN', 'STM', 'DTC-LP']
@@ -410,37 +410,37 @@ if __name__ == "__main__":
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
     #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
     #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-    #                     "SIGNALS":{x:'C' for x in LAYERS}, "BELIEFS":{x:'U' for x in LAYERS}})
+    #                     "SIGNALS":{x:'N' for x in LAYERS}, "BELIEFS":{x:'U' for x in LAYERS}})
 
     ''' Post-processing '''
-    # COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
-    # REF_METHOD = 'indp'
-    # METHOD_NAMES = ['indp', 'ng','bgCCCCUUUU'] #'ng', 'jc', 'dp_indp', 'tdindp'
+    COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
+    REF_METHOD = 'indp'
+    METHOD_NAMES = ['indp', 'ng','bgCCCCUUUU','bgNNNNUUUU'] #'ng', 'jc', 'dp_indp', 'tdindp'
 
-    # COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
-    #             FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
-    #             RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE,
-    #             list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
-    #             synthetic_dir=SYNTH_DIR)
+    COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
+                FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
+                RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE,
+                list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
+                synthetic_dir=SYNTH_DIR)
 
-    # BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
-    #                                     root_result_dir=OUTPUT_DIR, deaggregate=True)
+    BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
+                                        root_result_dir=OUTPUT_DIR, deaggregate=True)
 
-    # LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
-    #                                         ref_method=REF_METHOD, cost_type=COST_TYPES[0])
-    # RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resourcec_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
-    #                                                               objs, root_result_dir=OUTPUT_DIR,
-    #                                                               ref_method=REF_METHOD)
-    # RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
-    # ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
+    LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
+                                            ref_method=REF_METHOD, cost_type=COST_TYPES[0])
+    RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resourcec_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
+                                                                  objs, root_result_dir=OUTPUT_DIR,
+                                                                  ref_method=REF_METHOD)
+    RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
+    ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
 
-    # ''' Save Variables to file '''
-    # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
-    #             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]
+    ''' Save Variables to file '''
+    OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
+                RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]
 
-    # ## Saving the objects ###
-    # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
-    #     pickle.dump(OBJ_LIST, f)
+    ## Saving the objects ###
+    with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
+        pickle.dump(OBJ_LIST, f)
 
     ''' Plot results '''
     # plt.close('all')

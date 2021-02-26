@@ -741,7 +741,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
                                         (ne_data['Cooperation Status'] == 'OA')|\
                                         (ne_data['Cooperation Status'] == 'NA')|\
                                         (ne_data['Cooperation Status'] == 'NA_possible'),
-                                        ne_data['decision_type'], 'indp')
+                                        ne_data['decision_type'], 'Optimal')
             ne_data = ne_data.replace(['opt_cooperative', 'opt_partially_cooperative',
                                        'opt_OA', 'opt_NA', 'opt_NA_possible'],
                                       ['cooperative', 'partially_cooperative', 'OA',
