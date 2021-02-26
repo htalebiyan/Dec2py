@@ -109,6 +109,8 @@ results/
 *.log
 *.spydata
 *.pkl
+!pyindp/test_files/*.pkl
+
 /STAR_Model/models/
 *.json
 *.npz
