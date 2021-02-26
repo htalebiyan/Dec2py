@@ -81,7 +81,7 @@ def run_game(params, save_results=True, print_cmd=True, save_model=False, plot2D
         # t=0 results.
         obj.results = copy.deepcopy(indp_results_initial[1]) #!!! deepcopy
         # Run game
-        obj.run_game(compute_optimal=plot2D, plot=plot2D, save_results=save_results,
+        obj.run_game(compute_optimal=True, plot=plot2D, save_results=save_results,
                      print_cmd=print_cmd, save_model=save_model)
 
 def analyze_NE(objs, combinations, optimal_combinations):
@@ -107,21 +107,21 @@ def analyze_NE(objs, combinations, optimal_combinations):
     '''
     columns = ['t', 'Magnitude', 'decision_type', 'judgment_type', 'auction_type',
                'valuation_type', 'no_resources', 'sample',
-               'ne_total_cost', 'optimal_total_cost', 'payoff_similarity',
-               'action_similarity', 'payoff_ratio', 'no_ne', 'no_payoffs', 'cooperative',
+               'ne_total_cost', 'optimal_total_cost',  'action_similarity',
+               'payoff_ratio', 'no_ne', 'no_payoffs', 'cooperative',
                'partially_cooperative', 'OA', 'NA', 'NA_possible', 'opt_cooperative',
                'opt_partially_cooperative', 'opt_OA', 'opt_NA', 'opt_NA_possible']
     cmplt_analyze = pd.DataFrame(columns=columns, dtype=int)
     print("\nAnalyze NE")
     joinedlist = combinations + optimal_combinations
     for idx, x in enumerate(combinations):
-        if x[4][:2] == 'ng':
+        if x[4][:2] in ['ng', 'bg']:
             obj = objs[str(x)]
             for t in range(obj.time_steps):
                 game = obj.objs[t+1]
                 optimal_sol = game.optimal_solution
                 ne_sol = game.chosen_equilibrium
-                lyr_act, lyr_payoff, opt_payoff, ne_payoff = compare_sol(optimal_sol, ne_sol, obj.layers)
+                lyr_act, opt_payoff, ne_payoff = compare_sol(optimal_sol, ne_sol, obj.layers)
                 payoff_ratio = ne_payoff/opt_payoff
                 no_ne = len(game.solution.sol.keys())
                 no_payoffs = {l:len(game.actions[l]) for l in game.players}
@@ -141,7 +141,7 @@ def analyze_NE(objs, combinations, optimal_combinations):
                         sys.exit('Type of action cannot be found')
                     cooperation_opt[label] += 1/len(game.players)
                 values = [t+1, x[0], x[4], x[5], x[6], x[7], x[3], x[1], ne_payoff,
-                          opt_payoff, lyr_payoff, lyr_act, payoff_ratio, no_ne, no_payoffs,
+                          opt_payoff, lyr_act, payoff_ratio, no_ne, no_payoffs,
                           cooperation['C'], cooperation['P'], cooperation['OA'],
                           cooperation['NA'], cooperation['NAP'], cooperation_opt['C'],
                           cooperation_opt['P'], cooperation_opt['OA'],
@@ -159,12 +159,10 @@ def compare_sol(opt, ne, layers):
     sum_lyr_act = 0
     sum_lyr_payoff = 0
     for l in layers:
-        if opt['P'+str(l)+' actions'] == ne['P'+str(l)+' actions'][0]:
+        if opt['P'+str(l)+' actions'] == ne['solution combination'][0][l-1]:#!!!
             sum_lyr_act += 1
-        if abs((opt['P'+str(l)+' payoff']-(-ne['P'+str(l)+' payoff']))/opt['P'+str(l)+' payoff'])<0.01:
-            sum_lyr_payoff += 1
     opt_total_payoff = opt['full result'].results[0]['costs']['Total']
-    return sum_lyr_act/len(layers), sum_lyr_payoff/len(layers), opt_total_payoff, ne['total cost']
+    return sum_lyr_act/len(layers), opt_total_payoff, ne['total cost']
 
 def label_action(action, all_actions):
     label = None

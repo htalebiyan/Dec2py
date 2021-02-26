@@ -177,7 +177,7 @@ def run_parallel(i):
     rc = [3, 6]#[3,6,8,12]
     layers = [1, 2, 3, 4]
     judge_type = ["OPTIMISTIC"] #OPTIMISTIC #'DET-DEMAND' #PESSIMISTIC
-    res_alloc_type = ["OPTIMAL"] #"MDA", "MAA", "MCA", 'UNIFORM' "OPTIMAL"
+    res_alloc_type = ["OPTIMAL", 'UNIFORM'] #"MDA", "MAA", "MCA", 'UNIFORM' "OPTIMAL"
     val_type = ['DTC'] #'DTC'
     payoff_dir = '/scratch/ht20/results_NE_only_objs/'
     misc = {'PAYOFF_DIR':payoff_dir, 'DYNAMIC_PARAMS':dynamic_params_dir,

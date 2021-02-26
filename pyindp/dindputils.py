@@ -584,12 +584,14 @@ def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../
             if x[4] == 'jc':
                 decision_time = obj.results_judge.results[t]['run_time']+\
                     obj.results_real.results[t]['run_time']
-            elif x[4] == 'ng':
+            elif x[4][:2] in ['ng','bg']:
                 if t==0:
                     decision_time = obj.results.results[t]['run_time']
                 else:
-                    payoff_time = max(obj.objs[t].payoff_time.items(),
-                                      key=operator.itemgetter(1))[1]
+                    payoff_time = 0
+                    if obj.objs[t].payoff_time.items():
+                        payoff_time = max(obj.objs[t].payoff_time.items(),
+                                          key=operator.itemgetter(1))[1]
                     decision_time = obj.objs[t].solving_time + payoff_time
             else:
                 sys.exit('Error: Wrong method name in computing decision time')

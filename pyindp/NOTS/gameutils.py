@@ -81,7 +81,7 @@ def run_game(params, save_results=True, print_cmd=True, save_model=False, plot2D
         # t=0 results.
         obj.results = copy.deepcopy(indp_results_initial[1]) #!!! deepcopy
         # Run game
-        obj.run_game(compute_optimal=plot2D, plot=plot2D, save_results=save_results,
+        obj.run_game(compute_optimal=True, plot=plot2D, save_results=save_results,
                      print_cmd=print_cmd, save_model=save_model)
 
 def analyze_NE(objs, combinations, optimal_combinations):

@@ -648,7 +648,7 @@ def plot_ne_analysis(df, x='t', ci=None):
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
-    row_plot=['payoff_similarity', 'action_similarity', 'payoff_ratio', 'no_ne']
+    row_plot=['action_similarity', 'payoff_ratio', 'no_ne']
     col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
     hue_type = [auction_type, 'auction_type'] #auction_type
     style_type = 'auction_type'  #decision_type
@@ -711,15 +711,16 @@ def plot_ne_cooperation(df, x='t', ci=None):
     T = len(df[x].unique().tolist())
     row_plot = [auction_type, 'auction_type']
     col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
-    # hue_type = [auction_type, 'auction_type'] #auction_type
+    # hue_type = [decision_type, 'decision_type'] #auction_type
+
     # style_type = 'auction_type'  #decision_type
     # value_vars = ['cooperative', 'partially_cooperative', 'OA', 'NA', 'NA_possible',
     #               'opt_cooperative', 'opt_partially_cooperative', 'opt_OA',
     #               'opt_NA', 'opt_NA_possible']
-    # value_vars = ['cooperative', 'partially_cooperative',
-    #               'opt_cooperative', 'opt_partially_cooperative']
-    value_vars = ['OA', 'NA', 'NA_possible', 'opt_OA',
-                  'opt_NA', 'opt_NA_possible']
+    value_vars = ['cooperative', 'partially_cooperative',
+                  'opt_cooperative', 'opt_partially_cooperative']
+    # value_vars = ['OA', 'NA', 'NA_possible', 'opt_OA',
+    #               'opt_NA', 'opt_NA_possible']
     id_vars = [x for x in df.columns if x not in value_vars]
     # Initialize plot properties
     dpi = 300
@@ -740,7 +741,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
                                         (ne_data['Cooperation Status'] == 'OA')|\
                                         (ne_data['Cooperation Status'] == 'NA')|\
                                         (ne_data['Cooperation Status'] == 'NA_possible'),
-                                        'INRSG', 'INDP')
+                                        ne_data['decision_type'], 'indp')
             ne_data = ne_data.replace(['opt_cooperative', 'opt_partially_cooperative',
                                        'opt_OA', 'opt_NA', 'opt_NA_possible'],
                                       ['cooperative', 'partially_cooperative', 'OA',

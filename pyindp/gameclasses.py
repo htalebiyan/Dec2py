@@ -937,12 +937,14 @@ class InfrastructureGame:
                 sys.exit('Error: wrong algorithm name for Infrastructure Game.')
             # Compute payoffs
             if print_cmd:
-                print("Computing (or reading) payoffs...")
+                print("Computing payoffs...")
             if save_payoff_info:
                 save_payoff_info = [self.output_dir+'/payoff_models', t]
             if set(self.objs[t].first_actions) == {'NA'}:
                 pass
             elif t==1 and self.payoff_dir:
+                if print_cmd:
+                    print("Reading payoffs...")
                 self.objs[t].compute_payoffs(save_model=save_payoff_info,
                                              payoff_dir=self.payoff_dir)
                 if self.v_r[t] != self.objs[t].v_r:
