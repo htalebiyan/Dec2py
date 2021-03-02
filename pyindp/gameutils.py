@@ -107,8 +107,8 @@ def analyze_NE(objs, combinations, optimal_combinations):
     '''
     columns = ['t', 'Magnitude', 'decision_type', 'judgment_type', 'auction_type',
                'valuation_type', 'no_resources', 'sample',
-               'ne_total_cost', 'optimal_total_cost', 'action_similarity',
-               'payoff_ratio', 'no_ne', 'no_payoffs', 'cooperative',
+               'ne_total_cost', 'optimal_total_cost', 'action_similarity', 'payoff_ratio',
+               'total_cost_ratio', 'no_ne', 'no_payoffs', 'cooperative',
                'partially_cooperative', 'OA', 'NA', 'NA_possible', 'opt_cooperative',
                'opt_partially_cooperative', 'opt_OA', 'opt_NA', 'opt_NA_possible']
     cmplt_analyze = pd.DataFrame(columns=columns, dtype=int)
@@ -121,8 +121,9 @@ def analyze_NE(objs, combinations, optimal_combinations):
                 game = obj.objs[t+1]
                 optimal_sol = game.optimal_solution
                 ne_sol = game.chosen_equilibrium
-                lyr_act, opt_payoff, ne_payoff = compare_sol(optimal_sol, ne_sol, obj.layers)
-                payoff_ratio = ne_payoff/opt_payoff
+                lyr_act, opt_tc, ne_payoff, ne_tc = compare_sol(optimal_sol, ne_sol, obj.layers)
+                payoff_ratio = ne_payoff/opt_tc
+                tc_ratio = ne_tc/opt_tc
                 cooperation= {'C':0, 'P':0, 'OA':0, 'NA':0, 'NAP':0}
                 cooperation_opt= {'C':0, 'P':0, 'OA':0, 'NA':0, 'NAP':0}
                 no_ne = 0
@@ -147,7 +148,7 @@ def analyze_NE(objs, combinations, optimal_combinations):
                             sys.exit('Type of action cannot be found')
                         cooperation_opt[label] += 1/len(game.players)
                 values = [t+1, x[0], x[4], x[5], x[6], x[7], x[3], x[1], ne_payoff,
-                          opt_payoff, lyr_act, payoff_ratio, no_ne, no_payoffs,
+                          opt_tc, lyr_act, payoff_ratio, tc_ratio, no_ne, no_payoffs,
                           cooperation['C'], cooperation['P'], cooperation['OA'],
                           cooperation['NA'], cooperation['NAP'], cooperation_opt['C'],
                           cooperation_opt['P'], cooperation_opt['OA'],
@@ -166,15 +167,20 @@ def compare_sol(opt, ne, layers):
         for idxl, l in enumerate(layers):
             if opt['P'+str(l)+' actions'] == ne['solution combination'][0][idxl]:
                 sum_lyr_act += 1/len(layers)
-        opt_total_payoff = opt['full result'].results[0]['costs']['Total']
+        opt_total_cost = opt['full result'].results[0]['costs']['Total']
         ne_total_payoff = ne['total cost']
+        if 'full results' in ne.keys():
+            ne_total_cost = ne['full results'][0].results[0]['costs']['Total']
+        else:
+            ne_total_cost = ne['full result'][0].results[0]['costs']['Total']
     elif not opt and not ne:
         sum_lyr_act = 1
-        opt_total_payoff = 1
+        opt_total_cost = 1
         ne_total_payoff = 1
+        ne_total_cost = 1
     else:
         sys.exit('No optimal results')
-    return sum_lyr_act, opt_total_payoff, ne_total_payoff
+    return sum_lyr_act, opt_total_cost, ne_total_payoff, ne_total_cost
 
 def label_action(action, all_actions):
     label = None
