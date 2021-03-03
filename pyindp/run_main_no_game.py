@@ -340,7 +340,7 @@ if __name__ == "__main__":
     # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/Node_arc_info/"
     # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info/"
     #: The address to damge scenario data.
-    DAMAGE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/eq_100yr_dmg/"
+    DAMAGE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/eq_1000yr_dmg/"
     # ../data/random_disruption_shelby/"
     #"../data/Wu_Damage_scenarios/" 
     # "C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\"
@@ -390,7 +390,7 @@ if __name__ == "__main__":
     #                               substations, and poles/Joplin_interdependency_table.csv'}}
     
     ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
-    POP_DISLOC_DATA = ROOT_DISLOC+'Seaside_testbed/housingunit_eq_100yr_popdis_result.csv'
+    POP_DISLOC_DATA = ROOT_DISLOC+'Seaside_testbed/housingunit_eq_1000yr_popdis_result.csv'
     DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'seaside',
                       'OUT_DIR': BASE_DIR, 'POP_DISLOC_DATA': POP_DISLOC_DATA,
                       'MAPPING': {'POWER': ROOT_DISLOC+'Power/bldgs2elec_Seaside.csv',
@@ -431,10 +431,10 @@ if __name__ == "__main__":
     VAL_TYPE = ['DTC']
     #['DTC', 'DTC_uniform', 'MDDN', 'STM', 'DTC-LP']
     ''' Run different methods '''
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
-    #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-    #                     'EXTRA_COMMODITY':EXTRA_COMMODITY,
-    #                     'TIME_RESOURCE':True})
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
+                misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+                        'EXTRA_COMMODITY':EXTRA_COMMODITY,
+                        'TIME_RESOURCE':True})
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
     #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
     #                     'EXTRA_COMMODITY':EXTRA_COMMODITY})

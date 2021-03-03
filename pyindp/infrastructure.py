@@ -438,7 +438,7 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
                                 ext_com_data['flow_cost'] = float(v[1]['c_'+l])*cost_scale
     for file in files:
         fname = file[0:-4]
-        if fname[-4:] in ['beta', 'alpha', 'g', 'Interdep']:
+        if fname in ['beta', 'alpha', 'g', 'Interdep']:
             with open(BASE_DIR+file) as f:
                 data = pd.read_csv(f, delimiter=',')
                 for v in data.iterrows():

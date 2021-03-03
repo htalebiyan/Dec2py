@@ -7,8 +7,8 @@ import pandas as pd
 from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 sns.set(context='notebook', style='darkgrid', font_scale=1.2)
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+# plt.rc('text', usetex=True)
+# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                    decision_type=None, judgment_type=None,
