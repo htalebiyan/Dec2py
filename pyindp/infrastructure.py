@@ -532,10 +532,10 @@ def add_failure_scenario(G,DAM_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim
                 #    print "Arc ((",`func[0][1]`+","+`func[0][3]`+"),("+`func[0][2]`+","+`func[0][3]`+")) broken."
     pass
 
-def add_random_failure_scenario(G,sample,config=0,DAM_DIR=""):
+def add_from_csv_failure_scenario(G, magnitude, sample, DAM_DIR=""):
     import csv
     # print("Initiallize Random Damage...")
-    with open(DAM_DIR+'Initial_node.csv') as csvfile:
+    with open(DAM_DIR+'/'+str(magnitude)+'/Initial_node.csv') as csvfile:
         data = csv.reader(csvfile, delimiter=',')
         for row in data:
             rawN = row[0]
@@ -545,7 +545,7 @@ def add_random_failure_scenario(G,sample,config=0,DAM_DIR=""):
             G.G.nodes[n]['data']['inf_data'].functionality=state
             G.G.nodes[n]['data']['inf_data'].repaired=state
             
-    with open(DAM_DIR+'Initial_link.csv') as csvfile:
+    with open(DAM_DIR+'/'+str(magnitude)+'/Initial_link.csv') as csvfile:
         data = csv.reader(csvfile, delimiter=',')
         for row in data:
             rawUV = row[0]

@@ -7,8 +7,8 @@ import pandas as pd
 from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 sns.set(context='notebook', style='darkgrid', font_scale=1.2)
-# plt.rc('text', usetex=True)
-# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                    decision_type=None, judgment_type=None,
@@ -68,16 +68,15 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     #sns.color_palette("husl", len(auction_type)+1)
     row_plot = [judgment_type, 'judgment_type'] # valuation_type
     col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
-    hue_type = [return_period, 'return_period'] #auction_type
+    hue_type = [return_period, 'return_period'] #auction_type ,return_period
     style_type = 'return_period'  #decision_type
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
-                            figsize=(6000/dpi, 1500/dpi))
+                            figsize=(3000/dpi, 1500/dpi))
     colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
     # colors = ['r', 'b', 'k']
-    # pal = sns.color_palette(colors[:len(hue_type[0])])
-    pal = sns.diverging_palette(250, 1000, l=65, center="dark")
+    pal = sns.color_palette(colors[:len(hue_type[0])])
     x_ticks = np.arange(0, T+1, 2.0)
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
@@ -89,7 +88,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
             with pal:
                 sns.lineplot(x=x, y=y, hue=hue_type[1], style=style_type, markers=True,
                              ci=ci, ax=ax, data=cost_data[cost_data.layer == 'nan'],
-                             **{'markersize':5})
+                             palette=pal, **{'markersize':5})
             if deaggregate:
                 cost_lyr = cost_data[cost_data.layer != 'nan']
                 cost_lyr_pivot = cost_lyr.pivot_table(values='cost',
@@ -122,7 +121,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                 ax_2 = divider.append_axes("bottom", size="100%", pad=0.12, sharex=ax)
                 with pal:
                     sns.lineplot(x=x, y=y, hue=hue_type[1], style=style_type, markers=True,
-                                 ci=ci, ax=ax_2, legend='full',
+                                 ci=ci, ax=ax_2, legend='full', palette=pal,
                                  data=resilience_data[resilience_data.layer == 'nan'])
                 if deaggregate:
                     cost_lyr = resilience_data[resilience_data.layer != 'nan']
@@ -503,9 +502,9 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
     if 'nan' in layers:
         layers.remove('nan')
     layer_names = {1:'Water', 2:'Gas', 3:'Power', 4:'Telecom.'}#!!! Current convention
-    # colors = ['#154352', '#dbb539', '#007268', '#5d9c51']
-    # pal = sns.color_palette(colors[:len(auction_type)-1]+['k'])
-    pal = sns.color_palette(['r', 'b'])
+    colors = ['#154352', '#dbb539', '#007268', '#5d9c51']
+    pal = sns.color_palette(colors[:len(auction_type)-1]+['k'])
+    # pal = sns.color_palette(['r', 'b'])
     dpi = 300
     fig, axs = plt.subplots(len(layers)//2+1, 2, sharex=True, sharey='row',
                             tight_layout=False, figsize=(4000/dpi, 3000/dpi))
@@ -513,7 +512,7 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
     for idx, lyr in enumerate(layers):
         ax = axs[idx//2, idx%2]
         with pal:
-            sns.lineplot(x=x, y=y, hue="decision_type", style='auction_type', markers=True,
+            sns.lineplot(x=x, y=y, hue="return_period", style='no_resources', markers=True,
                          ci=ci, ax=ax, data=cost_data[cost_data.layer == lyr], **{'markersize':5})
             ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
             ax.set_title(r'Layer: %s'%(layer_names[lyr]))
@@ -522,18 +521,18 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
 
     ax = fig.add_subplot(len(layers)//2+1, 2, (len(layers)//2+1)*2)
     with pal:
-        sns.lineplot(x=x, y=y, hue="decision_type", style='auction_type',
+        sns.lineplot(x=x, y=y, hue="return_period", style='no_resources',
                       markers=True, ci=ci, ax=ax,
                       data=cost_data[cost_data.layer == 'nan'], **{'markersize':5})
         ax.set(xlabel=r'time step $t$', ylabel=cost_type+' Cost')
         ax.set_title(r'Overall')
         ax.get_legend().set_visible(False)
         ax.xaxis.set_ticks(np.arange(0, len(T), 2.0))   #ax.get_xlim()
-    if 'nan' in valuation_type:
-        valuation_type.remove('nan')
-    head = 'Resource Cap: '+str(res_caps).strip('[]')+', Valuation: '+\
-        str(valuation_type).strip('[]')
-    fig.suptitle(head)
+    # if 'nan' in valuation_type:
+    #     valuation_type.remove('nan')
+    # head = 'Resource Cap: '+str(res_caps).strip('[]')+', Valuation: '+\
+    #     str(valuation_type).strip('[]')
+    # fig.suptitle(head)
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_labels(labels)
     fig.legend(handles, labels, loc='upper right', ncol=1, framealpha=0.5)

@@ -3,11 +3,11 @@ import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 sns.set(context='notebook', style='darkgrid', font_scale=1.2)
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+# plt.rc('text', usetex=True)
+# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 plt.close('all')
-file_dir = 'C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info/'
-with open(file_dir+'seaside_pop_dislocation_demands_500yr.pkl', 'rb') as f:
+file_dir = 'C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Dislocation_models/'
+with open(file_dir+'seaside_pop_dislocation_demands_1000yr.pkl', 'rb') as f:
     dynamic_params = pickle.load(f)
 
 net_name = {1:'Water', 3:'Power'}
@@ -25,4 +25,4 @@ for idx, l in enumerate([1,3]):
                      flierprops=flierprops, palette=sns.cubehelix_palette(20))
     ax.set_title(net_name[l])
     ax.set(xlabel=r'time (weeks)', ylabel= '\% pre-event demand')
-plt.savefig('dynamic_demand_plot.png', dpi=dpi, bbox_inches='tight')
+# plt.savefig('dynamic_demand_plot.png', dpi=dpi, bbox_inches='tight')

@@ -593,9 +593,8 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
         # Initial calculations.
         if params['DYNAMIC_PARAMS']:
             original_N = copy.deepcopy(InterdepNet) #!!! deepcopy
-            dynamic_params = dislocationutils.create_dynamic_param(params, T=params["NUM_ITERATIONS"],
-                                                                   N=original_N)
-            dislocationutils.dynamic_parameters(InterdepNet, original_N, 0, dynamic_params)
+            dislocationutils.dynamic_parameters(InterdepNet, original_N, 0,
+                                                params['DYNAMIC_PARAMS']['DEMAND_DATA'])
         v_0 = {x:0 for x in params["V"].keys()}
         results=indp(InterdepNet, v_0, 1, layers, controlled_layers=controlled_layers,
                      functionality=functionality, co_location=co_location)
@@ -605,7 +604,8 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
         for i in range(params["NUM_ITERATIONS"]):
             print("-Time Step (iINDP)",i+1,"/",params["NUM_ITERATIONS"])
             if params['DYNAMIC_PARAMS']:
-                dislocationutils.dynamic_parameters(InterdepNet, original_N, i+1, dynamic_params)
+                dislocationutils.dynamic_parameters(InterdepNet, original_N, i+1,
+                                                    params['DYNAMIC_PARAMS']['DEMAND_DATA'])
             results=indp(InterdepNet, params["V"], T, layers, controlled_layers=controlled_layers,
                          forced_actions=forced_actions, co_location=co_location)
             indp_results.extend(results[1],t_offset=i+1)
@@ -953,11 +953,16 @@ def get_resource_suffix(params):
             outDirSuffixRes += rc[0]+str(sum([lval for _, lval in val.items()]))+'_fixed_layer_Cap'
     return outDirSuffixRes
 
-def time_resource_usage_curves(base_dir, damage_dir, sample_num):
+def time_resource_usage_curves(base_dir, damage_dir, magnitude, sample_num):
     '''
     This module calculate the repair time for nodes and arcs for the current
     scenario based on their damage state and write them to the input files of 
     INDP. Currently , it is only compatible with NIST testbeds.
+
+    .. todo::
+        The calculated repai time and costs are written to node and arc infor input
+        files. It makes it impossible to run the nalyses parallelly because there
+        might be a conflict between two processess. Consider correcitng this.
 
     Parameters
     ----------
@@ -973,13 +978,13 @@ def time_resource_usage_curves(base_dir, damage_dir, sample_num):
     None.
 
     '''
-    print('Computing repair times...')
     files = [f for f in os.listdir(base_dir) if os.path.isfile(os.path.join(base_dir, f))]
     nodes_reptime_func = pd.read_csv(base_dir+'repair_time_curves_nodes.csv')
     nodes_damge_ratio = pd.read_csv(base_dir+'damage_ratio_nodes.csv')
     arcs_reptime_func = pd.read_csv(base_dir+'repair_time_curves_arcs.csv')
     arcs_damge_ratio = pd.read_csv(base_dir+'damage_ratio_arcs.csv')
-    dmg_sce_data = pd.read_csv(damage_dir+'Initial_node_ds.csv', delimiter=',', header=None)
+    dmg_sce_data = pd.read_csv(damage_dir+'/'+str(magnitude)+'/Initial_node_ds.csv',
+                               delimiter=',', header=None)
     net_names = {'Water':1, 'Power':3}
 
     for file in files:
@@ -1015,7 +1020,8 @@ def time_resource_usage_curves(base_dir, damage_dir, sample_num):
         if fname[-4:] == 'Arcs':
             with open(base_dir+file) as f:
                 data = pd.read_csv(f, delimiter=',')
-                dmg_data_all = pd.read_csv(damage_dir+'pipe_dmg.csv', delimiter=',')
+                dmg_data_all = pd.read_csv(damage_dir+'/'+str(magnitude)+'/pipe_dmg.csv',
+                                           delimiter=',')
                 for v in data.iterrows():
                     dmg_data_arc = dmg_data_all[dmg_data_all['guid']==v[1]['guid']]
                     rep_time = 0

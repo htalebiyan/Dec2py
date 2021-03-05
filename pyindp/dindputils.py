@@ -15,6 +15,7 @@ import pickle
 import indp
 import indputils
 from dindpclasses import JcModel
+import dislocationutils
 
 def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False):
     '''
@@ -73,13 +74,18 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
     if not objs:
         return 0
     # t=0 costs and performance.
-    indp_results_initial = indp.indp(objs[0].net, 0, 1, objs[0].layers,
+    if params['DYNAMIC_PARAMS']:
+        original_N = copy.deepcopy(objs[0].net) #!!! deepcopy
+        dislocationutils.dynamic_parameters(objs[0].net, original_N, 0,
+                                            params['DYNAMIC_PARAMS']['DEMAND_DATA'])
+    v_0 = {x:0 for x in params["V"].keys()}
+    indp_results_initial = indp.indp(objs[0].net, v_0, 1, objs[0].layers,
                                      controlled_layers=objs[0].layers)
     for _, obj in objs.items():
         print('--Running JC: '+obj.judge_type+', resource allocation: '+obj.res_alloc_type)
         if obj.resource.type == 'AUCTION':
-            print('auction type: '+obj.resource.auction_model.auction_type+\
-                  ', valuation: '+obj.resource.auction_model.valuation_type)
+            a_model = next(iter(obj.resource.auction_model.values()))
+            print('auction type: '+a_model.auction_type+', valuation: '+a_model.valuation_type)
         if print_cmd:
             print("Num iters=", params["NUM_ITERATIONS"])
         # t=0 results.
@@ -90,8 +96,10 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
             #: Resource Allocation
             res_alloc_time_start = time.time()
             if obj.resource.type == 'AUCTION':
-                obj.resource.auction_model.auction_resources(obj, i+1, print_cmd=print_cmd,
-                                                             compute_poa=True)
+                for keya in obj.resource.auction_model.keys():
+                    obj.resource.auction_model[keya].auction_resources(obj, i+1,
+                                                                       print_cmd=print_cmd,
+                                                                       compute_poa=True)
             obj.resource.time[i+1] = time.time()-res_alloc_time_start
             # Judgment-based Decisions
             if print_cmd:
@@ -104,6 +112,9 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
                 functionality[l] = obj.judgments.create_judgment_dict(obj, neg_layer)
                 obj.judgments.save_judgments(obj, functionality[l], l, i+1)
                 # Make decision based on judgments before communication
+                if params['DYNAMIC_PARAMS']:
+                    dislocationutils.dynamic_parameters(objs[0].net, original_N, i+1,
+                                                        params['DYNAMIC_PARAMS']['DEMAND_DATA'])
                 indp_results = indp.indp(obj.net, obj.v_r[i+1][l], 1, layers=obj.layers,
                                          controlled_layers=[l], functionality=functionality[l],
                                          print_cmd=print_cmd, time_limit=time_limit)
@@ -176,7 +187,8 @@ def realized_performance(obj, t_step, functionality, judger_layer, print_cmd=Fal
             if print_cmd:
                 print('Correct judgment: '+str(u)+'<-0')
         val.append(obj.net.G.nodes[u]['data']['inf_data'].functionality)
-    indp_results_real = indp.indp(obj.net, v_r=0, T=1, layers=obj.layers,
+    v_0 = {x:0 for x in obj.resource.sum_resource.keys()}
+    indp_results_real = indp.indp(obj.net, v_r=v_0, T=1, layers=obj.layers,
                                   controlled_layers=[judger_layer],
                                   functionality=functionality_realized,
                                   print_cmd=print_cmd, time_limit=time_limit)

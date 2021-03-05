@@ -5,7 +5,6 @@ import numpy as np
 import math
 
 def create_dynamic_param(params, T=10, N=None):
-    print("Computing dislocation data...")
     dynamic_param_dict = params['DYNAMIC_PARAMS']
     return_type = dynamic_param_dict['RETURN']
     dp_dict_col = ['time', 'node', 'current pop', 'total pop']
@@ -21,14 +20,15 @@ def create_dynamic_param(params, T=10, N=None):
                                         (dd_df['set']==params["SIM_NUMBER"])]
     elif dynamic_param_dict['TYPE'] == 'incore':
         output_file = dynamic_param_dict['OUT_DIR']+dynamic_param_dict['TESTBED']+\
-            '_pop_dislocation_demands.pkl'
+            '_pop_dislocation_demands_'+str(params['MAGNITUDE'])+'yr.pkl'
         if os.path.exists(output_file):
-            print("Reading dislocation data from file...")
+            print("***Reading from file...***")
             with open(output_file, 'rb') as f:
                 dynamic_params = pickle.load(f)
             return dynamic_params
-
-        pop_dislocation = pd.read_csv(dynamic_param_dict['POP_DISLOC_DATA'], low_memory=False)
+        pop_dislocation_file = dynamic_param_dict['POP_DISLOC_DATA']+'housingunit_eq_'+\
+            str(params['MAGNITUDE'])+'yr_popdis_result.csv'
+        pop_dislocation = pd.read_csv(pop_dislocation_file, low_memory=False)
         for net in dynamic_param_dict['MAPPING'].keys():
             nn = net_names[net]
             mapping_data = pd.read_csv(dynamic_param_dict['MAPPING'][net], low_memory=False)

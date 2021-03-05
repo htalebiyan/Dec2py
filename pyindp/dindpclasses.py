@@ -48,11 +48,18 @@ class JcModel:
             DESCRIPTION.
 
         '''
+        outDirSuffixRes = ''
+        for rc, val in self.resource.sum_resource.items():
+            if isinstance(val, (int)):
+                outDirSuffixRes += rc[0]+str(val)
+            else:
+                outDirSuffixRes += rc[0]+str(sum([lval for _, lval in val.items()]))+'_fixed_layer_Cap'
+
         output_dir = root+'_L'+str(len(self.layers))+'_m'+str(mag)+"_v"+\
-            str(self.resource.sum_resource)+'_'+self.judge_type+'_'+self.res_alloc_type
+            outDirSuffixRes+'_'+self.judge_type+'_'+self.res_alloc_type
         if self.res_alloc_type == 'AUCTION':
-            output_dir += '_'+self.resource.auction_model.auction_type+\
-                '_'+self.resource.auction_model.valuation_type
+            a_model = next(iter(self.resource.auction_model.values()))
+            output_dir += '_'+a_model.auction_type+'_'+a_model.valuation_type
         return output_dir
     @staticmethod
     def set_algo(algorithm):
@@ -87,11 +94,9 @@ class JcModel:
             DESCRIPTION.
 
         '''
-        if "N" not in params:
-            sys.exit('No initial network object for: '+self.judge_type+', '+\
-                     self.res_alloc_type)
-        else:
-            return copy.deepcopy(params["N"]) #!!! deepcopy
+        assert "N" in params, 'No initial network object for: '+self.judge_type+\
+                                    ', '+params['RES_ALLOC_TYPE']
+        return copy.deepcopy(params["N"]) #!!! deepcopy
 
     @staticmethod
     def set_time_steps(T, num_iter):
@@ -402,10 +407,12 @@ class ResourceModel:
     def __init__(self, params, time_steps):
         self.t_steps = time_steps
         self.time = {t+1:0.0 for t in range(self.t_steps)}
-        self.v_r = {t+1:{l:0 for l in params['L']} for t in range(self.t_steps)}
+        self.v_r = {t+1:{l:{} for l in params['L']} for t in range(self.t_steps)}
         if params['RES_ALLOC_TYPE'] in ["MDA", "MAA", "MCA"]:
             self.type = 'AUCTION'
-            self.auction_model = AuctionModel(params, self.t_steps)
+            self.auction_model ={}
+            for key in params['V'].keys():
+                self.auction_model[key] = AuctionModel(params, self.t_steps, key)
             self.sum_resource = params['V']
         elif params['RES_ALLOC_TYPE'] == "OPTIMAL":
             self.type = 'OPTIMAL'
@@ -467,17 +474,18 @@ class ResourceModel:
         None.
 
         '''
-        if isinstance(params['V'], (int)):
-            self.sum_resource = params['V']
+        self.sum_resource = params['V']
+        for key, val in params['V'].items():
+            assert isinstance(val, (int)), 'Number of resources should be an integer\
+                    for the resource allocation type UNIFORM and resource '+str(key)+':'+str(val)
             for t in range(self.t_steps):
-                v_r_uni = {x:self.sum_resource//len(params['L']) for x in params['L']}
-                rnd_idx = np.random.choice(params['L'], self.sum_resource%len(params['L']),
+                v_r_uni = {x:val//len(params['L']) for x in params['L']}
+                rnd_idx = np.random.choice(params['L'], val%len(params['L']),
                                            replace=False)
                 for x in rnd_idx:
                     v_r_uni[x] += 1
-                self.v_r[t+1] = v_r_uni
-        else:
-            sys.exit('Number of resources is an integer for the resource allocation type UNIFORM.')
+                for l in params['L']:    
+                    self.v_r[t+1][l][key] = v_r_uni[l]
     def set_lf_res(self, params):
         '''
 
@@ -505,10 +513,12 @@ class AuctionModel():
     '''
     DESCRIPTION
     '''
-    def __init__(self, params, time_steps):
+    def __init__(self, params, time_steps, resource_name):
         self.auction_type = params['RES_ALLOC_TYPE']
+        self.resource_name = resource_name
+        self.resource_unit = self.set_resource_unit(resource_name)
         self.valuation_type = params['VALUATION_TYPE']
-        self.bidder_type = 'truthful'
+        self.bidder_type = 'truthful' #!!! refine truthfulness assumption
         self.winners = {t+1:{} for t in range(time_steps)}
         self.win_bids = {t+1:{} for t in range(time_steps)}
         self.win_prices = {t+1:{} for t in range(time_steps)}
@@ -519,6 +529,27 @@ class AuctionModel():
         self.poa = {t+1:0.0 for t in range(time_steps)}
         if self.valuation_type == 'STM':
             self.stm_pred_dict = params['STM_MODEL_DICT']
+
+    def set_resource_unit(self, resource_name):
+        '''
+
+        Parameters
+        ----------
+        time_step : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+        if resource_name == 'budget': #!!! Just for NIST 
+            return 20000
+        elif resource_name == 'time':
+            return 7
+        else:
+            return 1
+
     def bidding(self, time_step):
         '''
 
@@ -536,6 +567,7 @@ class AuctionModel():
             for v, vval in lval.items():
                 if self.bidder_type == 'truthful':
                     self.bids[time_step][l][v] = vval
+   
     def auction_resources(self, obj, time_step, print_cmd=True, compute_poa=False):
         '''
         allocate resources based on given types of auction and valuatoin.
@@ -562,16 +594,17 @@ class AuctionModel():
         '''
         #: Compute Valuations
         if print_cmd:
-            print('Compute Valuations: '+self.valuation_type)
+            print('Compute Valuations: ', self.resource_name, self.valuation_type)
         self.compute_valuations(obj, time_step, print_cmd=print_cmd,
                                 compute_optimal_valuation=compute_poa)
         #: Bidding
         self.bidding(time_step)
         #: Auctioning
         if print_cmd:
-            print("Auction: " +self.auction_type)
+            print("Auction: ", self.resource_name, self.auction_type)
         start_time_auction = time.time()
-        if self.auction_type == "MDA":
+        num_units = obj.resource.sum_resource[self.resource_name]//self.resource_unit
+        if self.auction_type == "MDA": #!!! adapt for multi resource
             for v in range(obj.resource.sum_resource):
                 if print_cmd:
                     print('Resource '+str(v+1)+': ', end='')
@@ -588,7 +621,7 @@ class AuctionModel():
                 else:
                     if print_cmd:
                         print("No auction winner!")
-        if self.auction_type == "MAA":
+        if self.auction_type == "MAA": #!!! adapt for multi resource
             all_bids = []
             for l, lval in self.bids[time_step].items():
                 for v, vval in lval.items():
@@ -629,20 +662,22 @@ class AuctionModel():
             m.setParam('OutputFlag', False)
             # Add allocation variables and populate objective function.
             for l in obj.layers:
-                for v in range(obj.resource.sum_resource):
-                    m.addVar(name='y_'+str(v+1)+", "+str(l), vtype=gurobipy.GRB.BINARY,
-                             obj=sum([-self.bids[time_step][l][vv] for vv in range(1, v+2)]))
+                for v in range(num_units):
+                    m.addVar(name='y_'+str((v+1)*self.resource_unit)+", "+str(l),
+                             vtype=gurobipy.GRB.BINARY,
+                             obj=sum([-self.bids[time_step][l][vv*self.resource_unit] for vv in range(1, v+2)]))
             m.update()
             # Add constraints
             num_alloc_res = gurobipy.LinExpr()
             for l in obj.layers:
                 each_bidder_alloc = gurobipy.LinExpr()
-                for v in range(obj.resource.sum_resource):
-                    num_alloc_res += m.getVarByName('y_'+str(v+1)+", "+str(l))*(v+1)
-                    each_bidder_alloc += m.getVarByName('y_'+str(v+1)+", "+str(l))
+                for v in range(num_units):
+                    num_alloc_res += m.getVarByName('y_'+str((v+1)*self.resource_unit)+", "+str(l))*(v+1)*self.resource_unit
+                    each_bidder_alloc += m.getVarByName('y_'+str((v+1)*self.resource_unit)+", "+str(l))
                 m.addConstr(each_bidder_alloc, gurobipy.GRB.LESS_EQUAL, 1.0,
                             "Bidder "+str(l)+" allocation")
-            m.addConstr(num_alloc_res, gurobipy.GRB.LESS_EQUAL, obj.resource.sum_resource,
+            m.addConstr(num_alloc_res, gurobipy.GRB.LESS_EQUAL,
+                        obj.resource.sum_resource[self.resource_name],
                         "Total number of resources")
             m.update()
             m.optimize()
@@ -650,18 +685,19 @@ class AuctionModel():
             # m.write('model.sol')
             num_assigned_res = 0
             for l in obj.layers:
-                for v in range(obj.resource.sum_resource):
-                    if m.getVarByName('y_'+str(v+1)+", "+str(l)).x == 1:
-                        obj.resource.v_r[time_step][l] = int(v+1)
+                obj.resource.v_r[time_step][l][self.resource_name] = 0
+                for v in range(num_units):
+                    if m.getVarByName('y_'+str((v+1)*self.resource_unit)+", "+str(l)).x == 1:
+                        obj.resource.v_r[time_step][l][self.resource_name] = int((v+1)*self.resource_unit)
                         for vv in range(v+1):
                             if print_cmd:
-                                print('Resource '+str(num_assigned_res+1)+': Player '+\
-                                      str(l)+' wins!')
-                            self.winners[time_step][num_assigned_res+1] = l
-                            self.win_bids[time_step][num_assigned_res+1] = \
-                                self.bids[time_step][l][vv+1]
-                            self.win_prices[time_step][num_assigned_res+1] = \
-                                self.bids[time_step][l][vv+1]
+                                print('Resource '+str((num_assigned_res+1)*self.resource_unit)+\
+                                      ': Player '+ str(l)+' wins!')
+                            self.winners[time_step][(num_assigned_res+1)*self.resource_unit] = l
+                            self.win_bids[time_step][(num_assigned_res+1)*self.resource_unit] = \
+                                self.bids[time_step][l][(vv+1)*self.resource_unit]
+                            self.win_prices[time_step][(num_assigned_res+1)*self.resource_unit] = \
+                                self.bids[time_step][l][(vv+1)*self.resource_unit]
                             num_assigned_res += 1
         self.auction_time[time_step] = time.time()-start_time_auction
         if compute_poa:
@@ -672,6 +708,7 @@ class AuctionModel():
                 self.poa[time_step] = self.poa[time_step]/sum(winners_valuations)
             else:
                 self.poa[time_step] = 'nan'
+    
     def compute_valuations(self, obj, t_step, print_cmd=True, compute_optimal_valuation=False):
         '''
         Computes bidders' valuations and bids for different number of resources
@@ -706,50 +743,54 @@ class AuctionModel():
                 current_optimal_tc = obj.results_real.results[t_step-1]['costs']['Total']
             else:
                 current_optimal_tc = obj.results.results[t_step-1]['costs']['Total']
-            indp_results = indp.indp(obj.net, v_r=obj.resource.sum_resource, T=1,
-                                     layers=obj.layers, controlled_layers=obj.layers)
+            rc = {self.resource_name: obj.resource.sum_resource[self.resource_name]}
+            indp_results = indp.indp(obj.net, v_r=rc, T=1, layers=obj.layers,
+                                     controlled_layers=obj.layers)
             optimal_tc = indp_results[1][0]['costs']['Total']
             self.poa[t_step] = current_optimal_tc - optimal_tc
         #: Compute valuations
+        num_units = obj.resource.sum_resource[self.resource_name]//self.resource_unit
         for l in obj.layers:
             max_val_time = 0.0
             if print_cmd:
                 print("Bidder-%d"%(l))
             if self.valuation_type == 'DTC':
-                for v in range(obj.resource.sum_resource):
+                for v in range(num_units):
                     start_time_val = time.time()
                     neg_layer = [x for x in obj.layers if x != l]
                     functionality = obj.judgments.create_judgment_dict(obj, neg_layer)
-                    indp_results = indp.indp(obj.net, v_r=v+1, T=1, layers=obj.layers,
+                    rc = {self.resource_name: (v+1)*self.resource_unit}
+                    indp_results = indp.indp(obj.net, v_r=rc, T=1, layers=obj.layers,
                                              controlled_layers=[l], functionality=functionality,
                                              print_cmd=print_cmd, time_limit=time_limit)
                     new_total_cost = indp_results[1][0]['costs']['Total']
                     if indp_results[1][0]['actions'] != []:
-                        self.valuations[t_step][l][v+1] = current_total_cost[l]-new_total_cost
+                        self.valuations[t_step][l][(v+1)*self.resource_unit] = current_total_cost[l]-new_total_cost
                         current_total_cost[l] = new_total_cost
                     else:
-                        self.valuations[t_step][l][v+1] = 0.0
+                        self.valuations[t_step][l][(v+1)*self.resource_unit] = 0.0
                     if time.time()-start_time_val > max_val_time:
                         max_val_time = time.time()-start_time_val
             elif self.valuation_type == 'DTC_uniform':
-                for v in range(obj.resource.sum_resource):
+                for v in range(num_units):
                     start_time_val = time.time()
                     total_cost_bounds = []
                     for jt in ["PESSIMISTIC", "OPTIMISTIC"]:
                         neg_layer = [x for x in obj.layers if x != l]
                         functionality = obj.judgments.create_judgment_dict(obj, neg_layer,
                                                                            judge_type_forced=jt)
-                        indp_results = indp.indp(obj.net, v_r=v+1, T=1, layers=obj.layers,
+                        rc = {self.resource_name: (v+1)*self.resource_unit}
+                        indp_results = indp.indp(obj.net, v_r=rc, T=1, layers=obj.layers,
                                                  controlled_layers=[l], functionality=functionality,
                                                  print_cmd=print_cmd, time_limit=time_limit)
                         total_cost_bounds.append(indp_results[1][0]['costs']['Total'])
                     new_total_cost = np.random.uniform(min(total_cost_bounds),
                                                        max(total_cost_bounds), 1)[0]
                     if current_total_cost[l]-new_total_cost > 0:
-                        self.valuations[t_step][l][v+1] = current_total_cost[l]-new_total_cost
+                        self.valuations[t_step][l][(v+1)*self.resource_unit] = current_total_cost[l]-new_total_cost
                         current_total_cost[l] = new_total_cost
                     else:
-                        self.valuations[t_step][l][v+1] = 0.0
+                        self.valuations[t_step][l][(v+1)*self.resource_unit] = 0.0
                     if time.time()-start_time_val > max_val_time:
                         max_val_time = time.time()-start_time_val
             elif self.valuation_type == 'MDDN':
@@ -767,16 +808,16 @@ class AuctionModel():
                             penalty_dmgd_nodes.append(abs(n[1]['data']['inf_data'].demand*\
                                                           n[1]['data']['inf_data'].undersupply_penalty))
                 penalty_rsorted = np.sort(penalty_dmgd_nodes)[::-1]
-                for v in range(obj.resource.sum_resource):
+                for v in range(num_units):
                     if v >= len(penalty_rsorted):
-                        self.valuations[t_step][l][v+1] = 0.0
+                        self.valuations[t_step][l][(v+1)*self.resource_unit] = 0.0
                     else:
-                        self.valuations[t_step][l][v+1] = penalty_rsorted[v]
+                        self.valuations[t_step][l][(v+1)*self.resource_unit] = penalty_rsorted[v]
                 max_val_time = time.time()-start_time_val
             elif self.valuation_type == 'STM':
                 pred_dict = obj.resource.auction_model.stm_pred_dict
                 max_val_time = 0.0
-                for v in range(obj.resource.sum_resource):
+                for v in range(num_units):
                     pred_dict['V'] = v+1
                     pred_results = stm.predict_resotration(obj, l, t_step, pred_dict)
                     new_total_cost = 0.0
@@ -786,27 +827,28 @@ class AuctionModel():
                         equiv_run_time += pred_results[pred_s].results[1]['run_time']
                     new_total_cost /= pred_dict['num_pred']
                     if current_total_cost[l]-new_total_cost > 0:
-                        self.valuations[t_step][l][v+1] = current_total_cost[l]-new_total_cost
+                        self.valuations[t_step][l][(v+1)*self.resource_unit] = current_total_cost[l]-new_total_cost
                         current_total_cost[l] = new_total_cost
                     else:
-                        self.valuations[t_step][l][v+1] = 0.0
+                        self.valuations[t_step][l][(v+1)*self.resource_unit] = 0.0
 
                     if equiv_run_time/pred_dict['num_pred'] > max_val_time:
                         max_val_time = equiv_run_time/pred_dict['num_pred']
             elif self.valuation_type == 'DTC-LP':
                 start_time_val = time.time()
-                for v in range(obj.resource.sum_resource):
+                for v in range(num_units):
                     neg_layer = [x for x in obj.layers if x != l]
                     functionality = obj.judgments.create_judgment_dict(obj, neg_layer)
-                    indp_results = indpalt.indp_relax(obj.net, v_r=v+1, T=1, layers=obj.layers,
+                    rc = {self.resource_name: (v+1)*self.resource_unit}
+                    indp_results = indpalt.indp_relax(obj.net, v_r=rc, T=1, layers=obj.layers,
                                              controlled_layers=[l], functionality=functionality,
                                              print_cmd=print_cmd, time_limit=time_limit)
                     new_total_cost = indp_results[1][0]['costs']['Total']
                     if indp_results[1][0]['actions'] != []:
-                        self.valuations[t_step][l][v+1] = current_total_cost[l]-new_total_cost
+                        self.valuations[t_step][l][(v+1)*self.resource_unit] = current_total_cost[l]-new_total_cost
                         current_total_cost[l] = new_total_cost
                     else:
-                        self.valuations[t_step][l][v+1] = 0.0
+                        self.valuations[t_step][l][(v+1)*self.resource_unit] = 0.0
                     if time.time()-start_time_val > max_val_time:
                         max_val_time = time.time()-start_time_val
             self.valuation_time[t_step][l] = max_val_time

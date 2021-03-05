@@ -11,6 +11,7 @@ import plots
 import gametree
 import itertools
 import Metaheuristics.metaheuristics as mh
+import dislocationutils
 # import gameutils
 
 try:
@@ -53,7 +54,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
         infrastructure_data = 'shelby_extended'
         if fail_sce_param['FILTER_SCE'] is not None:
             list_high_dam = pd.read_csv(fail_sce_param['FILTER_SCE'])
-    elif fail_sce_param['TYPE'] == 'random':
+    elif fail_sce_param['TYPE'] == 'from_csv':
         infrastructure_data = 'shelby_extended'
     elif fail_sce_param['TYPE'] == 'synthetic':
         topology = fail_sce_param['TOPO']
@@ -84,7 +85,8 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
 
             print('---Running Magnitude '+str(m)+' sample '+str(i)+'...')
             if params['TIME_RESOURCE']:
-                indp.time_resource_usage_curves(base_dir, damage_dir, i)
+                print('Computing repair times...')
+                indp.time_resource_usage_curves(base_dir, damage_dir, m, i)
             print("Initializing network...")
             if infrastructure_data:
                 params["N"], _, _ = indp.initialize_network(BASE_DIR=base_dir,
@@ -97,6 +99,11 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                             external_interdependency_dir=ext_interdependency,
                             magnitude=m, sample=i, infrastructure_data=infrastructure_data,
                             topology=topology)
+            if params['DYNAMIC_PARAMS']:
+                    print("Computing dislocation data...")
+                    dyn_dmnd = dislocationutils.create_dynamic_param(params, N=params["N"],
+                                                                     T=params["NUM_ITERATIONS"])
+                    params['DYNAMIC_PARAMS']['DEMAND_DATA'] = dyn_dmnd
 
             if fail_sce_param['TYPE'] == 'WU':
                 indp.add_Wu_failure_scenario(params["N"], DAM_DIR=damage_dir,
@@ -104,16 +111,16 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
             elif fail_sce_param['TYPE'] == 'ANDRES':
                 indp.add_failure_scenario(params["N"], DAM_DIR=damage_dir,
                                           magnitude=m, v=params["V"], sim_number=i)
-            elif fail_sce_param['TYPE'] == 'random':
-                indp.add_random_failure_scenario(params["N"], DAM_DIR=damage_dir,
-                                                 sample=i)
+            elif fail_sce_param['TYPE'] == 'from_csv':
+                indp.add_from_csv_failure_scenario(params["N"], DAM_DIR=damage_dir,
+                                                 magnitude=m, sample=i)
             elif fail_sce_param['TYPE'] == 'synthetic':
                 indp.add_synthetic_failure_scenario(params["N"], DAM_DIR=base_dir,
                                                     topology=topology, config=m, sample=i)
 
             if params["ALGORITHM"] == "INDP":
                 indp.run_indp(params, validate=False, T=params["T"], layers=params['L'],
-                              controlled_layers=params['L'], saveModel=True,
+                              controlled_layers=params['L'], saveModel=False,
                               print_cmd_line=True, co_location=True)
             if params["ALGORITHM"] == "MH":
                 mh.run_mh(params, validate=False, T=params["T"], layers=params['L'],
@@ -128,7 +135,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                                                  player_ordering=player_ordering,
                                                  T=params["T"], outdir=params["OUTPUT_DIR"])
             elif params["ALGORITHM"] == "JC":
-                dindputils.run_judgment_call(params, save_jc_model=True, print_cmd=False)
+                dindputils.run_judgment_call(params, save_jc_model=False, print_cmd=False)
             elif params["ALGORITHM"] in ["NORMALGAME", "BAYESGAME"]:
                 gameutils.run_game(params, save_results=True, print_cmd=False,
                                     save_model=False, plot2D=False) #!!!
@@ -244,7 +251,7 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
             params = {"OUTPUT_DIR":output_dir+'/tdindp_results', "V":v, "T":10,
                       'L':layers, "ALGORITHM":"INDP"} # "WINDOW_LENGTH":3, 
         elif method == 'JC':
-            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'jc_results',
+            params = {"NUM_ITERATIONS":20, "OUTPUT_DIR":output_dir+'jc_results',
                       "V":v, "T":1, 'L':layers, "ALGORITHM":"JC",
                       "JUDGMENT_TYPE":judgment_type, "RES_ALLOC_TYPE":res_alloc_type,
                       "VALUATION_TYPE":valuation_type}
@@ -340,7 +347,7 @@ if __name__ == "__main__":
     # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/Node_arc_info/"
     # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info/"
     #: The address to damge scenario data.
-    DAMAGE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/eq_1000yr_dmg/"
+    DAMAGE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/eq_dmg/"
     # ../data/random_disruption_shelby/"
     #"../data/Wu_Damage_scenarios/" 
     # "C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\"
@@ -371,7 +378,7 @@ if __name__ == "__main__":
     #                   'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    FAIL_SCE_PARAM = {'TYPE':"random", 'SAMPLE_RANGE':range(0, 10), 'MAGS':range(0, 1),
+    FAIL_SCE_PARAM = {'TYPE':"from_csv", 'SAMPLE_RANGE':range(0, 30), 'MAGS':[1000],
                       'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(68, 69),
     #                   'FILTER_SCE':None, 'TOPO':'Grid',
@@ -384,15 +391,16 @@ if __name__ == "__main__":
     #                   'DIR': 'C:/Users/ht20/Documents/Files/dynamic_demand/'}
     
     # ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/"
-    # DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'joplin', 'OUT_DIR': BASE_DIR,
-    #                   'POP_DISLOC_DATA': ROOT_DISLOC+'Joplin_testbed/pop-dislocation-results.csv',
+    # POP_DISLOC_DATA = ROOT_DISLOC+'Joplin_testbed/pop-dislocation-results.csv'
+    # DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'joplin',
+    #                   'OUT_DIR': BASE_DIR, 'POP_DISLOC_DATA': POP_DISLOC_DATA ,
     #                   'MAPPING': {'POWER': ROOT_DISLOC+'/Power/Joplin interdependency table - buildings,\
     #                               substations, and poles/Joplin_interdependency_table.csv'}}
     
     ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
-    POP_DISLOC_DATA = ROOT_DISLOC+'Seaside_testbed/housingunit_eq_1000yr_popdis_result.csv'
     DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'seaside',
-                      'OUT_DIR': BASE_DIR, 'POP_DISLOC_DATA': POP_DISLOC_DATA,
+                      'OUT_DIR': ROOT_DISLOC+'Dislocation_models/',
+                      'POP_DISLOC_DATA': ROOT_DISLOC+'Dislocation_models/',
                       'MAPPING': {'POWER': ROOT_DISLOC+'Power/bldgs2elec_Seaside.csv',
                                   'WATER': ROOT_DISLOC+'Water/bldgs2wter_Seaside.csv'}}    
 
@@ -424,39 +432,40 @@ if __name__ == "__main__":
     # Prescribed for each layer -> RC = [{'budget':{1:60000, 3:700}, 'time':{1:2, 3:10}}] 
     LAYERS = [1,3]#[1, 2, 3, 4]
     # Not necessary for synthetic nets
-    JUDGE_TYPE = ["PESSIMISTIC", "OPTIMISTIC", "DET-DEMAND"]
+    JUDGE_TYPE = ["OPTIMISTIC"]
     #["PESSIMISTIC", "OPTIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"]
-    RES_ALLOC_TYPE = ["MCA", 'UNIFORM', 'OPTIMAL']
+    RES_ALLOC_TYPE = ['UNIFORM', "MCA"]
     #["MDA", "MAA", "MCA", 'UNIFORM', 'OPTIMAL']
     VAL_TYPE = ['DTC']
     #['DTC', 'DTC_uniform', 'MDDN', 'STM', 'DTC-LP']
+
     ''' Run different methods '''
-    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
-                misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-                        'EXTRA_COMMODITY':EXTRA_COMMODITY,
-                        'TIME_RESOURCE':True})
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
-    #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-    #                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
+    # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
+    # #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+    # #                     'EXTRA_COMMODITY':EXTRA_COMMODITY,
+    # #                     'TIME_RESOURCE':True})
+    # # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
+    # # #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+    # # #                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
     #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
-    #             output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS,
+    #             output_dir=OUTPUT_DIR,
     #             misc = {'STM_MODEL':STM_MODEL_DICT, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-    #                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
-    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-    #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-    #                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
-    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-    #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-    #                     'EXTRA_COMMODITY':EXTRA_COMMODITY,
-    #                     "SIGNALS":{x:'C' for x in LAYERS}, "BELIEFS":{x:'U' for x in LAYERS}})
+    #                     'EXTRA_COMMODITY':EXTRA_COMMODITY, 'TIME_RESOURCE':False})
+    # # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
+    # # #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+    # # #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+    # # #                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
+    # # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
+    # # #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+    # # #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+    # # #                     'EXTRA_COMMODITY':EXTRA_COMMODITY,
+    # # #                     "SIGNALS":{x:'C' for x in LAYERS}, "BELIEFS":{x:'U' for x in LAYERS}})
 
-    ''' Post-processing '''
+    # ''' Post-processing '''
     # COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
     # REF_METHOD = 'indp'
-    # METHOD_NAMES = ['indp', 'dp_indp'] #'ng', 'jc', 'dp_indp', 'tdindp' ''bgCCCCUUUU'
+    # METHOD_NAMES = ['dp_indp'] #'indp', 'ng', 'jc', 'dp_indp', 'tdindp' ''bgCCCCUUUU'
 
     # COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
     #             FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
@@ -486,19 +495,21 @@ if __name__ == "__main__":
 
     # ''' Plot results '''
     plt.close('all')
-        
-    ### Getting back the objects ###
-    # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'rb') as f:
-    #     # [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
-    #     #   ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
-    #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, COST_TYPES] = pickle.load(f)
+
+    ## Getting back the objects ###
+    with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'rb') as f:
+        # [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
+        #   ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
+        [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, COST_TYPES] = pickle.load(f)
 
     plots.plot_performance_curves(BASE_DF[(BASE_DF['decision_type']=='dp_indp')],
                                   cost_type='Total', ci=None,
                                   deaggregate=False, plot_resilience=True)
 
-    # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
-    #                                     ci=95, normalize=False)
+    # plots.plot_seperated_perform_curves(BASE_DF[(BASE_DF['decision_type']=='dp_indp')&\
+    #                                             (BASE_DF['no_resources']=='b240000t105')],
+    #                                     x='t', y='cost', cost_type='Total',
+    #                                     ci=None, normalize=False)
 
     # plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
     # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
