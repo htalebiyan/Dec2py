@@ -356,7 +356,20 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
                             m.addConstr(m.getVarByName('y_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
                         else:
                             m.addConstr(m.getVarByName('y_tilde_'+str(u)+","+str(v)+","+str(t))*a['data']['inf_data'].in_space(s.id),GRB.LESS_EQUAL,m.getVarByName('z_'+str(s.id)+","+str(t)),"Geographical space constraint for arc ("+str(u)+","+str(v)+")")
-
+        #!!! Demand completion constraints for dependee nodes. 
+        all_dependees = [y[0] for x in interdep_nodes.values() for y in x]
+        for n,d in N_hat.nodes(data=True):
+            if n in all_dependees:
+                if T==1: #!!! add this constraint for td-INDP
+                    dc_lhs = abs(d['data']['inf_data'].demand)*m.getVarByName('w_'+str(n)+","+str(t))
+                    dc_rhs = abs(d['data']['inf_data'].demand)-m.getVarByName('delta-_'+str(n)+","+str(t))
+                    m.addConstr(dc_lhs,GRB.LESS_EQUAL,dc_rhs,
+                                "Demand completion constraints for node "+str(n)+","+str(t))
+                    for l, val in d['data']['inf_data'].extra_com.items():
+                        dc_lhs = abs(val['demand'])*m.getVarByName('w_'+str(n)+","+str(t))
+                        dc_rhs = abs(val['demand'])-m.getVarByName('delta-_'+str(n)+","+str(t)+","+str(l))
+                        m.addConstr(dc_lhs,GRB.LESS_EQUAL,dc_rhs,
+                                    "Demand completion constraints for node "+str(n)+","+str(t)+","+str(l))
 #    print "Solving..."
     m.update()
     m.optimize()
@@ -370,7 +383,8 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
         return [m,results]
     else:
         m.computeIIS()
-        if m.status==9:
+        if m.status==3:
+            m.write("model.ilp")
             print(m.getAttr("Status"),": SOLUTION NOT FOUND. (Check data and/or violated constraints).")
             print ('\nThe following constraint(s) cannot be satisfied:')
             for c in m.getConstrs():

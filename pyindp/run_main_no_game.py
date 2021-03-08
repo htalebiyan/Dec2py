@@ -107,20 +107,20 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
 
             if fail_sce_param['TYPE'] == 'WU':
                 indp.add_Wu_failure_scenario(params["N"], DAM_DIR=damage_dir,
-                                             noSet=i, noSce=m)
+                                              noSet=i, noSce=m)
             elif fail_sce_param['TYPE'] == 'ANDRES':
                 indp.add_failure_scenario(params["N"], DAM_DIR=damage_dir,
                                           magnitude=m, v=params["V"], sim_number=i)
             elif fail_sce_param['TYPE'] == 'from_csv':
                 indp.add_from_csv_failure_scenario(params["N"], DAM_DIR=damage_dir,
-                                                 magnitude=m, sample=i)
+                                                  magnitude=m, sample=i)
             elif fail_sce_param['TYPE'] == 'synthetic':
                 indp.add_synthetic_failure_scenario(params["N"], DAM_DIR=base_dir,
                                                     topology=topology, config=m, sample=i)
 
             if params["ALGORITHM"] == "INDP":
                 indp.run_indp(params, validate=False, T=params["T"], layers=params['L'],
-                              controlled_layers=params['L'], saveModel=False,
+                              controlled_layers=params['L'], saveModel=True,
                               print_cmd_line=True, co_location=True)
             if params["ALGORITHM"] == "MH":
                 mh.run_mh(params, validate=False, T=params["T"], layers=params['L'],
@@ -378,7 +378,7 @@ if __name__ == "__main__":
     #                   'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    FAIL_SCE_PARAM = {'TYPE':"from_csv", 'SAMPLE_RANGE':range(0, 30), 'MAGS':[1000],
+    FAIL_SCE_PARAM = {'TYPE':"from_csv", 'SAMPLE_RANGE':range(0, 1), 'MAGS':[1000],
                       'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(68, 69),
     #                   'FILTER_SCE':None, 'TOPO':'Grid',
@@ -397,12 +397,12 @@ if __name__ == "__main__":
     #                   'MAPPING': {'POWER': ROOT_DISLOC+'/Power/Joplin interdependency table - buildings,\
     #                               substations, and poles/Joplin_interdependency_table.csv'}}
     
-    ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
-    DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'seaside',
-                      'OUT_DIR': ROOT_DISLOC+'Dislocation_models/',
-                      'POP_DISLOC_DATA': ROOT_DISLOC+'Dislocation_models/',
-                      'MAPPING': {'POWER': ROOT_DISLOC+'Power/bldgs2elec_Seaside.csv',
-                                  'WATER': ROOT_DISLOC+'Water/bldgs2wter_Seaside.csv'}}    
+    # ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
+    # DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'seaside',
+    #                   'OUT_DIR': ROOT_DISLOC+'Dislocation_models/',
+    #                   'POP_DISLOC_DATA': ROOT_DISLOC+'Dislocation_models/',
+    #                   'MAPPING': {'POWER': ROOT_DISLOC+'Power/bldgs2elec_Seaside.csv',
+    #                               'WATER': ROOT_DISLOC+'Water/bldgs2wter_Seaside.csv'}}
 
     ###  Multicommodity parameters dict
     # EXTRA_COMMODITY = None
@@ -425,9 +425,8 @@ if __name__ == "__main__":
     ''' Set analysis parameters '''
     # No restriction on number of resources for each layer
     RC = [{'budget':120000, 'time':35}, {'budget':240000, 'time':35},
-          {'budget':120000, 'time':70}, {'budget':120000, 'time':105},
-          {'budget':240000, 'time':105}]
-
+            {'budget':120000, 'time':70}, {'budget':120000, 'time':105},
+            {'budget':240000, 'time':105}]
     # Not necessary for synthetic nets
     # Prescribed for each layer -> RC = [{'budget':{1:60000, 3:700}, 'time':{1:2, 3:10}}] 
     LAYERS = [1,3]#[1, 2, 3, 4]
@@ -440,32 +439,32 @@ if __name__ == "__main__":
     #['DTC', 'DTC_uniform', 'MDDN', 'STM', 'DTC-LP']
 
     ''' Run different methods '''
-    # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
-    # #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-    # #                     'EXTRA_COMMODITY':EXTRA_COMMODITY,
-    # #                     'TIME_RESOURCE':True})
-    # # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
-    # # #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-    # # #                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
+    #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+    #                     'EXTRA_COMMODITY':EXTRA_COMMODITY,
+    #                     'TIME_RESOURCE':True})
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
+    #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+    #                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
     #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
     #             output_dir=OUTPUT_DIR,
     #             misc = {'STM_MODEL':STM_MODEL_DICT, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
     #                     'EXTRA_COMMODITY':EXTRA_COMMODITY, 'TIME_RESOURCE':False})
-    # # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
-    # # #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-    # # #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-    # # #                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
-    # # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
-    # # #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-    # # #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-    # # #                     'EXTRA_COMMODITY':EXTRA_COMMODITY,
-    # # #                     "SIGNALS":{x:'C' for x in LAYERS}, "BELIEFS":{x:'U' for x in LAYERS}})
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
+    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+    #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+    #                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
+    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+    #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+    #                     'EXTRA_COMMODITY':EXTRA_COMMODITY,
+    #                     "SIGNALS":{x:'C' for x in LAYERS}, "BELIEFS":{x:'U' for x in LAYERS}})
 
-    # ''' Post-processing '''
+    ''' Post-processing '''
     # COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
     # REF_METHOD = 'indp'
-    # METHOD_NAMES = ['dp_indp'] #'indp', 'ng', 'jc', 'dp_indp', 'tdindp' ''bgCCCCUUUU'
+    # METHOD_NAMES = ['dp_indp', 'dp_jc'] #'indp', 'ng', 'jc', 'dp_indp', 'tdindp' ''bgCCCCUUUU'
 
     # COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
     #             FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
@@ -476,15 +475,15 @@ if __name__ == "__main__":
     # BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
     #                                     root_result_dir=OUTPUT_DIR, deaggregate=True)
 
-    # # LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
-    # #                                         ref_method=REF_METHOD, cost_type=COST_TYPES[0])
-    # # # RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resourcec_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
-    # # #                                                               objs, root_result_dir=OUTPUT_DIR,
-    # # #                                                               ref_method=REF_METHOD)
-    # # RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
-    # # # ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
+    # LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
+    #                                         ref_method=REF_METHOD, cost_type=COST_TYPES[0])
+    # RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resourcec_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
+    #                                                               objs, root_result_dir=OUTPUT_DIR,
+    #                                                               ref_method=REF_METHOD)
+    # RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
+    # ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
 
-    # ''' Save Variables to file '''
+    ''' Save Variables to file '''
     # # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
     # #             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]
     # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, COST_TYPES]
@@ -496,15 +495,17 @@ if __name__ == "__main__":
     # ''' Plot results '''
     plt.close('all')
 
-    ## Getting back the objects ###
-    with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'rb') as f:
-        # [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
-        #   ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
-        [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, COST_TYPES] = pickle.load(f)
+    ### Getting back the objects ###
+    # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'rb') as f:
+    #     # [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
+    #     #   ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
+    #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, COST_TYPES] = pickle.load(f)
 
-    plots.plot_performance_curves(BASE_DF[(BASE_DF['decision_type']=='dp_indp')],
-                                  cost_type='Total', ci=None,
-                                  deaggregate=False, plot_resilience=True)
+    plots.plot_performance_curves(BASE_DF[(BASE_DF['no_resources']=='b120000t70')|\
+                                          (BASE_DF['no_resources']=='b120000t105')|\
+                                          (BASE_DF['no_resources']=='b240000t105')],
+                                  cost_type='Under Supply Perc', ci=95,
+                                  deaggregate=False, plot_resilience=False)
 
     # plots.plot_seperated_perform_curves(BASE_DF[(BASE_DF['decision_type']=='dp_indp')&\
     #                                             (BASE_DF['no_resources']=='b240000t105')],

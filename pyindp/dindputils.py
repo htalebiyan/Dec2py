@@ -47,13 +47,14 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
     c = 0
     objs = {}
     params_copy = copy.deepcopy(params)  #!!! deepcopy
+    outDirSuffixRes = indp.get_resource_suffix(params_copy)
     for jc in params["JUDGMENT_TYPE"]:
         params_copy['JUDGMENT_TYPE'] = jc
         for rst in params["RES_ALLOC_TYPE"]:
             params_copy['RES_ALLOC_TYPE'] = rst
             if rst not in ["MDA", "MAA", "MCA"]:
                 output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
-                                str(params["MAGNITUDE"])+"_v"+str(params["V"])+'_'+jc+'_'+\
+                                str(params["MAGNITUDE"])+"_v"+outDirSuffixRes+'_'+jc+'_'+\
                                 rst+'/actions_'+str(params["SIM_NUMBER"])+'_real.csv'
                 if os.path.exists(output_dir_full):
                     print('Judgment Call:',jc,rst,'results are already there\n')
@@ -64,7 +65,7 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
                 for vt in params["VALUATION_TYPE"]:
                     params_copy['VALUATION_TYPE'] = vt
                     output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
-                                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'_'+jc+'_AUCTION_'+\
+                                    str(params["MAGNITUDE"])+"_v"+outDirSuffixRes+'_'+jc+'_AUCTION_'+\
                                     rst+'_'+vt+'/actions_'+str(params["SIM_NUMBER"])+'_real.csv'
                     if os.path.exists(output_dir_full):
                         print('Judgment Call:',jc,rst,vt,'results are already there\n')
@@ -241,7 +242,7 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
     for idx, x in enumerate(joinedlist):
         #: Make the directory
         full_suffix = '_L'+str(x[2])+'_m'+str(x[0])+'_v'+str(x[3])
-        if x[4][:2] in ['jc', 'ng', 'bg']:
+        if x[4][:2] in ['jc', 'ng', 'bg'] or x[4][:5] in ['dp_jc']:
             full_suffix += '_'+x[5]
             if x[6] in ["MDA", "MAA", "MCA"]:
                 full_suffix += '_AUCTION_'+x[6]+'_'+x[7]
@@ -288,7 +289,7 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
                             cmplt_results = cmplt_results.append(dict(zip(columns, values)),
                                                                  ignore_index=True)
             #: Getting back the JuCModel objects:
-            if x[4][:2] in ['jc', 'ng', 'bg']:
+            if x[4][:2] in ['jc', 'ng', 'bg'] or x[4][:5] in ['dp_jc']:
                 with open(result_dir+'/objs_'+str(x[1])+'.pkl', 'rb') as f:
                     objs[str(x)] = pickle.load(f)
             if idx%(len(joinedlist)//100+1) == 0:
@@ -671,7 +672,7 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
     print('\nCombination Generation\n', end='')
     idx = 0
     no_total = len(mags)*len(sample)
-    if database in ['shelby', 'random', 'ANDRES', 'WU']:
+    if database in ['shelby', 'from_csv', 'ANDRES', 'WU']:
         if list_high_dam_add:
             list_high_dam = pd.read_csv(list_high_dam_add)
         L = len(layers)

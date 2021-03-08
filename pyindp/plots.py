@@ -49,34 +49,35 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     '''
     #: Make lists
     no_resources = df.no_resources.unique().tolist()
-    return_period = df.return_period.unique().tolist()
+    # return_period = df.return_period.unique().tolist()
     if not decision_type:
         decision_type = df.decision_type.unique().tolist()
     if not judgment_type:
         judgment_type = df.judgment_type.unique().tolist()
-    # if 'nan' in judgment_type:
-    #     judgment_type.remove('nan')
+    if 'nan' in judgment_type:
+        judgment_type.remove('nan')
     if not auction_type:
         auction_type = df.auction_type.unique().tolist()
-    # if 'nan' in auction_type:
-    #     auction_type.remove('nan')
+    if 'nan' in auction_type:
+        auction_type.remove('nan')
     if not valuation_type:
         valuation_type = df.valuation_type.unique().tolist()
-    # if 'nan' in valuation_type:
-    #     valuation_type.remove('nan')
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
     #sns.color_palette("husl", len(auction_type)+1)
-    row_plot = [judgment_type, 'judgment_type'] # valuation_type
+    row_plot = [valuation_type, 'valuation_type'] # valuation_type
     col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
-    hue_type = [return_period, 'return_period'] #auction_type ,return_period
-    style_type = 'return_period'  #decision_type
+    hue_type = [auction_type, 'auction_type'] #auction_type ,return_period
+    style_type = 'decision_type'  #decision_type
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
-                            figsize=(3000/dpi, 1500/dpi))
-    colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
+                            figsize=(4000/dpi, 1000/dpi))
+    # colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
+    colors = ['r', 'b', '#5d9c51', '#dbb539', 'k']
     # colors = ['r', 'b', 'k']
-    pal = sns.color_palette(colors[:len(hue_type[0])])
+    pal = sns.color_palette(colors)
     x_ticks = np.arange(0, T+1, 2.0)
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
@@ -88,7 +89,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
             with pal:
                 sns.lineplot(x=x, y=y, hue=hue_type[1], style=style_type, markers=True,
                              ci=ci, ax=ax, data=cost_data[cost_data.layer == 'nan'],
-                             palette=pal, **{'markersize':5})
+                             **{'markersize':5})
             if deaggregate:
                 cost_lyr = cost_data[cost_data.layer != 'nan']
                 cost_lyr_pivot = cost_lyr.pivot_table(values='cost',
@@ -109,7 +110,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
             
             ax.get_legend().set_visible(False)
             ax.xaxis.set_ticks(x_ticks)
-            ax.set(xlabel=r'time step $t$', ylabel= cost_type+' Cost')#r'\% Unmet Demand')
+            ax.set(xlabel=r'time step $t$', ylabel= r'\% Unmet Demand')#cost_type+' Cost')#
             # ax.yaxis.set_ticks(np.arange(-.4, 0.05, 0.05))
 
             if plot_resilience:
@@ -121,7 +122,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                 ax_2 = divider.append_axes("bottom", size="100%", pad=0.12, sharex=ax)
                 with pal:
                     sns.lineplot(x=x, y=y, hue=hue_type[1], style=style_type, markers=True,
-                                 ci=ci, ax=ax_2, legend='full', palette=pal,
+                                 ci=ci, ax=ax_2, legend='full',
                                  data=resilience_data[resilience_data.layer == 'nan'])
                 if deaggregate:
                     cost_lyr = resilience_data[resilience_data.layer != 'nan']
@@ -153,7 +154,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
     labels = correct_labels(labels)
     fig.legend(handles, labels, loc='lower right', ncol=1, framealpha=0.35,
-               bbox_to_anchor=(.9, 0.11)) 
+               bbox_to_anchor=(.9, 0.11), fontsize='x-small') 
     # Add overll x- and y-axis titles
     _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
@@ -796,6 +797,7 @@ def correct_labels(labels):
     labels = ['Time Type' if x == 'variable' else x for x in labels]
     labels = ['iINDP' if x == 'indp' else x for x in labels]
     labels = ['Dynamic Param. iINDP' if x == 'dp_indp' else x for x in labels]
+    labels = ['Dynamic Param. JC' if x == 'dp_jc' else x for x in labels]
     labels = ['Optimal' if x == 'nan' else x for x in labels]#!!!
     labels = ['td-INDP' if x == 'tdindp' else x for x in labels]
     labels = ['Judge. Call' if x == 'jc' else x for x in labels]
