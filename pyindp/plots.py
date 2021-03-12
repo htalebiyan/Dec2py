@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-sns.set(context='notebook', style='darkgrid', font_scale=1.2)
-# plt.rc('text', usetex=True)
-# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+sns.set(context='notebook', style='darkgrid', font_scale=1)
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                    decision_type=None, judgment_type=None,
@@ -224,7 +224,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
                 ax.xaxis.set_label_position('bottom')
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='lower right', bbox_to_anchor = (0.49,0.16),
+    fig.legend(handles, labels, loc='lower right', bbox_to_anchor = (0.8,0.16),
                 frameon=True, framealpha=.75, ncol=1, fontsize='x-small')
     _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
@@ -719,15 +719,15 @@ def plot_ne_cooperation(df, x='t', ci=None):
     # value_vars = ['cooperative', 'partially_cooperative', 'OA', 'NA', 'NA_possible',
     #               'opt_cooperative', 'opt_partially_cooperative', 'opt_OA',
     #               'opt_NA', 'opt_NA_possible']
-    value_vars = ['cooperative', 'partially_cooperative',
-                  'opt_cooperative', 'opt_partially_cooperative']
-    # value_vars = ['OA', 'NA', 'NA_possible', 'opt_OA',
-    #               'opt_NA', 'opt_NA_possible']
+    # value_vars = ['cooperative', 'partially_cooperative',
+    #               'opt_cooperative', 'opt_partially_cooperative']
+    value_vars = ['OA', 'NA', 'NA_possible', 'opt_OA',
+                  'opt_NA', 'opt_NA_possible']
     id_vars = [x for x in df.columns if x not in value_vars]
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey='row',
-                            figsize=(4000/dpi, 3000/dpi))
+                            figsize=(4000/dpi, 1500/dpi))
     # colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
     # pal = sns.color_palette(colors)
     pal = sns.color_palette()
@@ -751,7 +751,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
             with pal:
                 sns.lineplot(x=x, y='value', hue='Cooperation Status', style='Method',
                              markers=True, ci=ci, ax=ax, data=ne_data, **{'markersize':5})
-            ax.set(xlabel=r'time step $t$', ylabel= row_plot[0][idx_r])
+            ax.set(xlabel=r'time step $t$', ylabel= '\% of Players, '+row_plot[0][idx_r])
             ax.get_legend().set_visible(False)
             ax.xaxis.set_ticks(np.arange(1, T+1, 1.0))#ax.get_xlim()
     # Rebuild legend
@@ -759,7 +759,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
     handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
     labels = correct_legend_labels(labels)
     fig.legend(handles, labels, loc='center right', ncol=1, framealpha=0.35,
-               bbox_to_anchor=(.84, 0.69))
+               bbox_to_anchor=(.83, 0.6))
     # Add overll x- and y-axis titles
     _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):

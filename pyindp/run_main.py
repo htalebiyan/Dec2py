@@ -274,7 +274,7 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
 if __name__ == "__main__":
     ''' Run a toy example for different methods '''
     # plt.close('all')
-    # layers=[1,2]#,3]
+    # layers=[1,2,3]
     # auction_type = [ "UNIFORM"]#"MCA", "MAA", "MDA"
     # valuation_type = ["DTC"]
     # judge_types = ["OPTIMISTIC"]#"PESSIMISTIC",
@@ -283,7 +283,7 @@ if __name__ == "__main__":
     # # run_jc_sample(layers, judge_types, auction_type, valuation_type)
     # # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="NORMALGAME")
     # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="BAYESGAME",
-    #                 beliefs={1:'U', 2:'U'}, signals={1:'N', 2:'N'})
+    #                 beliefs={1:'U', 2:'U', 3:'U'}, signals={1:'C', 2:'C', 3:'C'})
     # result_mh = run_mh_sample(layers) #!!!
 
     # COMBS = []
@@ -407,10 +407,10 @@ if __name__ == "__main__":
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
     #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
     #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
-    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-    #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-    #                     "SIGNALS":{1:'C', 2:'C', 3:'N', 4:'C'}, "BELIEFS":{x:'U' for x in LAYERS}})
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
+                res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+                misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+                        "SIGNALS":{1:'C', 2:'C', 3:'N', 4:'N'}, "BELIEFS":{x:'F' for x in LAYERS}})
     #{x:'N' for x in LAYERS}
 
     ''' Post-processing '''
@@ -444,24 +444,24 @@ if __name__ == "__main__":
     #     pickle.dump(OBJ_LIST, f)
 
     ''' Plot results '''
-    # plt.close('all')
+    plt.close('all')
     # ### Getting back the objects ###
     # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'rb') as f:
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
-    #      ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
+    #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
 
-    plots.plot_performance_curves(BASE_DF,
-                                  cost_type='Total', ci=None,
-                                  deaggregate=False, plot_resilience=True)
+    # plots.plot_performance_curves(BASE_DF[(BASE_DF['auction_type']!='UNIFORM')],
+    #                               cost_type='Total', ci=None,
+    #                               deaggregate=False, plot_resilience=True)
 
-    plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
-                                        ci=95, normalize=False)
+    # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
+    #                                     ci=95, normalize=False)
 
-    plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
-    plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
-    plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
-    plots.plot_run_time(RUN_TIME_DF, ci=95)
-    plots.plot_ne_analysis(ANALYZE_NE_DF, ci=None)
-    plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=None)
+    # plots.plot_relative_performance(LAMBDA_DF[(LAMBDA_DF['auction_type']!='UNIFORM')], lambda_type='U')
+    # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
+    # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
+    # plots.plot_run_time(RUN_TIME_DF, ci=95)
+    # plots.plot_ne_analysis(ANALYZE_NE_DF[(ANALYZE_NE_DF['auction_type']!='UNIFORM')], ci=None)
+    # plots.plot_ne_cooperation(ANALYZE_NE_DF[(ANALYZE_NE_DF['auction_type']!='UNIFORM')], ci=None)
 
     # # [(RUN_TIME_DF['auction_type']!='MDA')&(RUN_TIME_DF['auction_type']!='MAA')]

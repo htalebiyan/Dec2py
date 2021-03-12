@@ -179,9 +179,9 @@ def run_parallel(i):
     judge_type = ["OPTIMISTIC"] #OPTIMISTIC #'DET-DEMAND' #PESSIMISTIC
     res_alloc_type = ["OPTIMAL", 'UNIFORM'] #"MDA", "MAA", "MCA", 'UNIFORM' "OPTIMAL"
     val_type = ['DTC'] #'DTC'
-    payoff_dir = '/scratch/ht20/results_NE_only_objs/'
+    payoff_dir = None#'/scratch/ht20/results_NE_only_objs/'
     misc = {'PAYOFF_DIR':payoff_dir, 'DYNAMIC_PARAMS':dynamic_params_dir,
-            "SIGNALS":{1:'C', 2:'C', 3:'N', 4:'C'}, "BELIEFS":{x:'U' for x in layers}} #{x:'N' for x in layers}
+            "SIGNALS":{1:'C', 2:'C', 3:'C', 4:'C'}, "BELIEFS":{x:'F' for x in layers}} #{x:'N' for x in layers}
 
     # run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir,
                # misc = {'DYNAMIC_PARAMS':dynamic_params_dir})

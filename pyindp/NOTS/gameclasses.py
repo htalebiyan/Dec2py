@@ -8,6 +8,7 @@ import time
 import copy
 import itertools
 import fractions
+import scipy
 import pickle
 import random
 # import numpy as np
@@ -646,13 +647,26 @@ class BayesianGame(NormalGame):
         None.
 
         '''
+        N = len(self.players)
+        T = len(self.fundamental_types)
         for idx, l in enumerate(self.players):
             self.types[l] = {x:{} for x in self.fundamental_types}
-            if beliefs[l]=="U":
+            if beliefs[l]=="U": #Uninformed
                 for t in self.fundamental_types:
                     for s in self.states:
                         if s[idx]==t:
-                            self.types[l][t][s] = 1/len(self.fundamental_types)
+                            self.types[l][t][s] = 1/T/(N-1)
+                        else:
+                            self.types[l][t][s] = 0.0
+            elif beliefs[l]=="F": #false consensus effect or consensus bias
+                P = (2**N)/(2**(N+1)-2)
+                prob_dict = {n:[scipy.special.comb(N-1, N-n, exact=True)*(T-1)**(N-n),
+                                P/(2**(N-n))] for n in range(1, N+1)}
+                for t in self.fundamental_types:
+                    for s in self.states:
+                        if s[idx]==t:
+                            num_agree = len([x for x in s if x==t])
+                            self.types[l][t][s] = prob_dict[num_agree][1]/prob_dict[num_agree][0]
                         else:
                             self.types[l][t][s] = 0.0
             else:
@@ -937,12 +951,14 @@ class InfrastructureGame:
                 sys.exit('Error: wrong algorithm name for Infrastructure Game.')
             # Compute payoffs
             if print_cmd:
-                print("Computing (or reading) payoffs...")
+                print("Computing payoffs...")
             if save_payoff_info:
                 save_payoff_info = [self.output_dir+'/payoff_models', t]
             if set(self.objs[t].first_actions) == {'NA'}:
                 pass
             elif t==1 and self.payoff_dir:
+                if print_cmd:
+                    print("Reading payoffs...")
                 self.objs[t].compute_payoffs(save_model=save_payoff_info,
                                              payoff_dir=self.payoff_dir)
                 if self.v_r[t] != self.objs[t].v_r:
