@@ -429,7 +429,7 @@ class NormalGame:
         for key, sol in self.solution.sol.items():
             exclude_payoffs = sum([-sol['P'+str(x)+' payoff'] for x in excluded_palyers])
             total_cost_dict[key] = sol['total cost'] - exclude_payoffs
-        min_val = min(total_cost_dict.items())[1]
+        min_val = min(total_cost_dict.values())
         min_keys = [k for k, v in total_cost_dict.items() if v == min_val]
         # Chosse the lowest cost NE and randomize among several minimum values
         if len(min_keys) == 1:
@@ -662,6 +662,17 @@ class BayesianGame(NormalGame):
                 P = (2**N)/(2**(N+1)-2)
                 prob_dict = {n:[scipy.special.comb(N-1, N-n, exact=True)*(T-1)**(N-n),
                                 P/(2**(N-n))] for n in range(1, N+1)}
+                for t in self.fundamental_types:
+                    for s in self.states:
+                        if s[idx]==t:
+                            num_agree = len([x for x in s if x==t])
+                            self.types[l][t][s] = prob_dict[num_agree][1]/prob_dict[num_agree][0]
+                        else:
+                            self.types[l][t][s] = 0.0
+            elif beliefs[l]=="I": # Inverse false consensus effect 
+                P = (2**N)/(2**(N+1)-2)
+                prob_dict = {n:[scipy.special.comb(N-1, N-n, exact=True)*(T-1)**(N-n),
+                                P/(2**(n-1))] for n in range(1, N+1)}
                 for t in self.fundamental_types:
                     for s in self.states:
                         if s[idx]==t:

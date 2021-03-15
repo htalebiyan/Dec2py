@@ -669,6 +669,17 @@ class BayesianGame(NormalGame):
                             self.types[l][t][s] = prob_dict[num_agree][1]/prob_dict[num_agree][0]
                         else:
                             self.types[l][t][s] = 0.0
+            elif beliefs[l]=="I": # Inverse false consensus effect 
+                P = (2**N)/(2**(N+1)-2)
+                prob_dict = {n:[scipy.special.comb(N-1, N-n, exact=True)*(T-1)**(N-n),
+                                P/(2**(n-1))] for n in range(1, N+1)}
+                for t in self.fundamental_types:
+                    for s in self.states:
+                        if s[idx]==t:
+                            num_agree = len([x for x in s if x==t])
+                            self.types[l][t][s] = prob_dict[num_agree][1]/prob_dict[num_agree][0]
+                        else:
+                            self.types[l][t][s] = 0.0
             else:
                 sys.exit('Error: wrong signal name')
 

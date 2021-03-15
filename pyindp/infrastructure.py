@@ -773,15 +773,17 @@ def read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/",magnitude=6,v=3,sim
                         vars[v].append((tuple_string,val_string))
         return vars
 
-def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3",topology='Random',config=6,sample=0,cost_scale=1.0):
+def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3",topology='Random',
+                           config=6,sample=0,cost_scale=1.0):
     print("Initiallize Damage...")
     net_dir = BASE_DIR+'/'+topology+'Networks/'
-    topo_initial = {'Random':'RN','ScaleFree':'SFN','Grid':'GN'}
+    topo_initial = {'Random':'RN','ScaleFree':'SFN','Grid':'GN', 'General': 'GEN'}
     with open(net_dir+'List_of_Configurations.txt') as f:
         config_data = pd.read_csv(f, delimiter='\t')
+        config_data = config_data.rename(columns=lambda x: x.strip())
     config_param = config_data.iloc[config]
-    noLayers = int(config_param.loc[' No. Layers'])    
-    noResource = int(config_param.loc[' Resource Cap'])  
+    noLayers = int(config_param.loc['No. Layers'])
+    noResource = int(config_param.loc['Resource Cap'])
     
     file_dir = net_dir+topo_initial[topology]+'Config_'+str(config)+'/Sample_'+str(sample)+'/'
     G=InfrastructureNetwork("Test")
@@ -855,12 +857,13 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3",topol
 
 def add_synthetic_failure_scenario(G,DAM_DIR="../data/Generated_Network_Dataset_v3",topology='Random',config=0,sample=0):
     net_dir = DAM_DIR+'/'+topology+'Networks/'
-    topo_initial = {'Random':'RN','ScaleFree':'SFN','Grid':'GN'}
+    topo_initial = {'Random':'RN','ScaleFree':'SFN','Grid':'GN', 'General': 'GEN'}
     with open(net_dir+'List_of_Configurations.txt') as f:
         config_data = pd.read_csv(f, delimiter='\t')
+        config_data = config_data.rename(columns=lambda x: x.strip())
     config_param = config_data.iloc[config] 
-    noLayers = int(config_param.loc[' No. Layers']) 
-    noResource = int(config_param.loc[' Resource Cap'])  
+    noLayers = int(config_param.loc['No. Layers']) 
+    noResource = int(config_param.loc['Resource Cap'])  
     file_dir = net_dir+topo_initial[topology]+'Config_'+str(config)+'/Sample_'+str(sample)+'/'
     files = [f for f in os.listdir(file_dir) if os.path.isfile(os.path.join(file_dir, f))]
     for k in range(1,noLayers+1):

@@ -7,8 +7,8 @@ import pandas as pd
 from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 sns.set(context='notebook', style='darkgrid', font_scale=1)
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+# plt.rc('text', usetex=True)
+# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
                                    decision_type=None, judgment_type=None,
@@ -67,8 +67,8 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     #sns.color_palette("husl", len(auction_type)+1)
     row_plot = [judgment_type, 'judgment_type'] # valuation_type
     col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
-    hue_type = [auction_type, 'auction_type'] #auction_type
-    style_type = 'decision_type'  #decision_type
+    hue_type = [decision_type, 'decision_type'] #auction_type
+    style_type =  'auction_type' #decision_type
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
@@ -610,8 +610,24 @@ def plot_ne_sol_2player(game, suffix='', plot_dir=''):
                                           key=lambda x: str(x[0])))
                 p2_opt_act = tuple(sorted(game.optimal_solution['P'+str(game.players[1])+' actions'],
                                           key=lambda x: str(x[0])))
-                p1_opt_idx = list(pivot_dict).index(p1_opt_act)
-                p2_opt_idx = list(pivot_dict.index.values).index(p2_opt_act)
+                for key in list(pivot_dict):
+                    is_act = True
+                    for x in p1_opt_act:
+                        if x not in key:
+                            is_act = False
+                            break
+                    if is_act:
+                        p1_opt_idx = list(pivot_dict).index(key)
+                for key in list(pivot_dict.index.values):
+                    is_act = True
+                    for x in p2_opt_act:
+                        if x not in key:
+                            is_act = False
+                            break
+                    if is_act:
+                        p2_opt_idx = list(pivot_dict.index.values).index(key)
+                # p1_opt_idx = list(pivot_dict).index(p1_opt_act)
+                # p2_opt_idx = list(pivot_dict.index.values).index(p2_opt_act)
                 axs[idxl].add_patch(Rectangle((p1_opt_idx, p2_opt_idx), 1, 1, fill=False,
                                               hatch='xxx', edgecolor='green', lw=0.01))
             except:
@@ -620,7 +636,7 @@ def plot_ne_sol_2player(game, suffix='', plot_dir=''):
         else:
             print('Optimal solution has not been calculated')
     plt.savefig(plot_dir+'/NE_sol_2D_'+suffix+'.png', dpi=dpi, bbox_inches='tight')
-    
+
 def plot_ne_analysis(df, x='t', ci=None):
     '''
 
