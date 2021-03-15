@@ -20,7 +20,7 @@ import pandas as pd
 
 def load_array_format_extended(BASE_DIR="C:\\Users\\ht20\Documents\\Files\Generated_Network_Dataset_v3\\RandomNetworks\\",
                                topo='RN',config=0,sample=0,cost_scale=1.0):
-    file_dir = BASE_DIR+topo+'Config_'+str(config)+'\\Sample_'+str(sample)+'\\'
+    file_dir = BASE_DIR+topo+'Config_'+str(config)+'/Sample_'+str(sample)+'/'
     with open(BASE_DIR+'List_of_Configurations.txt') as f:
             data = pd.read_csv(f, delimiter='\t')    
     config_param = data.iloc[config]
@@ -43,7 +43,7 @@ def load_array_format_extended(BASE_DIR="C:\\Users\\ht20\Documents\\Files\Genera
                         node_data = {'b': v[1][4],'Mp': v[1][5],'Mm': v[1][6],'q': v[1][7]}
                         node_name = (int(v[1][0]),k)
                         G.add_node(node_name)
-                        G.node[node_name]['data'] = node_data
+                        G.nodes[node_name]['data'] = node_data
                         pos[node_name] = (v[1][1]+v[1][3]*z_offsetx,v[1][2]+v[1][3]*z_offsety)
         for file in files:
             if file=='N'+str(k)+'_Arcs.txt':
@@ -56,18 +56,6 @@ def load_array_format_extended(BASE_DIR="C:\\Users\\ht20\Documents\\Files\Genera
                         G[(int(v[1][0]),k)][(int(v[1][1]),k)]['data'] = arc_data
                         G.add_edge((int(v[1][1]),k),(int(v[1][0]),k))
                         G[(int(v[1][1]),k)][(int(v[1][0]),k)]['data'] = arc_data
-        for kt in range(noLayers):
-            if k!=kt:
-                for file in files:
-                    if file=='Interdependent_Arcs_'+str(k)+'_'+str(kt)+'.txt':
-                        with open(file_dir+file) as f:
-                #                print "Opened",file,"."
-                            try:
-                                data = pd.read_csv(f, delimiter='\t',header=None)
-                                for v in data.iterrows():   
-                                    G.add_edge((int(v[1][0]),k),(int(v[1][1]),kt)) 
-                            except:
-                                print('Empty file: '+ file)
         for file in files: 
             if file=='N'+str(k)+'_Damaged_Nodes.txt':
                 with open(file_dir+file) as f:
@@ -87,6 +75,19 @@ def load_array_format_extended(BASE_DIR="C:\\Users\\ht20\Documents\\Files\Genera
                             dam_arcs.append(((int(v[1][0]),k),(int(v[1][1]),k)))
                     except:
                         print('Empty file: '+ file)
+    for k in range(1,noLayers+1):
+        for kt in range(1,noLayers+1):
+            if k!=kt:
+                for file in files:
+                    if file=='Interdependent_Arcs_'+str(k)+'_'+str(kt)+'.txt':
+                        with open(file_dir+file) as f:
+                #                print "Opened",file,"."
+                            try:
+                                data = pd.read_csv(f, delimiter='\t',header=None)
+                                for v in data.iterrows():
+                                    G.add_edge((int(v[1][0]),k),(int(v[1][1]),kt)) 
+                            except:
+                                print('Empty file: '+ file)
 #    pos=nx.spring_layout(G)   
 ##    for key,value in pos.items():                     
 ##        pos[key][0] += key[1]*z_offsetx
@@ -107,24 +108,24 @@ def plot_network(BASE_DIR="C:\\Users\\ht20\Documents\\Files\Generated_Network_Da
         pos_moved[key] = [0,0]
         pos_moved[key][0] = pos[key][0]-0.2
         pos_moved[key][1] = pos[key][1]+0.2
-    #nx.draw(G, pos,node_color='w')
-    #nx.draw_networkx_labels(G,labels=labels,pos=pos,
-    #                        font_color='w',font_family='CMU Serif',font_weight='bold')
+    # nx.draw(G, pos,node_color='w')
+    # nx.draw_networkx_labels(G,labels=labels,pos=pos,
+    #                         font_color='w',font_family='CMU Serif',font_weight='bold')
     
     clr=['r','b','g','m']
-    for k in range(noLayers):
+    for k in range(1, noLayers+1):
         node_list = [x for x in G.nodes() if x[1]==k]
-        nx.draw_networkx_nodes(G,pos,nodelist=node_list,node_color=clr[k],node_size=70,alpha=0.9)
-    for k in range(noLayers):
+        nx.draw_networkx_nodes(G,pos,nodelist=node_list,node_color=clr[k-1],node_size=70,alpha=0.9)
+    for k in range(1, noLayers+1):
         arc_dict = [x for x in G.edges() if x[0][1]==k and x[1][1]==k]
-        nx.draw_networkx_edges(G,pos,edgelist=arc_dict,width=1,alpha=0.25,edge_color=clr[k])
+        nx.draw_networkx_edges(G,pos,edgelist=arc_dict,width=1,alpha=0.25,edge_color=clr[k-1],arrows=False)
         interarc_dict = [x for x in G.edges() if x[0][1]==k and x[1][1]!=k]
         nx.draw_networkx_edges(G,pos,edgelist=interarc_dict,width=1,alpha=0.25,edge_color='k')
-    #nx.draw_networkx_nodes(G,pos,nodelist=dam_nodes,node_color='w',node_shape="x",node_size=35)
-    #nx.draw_networkx_edges(G,pos,edgelist=dam_arcs,width=1,alpha=1,edge_color='w',style='dashed')
+    nx.draw_networkx_nodes(G,pos,nodelist=dam_nodes,node_color='w',node_shape="x",node_size=35)
+    nx.draw_networkx_edges(G,pos,edgelist=dam_arcs,width=1,alpha=1,edge_color='k',style='dashed',arrows=False)
     plt.tight_layout()   
     plt.axis('off')
-    #plt.savefig(output_dir+'/plot_net'+folderSuffix+'.png',dpi=600)
+    plt.savefig(BASE_DIR+'/Evaluations/net_plot_'+str(config)+'_'+str(sample)+'.png',dpi=600)
 
 '''
 This function solve INDP for two undamaged networks to find the total value of 
@@ -290,96 +291,105 @@ def plot_Evaluation_Results(noConfig, dmRatioSum, aveConn, allPairsConn,folder):
     plt.savefig(folder+'AverageConnectedness.png')
     plt.clf()
 
-    
-    
-# Input values
-noSamples = 30
-rootfolder = "C:\\Users\ht20\Documents\\Files\\Generated_Network_Dataset_v3.1\\" # Root folder where the database is
-rootfolder += 'GridNetworks\\' # choose relevant dataset folder #options: 'RandomNetworks\\'|'ScaleFreeNetworks\\'|'GridNetworks\\'
-NetworkTypeInitial = 'GN' #Options: RN|SFN|GN
+# # Input values
+# noSamples = 2
+# rootfolder = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/'
+# #"C:\\Users\ht20\Documents\\Files\\Generated_Network_Dataset_v3.1\\" # Root folder where the database is
+# rootfolder += 'GeneralNetworks/'
+#  # choose relevant dataset folder 
+# #options: 'RandomNetworks\\'|'ScaleFreeNetworks\\'|'GridNetworks\\'
+# NetworkTypeInitial = 'GEN' 
+# #Options: RN|SFN|GN
 
-# Read configuration data
-fileNameList = rootfolder + 'List_of_Configurations.txt' 
-configList = np.loadtxt(fileNameList,skiprows=1)
-
-# 3D arrays to store evaluation results
-dmRatioSum = np.zeros((len(configList),noSamples))
-aveConn = np.zeros((len(configList),noSamples))
-allPairsConn = np.zeros((len(configList),noSamples)) 
-noInterconnections = np.zeros(len(configList))
-node_ratios_df=pd.DataFrame(columns=['arcs','dam_arcs','dam_nodes','dam_elem','config','sample','noNodes','noLayers','topoParam','resCap'])
-for i in configList: 
-    # Reading configuration data from file 
-    cnfg = int(i[0])
-    noLayers = int(i[1])
-    noNodes = int(i[2])
-    arcProb = i[3] # exp for scale free net; gridsizex for Grid net
-    intConProb = i[4]
-    damProb = i[5]
-    resCap = i[6]
-#    foldername = NetworkTypeInitial+'Config_%d\\' % (cnfg)
-    for s in range(noSamples):
-        G,pos,noLayers,dam_nodes,dam_arcs = load_array_format_extended(rootfolder,NetworkTypeInitial,cnfg,s,cost_scale=1.0)
+# # Read configuration data
+# fileNameList = rootfolder + 'List_of_Configurations.txt' 
+# # configList = np.loadtxt(fileNameList,skiprows=1, delimiter='\t')
+# configList = pd.read_csv(fileNameList, header=0, sep='\t')
+# # 3D arrays to store evaluation results
+# dmRatioSum = np.zeros((len(configList),noSamples))
+# aveConn = np.zeros((len(configList),noSamples))
+# allPairsConn = np.zeros((len(configList),noSamples)) 
+# noInterconnections = np.zeros(len(configList))
+# node_ratios_df=pd.DataFrame(columns=['arcs','dam_arcs','dam_nodes','dam_elem','config','sample',
+#                                      'noNodes','noLayers','topoParam','resCap''netType'])
+# for i in configList.values: 
+#     # Reading configuration data from file 
+#     cnfg = int(i[0])
+#     noLayers = int(i[1])
+#     noNodes = int(i[2])
+#     topoParam = i[3] # arc prob for random, exp for scale free net; gridsizex for Grid net
+#     intConProb = i[4]
+#     damProb = i[5]
+#     resCap = i[6]
+#     net_type = i[7]
+# #    foldername = NetworkTypeInitial+'Config_%d\\' % (cnfg)
+#     for s in range(noSamples):
+#         G,pos,noLayers,dam_nodes,dam_arcs = load_array_format_extended(rootfolder,
+#                                                                        NetworkTypeInitial,
+#                                                                        cnfg, s ,cost_scale=1.0)
     
-        # Computoing the connectedness and average connectivity for each
-        # network
-#        aveConnect = 0.0
-#        isConnected = 1.0
-#        for k in range(noLayers):
-#            node_list = [x for x in G.nodes() if x[1]==k+1]
-#            H = G.subgraph(node_list)
-#            aveConnect += nx.average_node_connectivity(H)
-#            isConnected *= int(nx.is_connected(H.to_undirected()))
-#        aveConn[cnfg,s] = aveConnect/noLayers
-#        allPairsConn[cnfg,s] = isConnected
-#
-#        # Computoing the the percentage of demand which is met
-#        # for all layers            
-#        dmSum = initialPerformanceUndamagedNetwork(G,noLayers)
-#        b = [G.nodes()[x]['data']['b'] for x in list(G.nodes())] 
-#        alldemand = sum([y for y in b if y<0])
-#        dmRatioSum[cnfg,s] = 1.0+dmSum/alldemand
+#         # Computoing the connectedness and average connectivity for each network
+#         aveConnect = 0.0
+#         isConnected = 1.0
+#         for k in range(noLayers):
+#             node_list = [x for x in G.nodes() if x[1]==k+1]
+#             H = G.subgraph(node_list)
+#             aveConnect += nx.average_node_connectivity(H)
+#             isConnected *= int(nx.is_connected(H.to_undirected()))
+#         aveConn[cnfg,s] = aveConnect/noLayers
+#         allPairsConn[cnfg,s] = isConnected
+
+#         # Computoing the the percentage of demand which is met for all layers
+#         dmSum = initialPerformanceUndamagedNetwork(G,noLayers)
+#         b = [G.nodes()[x]['data']['b'] for x in list(G.nodes())] 
+#         alldemand = sum([y for y in b if y<0])
+#         dmRatioSum[cnfg,s] = 1.0+dmSum/alldemand
         
-        # Arc to node ratios
-        arc_to_node_ratio = 0
-        dam_arc_to_node_ratio = 0
-        dam_node_to_node_ratio = 0
-        dam_elem_to_node_ratio = 0        
-        for k in range(noLayers):
-            node_list = [x for x in G.nodes() if x[1]==k+1]
-            arc_list = [x for x in G.edges() if x[0][1]==k+1 and x[1][1]==k+1]
-            arc_to_node_ratio += len(arc_list)/float(len(node_list))/float(noLayers)/2.0
-            layer_da = len([x for x in dam_arcs if x[0][1]==k+1 and x[1][1]==k+1])/float(len(node_list))/float(noLayers)/2.0
-            dam_arc_to_node_ratio += layer_da
-            layer_dn = len([x for x in dam_nodes if x[1]==k+1])/float(len(node_list))/float(noLayers)
-            dam_node_to_node_ratio += layer_dn
-            dam_elem_to_node_ratio += layer_da+layer_dn
-        node_ratios_df = node_ratios_df.append({'arcs': arc_to_node_ratio,
-                                                'dam_arcs':dam_arc_to_node_ratio,
-                                                'dam_nodes':dam_node_to_node_ratio,
-                                                'dam_elem':dam_elem_to_node_ratio,
-                                                'config':cnfg,'sample':s,
-                                                'noNodes':noNodes,'noLayers':noLayers,
-                                                'topoParam':arcProb,'resCap':resCap},
-                                                ignore_index=True)
-    print('Config %d | Sample_%d' % (cnfg,s))
-    #Number of Interconnections
-#    noInterconnections[cnfg] = round(noNodes*noNodes*intConProb)
-#            
-#            
-            
-# Plot QUality  Control results  
-plt.close('all')          
-qcFolder = rootfolder+'Evaluations/'
-#plot_Evaluation_Results(len(configList),dmRatioSum,aveConn, allPairsConn,qcFolder)                      
-#sns.set()     
-#ax = sns.distplot(noInterconnections,rug=True,kde=False)
-#ax.set(xlabel='Number of Interconnections', ylabel='Probability (%)')
-#plt.savefig('noInterconnections_'+NetworkTypeInitial+'.png',dpi=600,bbox_inches="tight")
+#         # Arc to node ratios
+#         arc_to_node_ratio = 0
+#         dam_arc_to_node_ratio = 0
+#         dam_node_to_node_ratio = 0
+#         dam_elem_to_node_ratio = 0
+#         for k in range(noLayers):
+#             node_list = [x for x in G.nodes() if x[1]==k+1]
+#             arc_list = [x for x in G.edges() if x[0][1]==k+1 and x[1][1]==k+1]
+#             arc_to_node_ratio += len(arc_list)/float(len(node_list))/float(noLayers)/2.0
+#             layer_da = len([x for x in dam_arcs if x[0][1]==k+1 and x[1][1]==k+1])/float(len(node_list))/float(noLayers)/2.0
+#             dam_arc_to_node_ratio += layer_da
+#             layer_dn = len([x for x in dam_nodes if x[1]==k+1])/float(len(node_list))/float(noLayers)
+#             dam_node_to_node_ratio += layer_dn
+#             dam_elem_to_node_ratio += layer_da+layer_dn
+#         node_ratios_df = node_ratios_df.append({'arcs': arc_to_node_ratio,
+#                                                 'dam_arcs':dam_arc_to_node_ratio,
+#                                                 'dam_nodes':dam_node_to_node_ratio,
+#                                                 'dam_elem':dam_elem_to_node_ratio,
+#                                                 'config':cnfg,'sample':s,
+#                                                 'noNodes':noNodes,'noLayers':noLayers,
+#                                                 'topoParam':topoParam,'resCap':resCap,
+#                                                 'netType':net_type},
+#                                                 ignore_index=True)
+#         print('Config %d | Sample_%d' % (cnfg,s))
 
-node_ratios_df.to_pickle(NetworkTypeInitial+'_node_ratio_df.pkl',protocol=2)
-node_ratios_df = pd.read_pickle(NetworkTypeInitial+'_node_ratio_df.pkl')
-sns.relplot(x="dam_elem", y="dam_elem", hue="noLayers", alpha=.5,
-            height=6, data=node_ratios_df)
-#''' Plot one network '''
-#plot_network(BASE_DIR=rootfolder,topo=NetworkTypeInitial,config=0,sample=0)  
+
+
+# # Plot QUality  Control results  
+# plt.close('all')          
+# qcFolder = rootfolder+'Evaluations/'
+# plot_Evaluation_Results(len(configList),dmRatioSum,aveConn, allPairsConn, qcFolder)
+
+# # Number of Interconnections
+# noInterconnections[cnfg] = round(noNodes*noNodes*intConProb)
+# sns.set()
+# ax = sns.distplot(noInterconnections,rug=True,kde=False)
+# ax.set(xlabel='Number of Interconnections', ylabel='Probability (%)')
+# plt.savefig(qcFolder+'noInterconnections_'+NetworkTypeInitial+'.png',dpi=300,bbox_inches="tight")
+
+# node_ratios_df.to_pickle(qcFolder+NetworkTypeInitial+'_node_ratio_df.pkl',protocol=2)
+# # node_ratios_df = pd.read_pickle(qcFolder+NetworkTypeInitial+'_node_ratio_df.pkl')
+# sns.relplot(x="dam_elem", y="dam_elem", hue="netType", alpha=.5,
+#             height=6, data=node_ratios_df)
+# plt.savefig(qcFolder+'dam_elm_rations_'+NetworkTypeInitial+'.png',dpi=300,bbox_inches="tight")
+
+
+''' Plot one network '''
+plot_network(BASE_DIR=rootfolder,topo=NetworkTypeInitial,config=1,sample=0)

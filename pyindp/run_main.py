@@ -123,7 +123,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                 dindputils.run_judgment_call(params, save_jc_model=True, print_cmd=False)
             elif params["ALGORITHM"] in ["NORMALGAME", "BAYESGAME"]:
                 gameutils.run_game(params, save_results=True, print_cmd=True,
-                                    save_model=True, plot2D=False) #!!!
+                                    save_model=True, plot2D=True) #!!!
 
 def run_indp_sample(layers):
     interdep_net= indp.initialize_sample_network(layers=layers)
@@ -261,6 +261,9 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
             if method == 'BAYESGAME':
                 params["SIGNALS"] = misc['SIGNALS']
                 params["BELIEFS"] = misc['BELIEFS']
+            else:
+                params["SIGNALS"] = None
+                params["BELIEFS"] = None
         else:
             sys.exit('Wrong method name: '+method)
 
@@ -274,7 +277,7 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
 if __name__ == "__main__":
     ''' Run a toy example for different methods '''
     # plt.close('all')
-    # layers=[1,2,3]
+    # layers=[1,2]#,3]
     # auction_type = [ "UNIFORM"]#"MCA", "MAA", "MDA"
     # valuation_type = ["DTC"]
     # judge_types = ["OPTIMISTIC"]#"PESSIMISTIC",
@@ -283,21 +286,21 @@ if __name__ == "__main__":
     # # run_jc_sample(layers, judge_types, auction_type, valuation_type)
     # # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="NORMALGAME")
     # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="BAYESGAME",
-    #                 beliefs={1:'U', 2:'U', 3:'U'}, signals={1:'C', 2:'C', 3:'C'})
-    # result_mh = run_mh_sample(layers) #!!!
+    #                 beliefs={1:'I', 2:'I'}, signals={1:'N', 2:'C'})
+    # # result_mh = run_mh_sample(layers) #!!!
 
     # COMBS = []
     # OPTIMAL_COMBS = [[0, 0, len(layers), len(layers), 'indp_sample_12Node', 'nan',
     #                   'nan', 'nan', ''],
     #                   [0, 0, len(layers), len(layers), 'tdindp_sample_12Node', 'nan',
     #                   'nan', 'nan', '']]
-    # # for jt, rst, vt in itertools.product(judge_types, auction_type, valuation_type):
-    # #     if rst == 'UNIFORM':
-    # #         COMBS.append([0, 0, len(layers), len(layers), 'jc_sample_12Node', jt, rst, 'nan', 'real'])
-    # #         COMBS.append([0, 0, len(layers), len(layers), 'ng_sample_12Node', jt, rst, 'nan', ''])
-    # #     else:
-    # #         COMBS.append([0, 0, len(layers), len(layers), 'jc_sample_12Node', jt, rst, vt, 'real'])
-    # #         COMBS.append([0, 0, len(layers), len(layers), 'ng_sample_12Node', jt, rst, vt, ''])
+    # for jt, rst, vt in itertools.product(judge_types, auction_type, valuation_type):
+    #     if rst == 'UNIFORM':
+    #         COMBS.append([0, 0, len(layers), len(layers), 'jc_sample_12Node', jt, rst, 'nan', 'real'])
+    #         COMBS.append([0, 0, len(layers), len(layers), 'ng_sample_12Node', jt, rst, 'nan', ''])
+    #     else:
+    #         COMBS.append([0, 0, len(layers), len(layers), 'jc_sample_12Node', jt, rst, vt, 'real'])
+    #         COMBS.append([0, 0, len(layers), len(layers), 'ng_sample_12Node', jt, rst, vt, ''])
     # BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, ['Total'],
     #                                     root_result_dir='../results/', deaggregate=True)
     # LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
@@ -316,14 +319,16 @@ if __name__ == "__main__":
     FILTER_SCE = '../data/damagedElements_sliceQuantile_0.90.csv'
 
     #: The address to the basic (topology, parameters, etc.) information of the network.
-    BASE_DIR = "../data/Extended_Shelby_County/"
+    BASE_DIR = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/'
+    # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/'
     # "../data/Extended_Shelby_County/"
     # 'C:/Users/ht20/Box Sync/Shelby County Database/Node_arc_info'
     # "C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\"
     # "/home/hesam/Desktop/Files/Generated_Network_Dataset_v3.1"
 
     #: The address to damge scenario data.
-    DAMAGE_DIR = "../data/Wu_Damage_scenarios/"
+    DAMAGE_DIR = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/'
+    # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/'
     # ../data/random_disruption_shelby/"
     #"../data/Wu_Damage_scenarios/" 
     # "C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\"
@@ -331,7 +336,7 @@ if __name__ == "__main__":
     # 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios'
 
     #: The address to where output are stored.
-    OUTPUT_DIR = '/home/hesam/Desktop/Files/Game_Shelby_County/results_NE/'
+    OUTPUT_DIR = '../results/'
     # '/home/hesam/Desktop/Files/Game_Shelby_County/results_NE/'
     # 'C:/Users/ht20/Documents/Files/Game_Shelby_County/results_0.9_perc/'
     # 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
@@ -350,15 +355,15 @@ if __name__ == "__main__":
     #:     sce range: FAIL_SCE_PARAM['MAGS']
     #: For Synthetic nets: sample range: FAIL_SCE_PARAM['SAMPLE_RANGE'],
     #:     configurations: FAIL_SCE_PARAM['MAGS']
-    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(50), 'MAGS':range(96),
-                      'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
+    # FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(50), 'MAGS':range(96),
+    #                   'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"random", 'SAMPLE_RANGE':range(10, 11), 'MAGS':range(0, 1),
     #                   'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    # FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(68, 69),
-    #                   'FILTER_SCE':None, 'TOPO':'Grid',
-    #                   'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
+    FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(0, 1),
+                      'FILTER_SCE':None, 'TOPO':'General', 'BASE_DIR':BASE_DIR,
+                      'DAMAGE_DIR':DAMAGE_DIR}
 
     # Dynamic parameters dict
     DYNAMIC_PARAMS = None
@@ -373,7 +378,8 @@ if __name__ == "__main__":
     # {'num_pred':1, 'model_dir':MODEL_DIR+'/traces', 'param_folder':MODEL_DIR+'/parameters'}
 
     ### Directory with objects containing payoff values for games
-    PAYOFF_DIR = '/home/hesam/Desktop/Files/Game_Shelby_County/results_NE_only_objs/'
+    PAYOFF_DIR = OUTPUT_DIR+'General/results/'
+    #'/home/hesam/Desktop/Files/Game_Shelby_County/results_NE_only_objs/'
 
     # Output and base dir for sythetic database
     SYNTH_DIR = None
@@ -383,7 +389,7 @@ if __name__ == "__main__":
 
     ''' Set analysis parameters '''
     # No restriction on number of resources for each layer
-    RC = [3, 6]
+    RC = [0]
     # Not necessary for synthetic nets
     # [3, 6, 8, 12]
     # [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]]# Prescribed for each layer
@@ -396,27 +402,30 @@ if __name__ == "__main__":
     VAL_TYPE = ['DTC']
     #['DTC', 'DTC_uniform', 'MDDN', 'STM', 'DTC-LP']
     ''' Run different methods '''
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
-    #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
+                misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
     #            misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
     # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
     # #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
     # #             output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS,
     # #             misc = {'STM_MODEL':STM_MODEL_DICT, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
-    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-    #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
-    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
                 res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-                misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-                        "SIGNALS":{1:'C', 2:'C', 3:'N', 4:'N'}, "BELIEFS":{x:'F' for x in LAYERS}})
+                misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
+    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+    #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+    #                     "SIGNALS":{1:'C', 2:'C', 3:'N', 4:'C'}, "BELIEFS":{x:'I' for x in LAYERS}})
     #{x:'N' for x in LAYERS}
 
     ''' Post-processing '''
     # COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
     # REF_METHOD = 'indp'
-    # METHOD_NAMES = ['indp', 'bgCCNCUUUU'] #'ng', 'jc', 'dp_indp', 'tdindp','bgNNNNUUUU', 'bgCCCCUUUU'
+    # METHOD_NAMES = ['indp', 'bgCCNCIIII'] 
+    # #'ng', 'jc', 'dp_indp', 'tdindp',
+    # #'bgNNNNUUUU','bgCCCCUUUU', 'bgCCNCUUUU', 'bgCCCCFFFF', 'bgNNNNFFFF', 'bgCCNCFFFF'
+    # #'bgCCCCIIII','bgNNNNIIII',
 
     # COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
     #             FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
@@ -450,14 +459,14 @@ if __name__ == "__main__":
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
     #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
 
-    # plots.plot_performance_curves(BASE_DF[(BASE_DF['auction_type']!='UNIFORM')],
+    # plots.plot_performance_curves(BASE_DF,
     #                               cost_type='Total', ci=None,
     #                               deaggregate=False, plot_resilience=True)
 
     # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
     #                                     ci=95, normalize=False)
 
-    # plots.plot_relative_performance(LAMBDA_DF[(LAMBDA_DF['auction_type']!='UNIFORM')], lambda_type='U')
+    # plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
     # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
     # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
     # plots.plot_run_time(RUN_TIME_DF, ci=95)
