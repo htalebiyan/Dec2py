@@ -66,7 +66,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     T = len(df[x].unique().tolist())
     #sns.color_palette("husl", len(auction_type)+1)
     row_plot = [judgment_type, 'judgment_type'] # valuation_type
-    col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
+    col_plot = [judgment_type, 'judgment_type'] # no_resources, judgment_type
     hue_type = [decision_type, 'decision_type'] #auction_type
     style_type =  'auction_type' #decision_type
     # Initialize plot properties
@@ -194,7 +194,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     row_plot = [valuation_type, 'valuation_type'] #valuation_type
     col_plot = [auction_type , 'auction_type']
     hue_type = [decision_type , 'decision_type']
-    x = 'no_resources' 
+    x = 'decision_type'#'no_resources' 
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
@@ -666,7 +666,7 @@ def plot_ne_analysis(df, x='t', ci=None):
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
     row_plot=['action_similarity', 'payoff_ratio', 'total_cost_ratio', 'no_ne']
-    col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
+    col_plot = [decision_type, 'decision_type'] # no_resources, judgment_type
     hue_type = [decision_type, 'decision_type'] #auction_type
     style_type = 'auction_type'  #decision_type
     # Initialize plot properties
@@ -728,7 +728,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
     row_plot = [auction_type, 'auction_type']
-    col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type
+    col_plot = [decision_type, 'decision_type'] # no_resources, judgment_type
     # hue_type = [decision_type, 'decision_type'] #auction_type
 
     # style_type = 'auction_type'  #decision_type

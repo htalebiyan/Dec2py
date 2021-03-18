@@ -47,7 +47,7 @@ def topo_param(net_type, no_nodes):
     return topo_param, no_nodes, mean_num_arcs
 
 # Input values
-no_samples = 2 # Number of sample sets of network
+no_samples = 10 # Number of sample sets of network
 no_config = 10 # Number of configurations
 noZones = 4 # noZones by noZones tile of zones
 paramError = 0.1
@@ -103,8 +103,8 @@ while cnfg<no_config:
                 int_prob_dict[(kt,k)]=int_prob*(1+np.random.normal(0, paramError))
     # Restoration Resource Cap for each network
     # based on the sum of mean number of damaged nodes and arcs
-    res_cap = np.random.randint(low=2, high=max(4,sum([x for x in mean_dam_nodes.values()]),
-                                               +sum([x for x in mean_dam_arcs.values()])))
+    max_res_cap = 0.5*(sum([x for x in mean_dam_nodes.values()])+sum([x for x in mean_dam_arcs.values()]))
+    res_cap = np.random.randint(low=2, high=max(4,max_res_cap))
     fList.close()
     nodes={}
     arcs={}
@@ -169,24 +169,25 @@ while cnfg<no_config:
                                                                                        nodes[k],
                                                                                        int_prob_dict[(kt,k)])
                     no_sel_pairs_dict[(kt,k)] = len(selPairs[(kt,k)])
+                    temp_rel_act = []
                     for sp in selPairs[(kt,k)]:
                         if sp[0] in damNodes[kt]:
-                           no_relevant_action[kt]+=1
+                            temp_rel_act.append(sp[0])
+                    no_relevant_action[kt] = len(list(set(temp_rel_act)))
         total_actions ={x:0 for x in range(1,no_layers+1)}
+        total_actions_full_resource = {}
+        ### All relevant actions which do not use all resources
+        total_actions_relevent_only ={x:0 for x in range(1,no_layers+1)}
         for k in range(1,no_layers+1):
             for v in range(res_cap//no_layers+1):
                 # 1 inside the combination represents OA 
                 total_actions[k] += math.comb(no_relevant_action[k]+1, v+1)
             # 1 respresents NA
             total_actions[k] += 1
-        total_actions_relevent_only ={x:0 for x in range(1,no_layers+1)}
         for k in range(1,no_layers+1):
-            for v in range(res_cap//no_layers+1):
-                # 1 inside the combination represents OA and 1 outside it respresents NA
+            for v in range(min(res_cap//no_layers+1, no_relevant_action[k])-1):
                 total_actions_relevent_only[k] += math.comb(no_relevant_action[k], v+1)
-        total_actions_full_resource = {x:0 for x in range(1,no_layers+1)}
-        for k in range(1,no_layers+1):
-            total_actions_full_resource[k] += total_actions[k] - total_actions_relevent_only[k]
+            total_actions_full_resource[k] = total_actions[k] - total_actions_relevent_only[k]
         size_payoff_matrix = 1
         for x in total_actions.values():
             size_payoff_matrix *= x
