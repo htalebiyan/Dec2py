@@ -123,7 +123,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                 dindputils.run_judgment_call(params, save_jc_model=True, print_cmd=False)
             elif params["ALGORITHM"] in ["NORMALGAME", "BAYESGAME"]:
                 gameutils.run_game(params, save_results=True, print_cmd=False,
-                                    save_model=True, plot2D=True) #!!!
+                                    save_model=False, plot2D=True) #!!!
 
 def run_indp_sample(layers):
     interdep_net= indp.initialize_sample_network(layers=layers)
@@ -398,7 +398,7 @@ if __name__ == "__main__":
     # Not necessary for synthetic nets
     JUDGE_TYPE = ["OPTIMISTIC"]
     #["PESSIMISTIC", "OPTIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"]
-    RES_ALLOC_TYPE = ['OPTIMAL', 'UNIFORM']
+    RES_ALLOC_TYPE = ['OPTIMAL']
     #["MDA", "MAA", "MCA", 'UNIFORM', 'OPTIMAL']
     VAL_TYPE = ['DTC']
     #['DTC', 'DTC_uniform', 'MDDN', 'STM', 'DTC-LP']
@@ -414,7 +414,7 @@ if __name__ == "__main__":
     run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
                 res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
                 misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-                        'REDUCED_ACTIONS':False})
+                        'REDUCED_ACTIONS':True})
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
     #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
     #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
@@ -447,12 +447,12 @@ if __name__ == "__main__":
     ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
 
     ''' Save Variables to file '''
-    # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
-    #             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]
+    OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
+                RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]
 
-    # ## Saving the objects ###
-    # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
-    #     pickle.dump(OBJ_LIST, f)
+    ## Saving the objects ###
+    with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
+        pickle.dump(OBJ_LIST, f)
 
     ''' Plot results '''
     plt.close('all')
@@ -461,18 +461,25 @@ if __name__ == "__main__":
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
     #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
 
-    plots.plot_performance_curves(BASE_DF,
-                                  cost_type='Total', ci=None,
-                                  deaggregate=False, plot_resilience=True)
+    # plots.plot_performance_curves(BASE_DF,
+    #                               cost_type='Total', ci=95,
+    #                               deaggregate=False, plot_resilience=True)
 
-    # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
-    #                                     ci=95, normalize=False)
+    # # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
+    # #                                     ci=95, normalize=False)
 
-    plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
-    # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
-    # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
-    # plots.plot_run_time(RUN_TIME_DF, ci=95)
-    plots.plot_ne_analysis(ANALYZE_NE_DF[(ANALYZE_NE_DF['auction_type']!='UNIFORM')], ci=95)
-    plots.plot_ne_cooperation(ANALYZE_NE_DF[(ANALYZE_NE_DF['auction_type']!='UNIFORM')], ci=95)
+    # plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
+    # # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
+    # # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
+    # # plots.plot_run_time(RUN_TIME_DF, ci=95)
+    # plots.plot_ne_analysis(ANALYZE_NE_DF[(ANALYZE_NE_DF['auction_type']!='UNIFORM')], ci=95)
+    # plots.plot_ne_cooperation(ANALYZE_NE_DF[(ANALYZE_NE_DF['auction_type']!='UNIFORM')], ci=95)
 
     # # [(RUN_TIME_DF['auction_type']!='MDA')&(RUN_TIME_DF['auction_type']!='MAA')]
+    # [((BASE_DF['decision_type']=='bgCCCCUUUU')|\
+    #                                       (BASE_DF['decision_type']=='bgCCNCUUUU')|\
+    #                                       (BASE_DF['decision_type']=='bgNNNNUUUU')|\
+    #                                       (BASE_DF['decision_type']=='ng')|\
+    #                                       (BASE_DF['decision_type']=='indp'))&\
+    #                                       (BASE_DF['auction_type']=='OPTIMAL')&\
+    #                                       (BASE_DF['no_resources']<7)]
