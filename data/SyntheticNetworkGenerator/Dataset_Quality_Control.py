@@ -22,9 +22,10 @@ def load_array_format_extended(BASE_DIR="C:\\Users\\ht20\Documents\\Files\Genera
                                topo='RN',config=0,sample=0,cost_scale=1.0):
     file_dir = BASE_DIR+topo+'Config_'+str(config)+'/Sample_'+str(sample)+'/'
     with open(BASE_DIR+'List_of_Configurations.txt') as f:
-            data = pd.read_csv(f, delimiter='\t')    
+        data = pd.read_csv(f, delimiter='\t')
+        data = data.rename(columns=lambda x: x.strip())
     config_param = data.iloc[config]
-    noLayers = int(config_param.loc[' No. Layers'])
+    noLayers = int(config_param.loc['No. Layers'])
     G=nx.DiGraph()
     
     files = [f for f in os.listdir(file_dir) if os.path.isfile(os.path.join(file_dir, f))]
@@ -113,6 +114,7 @@ def plot_network(BASE_DIR="C:\\Users\\ht20\Documents\\Files\Generated_Network_Da
     #                         font_color='w',font_family='CMU Serif',font_weight='bold')
     
     clr=['r','b','g','m']
+
     for k in range(1, noLayers+1):
         node_list = [x for x in G.nodes() if x[1]==k]
         nx.draw_networkx_nodes(G,pos,nodelist=node_list,node_color=clr[k-1],node_size=70,alpha=0.9)
@@ -123,6 +125,14 @@ def plot_network(BASE_DIR="C:\\Users\\ht20\Documents\\Files\Generated_Network_Da
         nx.draw_networkx_edges(G,pos,edgelist=interarc_dict,width=1,alpha=0.25,edge_color='k')
     nx.draw_networkx_nodes(G,pos,nodelist=dam_nodes,node_color='w',node_shape="x",node_size=35)
     nx.draw_networkx_edges(G,pos,edgelist=dam_arcs,width=1,alpha=1,edge_color='k',style='dashed',arrows=False)
+
+    # for k in range(1, noLayers):
+    #     node_list = [x for x in G.nodes() if x[1]==k]
+    #     nx.draw_networkx_nodes(G,pos,nodelist=node_list,node_color=clr[k-1],node_size=70,alpha=0.9)
+    # for k in range(1, noLayers):
+    #     arc_dict = [x for x in G.edges() if x[0][1]==k and x[1][1]==k]
+    #     nx.draw_networkx_edges(G,pos,edgelist=arc_dict,width=1,alpha=0.25,edge_color=clr[k-1],arrows=False)
+
     plt.tight_layout()   
     plt.axis('off')
     plt.savefig(BASE_DIR+'/Evaluations/net_plot_'+str(config)+'_'+str(sample)+'.png',dpi=600)
@@ -292,14 +302,14 @@ def plot_Evaluation_Results(noConfig, dmRatioSum, aveConn, allPairsConn,folder):
     plt.clf()
 
 # # Input values
-# noSamples = 2
-# rootfolder = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/'
-# #"C:\\Users\ht20\Documents\\Files\\Generated_Network_Dataset_v3.1\\" # Root folder where the database is
-# rootfolder += 'GeneralNetworks/'
-#  # choose relevant dataset folder 
-# #options: 'RandomNetworks\\'|'ScaleFreeNetworks\\'|'GridNetworks\\'
-# NetworkTypeInitial = 'GEN' 
-# #Options: RN|SFN|GN
+noSamples = 2
+rootfolder = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
+#"C:\\Users\ht20\Documents\\Files\\Generated_Network_Dataset_v3.1\\" # Root folder where the database is
+rootfolder += 'GeneralNetworks/'
+  # choose relevant dataset folder 
+#options: 'RandomNetworks\\'|'ScaleFreeNetworks\\'|'GridNetworks\\'
+NetworkTypeInitial = 'GEN' 
+#Options: RN|SFN|GN
 
 # # Read configuration data
 # fileNameList = rootfolder + 'List_of_Configurations.txt' 
@@ -392,4 +402,4 @@ def plot_Evaluation_Results(noConfig, dmRatioSum, aveConn, allPairsConn,folder):
 
 
 ''' Plot one network '''
-plot_network(BASE_DIR=rootfolder,topo=NetworkTypeInitial,config=1,sample=0)
+plot_network(BASE_DIR=rootfolder,topo=NetworkTypeInitial,config=3,sample=0)

@@ -12,6 +12,7 @@ import math
 import os
 import sys
 import shutil
+import networkx as nx
 
 def topo_param(net_type, no_nodes):
     if net_type == 'grid':
@@ -32,7 +33,7 @@ def topo_param(net_type, no_nodes):
         # and np.log(noNodes)/noNodes in the upper bound corresponds to the
         # lower bound of the connected regime
         prob_LB = 1.0/no_nodes
-        prob_UB = (np.log(no_nodes)/no_nodes+1)*0.5 #!!! change it in the text
+        prob_UB = (np.log(no_nodes)/no_nodes+1)*0.5
         arc_prob = np.random.uniform(low=prob_LB, high=prob_UB)
         topo_param = arc_prob
         mean_num_arcs = 0.5*no_nodes*(no_nodes-1)*arc_prob
@@ -44,14 +45,23 @@ def topo_param(net_type, no_nodes):
         exp = np.random.uniform(low=expLB, high=expUB)
         topo_param = exp
         mean_num_arcs = no_nodes*(no_nodes**(1/(exp-1)))*0.5
+    if net_type == 'tree':
+        # The ratio of diameter to number of arcs=n-1
+        temp = []
+        for i in range(100):
+            G = nx.generators.trees.random_tree(no_nodes)
+            temp.append(nx.algorithms.distance_measures.diameter(G))
+        diam = random.choice(temp)
+        topo_param = diam/(no_nodes-1)
+        mean_num_arcs = no_nodes-1
     return topo_param, no_nodes, mean_num_arcs
 
 # Input values
-no_samples = 10 # Number of sample sets of network
+no_samples = 5 # Number of sample sets of network
 no_config = 10 # Number of configurations
 noZones = 4 # noZones by noZones tile of zones
 paramError = 0.1
-rootfolder = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/' # Root folder where the database is
+rootfolder = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/' # Root folder where the database is
 #'C:\\Users\\ht20\Documents\\Files\Generated_Network_Dataset_v3.1\\'
 rootfolder += 'GeneralNetworks/' #'GridNetworks/' # choose relevant dataset folder
 prefix = 'GEN'
@@ -91,7 +101,7 @@ while cnfg<no_config:
 
     for k in range(1,no_layers+1):
         # Choose a network type randomly
-        net_type[k] = random.choice(['grid','scalefree','random'])
+        net_type[k] = random.choice(['tree']) #['grid','scalefree','random', 'tree']
         no_nodes_dict[k] = int(round(no_nodes*(1+np.random.normal(0, paramError))))
         topo_param_dict[k], no_nodes_dict[k], mean_dam_arcs[k] = topo_param(net_type=net_type[k],
                                                                             no_nodes=no_nodes_dict[k])
@@ -135,6 +145,9 @@ while cnfg<no_config:
             if net_type[k] == 'scalefree':
                 nodes[k], arcs[k], pos[k] = Network_Data_Generator.Scale_Free_network(topo_param_dict[k],
                                                                                       no_nodes_dict[k] ,k)
+            if net_type[k] == 'tree':
+                nodes[k], arcs[k], pos[k] = Network_Data_Generator.Tree_network(topo_param_dict[k],
+                                                                                no_nodes_dict[k] ,k)
             '''All bounds are are chosen based on INDP data for Shelby county'''
             # Supply/Demand values for each node in the networks
             b[k] = np.random.randint(low=0, high=700, size=no_nodes_dict[k])

@@ -49,6 +49,8 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     '''
     #: Make lists
     no_resources = df.no_resources.unique().tolist()
+    rationality = df.rationality.unique().tolist()
+    topology = df.topology.unique().tolist()
     if not decision_type:
         decision_type = df.decision_type.unique().tolist()
     if not judgment_type:
@@ -66,9 +68,9 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     T = len(df[x].unique().tolist())
 
     row_plot = [judgment_type, 'judgment_type'] # valuation_type
-    col_plot = [valuation_type, 'valuation_type'] # no_resources, judgment_type
-    hue_type = [decision_type, 'decision_type'] #auction_type
-    style_type = 'auction_type' #decision_type
+    col_plot = [topology, 'topology'] # no_resources, judgment_type
+    hue_type = [rationality, 'rationality'] #auction_type
+    style_type = 'decision_type' #decision_type
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
@@ -177,6 +179,8 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     '''
     #: Make lists
     no_resources = lambda_df.no_resources.unique().tolist()
+    rationality = lambda_df.rationality.unique().tolist()
+    topology = lambda_df.topology.unique().tolist()
     decision_type = lambda_df.decision_type.unique().tolist()
     if 'indp_sample_12Node' in decision_type:
         decision_type.remove('indp_sample_12Node')
@@ -192,8 +196,8 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     # if 'nan' in valuation_type:
     #     valuation_type.remove('nan')
     row_plot = [valuation_type, 'valuation_type'] #valuation_type
-    col_plot = [auction_type , 'auction_type']
-    hue_type = [decision_type , 'decision_type']
+    col_plot = [topology , 'topology'] #auction_type
+    hue_type = [rationality , 'rationality']
     x = 'decision_type'#'no_resources' 
     # Initialize plot properties
     dpi = 300
@@ -654,6 +658,8 @@ def plot_ne_analysis(df, x='t', ci=None):
     '''
     #: Make lists
     no_resources = df.no_resources.unique().tolist()
+    rationality = df.rationality.unique().tolist()
+    topology = df.topology.unique().tolist()
     decision_type = df.decision_type.unique().tolist()
     judgment_type = df.judgment_type.unique().tolist()
     if 'nan' in judgment_type:
@@ -666,8 +672,8 @@ def plot_ne_analysis(df, x='t', ci=None):
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
     row_plot=['action_similarity', 'payoff_ratio', 'total_cost_ratio', 'no_ne']
-    col_plot = [decision_type, 'decision_type'] # no_resources, judgment_type
-    hue_type = [decision_type, 'decision_type'] #auction_type
+    col_plot = [topology, 'topology'] # no_resources, judgment_type
+    hue_type = [rationality, 'rationality'] #auction_type
     style_type = 'auction_type'  #decision_type
     # Initialize plot properties
     dpi = 300
@@ -715,6 +721,8 @@ def plot_ne_cooperation(df, x='t', ci=None):
 
     '''
     #: Make lists
+    rationality = df.rationality.unique().tolist()
+    topology = df.topology.unique().tolist()
     no_resources = df.no_resources.unique().tolist()
     decision_type = df.decision_type.unique().tolist()
     judgment_type = df.judgment_type.unique().tolist()
@@ -727,18 +735,18 @@ def plot_ne_cooperation(df, x='t', ci=None):
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
-    row_plot = [auction_type, 'auction_type']
-    col_plot = [decision_type, 'decision_type'] # no_resources, judgment_type
+    row_plot = [topology, 'topology']
+    col_plot = [rationality, 'rationality'] # no_resources, judgment_type
     # hue_type = [decision_type, 'decision_type'] #auction_type
 
     # style_type = 'auction_type'  #decision_type
     # value_vars = ['cooperative', 'partially_cooperative', 'OA', 'NA', 'NA_possible',
     #               'opt_cooperative', 'opt_partially_cooperative', 'opt_OA',
     #               'opt_NA', 'opt_NA_possible']
-    # value_vars = ['cooperative', 'partially_cooperative',
-    #               'opt_cooperative', 'opt_partially_cooperative']
-    value_vars = ['OA', 'NA', 'NA_possible', 'opt_OA',
-                  'opt_NA', 'opt_NA_possible']
+    value_vars = ['cooperative', 'partially_cooperative',
+                  'opt_cooperative', 'opt_partially_cooperative']
+    # value_vars = ['OA', 'NA', 'NA_possible', 'opt_OA',
+    #               'opt_NA', 'opt_NA_possible']
     id_vars = [x for x in df.columns if x not in value_vars]
     # Initialize plot properties
     dpi = 300
@@ -782,6 +790,75 @@ def plot_ne_cooperation(df, x='t', ci=None):
         ax.set_title(r'$R_c=$%s'%(str(col_plot[0][idx])))
     plt.savefig('ne_cooperation.png', dpi=dpi, bbox_inches='tight')
 
+def plot_payoff_hist(df, compute_payoff_numbers=True, ci=None):
+    '''
+
+    Parameters
+    ----------
+    df : TYPE
+        DESCRIPTION.
+    ci : TYPE, optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    None.
+
+    '''
+    #: Make lists
+    rationality = df.rationality.unique().tolist()
+    topology = df.topology.unique().tolist()
+    no_resources = df.no_resources.unique().tolist()
+    decision_type = df.decision_type.unique().tolist()
+    judgment_type = df.judgment_type.unique().tolist()
+    if 'nan' in judgment_type:
+        judgment_type.remove('nan')
+    auction_type = df.auction_type.unique().tolist()
+    if 'nan' in auction_type:
+        auction_type.remove('nan')
+    valuation_type = df.valuation_type.unique().tolist()
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
+
+    if compute_payoff_numbers:
+        for index, row in df.iterrows():
+            payoff_data = row['no_payoffs']
+            payoff_matrix_size = 1
+            for key, val in payoff_data.items():
+                df.loc[index,'payoffs '+str(key)] = val
+                payoff_matrix_size *= val
+            df.loc[index,'payoff matrix'] = payoff_matrix_size
+
+    col_plot = ['payoff matrix']+[x for x in df.columns if x[:7]=='payoffs']
+    row_plot = [topology, 'topology']
+    hue_type = 'rationality'
+    # Initialize plot properties
+    dpi = 300
+    fig, axs = plt.subplots(len(row_plot[0]), len(col_plot), sharey=True,
+                            figsize=(4000/dpi, 1500/dpi))
+    # colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
+    # pal = sns.color_palette(colors)
+    pal = sns.color_palette()
+    for idx_c, val_c in enumerate(col_plot):
+        for idx_r, val_r in enumerate(row_plot[0]):
+            ax, _, _ = find_ax(axs, row_plot[0], col_plot, idx_r, idx_c)
+            payoff_data = df[(df[row_plot[1]] == val_r)]
+            with pal:
+                sns.boxplot(x=val_c, y='t', hue=hue_type, showfliers=False,
+                               ax=ax, data=payoff_data, orient='h', linewidth=1)
+            if idx_c!=0:
+                ax.set(ylabel='')
+            ax.get_legend().set_visible(False)
+    # Rebuild legend
+    handles, labels = ax.get_legend_handles_labels()
+    labels = correct_legend_labels(labels)
+    fig.legend(handles, labels, loc='center right', ncol=1, framealpha=0.35,
+                bbox_to_anchor=(.83, 0.6))
+    # # Add overll x- and y-axis titles
+    # _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot)
+    # for idx, ax in enumerate(axs_c):
+    #     ax.set_title(r'$R_c=$%s'%(str(col_plot[idx])))
+    plt.savefig('payoff_hists.png', dpi=dpi, bbox_inches='tight')
 def correct_legend_labels(labels):
     '''
     Parameters

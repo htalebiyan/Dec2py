@@ -79,6 +79,27 @@ def Scale_Free_network(exp,n,z=0):
     return nodes, arcs, posConv
 
 '''
+This function returns list of nodes, arcs, and position of nodes 
+for a randoms network with n nodes connected with probability p.
+z denotes the third component of position vector of the nodes which
+is necessary for plotting the network.
+'''
+def Tree_network(d,n,z=0):
+    diam = round(d*(n-1))
+    diameter = 0
+    while diam!=diameter:
+        G = nx.generators.trees.random_tree(n)
+        diameter = nx.algorithms.distance_measures.diameter(G)
+    nodes = np.asanyarray(G.nodes())
+    arcs = np.asanyarray(G.edges())
+    pos = nx.spring_layout(G)
+    posConv = {}
+    for i in range(n):
+        posConv[i] = (pos[i][0], pos[i][1], z)
+#    Plot_Giant_Component(G,n,p)
+    return nodes, arcs, posConv
+
+'''
 This function returns list of nodes, arcs, position of nodes, and
 exponent of the powerlaw for a scale free network with n nodes connected 
 with parameter gamma whose (0,0.5) range corresponds to ranf (2,3) range 
