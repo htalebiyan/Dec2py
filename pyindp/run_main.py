@@ -337,7 +337,7 @@ if __name__ == "__main__":
     # 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios'
 
     #: The address to where output are stored.
-    OUTPUT_DIR = '../results/'
+    OUTPUT_DIR = '/home/hesam/Desktop/Files/Game_Shelby_County/results_NE/'
     # '/home/hesam/Desktop/Files/Game_Shelby_County/results_NE/'
     # 'C:/Users/ht20/Documents/Files/Game_Shelby_County/results_0.9_perc/'
     # 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
@@ -356,15 +356,15 @@ if __name__ == "__main__":
     #:     sce range: FAIL_SCE_PARAM['MAGS']
     #: For Synthetic nets: sample range: FAIL_SCE_PARAM['SAMPLE_RANGE'],
     #:     configurations: FAIL_SCE_PARAM['MAGS']
-    # FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(50), 'MAGS':range(96),
-    #                   'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
+    FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(50), 'MAGS':range(96),
+                      'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"ANDRES", 'SAMPLE_RANGE':range(1, 1001), 'MAGS':[6, 7, 8, 9],
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"random", 'SAMPLE_RANGE':range(10, 11), 'MAGS':range(0, 1),
     #                   'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 10), 'MAGS':range(0, 10),
-                      'FILTER_SCE':None, 'TOPO':'General', 'BASE_DIR':BASE_DIR,
-                      'DAMAGE_DIR':DAMAGE_DIR}
+    # FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 10), 'MAGS':range(0, 10),
+    #                   'FILTER_SCE':None, 'TOPO':'General', 'BASE_DIR':BASE_DIR,
+    #                   'DAMAGE_DIR':DAMAGE_DIR}
 
     # Dynamic parameters dict
     DYNAMIC_PARAMS = None
@@ -461,8 +461,8 @@ if __name__ == "__main__":
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
     #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
 
-    # plots.plot_performance_curves(BASE_DF,
-    #                               cost_type='Total', ci=95,
+    # plots.plot_performance_curves(BASE_DF[(BASE_DF['no_resources']==3)],
+    #                               cost_type='Total', ci=None,
     #                               deaggregate=False, plot_resilience=True)
 
     # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
@@ -472,9 +472,9 @@ if __name__ == "__main__":
     # # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
     # # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
     # # plots.plot_run_time(RUN_TIME_DF, ci=95)
-    # plots.plot_ne_analysis(ANALYZE_NE_DF[(ANALYZE_NE_DF['auction_type']!='UNIFORM')], ci=95)
-    # plots.plot_ne_cooperation(ANALYZE_NE_DF[(ANALYZE_NE_DF['auction_type']!='UNIFORM')], ci=95)
-    plots.plot_payoff_hist(ANALYZE_NE_DF, compute_payoff_numbers=False, ci=None)
+    # plots.plot_ne_analysis(ANALYZE_NE_DF, ci=95) #[(ANALYZE_NE_DF['auction_type']!='UNIFORM')]
+    plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=95)
+    # plots.plot_payoff_hist(ANALYZE_NE_DF, compute_payoff_numbers=False, ci=None)
 
     # # [(RUN_TIME_DF['auction_type']!='MDA')&(RUN_TIME_DF['auction_type']!='MAA')]
     # [((BASE_DF['decision_type']=='bgCCCCUUUU')|\
