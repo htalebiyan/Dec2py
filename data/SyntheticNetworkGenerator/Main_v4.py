@@ -54,14 +54,17 @@ def topo_param(net_type, no_nodes):
         diam = random.choice(temp)
         topo_param = diam/(no_nodes-1)
         mean_num_arcs = no_nodes-1
+    if net_type == 'mpg':
+        topo_param = 0
+        mean_num_arcs = 3*no_nodes-6
     return topo_param, no_nodes, mean_num_arcs
 
 # Input values
-no_samples = 5 # Number of sample sets of network
-no_config = 10 # Number of configurations
+no_samples = 1 # Number of sample sets of network
+no_config = 100 # Number of configurations
 noZones = 4 # noZones by noZones tile of zones
 paramError = 0.1
-rootfolder = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/' # Root folder where the database is
+rootfolder = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/' # Root folder where the database is
 #'C:\\Users\\ht20\Documents\\Files\Generated_Network_Dataset_v3.1\\'
 rootfolder += 'GeneralNetworks/' #'GridNetworks/' # choose relevant dataset folder
 prefix = 'GEN'
@@ -101,7 +104,7 @@ while cnfg<no_config:
 
     for k in range(1,no_layers+1):
         # Choose a network type randomly
-        net_type[k] = random.choice(['tree']) #['grid','scalefree','random', 'tree']
+        net_type[k] = random.choice(['grid','scalefree','random', 'tree', 'mpg']) #['grid','scalefree','random', 'tree', 'mpg']
         no_nodes_dict[k] = int(round(no_nodes*(1+np.random.normal(0, paramError))))
         topo_param_dict[k], no_nodes_dict[k], mean_dam_arcs[k] = topo_param(net_type=net_type[k],
                                                                             no_nodes=no_nodes_dict[k])
@@ -148,6 +151,8 @@ while cnfg<no_config:
             if net_type[k] == 'tree':
                 nodes[k], arcs[k], pos[k] = Network_Data_Generator.Tree_network(topo_param_dict[k],
                                                                                 no_nodes_dict[k] ,k)
+            if net_type[k] == 'mpg':
+                nodes[k], arcs[k], pos[k] = Network_Data_Generator.MPG_network(no_nodes_dict[k] ,k)
             '''All bounds are are chosen based on INDP data for Shelby county'''
             # Supply/Demand values for each node in the networks
             b[k] = np.random.randint(low=0, high=700, size=no_nodes_dict[k])
@@ -282,7 +287,8 @@ while cnfg<no_config:
         for k in range(1,no_layers+1):
             text += 'N%d = %d,' %(k,no_nodes_dict[k])
         f.write(text+'\n')
-        text = 'Topology parameter (Grid->X size, ScaleFree->Powerlaw exponent, Random->Arc existance prob): '
+        text = 'Topology parameter (Grid:X size, ScaleFree:Powerlaw exponent,'+\
+            ' Random:Arc existance prob, Tree:diameter, MPG:0): '
         for k in range(1,no_layers+1):
             text += 'N%d = %1.2f,' %(k,topo_param_dict[k])
         f.write(text+'\n')

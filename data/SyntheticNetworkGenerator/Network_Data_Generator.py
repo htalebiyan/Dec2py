@@ -9,6 +9,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import collections
 import math
+import random
 from itertools import combinations, product
 
 '''
@@ -80,7 +81,7 @@ def Scale_Free_network(exp,n,z=0):
 
 '''
 This function returns list of nodes, arcs, and position of nodes 
-for a randoms network with n nodes connected with probability p.
+for a tree with n nodes and diameter d.
 z denotes the third component of position vector of the nodes which
 is necessary for plotting the network.
 '''
@@ -99,6 +100,21 @@ def Tree_network(d,n,z=0):
 #    Plot_Giant_Component(G,n,p)
     return nodes, arcs, posConv
 
+'''
+This function returns list of nodes, arcs, and position of nodes 
+for a maximal planar graph with n nodes.
+z denotes the third component of position vector of the nodes which
+is necessary for plotting the network.
+'''
+def MPG_network(n,z=0):
+    G = sample_MPG(n)
+    nodes = np.asanyarray(G.nodes())
+    arcs = np.asanyarray(G.edges())
+    pos = nx.planar_layout(G)
+    posConv = {}
+    for i in range(n):
+        posConv[i] = (pos[i][0], pos[i][1], z)
+    return nodes, arcs, posConv
 '''
 This function returns list of nodes, arcs, position of nodes, and
 exponent of the powerlaw for a scale free network with n nodes connected 
@@ -240,4 +256,26 @@ def random_damage_Data(noNode,noArc,prob):
     damNode = np.random.choice(noNode, int(prob*noNode), replace=False)
     damArc = np.random.choice(noArc, int(prob*noArc), replace=False)
     return damNode,damArc
+
+'''
+This function generate one maximal planar graph with n nodes using a greedy algorithm.
+'''
+def sample_MPG(n):
+    G = nx.erdos_renyi_graph(n, 0.5)
+    is_planar,_ = nx.algorithms.planarity.check_planarity(G, counterexample=False)
+    while not is_planar:
+        list_edges = list(G.edges())
+        rnd_edge = random.choice(list_edges)
+        G.remove_edge(rnd_edge[0],rnd_edge[1])
+        is_planar,_ = nx.algorithms.planarity.check_planarity(G, counterexample=False)      
+    for n in G.nodes():
+        for m in G.nodes():
+            if n!=m and (n,m) not in G.edges() and (m,n) not in G.edges():
+                G.add_edge(n,m)
+                is_planar,_ = nx.algorithms.planarity.check_planarity(G, counterexample=False)
+                if not is_planar:
+                    G.remove_edge(n,m)
+    if len(G.nodes())>2:
+        assert len(G.edges())==3*len(G.nodes())-6, 'The graph is not maximal planar'
+    return G
     
