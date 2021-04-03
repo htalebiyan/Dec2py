@@ -49,8 +49,8 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     '''
     #: Make lists
     no_resources = df.no_resources.unique().tolist()
-    # rationality = df.rationality.unique().tolist()
-    # topology = df.topology.unique().tolist()
+    rationality = df.rationality.unique().tolist()
+    topology = df.topology.unique().tolist()
     if not decision_type:
         decision_type = df.decision_type.unique().tolist()
     if not judgment_type:
@@ -68,8 +68,8 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     T = len(df[x].unique().tolist())
 
     row_plot = [judgment_type, 'judgment_type'] # valuation_type
-    col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type, topology
-    hue_type = [auction_type, 'auction_type'] #auction_type, rationality
+    col_plot = [topology, 'topology'] # no_resources, judgment_type, topology
+    hue_type = [rationality, 'rationality'] #auction_type, rationality
     style_type = 'decision_type' #decision_type
     # Initialize plot properties
     dpi = 300
@@ -197,8 +197,8 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     # if 'nan' in valuation_type:
     #     valuation_type.remove('nan')
     row_plot = [valuation_type, 'valuation_type'] #valuation_type
-    col_plot = [topology , 'topology'] #auction_type
-    hue_type = [rationality , 'rationality']
+    col_plot = [topology , 'topology'] #auction_type, topology
+    hue_type = [rationality , 'rationality'] #rationality,decision_type
     x = 'decision_type'#'no_resources' 
     # Initialize plot properties
     dpi = 300
@@ -659,8 +659,8 @@ def plot_ne_analysis(df, x='t', ci=None):
     '''
     #: Make lists
     no_resources = df.no_resources.unique().tolist()
-    # rationality = df.rationality.unique().tolist()
-    # topology = df.topology.unique().tolist()
+    rationality = df.rationality.unique().tolist()
+    topology = df.topology.unique().tolist()
     decision_type = df.decision_type.unique().tolist()
     judgment_type = df.judgment_type.unique().tolist()
     if 'nan' in judgment_type:
@@ -673,8 +673,8 @@ def plot_ne_analysis(df, x='t', ci=None):
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
     row_plot=['action_similarity', 'payoff_ratio', 'no_ne'] #, 'total_cost_ratio'
-    col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type, topology
-    hue_type = [auction_type, 'auction_type'] #auction_type, rationality
+    col_plot = [topology, 'topology'] # no_resources, judgment_type, topology
+    hue_type = [rationality, 'rationality'] #auction_type, rationality
     style_type = 'auction_type'  #decision_type
     # Initialize plot properties
     dpi = 300
@@ -722,8 +722,8 @@ def plot_ne_cooperation(df, x='t', ci=None):
 
     '''
     #: Make lists
-    # rationality = df.rationality.unique().tolist()
-    # topology = df.topology.unique().tolist()
+    rationality = df.rationality.unique().tolist()
+    topology = df.topology.unique().tolist()
     no_resources = df.no_resources.unique().tolist()
     decision_type = df.decision_type.unique().tolist()
     judgment_type = df.judgment_type.unique().tolist()
@@ -736,58 +736,60 @@ def plot_ne_cooperation(df, x='t', ci=None):
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
-    row_plot = [auction_type, 'auction_type'] #topology, auction_type
-    col_plot = [no_resources, 'no_resources'] # no_resources, judgment_type,rationality
+    row_plot = [topology, 'topology'] #topology, auction_type
+    col_plot = [rationality, 'rationality'] # no_resources, judgment_type,rationality
 
     # value_vars = ['cooperative', 'partially_cooperative', 'OA', 'NA', 'NA_possible',
     #               'opt_cooperative', 'opt_partially_cooperative', 'opt_OA',
     #               'opt_NA', 'opt_NA_possible']
-    # value_vars = ['cooperative', 'partially_cooperative',
-    #               'opt_cooperative', 'opt_partially_cooperative']
-    value_vars = ['OA', 'NA', 'NA_possible', 'opt_OA',
+    value_vars_c = ['cooperative', 'partially_cooperative',
+                  'opt_cooperative', 'opt_partially_cooperative']
+    value_vars_nc = ['OA', 'NA', 'NA_possible', 'opt_OA',
                   'opt_NA', 'opt_NA_possible']
-    id_vars = [x for x in df.columns if x not in value_vars]
-    # Initialize plot properties
-    dpi = 300
-    fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey='row',
-                            figsize=(4000/dpi, 3000/dpi))
-    # colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
-    # pal = sns.color_palette(colors)
-    pal = sns.color_palette()
-    for idx_c, val_c in enumerate(col_plot[0]):
-        for idx_r, val_r in enumerate(row_plot[0]):
-            ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
-            ne_data = df[(df.decision_type.isin(decision_type))&
-                         (df[col_plot[1]] == val_c)&(df[row_plot[1]] == val_r)]
-            ne_data = pd.melt(ne_data, id_vars=id_vars, value_vars=value_vars,
-                              var_name='Cooperation Status')
-            ne_data['Method'] = np.where((ne_data['Cooperation Status'] == 'cooperative')|\
-                                        (ne_data['Cooperation Status'] == 'partially_cooperative')|\
-                                        (ne_data['Cooperation Status'] == 'OA')|\
-                                        (ne_data['Cooperation Status'] == 'NA')|\
-                                        (ne_data['Cooperation Status'] == 'NA_possible'),
-                                        ne_data['decision_type'], 'Optimal')
-            ne_data = ne_data.replace(['opt_cooperative', 'opt_partially_cooperative',
-                                       'opt_OA', 'opt_NA', 'opt_NA_possible'],
-                                      ['cooperative', 'partially_cooperative', 'OA',
-                                       'NA', 'NA_possible'])
-            with pal:
-                sns.lineplot(x=x, y='value', hue='Cooperation Status', style='Method',
-                             markers=True, ci=ci, ax=ax, data=ne_data, **{'markersize':5})
-            ax.set(xlabel=r'time step $t$', ylabel= '\% of Players, '+row_plot[0][idx_r])
-            ax.get_legend().set_visible(False)
-            ax.xaxis.set_ticks(np.arange(1, T+1, 1.0))#ax.get_xlim()
-    # Rebuild legend
-    handles, labels = ax.get_legend_handles_labels()
-    handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
-    labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='center right', ncol=1, framealpha=0.35,
-               bbox_to_anchor=(.83, 0.55))
-    # Add overll x- and y-axis titles
-    _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
-    for idx, ax in enumerate(axs_c):
-        ax.set_title(r'$R_c=$%s'%(str(col_plot[0][idx])))
-    plt.savefig('ne_cooperation.png', dpi=dpi, bbox_inches='tight')
+    suffix = ['c','nc']
+    for idxvv, value_vars in enumerate([value_vars_c, value_vars_nc]):
+        id_vars = [x for x in df.columns if x not in value_vars]
+        # Initialize plot properties
+        dpi = 300
+        fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey='row',
+                                figsize=(4000/dpi, 3000/dpi))
+        # colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
+        # pal = sns.color_palette(colors)
+        pal = sns.color_palette()
+        for idx_c, val_c in enumerate(col_plot[0]):
+            for idx_r, val_r in enumerate(row_plot[0]):
+                ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
+                ne_data = df[(df.decision_type.isin(decision_type))&
+                              (df[col_plot[1]] == val_c)&(df[row_plot[1]] == val_r)]
+                ne_data = pd.melt(ne_data, id_vars=id_vars, value_vars=value_vars,
+                                  var_name='Cooperation Status')
+                ne_data['Method'] = np.where((ne_data['Cooperation Status'] == 'cooperative')|\
+                                            (ne_data['Cooperation Status'] == 'partially_cooperative')|\
+                                            (ne_data['Cooperation Status'] == 'OA')|\
+                                            (ne_data['Cooperation Status'] == 'NA')|\
+                                            (ne_data['Cooperation Status'] == 'NA_possible'),
+                                            ne_data['decision_type'], 'Optimal')
+                ne_data = ne_data.replace(['opt_cooperative', 'opt_partially_cooperative',
+                                            'opt_OA', 'opt_NA', 'opt_NA_possible'],
+                                          ['cooperative', 'partially_cooperative', 'OA',
+                                            'NA', 'NA_possible'])
+                with pal:
+                    sns.lineplot(x=x, y='value', hue='Cooperation Status', style='Method',
+                                  markers=True, ci=ci, ax=ax, data=ne_data, **{'markersize':5})
+                ax.set(xlabel=r'time step $t$', ylabel= '\% of Players, '+row_plot[0][idx_r])
+                ax.get_legend().set_visible(False)
+                ax.xaxis.set_ticks(np.arange(1, T+1, 1.0))#ax.get_xlim()
+        # Rebuild legend
+        handles, labels = ax.get_legend_handles_labels()
+        handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
+        labels = correct_legend_labels(labels)
+        fig.legend(handles, labels, loc='center right', ncol=1, framealpha=0.35,
+                    bbox_to_anchor=(.83, 0.55))
+        # Add overll x- and y-axis titles
+        _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
+        for idx, ax in enumerate(axs_c):
+            ax.set_title(r'$R_c=$%s'%(str(col_plot[0][idx])))
+        plt.savefig('ne_cooperation_'+str(suffix[idxvv])+'.png', dpi=dpi, bbox_inches='tight')
 
 def plot_payoff_hist(df, compute_payoff_numbers=True, ci=None):
     '''
