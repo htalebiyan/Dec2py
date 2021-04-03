@@ -584,12 +584,14 @@ def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../
             if x[4] == 'jc':
                 decision_time = obj.results_judge.results[t]['run_time']+\
                     obj.results_real.results[t]['run_time']
-            elif x[4] == 'ng':
+            elif x[4][:2] in ['ng','bg']:
                 if t==0:
                     decision_time = obj.results.results[t]['run_time']
                 else:
-                    payoff_time = max(obj.objs[t].payoff_time.items(),
-                                      key=operator.itemgetter(1))[1]
+                    payoff_time = 0
+                    if obj.objs[t].payoff_time.items():
+                        payoff_time = max(obj.objs[t].payoff_time.items(),
+                                          key=operator.itemgetter(1))[1]
                     decision_time = obj.objs[t].solving_time + payoff_time
             else:
                 sys.exit('Error: Wrong method name in computing decision time')
@@ -692,10 +694,11 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
             sys.exit('Error: Provide the address of the synthetic databse')
         with open(synthetic_dir+'List_of_Configurations.txt') as f:
             config_data = pd.read_csv(f, delimiter='\t')
+            config_data = config_data.rename(columns=lambda x: x.strip())
         for m, s in itertools.product(mags, sample):
             config_param = config_data.iloc[m]
-            L = int(config_param.loc[' No. Layers'])
-            no_resources = int(config_param.loc[' Resource Cap'])
+            L = int(config_param.loc['No. Layers'])
+            no_resources = int(config_param.loc['Resource Cap'])
             for rc in [no_resources]:
                 for dt, jt, at, vt in itertools.product(decision_type, judgment_type,
                                                         res_alloc_type, valuation_type):

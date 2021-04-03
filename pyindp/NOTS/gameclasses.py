@@ -74,14 +74,14 @@ class NormalGame:
     optimal_solution : dict
         Optimal Solution from INDP. It is populated by :meth:`find_optimal_solution`.
     '''
-    def __init__(self, L, net, v_r):
+    def __init__(self, L, net, v_r, act_rduc=False):
         self.players = L
         self.net = net
         self.v_r = v_r
         self.dependee_nodes = {}
+        self.actions_reduced = act_rduc
         self.actions = self.find_actions()
         self.first_actions = [self.actions[l][0][0] for l in self.players]
-        self.actions_reduced = False
         self.payoffs = {}
         self.payoff_time = {}
         self.solving_time = 0.0
@@ -160,6 +160,17 @@ class NormalGame:
             "No Action (NA)" is added to possible actions
             '''
             actions[l].extend([('NA',l)])
+            
+            if self.actions_reduced:
+                if other_action:
+                    min_len = min(self.v_r[l], len(rel_actions)-1)
+                else:
+                    min_len = min(self.v_r[l], len(rel_actions))
+                remove_list = []
+                for a in actions[l]:
+                    if len(a)<min_len and ('OA',l) not in a and a!=('NA',l):
+                        remove_list.append(a)
+                actions[l] = [a for a in actions[l] if a not in remove_list]
         return actions
 
     def compute_payoffs(self, save_model=None, payoff_dir=None):
@@ -429,7 +440,7 @@ class NormalGame:
         for key, sol in self.solution.sol.items():
             exclude_payoffs = sum([-sol['P'+str(x)+' payoff'] for x in excluded_palyers])
             total_cost_dict[key] = sol['total cost'] - exclude_payoffs
-        min_val = min(total_cost_dict.items())[1]
+        min_val = min(total_cost_dict.values())
         min_keys = [k for k, v in total_cost_dict.items() if v == min_val]
         # Chosse the lowest cost NE and randomize among several minimum values
         if len(min_keys) == 1:
@@ -546,7 +557,7 @@ class BayesianGame(NormalGame):
         List of bayesian players of the game comprising combiantion of players 
         and their types.
     '''
-    def __init__(self, L, net, v_r):
+    def __init__(self, L, net, v_r, act_rduc=False):
         super().__init__(L, net, v_r)
         self.fundamental_types = ['C', 'N']
         self.states = {}
@@ -906,6 +917,7 @@ class InfrastructureGame:
         self.equib_alg = params['EQUIBALG']
         self.magnitude = params['MAGNITUDE']
         self.sample = params["SIM_NUMBER"]
+        self.actions_reduced = params["REDUCED_ACTIONS"]
         self.net = self.set_network(params)
         self.time_steps = self.set_time_steps(params['T'], params['NUM_ITERATIONS'])
         self.objs = {t:0 for t in range(1,self.time_steps+1)}
@@ -955,9 +967,11 @@ class InfrastructureGame:
             self.resource.time[t] = time.time()-res_alloc_time_start
             # Create game object
             if self.game_type == 'NORMALGAME':
-                self.objs[t] = NormalGame(self.layers, self.net, self.v_r[t])
+                self.objs[t] = NormalGame(self.layers, self.net, self.v_r[t], 
+                                          act_rduc = self.actions_reduced)
             elif self.game_type == 'BAYESGAME':
-                self.objs[t] = BayesianGame(self.layers, self.net, self.v_r[t])
+                self.objs[t] = BayesianGame(self.layers, self.net, self.v_r[t], 
+                                          act_rduc = self.actions_reduced)
             else:
                 sys.exit('Error: wrong algorithm name for Infrastructure Game.')
             # Compute payoffs
