@@ -132,7 +132,7 @@ class NormalGame:
             v_r = sum([x for key,x in self.v_r.items()])
             indp_res = indp.indp(self.net, v_r=v_r, T=1, layers=self.players,
                                  controlled_layers=self.players, functionality={},
-                                 print_cmd=False, solution_pool=10000)[2]
+                                 print_cmd=False, solution_pool=100)[2]
             solution_pool={l:[] for l in self.players}
             for _, val in indp_res.items():
                 for l in self.players:
@@ -406,6 +406,7 @@ class NormalGame:
             action_list = game_info[2]
 
         start_time = time.time()
+        no_solution = False
         if method == 'enumerate_pure':
             gambit_solution = gambit.nash.enumpure_solve(game)
         elif method == 'enumerate_mixed_2p':
@@ -422,14 +423,29 @@ class NormalGame:
             gambit_solution = gambit.nash.gnm_solve(game)
         else:
             sys.exit('The solution method is not valid')
-        if len(gambit_solution)==0:
+        if len(gambit_solution)==0 and method != 'enumerate_pure':
             print('No solution found: switching to pure enumeratiom method')
             gambit_solution = gambit.nash.enumpure_solve(game)
+        if len(gambit_solution)==0 :
+            print('No pure Nash equilibrium - both choose randomly')
+            no_solution = True
         self.solving_time = time.time()-start_time
 
         self.solution = GameSolution(player_list, gambit_solution, action_list)
+        # Choose a random action profile when there is no equilibrium
+        if no_solution:
+            max_payoff = -1e100
+            while max_payoff == -1e100:
+                act_profile = random.choice(list(self.payoffs.values()))
+                max_payoff = max([x[1] for x in act_profile.values()])
+            self.solution.sol = {0:{}}
+            for l in player_list:
+                self.solution.sol[0]['P'+str(l)+' payoff'] = act_profile[l][1]
+                self.solution.sol[0]['P'+str(l)+' actions'] = [act_profile[l][0]]
+                self.solution.sol[0]['P'+str(l)+' action probs'] = [1.0]
+            self.solution.sol[0]['total cost'] = -sum([x[1] for x in act_profile.values()])
+        # Find all combination of action in the case of mixed strategy
         for _, sol in self.solution.sol.items():
-            # Find all combination of action in the case of mixed strategy
             sol_super_set = []
             for l in player_list:
                 sol_super_set.append(sol['P'+str(l)+' actions'])
