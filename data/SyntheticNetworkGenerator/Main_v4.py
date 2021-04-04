@@ -317,8 +317,8 @@ while cnfg<no_config:
             text += 'N%d = %d,' %(k,len(damArcs[k]))
         f.write(text+'\n')
         f.write('Available resources for restoration in each time step = %d\n' % (res_cap))
-        f.write('Size of the full game: %d\n'%size_payoff_matrix)
-        f.write('Size of the reduced-sized game (full resource use): %d\n'%size_payoff_matrix_full_resource)
+        f.write('Size of the full game (approx.:uniform alloc.+1): %d\n'%size_payoff_matrix)
+        f.write('Size of the reduced-sized game (Exhuasting resources, approx.:uniform alloc.+1): %d\n'%size_payoff_matrix_full_resource)
         f.write('Interconnections are chosen randomly\n')
         f.write('Damaged nodes and arcs are chosen randomly\n') # fix in the text #!!!
         f.close()

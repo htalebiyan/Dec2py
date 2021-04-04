@@ -164,18 +164,18 @@ def run_jc_sample(layers, judge_types, auction_type, valuation_type):
         plt.show()
 
 def run_game_sample(layers, judge_types, auction_type, valuation_type,
-                    game_type="NORMALGAME", signals=None, beliefs=None):
+                    game_type="NORMALGAME", signals=None, beliefs=None, reduced_act=None):
     interdep_net= indp.initialize_sample_network(layers=layers)
     if game_type == "NORMALGAME":
         out_dir = '../results/ng_sample_12Node_results'
     elif game_type == "BAYESGAME":
         out_dir = '../results/bg'+''.join(signals.values())+''.join(beliefs.values())+\
             '_sample_12Node_results'
-    params={"NUM_ITERATIONS":7, "OUTPUT_DIR":out_dir, "V":len(layers), "T":1, "L":layers,
+    params={"NUM_ITERATIONS":7, "OUTPUT_DIR":out_dir, "V":len(layers)*2, "T":1, "L":layers,
             "WINDOW_LENGTH":1, "ALGORITHM":game_type, 'EQUIBALG':'enumerate_pure',
             "N":interdep_net, "MAGNITUDE":0, "SIM_NUMBER":0, "JUDGMENT_TYPE":judge_types,
             "RES_ALLOC_TYPE":auction_type, "VALUATION_TYPE":valuation_type, 'DYNAMIC_PARAMS':None,
-            'PAYOFF_DIR':None, "SIGNALS":signals, "BELIEFS":beliefs}
+            'PAYOFF_DIR':None, "SIGNALS":signals, "BELIEFS":beliefs, 'REDUCED_ACTIONS':reduced_act}
     gameutils.run_game(params, save_results=True, print_cmd=True, save_model=True, plot2D=True)
     for jt, rst, vt in itertools.product(judge_types, auction_type, valuation_type):
         print('\n\nPlot restoration plan by Game',jt,rst,vt)
@@ -285,11 +285,14 @@ if __name__ == "__main__":
     # # run_indp_sample(layers)
     # # run_tdindp_sample(layers)
     # # run_jc_sample(layers, judge_types, auction_type, valuation_type)
-    # # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="NORMALGAME")
-    # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="BAYESGAME",
-    #                 beliefs={1:'I', 2:'I'}, signals={1:'N', 2:'C'})
-    # # result_mh = run_mh_sample(layers) #!!!
+    # run_game_sample(layers, judge_types, auction_type, valuation_type,
+    #                 game_type="NORMALGAME", reduced_act='EDM')
+    # # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="BAYESGAME",
+    # #                 beliefs={1:'I', 2:'I'}, signals={1:'N', 2:'C'})
+    # # # result_mh = run_mh_sample(layers) #!!!
 
+    # with open('../results/ng_sample_12Node_results_L2_m0_v4_OPTIMISTIC_UNIFORM/objs_0.pkl', 'rb') as f:
+    #     obj = pickle.load(f)
     # COMBS = []
     # OPTIMAL_COMBS = [[0, 0, len(layers), len(layers), 'indp_sample_12Node', 'nan',
     #                   'nan', 'nan', ''],
@@ -362,7 +365,7 @@ if __name__ == "__main__":
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"random", 'SAMPLE_RANGE':range(10, 11), 'MAGS':range(0, 1),
     #                   'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(0, 100),
+    FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(0, 1),
                       'FILTER_SCE':None, 'TOPO':'General', 'BASE_DIR':BASE_DIR,
                       'DAMAGE_DIR':DAMAGE_DIR}
 
@@ -403,22 +406,22 @@ if __name__ == "__main__":
     VAL_TYPE = ['DTC']
     #['DTC', 'DTC_uniform', 'MDDN', 'STM', 'DTC-LP']
     # ''' Run different methods '''
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
-    #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
+                misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
     # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
     # #            misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
     # # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
     # # #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
     # # #             output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS,
     # # #             misc = {'STM_MODEL':STM_MODEL_DICT, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
-    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
-    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-    #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-    #                     'REDUCED_ACTIONS':True})
-    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
+    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
                 res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
                 misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-                        "SIGNALS":{1:'N', 2:'C'}, "BELIEFS":{1:'U', 2:'U'}, 'REDUCED_ACTIONS':True})
+                        'REDUCED_ACTIONS':'EDM'})
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
+    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+    #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+    #                     "SIGNALS":{1:'N', 2:'C'}, "BELIEFS":{1:'U', 2:'U'}, 'REDUCED_ACTIONS':'ER'})
                 # {x:'I' for x in LAYERS}
 
     ''' Post-processing '''
@@ -473,7 +476,7 @@ if __name__ == "__main__":
     # # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
     # # plots.plot_run_time(RUN_TIME_DF, ci=95)
     # plots.plot_ne_analysis(ANALYZE_NE_DF, ci=95) #[(ANALYZE_NE_DF['auction_type']!='UNIFORM')]
-    plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=95)
+    # plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=95)
     # plots.plot_payoff_hist(ANALYZE_NE_DF, compute_payoff_numbers=False, ci=None)
 
     # # [(RUN_TIME_DF['auction_type']!='MDA')&(RUN_TIME_DF['auction_type']!='MAA')]

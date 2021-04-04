@@ -17,7 +17,7 @@ import sys
 
 def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
          forced_actions=False, fixed_nodes={}, print_cmd=True, time_limit=None,
-         co_location=True):
+         co_location=True, solution_pool=False):
     """INDP optimization problem. Also solves td-INDP if T > 1.
     :param N: An InfrastructureNetwork instance (created in infrastructure.py)
     :param v_r: Vector of number of resources given to each layer in each timestep. If the size of the vector is 1, it shows the total number of resources for all layers.
@@ -302,6 +302,9 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
 
 #    print "Solving..."
     m.update()
+    if solution_pool:
+        m.setParam('PoolSearchMode', 1)
+        m.setParam('PoolSolutions', solution_pool)
     m.optimize()
     run_time = time.time()-start_time
     # Save results.
@@ -310,7 +313,10 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
             print ('\nOptimizer time limit, gap = %1.3f\n' % m.MIPGap)
         results=collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=co_location)
         results.add_run_time(t,run_time)
-        return [m,results]
+        if solution_pool:
+            sol_pool_results =  collect_solutoon_pool(m, T, N_hat_prime, A_hat_prime)
+            return [m, results, sol_pool_results]
+        return [m, results]
     else:
         m.computeIIS()
         if m.status==9:
@@ -320,6 +326,28 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
                 if c.IISConstr:
                     print('%s' % c.constrName)
         return None
+
+def collect_solutoon_pool(m, T, N_hat_prime, A_hat_prime):
+    sol_pool_results={}
+    for sol in range(m.SolCount):
+        m.setParam('SolutionNumber', sol)
+        sol_pool_results[sol] = {'nodes':[], 'arcs':[]}
+        for t in range(T):
+            # Record node recovery actions.
+            for n,d in N_hat_prime:
+                nodeVar='w_tilde_'+str(n)+","+str(t)
+                if T == 1:
+                    nodeVar='w_'+str(n)+","+str(t)
+                if round(m.getVarByName(nodeVar).xn)==1:
+                    sol_pool_results[sol]['nodes'].append(n)
+            # Record edge recovery actions.
+            for u,v,a in A_hat_prime:
+                arcVar='y_tilde_'+str(u)+","+str(v)+","+str(t)
+                if T == 1:
+                    arcVar='y_'+str(u)+","+str(v)+","+str(t)
+                if round(m.getVarByName(arcVar).x)==1:
+                    sol_pool_results[sol]['arcs'].append((u,v))
+    return sol_pool_results
 
 def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=True):
     layers = controlled_layers

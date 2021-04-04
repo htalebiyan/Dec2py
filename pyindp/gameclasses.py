@@ -74,7 +74,7 @@ class NormalGame:
     optimal_solution : dict
         Optimal Solution from INDP. It is populated by :meth:`find_optimal_solution`.
     '''
-    def __init__(self, L, net, v_r, act_rduc=False):
+    def __init__(self, L, net, v_r, act_rduc=None):
         self.players = L
         self.net = net
         self.v_r = v_r
@@ -128,6 +128,26 @@ class NormalGame:
                 if u not in self.dependee_nodes:
                     self.dependee_nodes[u]=[]
                 self.dependee_nodes[u].append((v,a['data']['inf_data'].gamma))
+        if self.actions_reduced == 'EDM':
+            v_r = sum([x for key,x in self.v_r.items()])
+            indp_res = indp.indp(self.net, v_r=v_r, T=1, layers=self.players,
+                                 controlled_layers=self.players, functionality={},
+                                 print_cmd=False, solution_pool=10000)[2]
+            solution_pool={l:[] for l in self.players}
+            for _, val in indp_res.items():
+                for l in self.players:
+                    act = ()
+                    for x in val['nodes']:
+                        if x[1]==l:
+                            if x in self.dependee_nodes.keys():
+                                act += (x,)
+                            elif ('OA',l) not in act:
+                                act += (('OA',l),)
+                    for x in val['arcs']:
+                        if x[0][1]==l and ('OA',l) not in act:
+                            act += (('OA',l),)
+                    if act not in solution_pool[l]:
+                        solution_pool[l].append(act)
         actions = {}
         for l in self.players:
             damaged_nodes = [n for n, d in self.net.G.nodes(data=True) if\
@@ -161,16 +181,25 @@ class NormalGame:
             '''
             actions[l].extend([('NA',l)])
             
-            if self.actions_reduced:
-                if other_action:
-                    min_len = min(self.v_r[l], len(rel_actions)-1)
-                else:
-                    min_len = min(self.v_r[l], len(rel_actions))
+            if self.actions_reduced == 'ER':
                 remove_list = []
                 for a in actions[l]:
-                    if len(a)<min_len and ('OA',l) not in a and a!=('NA',l):
+                    if len(a) < self.v_r[l] and ('OA',l) not in a and a != ('NA',l):
                         remove_list.append(a)
-                actions[l] = [a for a in actions[l] if a not in remove_list]
+            if self.actions_reduced == 'EDM':
+                remove_list = []
+                for a in actions[l]:
+                    is_in_sol_pool = False
+                    if a != ('NA',l):
+                        sa = tuple(sorted(a, key=lambda item:str(item[0])))
+                        for x in solution_pool[l]:
+                            sx = tuple(sorted(x, key=lambda item:str(item[0])))
+                            if sa == sx:
+                                is_in_sol_pool = True
+                                break
+                        if not is_in_sol_pool:
+                            remove_list.append(a)
+            actions[l] = [a for a in actions[l] if a not in remove_list]
         return actions
 
     def compute_payoffs(self, save_model=None, payoff_dir=None):
@@ -557,7 +586,7 @@ class BayesianGame(NormalGame):
         List of bayesian players of the game comprising combiantion of players 
         and their types.
     '''
-    def __init__(self, L, net, v_r):
+    def __init__(self, L, net, v_r, act_rduc=None):
         super().__init__(L, net, v_r)
         self.fundamental_types = ['C', 'N']
         self.states = {}
