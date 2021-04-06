@@ -123,7 +123,7 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                 dindputils.run_judgment_call(params, save_jc_model=True, print_cmd=False)
             elif params["ALGORITHM"] in ["NORMALGAME", "BAYESGAME"]:
                 gameutils.run_game(params, save_results=True, print_cmd=False,
-                                    save_model=False, plot2D=False) #!!!
+                                    save_model=False, plot2D=True) #!!!
 
 def run_indp_sample(layers):
     interdep_net= indp.initialize_sample_network(layers=layers)
@@ -365,7 +365,7 @@ if __name__ == "__main__":
     #                  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
     # FAIL_SCE_PARAM = {'TYPE':"random", 'SAMPLE_RANGE':range(10, 11), 'MAGS':range(0, 1),
     #                   'FILTER_SCE':None, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
-    FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(0, 1),
+    FAIL_SCE_PARAM = {'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(0, 100),
                       'FILTER_SCE':None, 'TOPO':'General', 'BASE_DIR':BASE_DIR,
                       'DAMAGE_DIR':DAMAGE_DIR}
 
@@ -382,7 +382,7 @@ if __name__ == "__main__":
     # {'num_pred':1, 'model_dir':MODEL_DIR+'/traces', 'param_folder':MODEL_DIR+'/parameters'}
 
     ### Directory with objects containing payoff values for games
-    PAYOFF_DIR = OUTPUT_DIR+'General/results/reudced_action_matrix/'
+    PAYOFF_DIR = OUTPUT_DIR+'General/results/reudced_action_matrix_100/'
     #'/home/hesam/Desktop/Files/Game_Shelby_County/results_NE_only_objs/'
 
     # Output and base dir for sythetic database
@@ -401,33 +401,34 @@ if __name__ == "__main__":
     # Not necessary for synthetic nets
     JUDGE_TYPE = ["OPTIMISTIC"]
     #["PESSIMISTIC", "OPTIMISTIC", "DEMAND", "DET-DEMAND", "RANDOM"]
-    RES_ALLOC_TYPE = ['OPTIMAL']
+    RES_ALLOC_TYPE = ['UNIFORM', 'OPTIMAL']
     #["MDA", "MAA", "MCA", 'UNIFORM', 'OPTIMAL']
     VAL_TYPE = ['DTC']
     #['DTC', 'DTC_uniform', 'MDDN', 'STM', 'DTC-LP']
     # ''' Run different methods '''
-    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
-                misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
+    #             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
     # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
     # #            misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
     # # # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
     # # #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
     # # #             output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS,
     # # #             misc = {'STM_MODEL':STM_MODEL_DICT, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
-    run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
-                res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-                misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-                        'REDUCED_ACTIONS':'EDM'})
+    # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
+    #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+    #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+    #                     'REDUCED_ACTIONS':'EDM'})
     # run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
     #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
     #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-    #                     "SIGNALS":{1:'N', 2:'C'}, "BELIEFS":{1:'U', 2:'U'}, 'REDUCED_ACTIONS':'ER'})
+    #                     "SIGNALS":{1:'C', 2:'C'}, "BELIEFS":{1:'U', 2:'U'},
+    #                     'REDUCED_ACTIONS':'EDM'})
                 # {x:'I' for x in LAYERS}
 
     ''' Post-processing '''
     # COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
     # REF_METHOD = 'indp'
-    # METHOD_NAMES = ['indp','ng'] 
+    # METHOD_NAMES = ['indp','ng', 'bgCCUU'] 
     # # #'ng', 'jc', 'dp_indp', 'tdindp',
     # # #'bgNNNNUUUU','bgCCCCUUUU', 'bgCCNCUUUU', 'bgCCCCFFFF', 'bgNNNNFFFF', 'bgCCNCFFFF'
     # # #'bgCCCCIIII','bgNNNNIIII', 'bgCCNCIIII',
@@ -458,7 +459,7 @@ if __name__ == "__main__":
     #     pickle.dump(OBJ_LIST, f)
 
     ''' Plot results '''
-    plt.close('all')
+    # plt.close('all')
     # ### Getting back the objects ###
     # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'rb') as f:
     #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
@@ -468,16 +469,16 @@ if __name__ == "__main__":
     #                               cost_type='Total', ci=95,
     #                               deaggregate=False, plot_resilience=False)
 
-    # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
-    #                                     ci=95, normalize=False)
+    # # plots.plot_seperated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
+    # #                                     ci=95, normalize=False)
 
     # plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
     # # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
     # # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
     # # plots.plot_run_time(RUN_TIME_DF, ci=95)
     # plots.plot_ne_analysis(ANALYZE_NE_DF, ci=95) #[(ANALYZE_NE_DF['auction_type']!='UNIFORM')]
-    # plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=95)
-    # plots.plot_payoff_hist(ANALYZE_NE_DF, compute_payoff_numbers=False, ci=None)
+    plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=95)
+    # plots.plot_payoff_hist(ANALYZE_NE_DF, compute_payoff_numbers=True, outlier=False)
 
     # # [(RUN_TIME_DF['auction_type']!='MDA')&(RUN_TIME_DF['auction_type']!='MAA')]
     # [((BASE_DF['decision_type']=='bgCCCCUUUU')|\

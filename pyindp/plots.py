@@ -67,7 +67,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
 
-    row_plot = [judgment_type, 'judgment_type'] # valuation_type
+    row_plot = [auction_type, 'auction_type'] # valuation_type
     col_plot = [topology, 'topology'] # no_resources, judgment_type, topology
     hue_type = [rationality, 'rationality'] #auction_type, rationality
     style_type = 'decision_type' #decision_type
@@ -194,11 +194,11 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     if 'nan' in auction_type:
         auction_type.remove('nan')
     valuation_type = lambda_df.valuation_type.unique().tolist()
-    # if 'nan' in valuation_type:
-    #     valuation_type.remove('nan')
-    row_plot = [valuation_type, 'valuation_type'] #valuation_type
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
+    row_plot = [judgment_type, 'judgment_type'] #valuation_type
     col_plot = [topology , 'topology'] #auction_type, topology
-    hue_type = [rationality , 'rationality'] #rationality,decision_type
+    hue_type = [auction_type , 'auction_type'] #rationality,decision_type
     x = 'decision_type'#'no_resources' 
     # Initialize plot properties
     dpi = 300
@@ -674,7 +674,7 @@ def plot_ne_analysis(df, x='t', ci=None):
     T = len(df[x].unique().tolist())
     row_plot=['action_similarity', 'payoff_ratio', 'no_ne'] #, 'total_cost_ratio'
     col_plot = [topology, 'topology'] # no_resources, judgment_type, topology
-    hue_type = [rationality, 'rationality'] #auction_type, rationality
+    hue_type = [decision_type, 'decision_type'] #auction_type, rationality
     style_type = 'auction_type'  #decision_type
     # Initialize plot properties
     dpi = 300
@@ -736,8 +736,8 @@ def plot_ne_cooperation(df, x='t', ci=None):
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
-    row_plot = [topology, 'topology'] #topology, auction_type
-    col_plot = [rationality, 'rationality'] # no_resources, judgment_type,rationality
+    row_plot = [auction_type, 'auction_type'] #topology, auction_type
+    col_plot = [decision_type, 'decision_type'] # no_resources, judgment_type,rationality
 
     # value_vars = ['cooperative', 'partially_cooperative', 'OA', 'NA', 'NA_possible',
     #               'opt_cooperative', 'opt_partially_cooperative', 'opt_OA',
@@ -791,7 +791,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
             ax.set_title(r'$R_c=$%s'%(str(col_plot[0][idx])))
         plt.savefig('ne_cooperation_'+str(suffix[idxvv])+'.png', dpi=dpi, bbox_inches='tight')
 
-def plot_payoff_hist(df, compute_payoff_numbers=True, ci=None):
+def plot_payoff_hist(df, compute_payoff_numbers=True, outlier=False):
     '''
 
     Parameters
@@ -830,7 +830,7 @@ def plot_payoff_hist(df, compute_payoff_numbers=True, ci=None):
                 payoff_matrix_size *= val
             df.loc[index,'payoff matrix'] = payoff_matrix_size
 
-    col_plot = ['payoff matrix']+[x for x in df.columns if x[:7]=='payoffs']
+    col_plot = ['payoff matrix']#+[x for x in df.columns if x[:7]=='payoffs']
     row_plot = [topology, 'topology']
     hue_type = 'rationality'
     # Initialize plot properties
@@ -845,20 +845,17 @@ def plot_payoff_hist(df, compute_payoff_numbers=True, ci=None):
             ax, _, _ = find_ax(axs, row_plot[0], col_plot, idx_r, idx_c)
             payoff_data = df[(df[row_plot[1]] == val_r)]
             with pal:
-                sns.boxplot(x=val_c, y='t', hue=hue_type, showfliers=False,
+                sns.boxplot(x=val_c, y='t', hue=hue_type, showfliers=outlier,
                                ax=ax, data=payoff_data, orient='h', linewidth=1)
             if idx_c!=0:
                 ax.set(ylabel='')
             ax.get_legend().set_visible(False)
+            ax.set_xlim(0,100)
     # Rebuild legend
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_legend_labels(labels)
     fig.legend(handles, labels, loc='center right', ncol=1, framealpha=0.35,
                 bbox_to_anchor=(.83, 0.6))
-    # # Add overll x- and y-axis titles
-    # _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot)
-    # for idx, ax in enumerate(axs_c):
-    #     ax.set_title(r'$R_c=$%s'%(str(col_plot[idx])))
     plt.savefig('payoff_hists.png', dpi=dpi, bbox_inches='tight')
 def correct_legend_labels(labels):
     '''

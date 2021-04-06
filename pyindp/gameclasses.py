@@ -181,13 +181,13 @@ class NormalGame:
             '''
             actions[l].extend([('NA',l)])
             
+            ''' Remove action due to the biunded rationality '''
+            remove_list = []
             if self.actions_reduced == 'ER':
-                remove_list = []
                 for a in actions[l]:
                     if len(a) < self.v_r[l] and ('OA',l) not in a and a != ('NA',l):
                         remove_list.append(a)
             if self.actions_reduced == 'EDM':
-                remove_list = []
                 for a in actions[l]:
                     is_in_sol_pool = False
                     if a != ('NA',l):
@@ -603,7 +603,7 @@ class BayesianGame(NormalGame):
         and their types.
     '''
     def __init__(self, L, net, v_r, act_rduc=None):
-        super().__init__(L, net, v_r)
+        super().__init__(L, net, v_r, act_rduc)
         self.fundamental_types = ['C', 'N']
         self.states = {}
         self.states_payoffs = {}
