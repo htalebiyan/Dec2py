@@ -1,4 +1,7 @@
-""" Runs INDP, td-INDP, Judgment Call, and infrastructure games"""
+# %% dependencies
+""" Functions that are used to run different types of analysis on the restoration of 
+interdependent networks
+"""
 import sys
 import os
 import pandas as pd
@@ -12,6 +15,7 @@ import itertools
 import Metaheuristics.metaheuristics as mh
 import gameutils 
 
+# %% functions
 def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
     '''
     Batch run different methods for a given list of damage scenarios,
