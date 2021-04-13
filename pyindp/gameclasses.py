@@ -11,14 +11,15 @@ import fractions
 import scipy
 import pickle
 import random
-# import numpy as np
-# import pandas as pd
-import gambit
 import dindpclasses
 import indpalt
 import indp
 import indputils
 import plots
+try:
+    import gambit
+except ModuleNotFoundError:
+    print("Can't find module 'gambit'")
 
 class NormalGame:
     '''

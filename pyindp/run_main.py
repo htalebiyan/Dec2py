@@ -4,8 +4,11 @@
 '''
 
 # %%
-import runutils
+import os
 import matplotlib.pyplot as plt
+import runutils
+import dindputils
+import gameutils
 
 try:
     # Change the current working Directory
@@ -21,7 +24,7 @@ except OSError:
 '''
 
 # %%
-# runutils.run_sample_problems()
+runutils.run_sample_problems()
 
 # %%
 ''' 
@@ -268,35 +271,62 @@ runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_typ
                     'REDUCED_ACTIONS':'EDM'})
 
 # %%
-''' Post-processing '''
+''' 
+### Post-processing 
+First, you have to set a few parameters and then call functions that read outputs
+and generate the panda datframes that are needed for plotting the results.
+##### Post-processing parameters
+1. `COST_TYPES`: type of cost that should be used in processing the outputs. Options 
+are *Total*, *Under Supply*, *Over Supply*, *Node*, *Arc*, *Flow*, *Space Prep*, *Under Supply Perc*.
+2. `REF_METHOD`: the method that served as the reference in computing the reative performance
+and allocation gap. Usually, this is aan optimal methods like `indp` or `tdindp`. However,
+it can be any other method lik `jc`, `ng`, or else.
+3. `METHOD_NAMES`: methods whose output should be read. Options are `indp`, `tdindp`, `jc`,
+`ng`, `dp_indp`, `dp_jc`, `bg????` (For example `bgNCUI` means the Bayesiab game with
+two players where the first player is non-cooperative and uses uninformative belief,
+and the second one is cooperative and uses the inverse false consensus belief).
+
+##### Post-processing functions
+1. `generate_combinations`: generate all the combination of oututs that should be read and
+save them in `COMBS` and `OPTIMAL_COMBS` lists.
+2. `read_results`: read results for combinations in `COMBS` and `OPTIMAL_COMBS` lists.
+3. `relative_performance`: computes relative performance measures  for different combinations.
+4. `read_resourcec_allocation`: read the resource allocations by different methods and
+compute allocation gaps  for different combinations.
+5. `read_run_time`: compute run time for different combinations.
+6. `analyze_NE`: analyze the characteristics of Nash equilibria for different combinations.
+'''
 
 # %%
-# COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
-# REF_METHOD = 'indp'
-# METHOD_NAMES = ['indp','ng', 'bgCCUU'] 
-# # #'ng', 'jc', 'dp_indp', 'tdindp',
-# # #'bgNNNNUUUU','bgCCCCUUUU', 'bgCCNCUUUU', 'bgCCCCFFFF', 'bgNNNNFFFF', 'bgCCNCFFFF'
-# # #'bgCCCCIIII','bgNNNNIIII', 'bgCCNCIIII',
+COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
+REF_METHOD = 'indp'
+METHOD_NAMES = ['indp','ng', 'bgCCUU'] 
+# #'ng', 'jc', 'dp_indp', 'tdindp',
+# #'bgNNNNUUUU','bgCCCCUUUU', 'bgCCNCUUUU', 'bgCCCCFFFF', 'bgNNNNFFFF', 'bgCCNCFFFF'
+# #'bgCCCCIIII','bgNNNNIIII', 'bgCCNCIIII',
 
-# COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
-#             FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
-#             RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE,
-#             list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
-#             synthetic_dir=SYNTH_DIR)
+COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
+            FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
+            RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE,
+            list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
+            synthetic_dir=SYNTH_DIR)
 
-# BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
-#                                     root_result_dir=OUTPUT_DIR, deaggregate=True)
+BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
+                                    root_result_dir=OUTPUT_DIR, deaggregate=True)
 
-# LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
-#                                         ref_method=REF_METHOD, cost_type=COST_TYPES[0])
-# RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resourcec_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
-#                                                               objs, root_result_dir=OUTPUT_DIR,
-#                                                               ref_method=REF_METHOD)
-# RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
-# ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
+LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
+                                        ref_method=REF_METHOD, cost_type=COST_TYPES[0])
+RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resourcec_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
+                                                              objs, root_result_dir=OUTPUT_DIR,
+                                                              ref_method=REF_METHOD)
+RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
+ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
 
 # %%
-''' Save Variables to file '''
+''' 
+### Save Variables to file
+All dictionaries that are made in the postprocessing step are saved here.
+'''
 
 # %%
 # OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
@@ -307,7 +337,20 @@ runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_typ
 #     pickle.dump(OBJ_LIST, f)
 
 # %%
-''' Plot results '''
+''' 
+### Plot results 
+Plot functions use the dictionaries that are made in the postprocessing step to 
+make output figures:
+1. `plot_performance_curves`: plots costs (in `COST_TYPES`) and unmet demand vs. time.
+2. `plot_seperated_perform_curves`: plots costs (in `COST_TYPES`) vs. time for each layer sepearately.
+3. `plot_relative_performance`: plots relative performances.
+4. `plot_auction_allocation`: plots reosurce allocation vs. time.
+5. `plot_relative_allocation`: plots allocation gaps.
+6. `plot_run_time`: plots run time vs. time.
+7. `plot_ne_analysis`: plots NE analysis measures vs. time (for games only).
+8. `plot_ne_cooperation`: plots action types vs. time (for games only).
+9. `plot_payoff_hist`: plots size of the payoff matrix vs. time (for games only).
+'''
 
 # %%
 # plt.close('all')
@@ -327,15 +370,8 @@ runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_typ
 # # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
 # # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
 # # plots.plot_run_time(RUN_TIME_DF, ci=95)
-# plots.plot_ne_analysis(ANALYZE_NE_DF, ci=95) #[(ANALYZE_NE_DF['auction_type']!='UNIFORM')]
-plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=95)
+# plots.plot_ne_analysis(ANALYZE_NE_DF, ci=95)
+# plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=95)
 # plots.plot_payoff_hist(ANALYZE_NE_DF, compute_payoff_numbers=True, outlier=False)
 
-# # [(RUN_TIME_DF['auction_type']!='MDA')&(RUN_TIME_DF['auction_type']!='MAA')]
-# [((BASE_DF['decision_type']=='bgCCCCUUUU')|\
-#                                       (BASE_DF['decision_type']=='bgCCNCUUUU')|\
-#                                       (BASE_DF['decision_type']=='bgNNNNUUUU')|\
-#                                       (BASE_DF['decision_type']=='ng')|\
-#                                       (BASE_DF['decision_type']=='indp'))&\
-#                                       (BASE_DF['auction_type']=='OPTIMAL')&\
-#                                       (BASE_DF['no_resources']<7)]
+ #[(ANALYZE_NE_DF['auction_type']!='UNIFORM')]

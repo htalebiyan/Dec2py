@@ -9,6 +9,7 @@ import dindputils
 import plots
 import gametree
 import itertools
+import Metaheuristics.metaheuristics as mh
 import gameutils 
 
 def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
@@ -274,11 +275,11 @@ def run_sample_problems():
     auction_type = [ "UNIFORM"]#"MCA", "MAA", "MDA"
     valuation_type = ["DTC"]
     judge_types = ["OPTIMISTIC"]#"PESSIMISTIC",
-    # run_indp_sample(layers)
-    # run_tdindp_sample(layers)
-    # run_jc_sample(layers, judge_types, auction_type, valuation_type)
-    run_game_sample(layers, judge_types, auction_type, valuation_type,
-                    game_type="NORMALGAME", reduced_act='EDM')
+    run_indp_sample(layers)
+    run_tdindp_sample(layers)
+    run_jc_sample(layers, judge_types, auction_type, valuation_type)
+    # run_game_sample(layers, judge_types, auction_type, valuation_type,
+    #                 game_type="NORMALGAME", reduced_act='EDM')
     # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="BAYESGAME",
     #                 beliefs={1:'I', 2:'I'}, signals={1:'N', 2:'C'})
     # # result_mh = run_mh_sample(layers) #!!!
