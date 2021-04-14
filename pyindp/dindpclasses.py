@@ -1,4 +1,8 @@
-''' Decentralized restoration for interdepndent networks'''
+# %%
+''' 
+Classes for modeling Judgment Call method and Auction-based resource 
+:cite:`Talebiyan2019c,Talebiyan2019`.
+'''
 import os.path
 import operator
 import copy
@@ -12,6 +16,7 @@ import indputils
 import stm
 import indpalt
 
+# %%
 class JcModel:
     '''
     Description
@@ -395,6 +400,7 @@ class JudgmentModel:
                 prob[n[0]] = [prob_node, np.random.choice([0, 1], p=[1-prob_node, prob_node])]
         return prob
 
+# %%
 class ResourceModel:
     '''
     DESCRIPTION
@@ -501,6 +507,7 @@ class ResourceModel:
             for l in params['L']:
                 self.v_r[t+1][l] = int(params['V'][params['L'].index(l)])
 
+# %%
 class AuctionModel():
     '''
     DESCRIPTION

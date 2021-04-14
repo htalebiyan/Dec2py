@@ -1,4 +1,4 @@
-INDP Functions
+INDP optimization functions
 =======================================================
 .. automodule:: indp
     :members:

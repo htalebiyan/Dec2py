@@ -3,7 +3,6 @@ from indputils import *
 from gurobipy import *
 from indp import *
 import string
-import matlab.engine
 import networkx as nx
 import matplotlib.pyplot as plt
 import copy
@@ -11,9 +10,10 @@ import random
 import time
 import sys
 import scipy.io
-#HOME_DIR="/Users/Andrew/"
-#if platform.system() == "Linux":
-#    HOME_DIR="/home/andrew/"
+try:
+    import matlab.engine
+except ModuleNotFoundError:
+    print("Can't find module 'matlab.engine'")
 
 def apply_recovery(N,indp_results,t):
     for action in indp_results[t]['actions']:

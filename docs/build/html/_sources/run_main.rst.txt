@@ -1,8 +1,9 @@
-Run INDP and Judgment Call
+Run INDP, Judgment Call, and Restoration Games
 =======================================================
-.. automodule:: run_main
-	:members: run_method, batch_run 
+	Use the following Jupyter notebook to run methods:  
 
 .. toctree::
    :maxdepth: 2
    :caption: Topics:
+   
+   

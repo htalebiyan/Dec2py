@@ -1,13 +1,14 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="Python 3.7.6" >
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>Run INDP and Judgment Call &mdash; Decenalized Decision Making 0.1.0 documentation</title>
+  <title>Runs INDP, td-INDP, Judgment Call, and infrastructure games &mdash; Decenalized Decision Making 0.3.0 documentation</title>
   
 
   
@@ -17,7 +18,10 @@
 
   
   
+
   
+  
+
   
 
   
@@ -30,16 +34,13 @@
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
     
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Interdependent Network Design Problem (INDP)" href="indp_main.html" />
-    <link rel="prev" title="Input Parameters" href="main_vars.html" /> 
+    <link rel="search" title="Search" href="search.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -53,7 +54,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home" alt="Documentation Home"> Decenalized Decision Making
+            <a href="index.html" class="icon icon-home"> Decenalized Decision Making
           
 
           
@@ -61,6 +62,10 @@
 
           
             
+            
+              <div class="version">
+                0.3.0
+              </div>
             
           
 
@@ -84,15 +89,9 @@
               
             
             
-              <p class="caption"><span class="caption-text">Topics:</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="main_vars.html">Input Parameters</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Run INDP and Judgment Call</a><ul class="simple">
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="indp_main.html">Interdependent Network Design Problem (INDP)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dindp_main.html">Judgment Call Method</a></li>
-<li class="toctree-l1"><a class="reference internal" href="gameclasses.html">Restoration Game Classes</a></li>
+              <p><span class="caption-text">Topics:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="backend.html">Backend Classes and Modules</a></li>
 </ul>
 
             
@@ -133,19 +132,21 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
     
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li>Run INDP and Judgment Call</li>
+      <li>Runs INDP, td-INDP, Judgment Call, and infrastructure games</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
-            
-            <a href="_sources/run_main.rst.txt" rel="nofollow"> View page source</a>
+          
+            <a href="_sources/run_main.ipynb.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -158,105 +159,700 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="module-run_main">
-<span id="run-indp-and-judgment-call"></span><h1>Run INDP and Judgment Call<a class="headerlink" href="#module-run_main" title="Permalink to this headline">¶</a></h1>
-<p>Runs INDP, td-INDP, Judgment Call, and infrastructure games</p>
-<dl class="py function">
-<dt id="run_main.batch_run">
-<code class="sig-prename descclassname">run_main.</code><code class="sig-name descname">batch_run</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em>, <em class="sig-param"><span class="n">fail_sce_param</span></em>, <em class="sig-param"><span class="n">player_ordering</span><span class="o">=</span><span class="default_value">[3, 1]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#run_main.batch_run" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>Batch run different methods for a given list of damage scenarios,</dt><dd><p>given global parameters.</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>params</strong> (<em>dict</em>) -- DESCRIPTION.</p></li>
-<li><p><strong>fail_sce_param</strong> (<em>dict</em>) -- DESCRIPTION.</p></li>
-<li><p><strong>player_ordering</strong> (<em>list</em><em>, </em><em>optional</em>) -- DESCRIPTION. The default is [3, 1].</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None. Writes to file</p>
-</dd>
-</dl>
-</dd></dl>
+  
+<style>
+/* CSS for nbsphinx extension */
 
-<dl class="py function">
-<dt id="run_main.run_method">
-<code class="sig-prename descclassname">run_main.</code><code class="sig-name descname">run_method</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fail_sce_param</span></em>, <em class="sig-param"><span class="n">v_r</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">method</span></em>, <em class="sig-param"><span class="n">judgment_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">res_alloc_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">valuation_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output_dir</span><span class="o">=</span><span class="default_value">'..'</span></em>, <em class="sig-param"><span class="n">misc</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">dynamic_params</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#run_main.run_method" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function runs a given method for different numbers of resources,
-and a given judge, auction, and valuation type in the case of JC.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>fail_sce_param</strong> (<em>dict</em>) -- informaton of damage scenrios.</p></li>
-<li><p><strong>v_r</strong> (<em>float</em><em>, </em><em>list of float</em><em>, or </em><em>list of lists of floats</em>) -- number of resources,
-if this is a list of floats, each float is interpreted as a different total
-number of resources, and indp is run given the total number of resources.
-It only works when auction_type != None.
-If this is a list of lists of floats, each list is interpreted as fixed upper
-bounds on the number of resources each layer can use (same for all time step)..</p></li>
-<li><p><strong>layers</strong> (<em>TYPE</em>) -- DESCRIPTION.</p></li>
-<li><p><strong>method</strong> (<em>TYPE</em>) -- DESCRIPTION.</p></li>
-<li><p><strong>judgment_type</strong> (<em>str</em><em>, </em><em>optional</em>) -- Type of Judgments in Judfment Call Method. The default is None.</p></li>
-<li><p><strong>res_alloc_type</strong> (<em>str</em><em>, </em><em>optional</em>) -- Type of resource allocation method for resource allocation. The default is None.</p></li>
-<li><p><strong>valuation_type</strong> (<em>str</em><em>, </em><em>optional</em>) -- Type of valuation in auction. The default is None.</p></li>
-<li><p><strong>output_dir</strong> (<em>str</em><em>, </em><em>optional</em>) -- DESCRIPTION. The default is '..'.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None.  Writes to file</p>
-</dd>
-</dl>
-</dd></dl>
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
 
-<div class="toctree-wrapper compound">
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="Runs-INDP,-td-INDP,-Judgment-Call,-and-infrastructure-games">
+<h1>Runs INDP, td-INDP, Judgment Call, and infrastructure games<a class="headerlink" href="#Runs-INDP,-td-INDP,-Judgment-Call,-and-infrastructure-games" title="Permalink to this headline">¶</a></h1>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">runutils</span>
+<span class="kn">import</span> <span class="nn">dindputils</span>
+<span class="kn">import</span> <span class="nn">gameutils</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="c1"># Change the current working Directory</span>
+    <span class="n">DIR_MAIN</span> <span class="o">=</span> <span class="s1">&#39;C:/Users/ht20/Documents/GitHub/td-DINDP/pyindp&#39;</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">DIR_MAIN</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Directory changed to &quot;</span><span class="o">+</span><span class="n">DIR_MAIN</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Can&#39;t change the Current Working Directory&quot;</span><span class="p">)</span>
+</pre></div>
 </div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING (theano.configdefaults): g++ not available, if using conda: `conda install m2w64-toolchain`
+WARNING (theano.configdefaults): g++ not detected ! Theano will be unable to execute optimized C-implementations (for both CPU and GPU) and will default to Python implementations. Performance will be severely degraded. To remove this warning, set Theano flags cxx to an empty string.
+WARNING (theano.tensor.blas): Using NumPy C-API based implementation for BLAS functions.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Can&#39;t find module &#39;matlab.engine&#39;
+Can&#39;t find module &#39;gambit&#39;
+Directory changed to C:/Users/ht20/Documents/GitHub/td-DINDP/pyindp
+</pre></div></div>
+</div>
+<section id="Run-a-toy-example-for-different-methods">
+<h2>Run a toy example for different methods<a class="headerlink" href="#Run-a-toy-example-for-different-methods" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># plt.close(&#39;all&#39;)</span>
+<span class="c1"># runutils.run_sample_problems()</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Run-different-methods-for-different-networks,-postprocess-th-outputs,-and-plot-the-result">
+<h2>Run different methods for different networks, postprocess th outputs, and plot the result<a class="headerlink" href="#Run-different-methods-for-different-networks,-postprocess-th-outputs,-and-plot-the-result" title="Permalink to this headline">¶</a></h2>
+<section id="Input/Output-file-addresses">
+<h3>Input/Output file addresses<a class="headerlink" href="#Input/Output-file-addresses" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">BASE_DIR</span></code>: the address of the folder where the basic network information (topology, parameters, etc.) is stored</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DAMAGE_DIR</span></code>: the address of the folder where the damage information is stored</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OUTPUT_DIR</span></code>: the address of the folder where the output files should be written</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FILTER_SCE</span></code>(optional): The address of the list of scenarios that should be included in the analyses. It is used to remove less damaging scenarios from the list of damage scenarios. Set it to <em>None</em> if you don’t want to use this option.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PAYOFF_DIR</span></code>(only for Games): The address of the folder that contaions the objects that store the payoff values for the game so that they are read from file and not calcualted again. Set it to <em>None</em> if you don’t want to use this option.</p></li>
+</ol>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">BASE_DIR</span> <span class="o">=</span> <span class="s1">&#39;/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/&#39;</span>
+<span class="c1"># &#39;/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/&#39;</span>
+<span class="c1"># &quot;../data/Extended_Shelby_County/&quot;</span>
+<span class="c1"># &#39;C:/Users/ht20/Box Sync/Shelby County Database/Node_arc_info&#39;</span>
+<span class="c1"># &quot;C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\&quot;</span>
+<span class="c1"># &quot;/home/hesam/Desktop/Files/Generated_Network_Dataset_v3.1&quot;</span>
+
+<span class="n">DAMAGE_DIR</span> <span class="o">=</span> <span class="s1">&#39;/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/&#39;</span>
+<span class="c1"># &#39;/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/&#39;</span>
+<span class="c1"># ../data/random_disruption_shelby/&quot;</span>
+<span class="c1">#&quot;../data/Wu_Damage_scenarios/&quot;</span>
+<span class="c1"># &quot;C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\&quot;</span>
+<span class="c1"># &quot;/home/hesam/Desktop/Files/Generated_Network_Dataset_v3.1&quot;</span>
+<span class="c1"># &#39;C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios&#39;</span>
+
+<span class="n">OUTPUT_DIR</span> <span class="o">=</span> <span class="s1">&#39;../results/&#39;</span>
+<span class="c1"># &#39;/home/hesam/Desktop/Files/Game_Shelby_County/results_NE/&#39;</span>
+<span class="c1"># &#39;C:/Users/ht20/Documents/Files/Game_Shelby_County/results_0.9_perc/&#39;</span>
+<span class="c1"># &#39;C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/&#39;</span>
+<span class="c1"># &#39;../results/&#39;</span>
+<span class="c1"># &#39;C:/Users/ht20/Documents/Files/Auction_synthetic_networks_v3.1/&#39;</span>
+<span class="c1"># &#39;C:/Users/ht20/Documents/Files/Shelby_data_paper/Restoration_results/&#39;</span>
+<span class="c1"># FAIL_SCE_PARAM[&#39;TOPO&#39;]+&#39;/results/&#39;</span>
+
+<span class="n">FILTER_SCE</span> <span class="o">=</span> <span class="s1">&#39;../data/damagedElements_sliceQuantile_0.90.csv&#39;</span>
+
+
+<span class="c1">### Directory with objects containing payoff values for games</span>
+<span class="n">PAYOFF_DIR</span> <span class="o">=</span> <span class="n">OUTPUT_DIR</span><span class="o">+</span><span class="s1">&#39;General/results/reudced_action_matrix_100/&#39;</span>
+<span class="c1">#&#39;/home/hesam/Desktop/Files/Game_Shelby_County/results_NE_only_objs/&#39;</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Set-analysis-dictionaries">
+<h3>Set analysis dictionaries<a class="headerlink" href="#Set-analysis-dictionaries" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic">
+<li><p><code class="docutils literal notranslate"><span class="pre">FAIL_SCE_PARAM</span></code>: stores informatiom on the type of the damage scenario and network dataset. This dictionary should have the following items:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">TYPE</span></code>: type of the network. Options are <code class="docutils literal notranslate"><span class="pre">shelby</span></code> for the infrastructure network of Shelby County, TN, and <code class="docutils literal notranslate"><span class="pre">synthetic</span></code> for the synthetic interdepndent dataset.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MAGS</span></code>: the damage scenarios for all datasets comes in a two-level format. The implication of each level is different as explained below. <code class="docutils literal notranslate"><span class="pre">MAGS</span></code> sets the range of the scenarios in the first level that should be included in the analysis.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SAMPLE_RANGE</span></code>: sets the range of the scenarios in the second level that should be included in the analysis.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BASE_DIR</span></code>: sets the folder where the basic network information is stored.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DAMAGE_DIR</span></code>: sets the folder where the damage information is stored</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FILTER_SCE</span></code> (optional): sets a given list of scenarios that should be included in the analyses, and exculde the rest (mostly used with <strong>WU format</strong> below).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TOPO</span></code> (only when <code class="docutils literal notranslate"><span class="pre">TYPE</span></code>=<em>synthetic</em>): sets the topology of the sunthetic networks that should be analyzed When the network dataset is the infrastructure network of Shelby County, TN, there are three formats for network data and damage scenarios files:</p></li>
+</ol>
+<ul class="simple">
+<li><p><strong>ANDRES</strong>: this the old format that Andres Gonzalez employed during the development of INDP, and is based on the input data for Xpress software. The network data that are available in this format are the first version Shleby County dataset [cite] and the damage data are 1000 realizations of hazard maps correponding to hypothetical earthquakes with Magnitudes 6 to 9 occuring at a specific epicenter [cite] . To use this format, set the dictionary to:
+<code class="docutils literal notranslate"><span class="pre">{'TYPE':&quot;ANDRES&quot;,</span> <span class="pre">'SAMPLE_RANGE':range(1,</span> <span class="pre">1001),</span> <span class="pre">'MAGS':[6,</span> <span class="pre">7,</span> <span class="pre">8,</span> <span class="pre">9],</span> <span class="pre">'FILTER_SCE':None,</span>&#160;&#160;&#160; <span class="pre">'BASE_DIR':BASE_DIR,</span> <span class="pre">'DAMAGE_DIR':DAMAGE_DIR}</span></code> Here, the range of magnitudes in the analysis is set by <code class="docutils literal notranslate"><span class="pre">MAGS</span></code>, and for each magnitude, the range of analyzed samples is set by <code class="docutils literal notranslate"><span class="pre">SAMPLE_RANGE</span></code>.</p></li>
+<li><p><strong>WU</strong>: this is the new format that is designed by Hesam Talebiyan and used in the Shelby County data paper [cite]. The damage data for this dataset comes in a format similar to the hazard maps from Jason Wu [cite], which consist of N sets (<code class="docutils literal notranslate"><span class="pre">SAMPLE_RANGE</span></code>) of M damage scenarios (<code class="docutils literal notranslate"><span class="pre">MAGS</span></code>). For shelby county, for example, N=50 and M=96. To use this format, set the dictionary to:
+<code class="docutils literal notranslate"><span class="pre">{'TYPE':&quot;WU&quot;,</span> <span class="pre">'SAMPLE_RANGE':range(50),</span> <span class="pre">'MAGS':range(96),'FILTER_SCE':FILTER_SCE,</span>&#160;&#160;&#160; <span class="pre">'BASE_DIR':BASE_DIR,</span> <span class="pre">'DAMAGE_DIR':DAMAGE_DIR}</span></code></p></li>
+<li><p><strong>from_csv</strong>: this type uses the same network data format as the <strong>WU format</strong>. However, the damage data come in the form of two csv files that contain all damage data for nodes and arcs. This is a more compressed representation of damage data. In this format, there is only one <code class="docutils literal notranslate"><span class="pre">MAGS</span></code>=0, and <code class="docutils literal notranslate"><span class="pre">SAMPLE_RANGE</span></code> defines all scenarios that should be analyzed. To use this format, set the dictionary to:
+<code class="docutils literal notranslate"><span class="pre">{'TYPE':&quot;from_csv&quot;,</span> <span class="pre">'SAMPLE_RANGE':range(100),</span> <span class="pre">'MAGS':range(0,</span> <span class="pre">1),</span> <span class="pre">'FILTER_SCE':None,</span>&#160;&#160;&#160; <span class="pre">'BASE_DIR':BASE_DIR,</span> <span class="pre">'DAMAGE_DIR':DAMAGE_DIR}</span></code> When the network dataset is synthetic, there are one format for network data and damage scenarios files:</p></li>
+<li><p><strong>synthetic</strong>: in this format network data and damage data are in the same folder, and hence, <code class="docutils literal notranslate"><span class="pre">BASE_DIR</span></code>= <code class="docutils literal notranslate"><span class="pre">DAMAGE_DIR</span></code>. Also, <code class="docutils literal notranslate"><span class="pre">MAGS</span></code> represents the range of network configuration, and <code class="docutils literal notranslate"><span class="pre">SAMPLE_RANGE</span></code> sets the range of sampele network for each configuraytion in the analysis. To use this format, set the dictionary to: <code class="docutils literal notranslate"><span class="pre">{'TYPE':&quot;synthetic&quot;,</span> <span class="pre">'SAMPLE_RANGE':range(0,</span> <span class="pre">1),</span> <span class="pre">'MAGS':range(0,</span> <span class="pre">100),</span> <span class="pre">'FILTER_SCE':None,</span>&#160;&#160;&#160; <span class="pre">'TOPO':'General',</span> <span class="pre">'BASE_DIR':BASE_DIR,</span> <span class="pre">'DAMAGE_DIR':DAMAGE_DIR}</span></code></p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DYNAMIC_PARAMS</span></code>: sets the features of the models that incorporate dynamic parameters into the analysis. Set it to <em>None</em> if you want to use static paramters that are constant for different time steps. So far, we only have one type of dynamic paramters, which is the dynamic demand that is calculated based on population dislocation models, for which, the dictionary should have the following items:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">TYPE</span></code>: type of the dislocation data (see below).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RETURN</span></code>: type of the model for the return of dislocated population. Options are <em>step_function</em> and <em>linear</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DIR</span></code>: sets the folder where the dislocation data are stored.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TESTBED</span></code> (only when <code class="docutils literal notranslate"><span class="pre">TYPE</span></code>=<em>incore</em>) : sets the name of the testbed in analysis. The are two types of dislocation data:</p></li>
+</ol>
+<ul class="simple">
+<li><p><strong>shelby_adopted</strong>: this is a precalculated dictionary that stores stylized dislocation data for Shelby County dataset and the code reads those files. To use this type, set the dictionary to: <code class="docutils literal notranslate"><span class="pre">{'TYPE':</span> <span class="pre">'shelby_adopted',</span> <span class="pre">'RETURN':</span> <span class="pre">'step_function',</span> <span class="pre">'DIR':</span> <span class="pre">'C:/Users/ht20/Documents/Files/dynamic_demand/'}</span></code></p></li>
+<li><p><strong>incore</strong>: this type uses the population dislocation models and household unit allocation data from IN-CORE (stored locally) to calculate demand values in each time step of the analysis. To use this type, set the dictionary to: <code class="docutils literal notranslate"><span class="pre">{'TYPE':</span> <span class="pre">'incore',</span> <span class="pre">'RETURN':</span> <span class="pre">'step_function',</span> <span class="pre">'TESTBED':'Joplin',</span> <span class="pre">'DIR':</span> <span class="pre">'C:/Users/ht20/Documents/GitHub/NIST_testbeds/'}</span></code></p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">STM_MODEL_DICT</span></code>: contains information about the statistical models approximating INDP, which are used for valution methods in auction-based resource allocation. Set it to <em>None</em> if <code class="docutils literal notranslate"><span class="pre">VAL_TYPE</span></code> does not include <em>STM</em> (see below). Otherwise, the dictionary should have the following items:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">num_pred</span></code>: number of model prediction that are used to calculate each valuation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">model_dir</span></code>: the folder that contains the statistical model files.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">param_folder</span></code>: the folder that contains the statistical model parameters. Example: <code class="docutils literal notranslate"><span class="pre">MODEL_DIR</span> <span class="pre">=</span> <span class="pre">'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'</span>&#160; <span class="pre">STM_MODEL_DICT</span> <span class="pre">=</span> <span class="pre">{'num_pred':1,</span> <span class="pre">'model_dir':MODEL_DIR+'/traces',</span> <span class="pre">'param_folder':MODEL_DIR+'/parameters'}</span></code></p></li>
+</ol>
+</li>
+</ol>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">FAIL_SCE_PARAM</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;TYPE&#39;</span><span class="p">:</span><span class="s2">&quot;synthetic&quot;</span><span class="p">,</span> <span class="s1">&#39;SAMPLE_RANGE&#39;</span><span class="p">:</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="s1">&#39;MAGS&#39;</span><span class="p">:</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+                              <span class="s1">&#39;FILTER_SCE&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;TOPO&#39;</span><span class="p">:</span><span class="s1">&#39;General&#39;</span><span class="p">,</span> <span class="s1">&#39;BASE_DIR&#39;</span><span class="p">:</span><span class="n">BASE_DIR</span><span class="p">,</span>
+                              <span class="s1">&#39;DAMAGE_DIR&#39;</span><span class="p">:</span><span class="n">DAMAGE_DIR</span><span class="p">}</span>
+<span class="n">DYNAMIC_PARAMS</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">STM_MODEL_DICT</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="c1"># Adjust output and base dir for sythetic database based on `FAIL_SCE_PARAM`</span>
+<span class="n">SYNTH_DIR</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="k">if</span> <span class="n">FAIL_SCE_PARAM</span><span class="p">[</span><span class="s1">&#39;TYPE&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;synthetic&#39;</span><span class="p">:</span>
+    <span class="n">SYNTH_DIR</span> <span class="o">=</span> <span class="n">BASE_DIR</span><span class="o">+</span><span class="n">FAIL_SCE_PARAM</span><span class="p">[</span><span class="s1">&#39;TOPO&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;Networks/&#39;</span>
+    <span class="n">OUTPUT_DIR</span> <span class="o">+=</span> <span class="n">FAIL_SCE_PARAM</span><span class="p">[</span><span class="s1">&#39;TOPO&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;/results/&#39;</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Set-analysis-parameters">
+<h3>Set analysis parameters<a class="headerlink" href="#Set-analysis-parameters" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">RC</span></code>: list of resource caps or the number of available reousrces in each step of the analysis.</p>
+<ul class="simple">
+<li><p>If <code class="docutils literal notranslate"><span class="pre">FAIL_SCE_PARAM[TYPE']</span></code>=<em>synthetic</em>, this item is not necessaary. <code class="docutils literal notranslate"><span class="pre">R_c</span></code> is adjusted for each configuration. Set it to to <code class="docutils literal notranslate"><span class="pre">R_c</span></code>=[0]</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">FAIL_SCE_PARAM[TYPE']</span></code>=<em>shelby</em>, you have to options.</p>
+<ul>
+<li><p>if, for example, <code class="docutils literal notranslate"><span class="pre">R_c</span></code>= [3, 6, 8, 12], then the analysis is done for the cases when threr are 3, 6, 8, and 12 resources available (total reource assignment).</p></li>
+<li><p>if, for example, <code class="docutils literal notranslate"><span class="pre">R_c</span></code>= [[1, 1], [1, 2], [3, 3]] and given there are 2 layers, then the analysis is done for the case where each layer gets 1 resource, AND the case where layer 1 gets 1 and layer 2 gets 2 resources, AND the case where each layer gets 3 resource (Prescribed resource for each layer).</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LAYERS</span></code>: list of layers in the analysis.</p>
+<ul class="simple">
+<li><p>If <code class="docutils literal notranslate"><span class="pre">FAIL_SCE_PARAM[TYPE']</span></code>=<em>synthetic</em>, this item is not necessaary. <code class="docutils literal notranslate"><span class="pre">LAYERS</span></code> is adjusted for each configuration. Set it to to <code class="docutils literal notranslate"><span class="pre">LAYERS</span></code>=[0]</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">JUDGE_TYPE</span></code>: list of judgment types that are used in JC method and/or computing valuations for auction-based allocation [cite]. Options are <em>OPTIMISTIC</em>, <em>PESSIMISTIC</em>, <em>DEMAND</em>, <em>DET-DEMAND</em>, and <em>RANDOM</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RES_ALLOC_TYPE</span></code>: list of resource allocation types that are used in JC method [cite]. Options are <em>MDA</em>, <em>MAA</em>, <em>MCA</em>, <em>UNIFORM</em>, and <em>OPTIMAL</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">VAL_TYPE</span></code>: list of valuation types that are used in auction-based resource allocation method [cite], i.e. when <code class="docutils literal notranslate"><span class="pre">RES_ALLOC_TYPE</span></code> includes at least one of the options <em>MDA</em>, <em>MAA</em>, or <em>MCA</em>. Options are <em>DTC</em>, <em>DTC_uniform</em>, <em>MDDN</em>, <em>STM</em>, and <em>DTC-LP</em>.</p></li>
+</ol>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">RC</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">LAYERS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="n">JUDGE_TYPE</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;OPTIMISTIC&quot;</span><span class="p">]</span>
+<span class="n">RES_ALLOC_TYPE</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;UNIFORM&#39;</span><span class="p">,</span> <span class="s1">&#39;OPTIMAL&#39;</span><span class="p">]</span>
+<span class="n">VAL_TYPE</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;DTC&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Run-method(s)">
+<h3>Run method(s)<a class="headerlink" href="#Run-method(s)" title="Permalink to this headline">¶</a></h3>
+<p>There are five choices of method: 1. <code class="docutils literal notranslate"><span class="pre">INDP</span></code>: runs Interdependent Network Restoration Problem (INDP) [cite]. To run this method, you have to call: <code class="docutils literal notranslate"><span class="pre">runutils.run_method(FAIL_SCE_PARAM,</span> <span class="pre">RC,</span> <span class="pre">LAYERS,</span> <span class="pre">method='INDP',</span> <span class="pre">output_dir=OUTPUT_DIR,</span>&#160;&#160;&#160;&#160; <span class="pre">misc</span> <span class="pre">=</span> <span class="pre">{'DYNAMIC_PARAMS':DYNAMIC_PARAMS})</span></code> 2. <code class="docutils literal notranslate"><span class="pre">TDINDP</span></code>: runs time-dependent INDP (td-INDP) [cite]. To run this method, you have to call:
+<code class="docutils literal notranslate"><span class="pre">runutils.run_method(FAIL_SCE_PARAM,</span> <span class="pre">RC,</span> <span class="pre">LAYERS,</span> <span class="pre">method='TDINDP',</span> <span class="pre">output_dir=OUTPUT_DIR,</span>&#160;&#160;&#160;&#160; <span class="pre">misc</span> <span class="pre">=</span> <span class="pre">{'DYNAMIC_PARAMS':DYNAMIC_PARAMS}))</span></code> 3. <code class="docutils literal notranslate"><span class="pre">JC</span></code>: runs Judgment Call (JC) method, which is a decentralized version of INDP [cite]. To run this method, you have to call:
+<code class="docutils literal notranslate"><span class="pre">runutils.run_method(FAIL_SCE_PARAM,</span> <span class="pre">RC,</span> <span class="pre">LAYERS,</span> <span class="pre">method='JC',</span> <span class="pre">judgment_type=JUDGE_TYPE,</span>&#160;&#160;&#160;&#160; <span class="pre">res_alloc_type=RES_ALLOC_TYPE,</span> <span class="pre">valuation_type=VAL_TYPE,</span>&#160;&#160;&#160;&#160; <span class="pre">output_dir=OUTPUT_DIR,</span> <span class="pre">dynamic_params=DYNAMIC_PARAMS,</span>&#160;&#160;&#160;&#160; <span class="pre">misc</span> <span class="pre">=</span> <span class="pre">{'STM_MODEL':STM_MODEL_DICT,</span> <span class="pre">'DYNAMIC_PARAMS':DYNAMIC_PARAMS})</span></code> 4. <code class="docutils literal notranslate"><span class="pre">NORMALGAME</span></code>: runs Interdependent Network Restoration Normal Game (INRNG), which is a decentralized version of INDP [cite]. To run this method, you have to call:
+<code class="docutils literal notranslate"><span class="pre">runutils.run_method(FAIL_SCE_PARAM,</span> <span class="pre">RC,</span> <span class="pre">LAYERS,</span> <span class="pre">method='NORMALGAME',</span> <span class="pre">judgment_type=JUDGE_TYPE,</span>&#160;&#160;&#160;&#160; <span class="pre">res_alloc_type=RES_ALLOC_TYPE,</span> <span class="pre">valuation_type=VAL_TYPE,</span> <span class="pre">output_dir=OUTPUT_DIR,</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">misc</span> <span class="pre">=</span> <span class="pre">{'PAYOFF_DIR':PAYOFF_DIR,</span> <span class="pre">'DYNAMIC_PARAMS':DYNAMIC_PARAMS,</span>&#160;&#160;&#160; <span class="pre">'REDUCED_ACTIONS':'EDM'}</span></code> Here, <code class="docutils literal notranslate"><span class="pre">misc['REDUCED_ACTIONS']</span></code> sets the hueristic method to reduce the number of actions of each player to add Bounded Rationality to the analysis. Options are <em>ER</em> for exhasuting resources, and <em>EDM</em> for expert
+decision maker. 5. <code class="docutils literal notranslate"><span class="pre">BAYESGAME</span></code>: runs Interdependent Network Restoration Bayesian Game (INRBG), which is a decentralized version of INDP [cite]. To run this method, you have to call:
+<code class="docutils literal notranslate"><span class="pre">runutils.run_method(FAIL_SCE_PARAM,</span> <span class="pre">RC,</span> <span class="pre">LAYERS,</span> <span class="pre">method='BAYESGAME',</span> <span class="pre">judgment_type=JUDGE_TYPE,</span>&#160;&#160;&#160;&#160; <span class="pre">res_alloc_type=RES_ALLOC_TYPE,</span> <span class="pre">valuation_type=VAL_TYPE,</span> <span class="pre">output_dir=OUTPUT_DIR,</span>&#160;&#160;&#160;&#160; <span class="pre">misc</span> <span class="pre">=</span> <span class="pre">{'PAYOFF_DIR':PAYOFF_DIR,</span> <span class="pre">'DYNAMIC_PARAMS':DYNAMIC_PARAMS,</span>&#160;&#160;&#160;&#160; <span class="pre">&quot;SIGNALS&quot;:{1:'C',</span> <span class="pre">2:'C'},</span> <span class="pre">&quot;BELIEFS&quot;:{1:'U',</span> <span class="pre">2:'U'},</span>&#160;&#160;&#160;&#160; <span class="pre">'REDUCED_ACTIONS':'EDM'}</span></code> Here, <code class="docutils literal notranslate"><span class="pre">misc['SIGNALS']</span></code> sets the actual type of each player in the game. Options are <em>C</em> for cooperative and <em>N</em> for non-cooperative. Also, <code class="docutils literal notranslate"><span class="pre">misc['BELIEFS']</span></code>
+sets the belief of each player in the game. Options are <em>U</em> for uniformed belief, <em>F</em> for false consensus bias, and <em>I</em> for inverse false consensus bias.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">runutils</span><span class="o">.</span><span class="n">run_method</span><span class="p">(</span><span class="n">FAIL_SCE_PARAM</span><span class="p">,</span> <span class="n">RC</span><span class="p">,</span> <span class="n">LAYERS</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;INDP&#39;</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">OUTPUT_DIR</span><span class="p">,</span>
+                                    <span class="n">misc</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;DYNAMIC_PARAMS&#39;</span><span class="p">:</span><span class="n">DYNAMIC_PARAMS</span><span class="p">})</span>
+<span class="c1"># runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method=&#39;TDINDP&#39;, output_dir=OUTPUT_DIR,</span>
+<span class="c1">#                     misc = {&#39;DYNAMIC_PARAMS&#39;:DYNAMIC_PARAMS})</span>
+<span class="c1"># runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method=&#39;JC&#39;, judgment_type=JUDGE_TYPE,</span>
+<span class="c1">#                     res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,</span>
+<span class="c1">#                     output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS,</span>
+<span class="c1">#                     misc = {&#39;STM_MODEL&#39;:STM_MODEL_DICT, &#39;DYNAMIC_PARAMS&#39;:DYNAMIC_PARAMS})</span>
+<span class="n">runutils</span><span class="o">.</span><span class="n">run_method</span><span class="p">(</span><span class="n">FAIL_SCE_PARAM</span><span class="p">,</span> <span class="n">RC</span><span class="p">,</span> <span class="n">LAYERS</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;NORMALGAME&#39;</span><span class="p">,</span> <span class="n">judgment_type</span><span class="o">=</span><span class="n">JUDGE_TYPE</span><span class="p">,</span>
+                                    <span class="n">res_alloc_type</span><span class="o">=</span><span class="n">RES_ALLOC_TYPE</span><span class="p">,</span> <span class="n">valuation_type</span><span class="o">=</span><span class="n">VAL_TYPE</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">OUTPUT_DIR</span><span class="p">,</span>
+                                    <span class="n">misc</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;PAYOFF_DIR&#39;</span><span class="p">:</span><span class="n">PAYOFF_DIR</span><span class="p">,</span> <span class="s1">&#39;DYNAMIC_PARAMS&#39;</span><span class="p">:</span><span class="n">DYNAMIC_PARAMS</span><span class="p">,</span>
+                                    <span class="s1">&#39;REDUCED_ACTIONS&#39;</span><span class="p">:</span><span class="s1">&#39;EDM&#39;</span><span class="p">})</span>
+<span class="n">runutils</span><span class="o">.</span><span class="n">run_method</span><span class="p">(</span><span class="n">FAIL_SCE_PARAM</span><span class="p">,</span> <span class="n">RC</span><span class="p">,</span> <span class="n">LAYERS</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;BAYESGAME&#39;</span><span class="p">,</span> <span class="n">judgment_type</span><span class="o">=</span><span class="n">JUDGE_TYPE</span><span class="p">,</span>
+                    <span class="n">res_alloc_type</span><span class="o">=</span><span class="n">RES_ALLOC_TYPE</span><span class="p">,</span> <span class="n">valuation_type</span><span class="o">=</span><span class="n">VAL_TYPE</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">OUTPUT_DIR</span><span class="p">,</span>
+                    <span class="n">misc</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;PAYOFF_DIR&#39;</span><span class="p">:</span><span class="n">PAYOFF_DIR</span><span class="p">,</span> <span class="s1">&#39;DYNAMIC_PARAMS&#39;</span><span class="p">:</span><span class="n">DYNAMIC_PARAMS</span><span class="p">,</span>
+                                    <span class="s2">&quot;SIGNALS&quot;</span><span class="p">:{</span><span class="mi">1</span><span class="p">:</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span><span class="s1">&#39;C&#39;</span><span class="p">},</span> <span class="s2">&quot;BELIEFS&quot;</span><span class="p">:{</span><span class="mi">1</span><span class="p">:</span><span class="s1">&#39;U&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span><span class="s1">&#39;U&#39;</span><span class="p">},</span>
+                                    <span class="s1">&#39;REDUCED_ACTIONS&#39;</span><span class="p">:</span><span class="s1">&#39;EDM&#39;</span><span class="p">})</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+----Running for resources: 0
+---Running Magnitude 0 sample 0...
+Initializing network...
+Initiallize Damage...
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-intense-fg ansi-bold">---------------------------------------------------------------------------</span>
+<span class="ansi-red-intense-fg ansi-bold">FileNotFoundError</span>                         Traceback (most recent call last)
+<span class="ansi-green-intense-fg ansi-bold">&lt;ipython-input-6-e6f69f057d48&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
+<span class="ansi-green-intense-fg ansi-bold">----&gt; 1</span><span class="ansi-yellow-intense-fg ansi-bold"> runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method=&#39;INDP&#39;, output_dir=OUTPUT_DIR,
+</span><span class="ansi-green-fg">      2</span>                                       misc = {&#39;DYNAMIC_PARAMS&#39;:DYNAMIC_PARAMS})
+<span class="ansi-green-fg">      3</span> <span class="ansi-red-intense-fg ansi-bold"># runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method=&#39;TDINDP&#39;, output_dir=OUTPUT_DIR,</span>
+<span class="ansi-green-fg">      4</span> <span class="ansi-red-intense-fg ansi-bold">#                     misc = {&#39;DYNAMIC_PARAMS&#39;:DYNAMIC_PARAMS})</span>
+<span class="ansi-green-fg">      5</span> <span class="ansi-red-intense-fg ansi-bold"># runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method=&#39;JC&#39;, judgment_type=JUDGE_TYPE,</span>
+
+<span class="ansi-green-intense-fg ansi-bold">~\Documents\GitHub\td-DINDP\pyindp\runutils.py</span> in <span class="ansi-cyan-fg">run_method</span><span class="ansi-blue-intense-fg ansi-bold">(fail_sce_param, v_r, layers, method, judgment_type, res_alloc_type, valuation_type, output_dir, misc)</span>
+<span class="ansi-green-fg">    198</span>             params<span class="ansi-yellow-intense-fg ansi-bold">[</span><span class="ansi-blue-intense-fg ansi-bold">&#39;OUTPUT_DIR&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">]</span> <span class="ansi-yellow-intense-fg ansi-bold">=</span> params<span class="ansi-yellow-intense-fg ansi-bold">[</span><span class="ansi-blue-intense-fg ansi-bold">&#39;OUTPUT_DIR&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">]</span><span class="ansi-yellow-intense-fg ansi-bold">.</span>replace<span class="ansi-yellow-intense-fg ansi-bold">(</span>prefix<span class="ansi-yellow-intense-fg ansi-bold">,</span><span class="ansi-blue-intense-fg ansi-bold">&#39;dp_&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">+</span>prefix<span class="ansi-yellow-intense-fg ansi-bold">)</span>
+<span class="ansi-green-fg">    199</span>
+<span class="ansi-green-intense-fg ansi-bold">--&gt; 200</span><span class="ansi-yellow-intense-fg ansi-bold">         </span>batch_run<span class="ansi-yellow-intense-fg ansi-bold">(</span>params<span class="ansi-yellow-intense-fg ansi-bold">,</span> fail_sce_param<span class="ansi-yellow-intense-fg ansi-bold">)</span>
+<span class="ansi-green-fg">    201</span>
+<span class="ansi-green-fg">    202</span> <span class="ansi-green-intense-fg ansi-bold">def</span> run_indp_sample<span class="ansi-yellow-intense-fg ansi-bold">(</span>layers<span class="ansi-yellow-intense-fg ansi-bold">)</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
+
+<span class="ansi-green-intense-fg ansi-bold">~\Documents\GitHub\td-DINDP\pyindp\runutils.py</span> in <span class="ansi-cyan-fg">batch_run</span><span class="ansi-blue-intense-fg ansi-bold">(params, fail_sce_param)</span>
+<span class="ansi-green-fg">     71</span>                             infrastructure_data=infrastructure_data)
+<span class="ansi-green-fg">     72</span>             <span class="ansi-green-intense-fg ansi-bold">else</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
+<span class="ansi-green-intense-fg ansi-bold">---&gt; 73</span><span class="ansi-yellow-intense-fg ansi-bold">                 params[&#34;N&#34;], params[&#34;V&#34;], params[&#39;L&#39;] = indp.initialize_network(BASE_DIR=base_dir,
+</span><span class="ansi-green-fg">     74</span>                             external_interdependency_dir<span class="ansi-yellow-intense-fg ansi-bold">=</span>ext_interdependency<span class="ansi-yellow-intense-fg ansi-bold">,</span>
+<span class="ansi-green-fg">     75</span>                             magnitude<span class="ansi-yellow-intense-fg ansi-bold">=</span>m<span class="ansi-yellow-intense-fg ansi-bold">,</span> sample<span class="ansi-yellow-intense-fg ansi-bold">=</span>i<span class="ansi-yellow-intense-fg ansi-bold">,</span> infrastructure_data<span class="ansi-yellow-intense-fg ansi-bold">=</span>infrastructure_data<span class="ansi-yellow-intense-fg ansi-bold">,</span>
+
+<span class="ansi-green-intense-fg ansi-bold">~\Documents\GitHub\td-DINDP\pyindp\indp.py</span> in <span class="ansi-cyan-fg">initialize_network</span><span class="ansi-blue-intense-fg ansi-bold">(BASE_DIR, external_interdependency_dir, sim_number, cost_scale, magnitude, sample, v, infrastructure_data, topology)</span>
+<span class="ansi-green-fg">    525</span>     <span class="ansi-red-intense-fg ansi-bold">#    print &#34;Data loaded.&#34; #!!!</span>
+<span class="ansi-green-fg">    526</span>     <span class="ansi-green-intense-fg ansi-bold">else</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
+<span class="ansi-green-intense-fg ansi-bold">--&gt; 527</span><span class="ansi-yellow-intense-fg ansi-bold">         InterdepNet,v_temp,layers_temp=load_synthetic_network(BASE_DIR=BASE_DIR, topology=topology,
+</span><span class="ansi-green-fg">    528</span>                                                               config<span class="ansi-yellow-intense-fg ansi-bold">=</span>magnitude<span class="ansi-yellow-intense-fg ansi-bold">,</span> sample<span class="ansi-yellow-intense-fg ansi-bold">=</span>sample<span class="ansi-yellow-intense-fg ansi-bold">,</span>
+<span class="ansi-green-fg">    529</span>                                                               cost_scale=cost_scale)
+
+<span class="ansi-green-intense-fg ansi-bold">~\Documents\GitHub\td-DINDP\pyindp\infrastructure.py</span> in <span class="ansi-cyan-fg">load_synthetic_network</span><span class="ansi-blue-intense-fg ansi-bold">(BASE_DIR, topology, config, sample, cost_scale)</span>
+<span class="ansi-green-fg">    779</span>     net_dir <span class="ansi-yellow-intense-fg ansi-bold">=</span> BASE_DIR<span class="ansi-yellow-intense-fg ansi-bold">+</span><span class="ansi-blue-intense-fg ansi-bold">&#39;/&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">+</span>topology<span class="ansi-yellow-intense-fg ansi-bold">+</span><span class="ansi-blue-intense-fg ansi-bold">&#39;Networks/&#39;</span>
+<span class="ansi-green-fg">    780</span>     topo_initial <span class="ansi-yellow-intense-fg ansi-bold">=</span> <span class="ansi-yellow-intense-fg ansi-bold">{</span><span class="ansi-blue-intense-fg ansi-bold">&#39;Random&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">:</span><span class="ansi-blue-intense-fg ansi-bold">&#39;RN&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">,</span><span class="ansi-blue-intense-fg ansi-bold">&#39;ScaleFree&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">:</span><span class="ansi-blue-intense-fg ansi-bold">&#39;SFN&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">,</span><span class="ansi-blue-intense-fg ansi-bold">&#39;Grid&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">:</span><span class="ansi-blue-intense-fg ansi-bold">&#39;GN&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">,</span> <span class="ansi-blue-intense-fg ansi-bold">&#39;General&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">:</span> <span class="ansi-blue-intense-fg ansi-bold">&#39;GEN&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">}</span>
+<span class="ansi-green-intense-fg ansi-bold">--&gt; 781</span><span class="ansi-yellow-intense-fg ansi-bold">     </span><span class="ansi-green-intense-fg ansi-bold">with</span> open<span class="ansi-yellow-intense-fg ansi-bold">(</span>net_dir<span class="ansi-yellow-intense-fg ansi-bold">+</span><span class="ansi-blue-intense-fg ansi-bold">&#39;List_of_Configurations.txt&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">)</span> <span class="ansi-green-intense-fg ansi-bold">as</span> f<span class="ansi-yellow-intense-fg ansi-bold">:</span>
+<span class="ansi-green-fg">    782</span>         config_data <span class="ansi-yellow-intense-fg ansi-bold">=</span> pd<span class="ansi-yellow-intense-fg ansi-bold">.</span>read_csv<span class="ansi-yellow-intense-fg ansi-bold">(</span>f<span class="ansi-yellow-intense-fg ansi-bold">,</span> delimiter<span class="ansi-yellow-intense-fg ansi-bold">=</span><span class="ansi-blue-intense-fg ansi-bold">&#39;\t&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">)</span>
+<span class="ansi-green-fg">    783</span>         config_data <span class="ansi-yellow-intense-fg ansi-bold">=</span> config_data<span class="ansi-yellow-intense-fg ansi-bold">.</span>rename<span class="ansi-yellow-intense-fg ansi-bold">(</span>columns<span class="ansi-yellow-intense-fg ansi-bold">=</span><span class="ansi-green-intense-fg ansi-bold">lambda</span> x<span class="ansi-yellow-intense-fg ansi-bold">:</span> x<span class="ansi-yellow-intense-fg ansi-bold">.</span>strip<span class="ansi-yellow-intense-fg ansi-bold">(</span><span class="ansi-yellow-intense-fg ansi-bold">)</span><span class="ansi-yellow-intense-fg ansi-bold">)</span>
+
+<span class="ansi-red-intense-fg ansi-bold">FileNotFoundError</span>: [Errno 2] No such file or directory: &#39;/home/hesam/Desktop/Files/Generated_Network_Dataset_v4//GeneralNetworks/List_of_Configurations.txt&#39;
+</pre></div></div>
+</div>
+</section>
+<section id="Post-processing">
+<h3>Post-processing<a class="headerlink" href="#Post-processing" title="Permalink to this headline">¶</a></h3>
+<p>First, you have to set a few parameters and then call functions that read outputs and generate the panda datframes that are needed for plotting the results. ##### Post-processing parameters 1. <code class="docutils literal notranslate"><span class="pre">COST_TYPES</span></code>: type of cost that should be used in processing the outputs. Options are <em>Total</em>, <em>Under Supply</em>, <em>Over Supply</em>, <em>Node</em>, <em>Arc</em>, <em>Flow</em>, <em>Space Prep</em>, <em>Under Supply Perc</em>. 2. <code class="docutils literal notranslate"><span class="pre">REF_METHOD</span></code>: the method that served as the reference in computing the reative performance and allocation gap.
+Usually, this is aan optimal methods like <code class="docutils literal notranslate"><span class="pre">indp</span></code> or <code class="docutils literal notranslate"><span class="pre">tdindp</span></code>. However, it can be any other method lik <code class="docutils literal notranslate"><span class="pre">jc</span></code>, <code class="docutils literal notranslate"><span class="pre">ng</span></code>, or else. 3. <code class="docutils literal notranslate"><span class="pre">METHOD_NAMES</span></code>: methods whose output should be read. Options are <code class="docutils literal notranslate"><span class="pre">indp</span></code>, <code class="docutils literal notranslate"><span class="pre">tdindp</span></code>, <code class="docutils literal notranslate"><span class="pre">jc</span></code>, <code class="docutils literal notranslate"><span class="pre">ng</span></code>, <code class="docutils literal notranslate"><span class="pre">dp_indp</span></code>, <code class="docutils literal notranslate"><span class="pre">dp_jc</span></code>, <code class="docutils literal notranslate"><span class="pre">bg????</span></code> (For example <code class="docutils literal notranslate"><span class="pre">bgNCUI</span></code> means the Bayesiab game with two players where the first player is non-cooperative and uses uninformative belief, and the second one is cooperative and uses the inverse false consensus belief).</p>
+<section id="Post-processing-functions">
+<h4>Post-processing functions<a class="headerlink" href="#Post-processing-functions" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">generate_combinations</span></code>: generate all the combination of oututs that should be read and save them in <code class="docutils literal notranslate"><span class="pre">COMBS</span></code> and <code class="docutils literal notranslate"><span class="pre">OPTIMAL_COMBS</span></code> lists.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">read_results</span></code>: read results for combinations in <code class="docutils literal notranslate"><span class="pre">COMBS</span></code> and <code class="docutils literal notranslate"><span class="pre">OPTIMAL_COMBS</span></code> lists.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">relative_performance</span></code>: computes relative performance measures for different combinations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">read_resourcec_allocation</span></code>: read the resource allocations by different methods and compute allocation gaps for different combinations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">read_run_time</span></code>: compute run time for different combinations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">analyze_NE</span></code>: analyze the characteristics of Nash equilibria for different combinations.</p></li>
+</ol>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">COST_TYPES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Total&#39;</span><span class="p">]</span> <span class="c1"># &#39;Under Supply&#39;, &#39;Over Supply&#39;</span>
+<span class="n">REF_METHOD</span> <span class="o">=</span> <span class="s1">&#39;indp&#39;</span>
+<span class="n">METHOD_NAMES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;indp&#39;</span><span class="p">,</span><span class="s1">&#39;ng&#39;</span><span class="p">,</span> <span class="s1">&#39;bgCCUU&#39;</span><span class="p">]</span>
+<span class="c1"># #&#39;ng&#39;, &#39;jc&#39;, &#39;dp_indp&#39;, &#39;tdindp&#39;,</span>
+<span class="c1"># #&#39;bgNNNNUUUU&#39;,&#39;bgCCCCUUUU&#39;, &#39;bgCCNCUUUU&#39;, &#39;bgCCCCFFFF&#39;, &#39;bgNNNNFFFF&#39;, &#39;bgCCNCFFFF&#39;</span>
+<span class="c1"># #&#39;bgCCCCIIII&#39;,&#39;bgNNNNIIII&#39;, &#39;bgCCNCIIII&#39;,</span>
+
+<span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span> <span class="o">=</span> <span class="n">dindputils</span><span class="o">.</span><span class="n">generate_combinations</span><span class="p">(</span><span class="n">FAIL_SCE_PARAM</span><span class="p">[</span><span class="s1">&#39;TYPE&#39;</span><span class="p">],</span>
+                    <span class="n">FAIL_SCE_PARAM</span><span class="p">[</span><span class="s1">&#39;MAGS&#39;</span><span class="p">],</span> <span class="n">FAIL_SCE_PARAM</span><span class="p">[</span><span class="s1">&#39;SAMPLE_RANGE&#39;</span><span class="p">],</span> <span class="n">LAYERS</span><span class="p">,</span>
+                    <span class="n">RC</span><span class="p">,</span> <span class="n">METHOD_NAMES</span><span class="p">,</span> <span class="n">JUDGE_TYPE</span><span class="p">,</span> <span class="n">RES_ALLOC_TYPE</span><span class="p">,</span> <span class="n">VAL_TYPE</span><span class="p">,</span>
+                    <span class="n">list_high_dam_add</span><span class="o">=</span><span class="n">FAIL_SCE_PARAM</span><span class="p">[</span><span class="s1">&#39;FILTER_SCE&#39;</span><span class="p">],</span>
+                    <span class="n">synthetic_dir</span><span class="o">=</span><span class="n">SYNTH_DIR</span><span class="p">)</span>
+
+<span class="n">BASE_DF</span><span class="p">,</span> <span class="n">objs</span> <span class="o">=</span> <span class="n">dindputils</span><span class="o">.</span><span class="n">read_results</span><span class="p">(</span><span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">,</span> <span class="n">COST_TYPES</span><span class="p">,</span>
+                                                                    <span class="n">root_result_dir</span><span class="o">=</span><span class="n">OUTPUT_DIR</span><span class="p">,</span> <span class="n">deaggregate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">LAMBDA_DF</span> <span class="o">=</span> <span class="n">dindputils</span><span class="o">.</span><span class="n">relative_performance</span><span class="p">(</span><span class="n">BASE_DF</span><span class="p">,</span> <span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">,</span>
+                                                                            <span class="n">ref_method</span><span class="o">=</span><span class="n">REF_METHOD</span><span class="p">,</span> <span class="n">cost_type</span><span class="o">=</span><span class="n">COST_TYPES</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">RES_ALLOC_DF</span><span class="p">,</span> <span class="n">ALLOC_GAP_DF</span> <span class="o">=</span> <span class="n">dindputils</span><span class="o">.</span><span class="n">read_resourcec_allocation</span><span class="p">(</span><span class="n">BASE_DF</span><span class="p">,</span> <span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">,</span>
+                                                                                                                      <span class="n">objs</span><span class="p">,</span> <span class="n">root_result_dir</span><span class="o">=</span><span class="n">OUTPUT_DIR</span><span class="p">,</span>
+                                                                                                                      <span class="n">ref_method</span><span class="o">=</span><span class="n">REF_METHOD</span><span class="p">)</span>
+<span class="n">RUN_TIME_DF</span> <span class="o">=</span> <span class="n">dindputils</span><span class="o">.</span><span class="n">read_run_time</span><span class="p">(</span><span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">,</span> <span class="n">objs</span><span class="p">,</span> <span class="n">root_result_dir</span><span class="o">=</span><span class="n">OUTPUT_DIR</span><span class="p">)</span>
+<span class="n">ANALYZE_NE_DF</span> <span class="o">=</span> <span class="n">gameutils</span><span class="o">.</span><span class="n">analyze_NE</span><span class="p">(</span><span class="n">objs</span><span class="p">,</span> <span class="n">COMBS</span><span class="p">,</span> <span class="n">OPTIMAL_COMBS</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Save-Variables-to-file">
+<h3>Save Variables to file<a class="headerlink" href="#Save-Variables-to-file" title="Permalink to this headline">¶</a></h3>
+<p>All dictionaries that are made in the postprocessing step are saved here.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,</span>
+<span class="c1">#             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]</span>
+
+<span class="c1"># ## Saving the objects ###</span>
+<span class="c1"># with open(OUTPUT_DIR+&#39;postprocess_dicts.pkl&#39;, &#39;wb&#39;) as f:</span>
+<span class="c1">#     pickle.dump(OBJ_LIST, f)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Plot-results">
+<h3>Plot results<a class="headerlink" href="#Plot-results" title="Permalink to this headline">¶</a></h3>
+<p>Plot functions use the dictionaries that are made in the postprocessing step to make output figures: 1. <code class="docutils literal notranslate"><span class="pre">plot_performance_curves</span></code>: plots costs (in <code class="docutils literal notranslate"><span class="pre">COST_TYPES</span></code>) and unmet demand vs. time. 2. <code class="docutils literal notranslate"><span class="pre">plot_seperated_perform_curves</span></code>: plots costs (in <code class="docutils literal notranslate"><span class="pre">COST_TYPES</span></code>) vs. time for each layer sepearately. 3. <code class="docutils literal notranslate"><span class="pre">plot_relative_performance</span></code>: plots relative performances. 4. <code class="docutils literal notranslate"><span class="pre">plot_auction_allocation</span></code>: plots reosurce allocation vs. time. 5. <code class="docutils literal notranslate"><span class="pre">plot_relative_allocation</span></code>: plots allocation gaps. 6.
+<code class="docutils literal notranslate"><span class="pre">plot_run_time</span></code>: plots run time vs. time. 7. <code class="docutils literal notranslate"><span class="pre">plot_ne_analysis</span></code>: plots NE analysis measures vs. time (for games only). 8. <code class="docutils literal notranslate"><span class="pre">plot_ne_cooperation</span></code>: plots action types vs. time (for games only). 9. <code class="docutils literal notranslate"><span class="pre">plot_payoff_hist</span></code>: plots size of the payoff matrix vs. time (for games only).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+<span class="c1"># ### Getting back the objects ###</span>
+<span class="c1"># with open(OUTPUT_DIR+&#39;postprocess_dicts.pkl&#39;, &#39;rb&#39;) as f:</span>
+<span class="c1">#     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,</span>
+<span class="c1">#       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)</span>
+
+<span class="c1"># plots.plot_performance_curves(BASE_DF,</span>
+<span class="c1">#                               cost_type=&#39;Total&#39;, ci=95,</span>
+<span class="c1">#                               deaggregate=False, plot_resilience=False)</span>
+
+<span class="c1"># # plots.plot_seperated_perform_curves(BASE_DF, x=&#39;t&#39;, y=&#39;cost&#39;, cost_type=&#39;Total&#39;,</span>
+<span class="c1"># #                                     ci=95, normalize=False)</span>
+
+<span class="c1"># plots.plot_relative_performance(LAMBDA_DF, lambda_type=&#39;U&#39;)</span>
+<span class="c1"># # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)</span>
+<span class="c1"># # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type=&#39;gap&#39;)</span>
+<span class="c1"># # plots.plot_run_time(RUN_TIME_DF, ci=95)</span>
+<span class="c1"># plots.plot_ne_analysis(ANALYZE_NE_DF, ci=95)</span>
+<span class="c1"># plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=95)</span>
+<span class="c1"># plots.plot_payoff_hist(ANALYZE_NE_DF, compute_payoff_numbers=True, outlier=False)</span>
+
+ <span class="c1">#[(ANALYZE_NE_DF[&#39;auction_type&#39;]!=&#39;UNIFORM&#39;)]</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+</section>
 
 
            </div>
            
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="indp_main.html" class="btn btn-neutral float-right" title="Interdependent Network Design Problem (INDP)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="main_vars.html" class="btn btn-neutral float-left" title="Input Parameters" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2020, Hesam Talebiyan
+        &#169; Copyright 2021, SISRRA.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 

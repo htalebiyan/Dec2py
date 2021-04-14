@@ -1,4 +1,4 @@
-# %% dependencies
+# %%
 """ Functions that are used to run different types of analysis on the restoration of 
 interdependent networks
 """
@@ -15,11 +15,11 @@ import itertools
 import Metaheuristics.metaheuristics as mh
 import gameutils 
 
-# %% functions
-def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
+# %%
+def batch_run(params, fail_sce_param):
     '''
     Batch run different methods for a given list of damage scenarios,
-        given global parameters.
+    given global parameters.
 
     Parameters
     ----------
@@ -27,8 +27,6 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
         DESCRIPTION.
     fail_sce_param : dict
         DESCRIPTION.
-    player_ordering : list, optional
-        DESCRIPTION. The default is [3, 1].
 
     Returns
     -------

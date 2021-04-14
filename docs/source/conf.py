@@ -13,16 +13,19 @@
 import os
 import sys
 import sphinx_rtd_theme
-sys.path.insert(0, os.path.abspath('../../pyindp'))
-
+sys.path.insert(0, os.path.abspath('../../pyindp/'))
+# -----------------------------------------
+# Required
+version: 2
 # -- Project information -----------------------------------------------------
 
 project = 'Decenalized Decision Making'
-copyright = '2020, Hesam Talebiyan'
+copyright = '2021, SISRRA'
 author = 'Hesam Talebiyan'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.0'
+version = '0.3.0'
+release = version
 
 
 # -- General configuration ---------------------------------------------------
@@ -32,10 +35,10 @@ release = '0.1.0'
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.napoleon',
 'sphinx_automodapi.automodapi','sphinx.ext.todo', 'sphinx.ext.githubpages',
-'sphinx_rtd_theme', 'sphinxcontrib.bibtex']#, 'sphinx.ext.viewcode']
+'sphinx_rtd_theme', 'sphinxcontrib.bibtex', 'nbsphinx', 'sphinx.ext.mathjax']#, 'sphinx.ext.viewcode']
 numpydoc_show_class_members = False
 todo_include_todos = True
-autodoc_mock_imports = ['gambit']
+autodoc_mock_imports = []
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -45,12 +48,12 @@ templates_path = ['_templates']
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = 'Python 3.7.6'
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns = ['_build', '**.ipynb_checkpoints']
 
 
 # -- Options for HTML output -------------------------------------------------

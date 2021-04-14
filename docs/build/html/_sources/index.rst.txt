@@ -4,11 +4,9 @@ Decentralized Decision Making's documentation
    :maxdepth: 2
    :caption: Topics:
 
-   main_vars.rst
-   run_main.rst
-   indp_main.rst
-   dindp_main.rst
-   gameclasses.rst
+   run_main.ipynb
+   backend.rst
+
    
 Indices and tables
 ==================

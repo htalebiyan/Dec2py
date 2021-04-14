@@ -1,13 +1,14 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="Python 3.7.6" >
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>INDP Functions &mdash; Decenalized Decision Making 0.1.0 documentation</title>
+  <title>INDP optimization functions &mdash; Decenalized Decision Making 0.3.0 documentation</title>
   
 
   
@@ -17,7 +18,10 @@
 
   
   
+
   
+  
+
   
 
   
@@ -30,16 +34,15 @@
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="INDP utils classes and functions" href="indputils.html" />
-    <link rel="prev" title="Interdependent Network Design Problem (INDP)" href="indp_main.html" /> 
+    <link rel="next" title="INDP classes and functions" href="indputils.html" />
+    <link rel="prev" title="High-level analysis modules" href="runutils.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -53,7 +56,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home" alt="Documentation Home"> Decenalized Decision Making
+            <a href="index.html" class="icon icon-home"> Decenalized Decision Making
           
 
           
@@ -61,6 +64,10 @@
 
           
             
+            
+              <div class="version">
+                0.3.0
+              </div>
             
           
 
@@ -84,20 +91,21 @@
               
             
             
-              <p class="caption"><span class="caption-text">Topics:</span></p>
+              <p><span class="caption-text">Topics:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="main_vars.html">Input Parameters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="run_main.html">Run INDP and Judgment Call</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="indp_main.html">Interdependent Network Design Problem (INDP)</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">INDP Functions</a><ul class="simple">
+<li class="toctree-l1 current"><a class="reference internal" href="backend.html">Backend Classes and Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="runutils.html">High-level analysis modules</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">INDP optimization functions</a><ul class="simple">
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="indputils.html">INDP utils classes and functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="indputils.html">INDP classes and functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="infrastructure.html">Infrastructure classes and functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dindputils.html">Judgment Call functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dindpclasses.html">Judgment Call Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gameutils.html">INRNG and INRBG functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gameclasses.html">INRNG and INRBG Classes</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="dindp_main.html">Judgment Call Method</a></li>
-<li class="toctree-l1"><a class="reference internal" href="gameclasses.html">Restoration Game Classes</a></li>
 </ul>
 
             
@@ -138,20 +146,22 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
     
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
-          <li><a href="indp_main.html">Interdependent Network Design Problem (INDP)</a> &raquo;</li>
+          <li><a href="backend.html">Backend Classes and Modules</a> &raquo;</li>
         
-      <li>INDP Functions</li>
+      <li>INDP optimization functions</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/indp.rst.txt" rel="nofollow"> View page source</a>
           
         
@@ -165,23 +175,47 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="module-indp">
-<span id="indp-functions"></span><h1>INDP Functions<a class="headerlink" href="#module-indp" title="Permalink to this headline">¶</a></h1>
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-indp">
+<span id="indp-optimization-functions"></span><h1>INDP optimization functions<a class="headerlink" href="#module-indp" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt id="indp.create_functionality_matrix">
-<code class="sig-prename descclassname">indp.</code><code class="sig-name descname">create_functionality_matrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">N</span></em>, <em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">actions</span></em>, <em class="sig-param"><span class="n">strategy_type</span><span class="o">=</span><span class="default_value">'OPTIMISTIC'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.create_functionality_matrix" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">create_functionality_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strategy_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'OPTIMISTIC'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.create_functionality_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a functionality map for input into the functionality parameter in the indp function.
 :param N: An InfrastructureNetwork instance (created in infrastructure.py)
 :param T: Number of timesteps to optimize over.
 :param layers: Layer IDs of N included in the optimization.
-:param actions: An array of actions from a previous optimization. Likely taken from an INDPResults variable 'indp_result[t]['actions']'.
-:param strategy_type: If no actions are provided, assigns a default functionality. Options are: &quot;OPTIMISTIC&quot;, &quot;PESSIMISTIC&quot; or &quot;INFO_SHARE&quot;
+:param actions: An array of actions from a previous optimization. Likely taken from an INDPResults variable ‘indp_result[t][‘actions’]’.
+:param strategy_type: If no actions are provided, assigns a default functionality. Options are: “OPTIMISTIC”, “PESSIMISTIC” or “INFO_SHARE”
 :returns: A functionality dictionary used for input into indp.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt id="indp.indp">
-<code class="sig-prename descclassname">indp.</code><code class="sig-name descname">indp</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">N</span></em>, <em class="sig-param"><span class="n">v_r</span></em>, <em class="sig-param"><span class="n">T</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">layers</span><span class="o">=</span><span class="default_value">[1, 3]</span></em>, <em class="sig-param"><span class="n">controlled_layers</span><span class="o">=</span><span class="default_value">[1, 3]</span></em>, <em class="sig-param"><span class="n">functionality</span><span class="o">=</span><span class="default_value">{}</span></em>, <em class="sig-param"><span class="n">forced_actions</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">fixed_nodes</span><span class="o">=</span><span class="default_value">{}</span></em>, <em class="sig-param"><span class="n">print_cmd</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">time_limit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">co_location</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.indp" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">indp</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">3]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controlled_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">3]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">functionality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forced_actions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">co_location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solution_pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.indp" title="Permalink to this definition">¶</a></dt>
 <dd><p>INDP optimization problem. Also solves td-INDP if T &gt; 1.
 :param N: An InfrastructureNetwork instance (created in infrastructure.py)
 :param v_r: Vector of number of resources given to each layer in each timestep. If the size of the vector is 1, it shows the total number of resources for all layers.
@@ -194,7 +228,7 @@
 
 <dl class="py function">
 <dt id="indp.initialize_network">
-<code class="sig-prename descclassname">indp.</code><code class="sig-name descname">initialize_network</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">BASE_DIR</span><span class="o">=</span><span class="default_value">'../data/INDP_7-20-2015/'</span></em>, <em class="sig-param"><span class="n">external_interdependency_dir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sim_number</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cost_scale</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">magnitude</span><span class="o">=</span><span class="default_value">6</span></em>, <em class="sig-param"><span class="n">sample</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">v</span><span class="o">=</span><span class="default_value">3</span></em>, <em class="sig-param"><span class="n">shelby_data</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">topology</span><span class="o">=</span><span class="default_value">'Random'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.initialize_network" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">initialize_network</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">BASE_DIR</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'../data/INDP_7-20-2015/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">external_interdependency_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">magnitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">infrastructure_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topology</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Random'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.initialize_network" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializes an InfrastructureNetwork from Shelby County data.
 :param BASE_DIR: Base directory of Shelby County data.
 :param sim_number: Which simulation number to use as input.
@@ -206,7 +240,7 @@
 
 <dl class="py function">
 <dt id="indp.initialize_sample_network">
-<code class="sig-prename descclassname">indp.</code><code class="sig-name descname">initialize_sample_network</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span><span class="o">=</span><span class="default_value">[1, 2]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.initialize_sample_network" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">initialize_sample_network</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">2]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.initialize_sample_network" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializes sample network
 :param layers: (Currently not used).
 :returns: An interdependent InfrastructureNetwork.</p>
@@ -214,8 +248,8 @@
 
 <dl class="py function">
 <dt id="indp.run_indp">
-<code class="sig-prename descclassname">indp.</code><code class="sig-name descname">run_indp</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em>, <em class="sig-param"><span class="n">layers</span><span class="o">=</span><span class="default_value">[1, 2, 3]</span></em>, <em class="sig-param"><span class="n">controlled_layers</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">functionality</span><span class="o">=</span><span class="default_value">{}</span></em>, <em class="sig-param"><span class="n">T</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">validate</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">save</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">forced_actions</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">saveModel</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">print_cmd_line</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">dynamic_params</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">co_location</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.run_indp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Runs an INDP problem with specified parameters. Outputs to directory specified in params['OUTPUT_DIR'].
+<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">run_indp</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controlled_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">functionality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forced_actions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saveModel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_cmd_line</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">co_location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.run_indp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs an INDP problem with specified parameters. Outputs to directory specified in params[‘OUTPUT_DIR’].
 :param params: Global parameters.
 :param layers: Layers to consider in the infrastructure network.
 :param T: Number of timesteps to optimize over.
@@ -224,9 +258,9 @@
 
 <dl class="py function">
 <dt id="indp.run_info_share">
-<code class="sig-prename descclassname">indp.</code><code class="sig-name descname">run_info_share</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em>, <em class="sig-param"><span class="n">layers</span><span class="o">=</span><span class="default_value">[1, 2, 3]</span></em>, <em class="sig-param"><span class="n">T</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">validate</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">suffix</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.run_info_share" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">run_info_share</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.run_info_share" title="Permalink to this definition">¶</a></dt>
 <dd><p>Applies rounds of information sharing between INDP runs. Assumes each layer is controlled by a separate player.
-params[&quot;NUM_ITERATIONS&quot;] determines how many rounds of sharing to perform.
+params[“NUM_ITERATIONS”] determines how many rounds of sharing to perform.
 NOTE: This is still not fully functional.
 :param params: Global parameters.
 :param layers: Specifies which layers to optimize over.
@@ -236,44 +270,36 @@ NOTE: This is still not fully functional.
 
 <div class="toctree-wrapper compound">
 </div>
-</div>
+</section>
 
 
            </div>
            
           </div>
           <footer>
-  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="indputils.html" class="btn btn-neutral float-right" title="INDP utils classes and functions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="indp_main.html" class="btn btn-neutral float-left" title="Interdependent Network Design Problem (INDP)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+        <a href="indputils.html" class="btn btn-neutral float-right" title="INDP classes and functions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="runutils.html" class="btn btn-neutral float-left" title="High-level analysis modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2020, Hesam Talebiyan
+        &#169; Copyright 2021, SISRRA.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 

@@ -1,8 +1,7 @@
-Judgment Call Classes
+INRNG and INRBG functions
 =======================================================
-.. automodule:: dindpclasses
-    :members:
-
+.. automodule:: gameutils
+    :members:	
 .. toctree::
    :maxdepth: 2
    :caption: Topics:

@@ -666,8 +666,7 @@ class BayesianGame(NormalGame):
         of actions that are not consistant with the player's type.
 
         .. todo::
-            Games: refine how to reduce importance of action not consistant with
-            the player's type.
+            Games: refine how to reduce importance of other types
 
         Returns
         -------
@@ -684,7 +683,7 @@ class BayesianGame(NormalGame):
                 for idx, l in enumerate(self.players):
                     label = self.label_actions(val[l][0])
                     if label != s[idx]:
-                        val[l][1] *= 2 #!!!refine how to reduce importance of other types
+                        val[l][1] *= 2 #!!!
 
     def set_types(self, beliefs):
         '''
@@ -908,9 +907,6 @@ class InfrastructureGame:
     '''
     This class is employed to find the restoration strategy for an interdepndent network
     using game theoretic methods over a given time horizon
-
-    .. todo::
-        Games: Add bayesian games
 
     Attributes
     ----------

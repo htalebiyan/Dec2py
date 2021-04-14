@@ -1,4 +1,4 @@
-INDP utils classes and functions
+INDP classes and functions
 =======================================================
 .. automodule:: indputils
     :members:

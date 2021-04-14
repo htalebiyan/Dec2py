@@ -1,4 +1,3 @@
-# %% dependencies
 '''
 Functions that are used to run different types of games for the restoration of 
 interdependent networks
@@ -11,7 +10,6 @@ import indp
 import dindputils
 import pandas as pd
 
-# %% functions
 def run_game(params, save_results=True, print_cmd=True, save_model=False, plot2D=False):
     '''
     Finds interdepndent restoration strategies using a decentralized hueristic,

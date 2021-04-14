@@ -1,4 +1,4 @@
-Restoration Game Classes
+INRNG and INRBG Classes
 =======================================================
 .. automodule:: gameclasses
     :members:
