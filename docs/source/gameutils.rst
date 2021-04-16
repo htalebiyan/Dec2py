@@ -1,4 +1,4 @@
-INRNG and INRBG functions
+INRSG and INRBG functions
 =======================================================
 .. automodule:: gameutils
     :members:	

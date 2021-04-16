@@ -1,4 +1,4 @@
-INRNG and INRBG Classes
+INRSG and INRBG Classes
 =======================================================
 .. automodule:: gameclasses
     :members:

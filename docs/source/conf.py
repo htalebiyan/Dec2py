@@ -19,12 +19,12 @@ sys.path.insert(0, os.path.abspath('../../pyindp/'))
 version: 2
 # -- Project information -----------------------------------------------------
 
-project = 'Decenalized Decision Making'
+project = 'Dec2py'
 copyright = '2021, SISRRA'
 author = 'Hesam Talebiyan'
 
 # The full version, including alpha/beta/rc tags
-version = '0.3.0'
+version = '0.4.0'
 release = version
 
 
@@ -35,7 +35,8 @@ release = version
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.napoleon',
 'sphinx_automodapi.automodapi','sphinx.ext.todo', 'sphinx.ext.githubpages',
-'sphinx_rtd_theme', 'sphinxcontrib.bibtex', 'nbsphinx', 'sphinx.ext.mathjax']#, 'sphinx.ext.viewcode']
+'sphinx_rtd_theme', 'sphinxcontrib.bibtex', 'nbsphinx', 'sphinx.ext.mathjax',
+'sphinx_last_updated_by_git']#, 'sphinx.ext.viewcode']
 numpydoc_show_class_members = False
 todo_include_todos = True
 autodoc_mock_imports = []
@@ -55,6 +56,17 @@ language = 'en'
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', '**.ipynb_checkpoints']
 
+# -- Get version information and date from Git ----------------------------
+
+try:
+    from subprocess import check_output
+    release = check_output(['git', 'describe', '--tags', '--always'])
+    release = release.decode().strip()
+    today = check_output(['git', 'show', '-s', '--format=%ad', '--date=short'])
+    today = today.decode().strip()
+except Exception:
+    release = '<unknown>'
+    today = '<unknown date>'
 
 # -- Options for HTML output -------------------------------------------------
 

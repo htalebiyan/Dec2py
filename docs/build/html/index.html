@@ -4,11 +4,11 @@
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
-
+  
+    <meta property="article:modified_time" content="2021-04-13T22:02:38-05:00" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Decentralized Decision Making’s documentation &mdash; Decenalized Decision Making 0.3.0 documentation</title>
+  <title>Dec2py: Decentralized Decision-making tools &mdash; Dec2py 1b6f5e3 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Runs INDP, td-INDP, Judgment Call, and infrastructure games" href="run_main.html" /> 
+    <link rel="next" title="Interdepndent Network Restoration Decision-making (toy example)" href="run_samples.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -55,7 +55,7 @@
           
 
           
-            <a href="#" class="icon icon-home"> Decenalized Decision Making
+            <a href="#" class="icon icon-home"> Dec2py
           
 
           
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                0.3.0
+                0.4.0
               </div>
             
           
@@ -90,9 +90,10 @@
               
             
             
-              <p><span class="caption-text">Topics:</span></p>
+              <p class="caption"><span class="caption-text">Topics</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="run_main.html">Runs INDP, td-INDP, Judgment Call, and infrastructure games</a></li>
+<li class="toctree-l1"><a class="reference internal" href="run_samples.html">Interdepndent Network Restoration Decision-making (toy example)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="run_main.html">Interdepndent Network Restoration Decision-making (Complete Analysis Dashboard)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="backend.html">Backend Classes and Modules</a></li>
 </ul>
 
@@ -109,7 +110,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">Decenalized Decision Making</a>
+          <a href="#">Dec2py</a>
         
       </nav>
 
@@ -142,7 +143,7 @@
     
       <li><a href="#" class="icon icon-home"></a> &raquo;</li>
         
-      <li>Decentralized Decision Making’s documentation</li>
+      <li>Dec2py: Decentralized Decision-making tools</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -185,12 +186,47 @@
     text-align: unset;
 }
 </style>
-<section id="decentralized-decision-making-s-documentation">
-<h1>Decentralized Decision Making’s documentation<a class="headerlink" href="#decentralized-decision-making-s-documentation" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound">
-<p><span class="caption-text">Topics:</span></p>
+<div class="section" id="dec2py-decentralized-decision-making-tools">
+<h1>Dec2py: Decentralized Decision-making tools<a class="headerlink" href="#dec2py-decentralized-decision-making-tools" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="interdepndent-network-restoration-decision-making-to-enhance-resilience">
+<h2>Interdepndent network restoration decision-making to enhance resilience<a class="headerlink" href="#interdepndent-network-restoration-decision-making-to-enhance-resilience" title="Permalink to this headline">¶</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This webpage contains code documentation and sample jupyter notebooks for an ongoing project.
+The documentation is constatntly getting updated and revised, and the codes will be added to
+the website soon.</p>
+</div>
+<p>This website offers code documentation and sample jupyter notebooks for a set of analytic tools that
+model the restroation processes in synthetic and real-world interdepndent networks subject to
+external shock and disruption. The codes are develped using Python language. Various restoration
+decision-making models are considered here:</p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="run_main.html">Runs INDP, td-INDP, Judgment Call, and infrastructure games</a><ul>
+<li><p><strong>Centralized methods</strong></p>
+<p>These method solve one optimization problem for the whole
+interdepndent network, which leads to optimal restoration plans. The implication
+of such models setting is that the decison-maker is one entity who has the complete
+information and authority to restore all layers of the interdepndent network. This
+kind of methods includes Interdepndent Network Desgin Problem (INDP) <a class="bibtex reference internal" href="#gonzalez2016" id="id1">[GDOSSM16]</a> and
+time-dependnet INDP (td-INDP) <a class="bibtex reference internal" href="#gonzalez2016c" id="id2">[GDOMSS16]</a>.</p>
+</li>
+<li><p><strong>Decentralized mrthods</strong></p>
+<p>These methods model a multi-agent decision-making environment
+where each agent has the authority to restore a single layer and has full information
+about her respective layer and minimal or no information about other layers. It is assumed
+that agents communicatie poorly and not in a timely manner. This kind of methods includes
+Judgment Call (JC) method <a class="bibtex reference internal" href="#talebiyan2019c" id="id3">[TDO20]</a><a class="bibtex reference internal" href="#talebiyan2019" id="id4">[TDO19]</a> with and without
+Auction-based resource allocations <a class="bibtex reference internal" href="#talebiyan2020a" id="id5">[TDO21b]</a> and Interdependent Network
+Restoration Simultaneous Games (INRSG) and Bayesian Games (INRBG) <a class="bibtex reference internal" href="#talebiyan2021c" id="id6">[TDO21a]</a>.</p>
+</li>
+</ul>
+<p>Below, you can find different parts of the website (topics), starting with the demonstration of tools for a toy
+interdepndent network followed by a notebook containing the full analysis dashboard. The third section presents
+functions and classes under the hood:</p>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="run_samples.html">Interdepndent Network Restoration Decision-making (toy example)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="run_main.html">Interdepndent Network Restoration Decision-making (Complete Analysis Dashboard)</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="run_main.html#Run-a-toy-example-for-different-methods">Run a toy example for different methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run_main.html#Run-different-methods-for-different-networks,-postprocess-th-outputs,-and-plot-the-result">Run different methods for different networks, postprocess th outputs, and plot the result</a></li>
 </ul>
@@ -202,22 +238,23 @@
 <li class="toctree-l2"><a class="reference internal" href="infrastructure.html">Infrastructure classes and functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dindputils.html">Judgment Call functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dindpclasses.html">Judgment Call Classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gameutils.html">INRNG and INRBG functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gameclasses.html">INRNG and INRBG Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gameutils.html">INRSG and INRBG functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gameclasses.html">INRSG and INRBG Classes</a></li>
 </ul>
 </li>
 </ul>
 </div>
-</section>
-<section id="indices-and-tables">
+</div>
+</div>
+<div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
 <li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
-</section>
-<section id="to-do-works">
+</div>
+<div class="section" id="to-do-works">
 <h1>To-do works<a class="headerlink" href="#to-do-works" title="Permalink to this headline">¶</a></h1>
 <div class="admonition-todo admonition">
 <p class="admonition-title">Todo</p>
@@ -246,22 +283,31 @@ them in the ‘OA’ action.</p>
 <p>Games: Add the geographical interdependency to computation of payoff values</p>
 </div>
 <p class="todo-source">(The <a class="reference internal" href="gameclasses.html#id5"><em>original entry</em></a> is located in C:\Users\ht20\Documents\GitHub\td-DINDP\pyindp\gameclasses.py:docstring of gameclasses.NormalGame.flow_problem, line 29.)</p>
-</section>
-<section id="bibliography">
+</div>
+<div class="section" id="bibliography">
 <h1>Bibliography<a class="headerlink" href="#bibliography" title="Permalink to this headline">¶</a></h1>
-<p id="bibtex-bibliography-index-0"><dl class="bibtex citation">
-<dt class="bibtex label" id="talebiyan2019"><span class="brackets">TDO19</span></dt>
+<p id="bibtex-bibliography-index-0"><dl class="citation">
+<dt class="bibtex label" id="gonzalez2016"><span class="brackets"><a class="fn-backref" href="#id1">GDOSSM16</a></span></dt>
+<dd><p>Andres D. Gonzalez, Leonardo Duenas-Osorio, Mauricio Sanchez-Silva, and Andres L. Medaglia. The Interdependent Network Design Problem for Optimal Infrastructure System Restoration. <em>Computer-Aided Civil and Infrastructure Engineering</em>, 31(5):334–350, may 2016. URL: <a class="reference external" href="http://doi.wiley.com/10.1111/mice.12171">http://doi.wiley.com/10.1111/mice.12171</a>, <a class="reference external" href="https://doi.org/10.1111/mice.12171">doi:10.1111/mice.12171</a>.</p>
+</dd>
+<dt class="bibtex label" id="gonzalez2016c"><span class="brackets"><a class="fn-backref" href="#id2">GDOMSS16</a></span></dt>
+<dd><p>Andres David Gonzalez, Leonardo Duenas-Osorio, Andres L. Medaglia, and Mauricio Sanchez-Silva. The time-dependent interdependent network design problem (td-INDP) and the evaluation of multi-system recovery strategies in polynomial time. In <em>The 6th Asian-Pacific Symposium on Structural Reliability and its Applications</em>, 544–550. Shanghai, China, 2016.</p>
+</dd>
+<dt class="bibtex label" id="talebiyan2019"><span class="brackets"><a class="fn-backref" href="#id4">TDO19</a></span></dt>
 <dd><p>Hesam Talebiyan and Leonardo Duenas-Osorio. Probabilistic Assessment of Decentralized Decision-making for Interdependent Network Restoration. In Junho Song, editor, <em>13th International Conference on Applications of Statistics and Probability in Civil Engineering, ICASP13</em>. Seoul, South Korea, 2019. <a class="reference external" href="https://doi.org/10.22725/ICASP13.215">doi:10.22725/ICASP13.215</a>.</p>
 </dd>
-<dt class="bibtex label" id="talebiyan2019c"><span class="brackets">TDO20</span></dt>
+<dt class="bibtex label" id="talebiyan2019c"><span class="brackets"><a class="fn-backref" href="#id3">TDO20</a></span></dt>
 <dd><p>Hesam Talebiyan and Leonardo Duenas-Osorio. Decentralized Decision Making for the Restoration of Interdependent Networks. <em>ASCE-ASME Journal of Risk and Uncertainty in Engineering Systems, Part A: Civil Engineering</em>, 6(2):04020012, jun 2020. URL: <a class="reference external" href="http://ascelibrary.org/doi/10.1061/AJRUA6.0001035">http://ascelibrary.org/doi/10.1061/AJRUA6.0001035</a>, <a class="reference external" href="https://doi.org/10.1061/AJRUA6.0001035">doi:10.1061/AJRUA6.0001035</a>.</p>
 </dd>
-<dt class="bibtex label" id="talebiyan2020a"><span class="brackets">TDO21</span></dt>
+<dt class="bibtex label" id="talebiyan2021c"><span class="brackets"><a class="fn-backref" href="#id6">TDO21a</a></span></dt>
+<dd><p>Hesam Talebiyan and Leonardo Duenas-Osorio. Interdependent Network Restoration Games: Simultaneous and Bayesian. working paper, 2021.</p>
+</dd>
+<dt class="bibtex label" id="talebiyan2020a"><span class="brackets"><a class="fn-backref" href="#id5">TDO21b</a></span></dt>
 <dd><p>Hesam Talebiyan and Leonardo Duenas-Osorio. Resource Allocation for Restoration of Interdependent Networks Using Auction Theory. Reliability Engineering and System Safety (under review), 2021.</p>
 </dd>
 </dl>
 </p>
-</section>
+</div>
 
 
            </div>
@@ -269,7 +315,7 @@ them in the ‘OA’ action.</p>
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="run_main.html" class="btn btn-neutral float-right" title="Runs INDP, td-INDP, Judgment Call, and infrastructure games" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="run_samples.html" class="btn btn-neutral float-right" title="Interdepndent Network Restoration Decision-making (toy example)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
@@ -277,6 +323,9 @@ them in the ‘OA’ action.</p>
   <div role="contentinfo">
     <p>
         &#169; Copyright 2021, SISRRA.
+      <span class="lastupdated">
+        Last updated on Apr 13, 2021.
+      </span>
 
     </p>
   </div>

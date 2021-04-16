@@ -1,6 +1,22 @@
 # %%
 '''
-# Runs INDP, td-INDP, Judgment Call, and infrastructure games
+# Interdepndent Network Restoration Decision-making (Complete Analysis Dashboard) 
+This notebook finds restoration plans for synthetic or real-world of interdepndent
+networks subject to different initial seismic damage scenarios. Various restoration 
+decision-making models are considered here:
+
+* Centralized methods: These method solve one optimization problem for the whole
+interdepndent network, which leads to the optimal restoration plan. The implication 
+of such model setting is that the decison-maker is one entity who has the complete
+information and authority to restore all layers of the interdepndent network. This 
+kind of methods includes Interdepndent Network Desgin Problem (INDP) [cite] and 
+time-dependnet INDP (td-INDP) [cite].
+* Decentralized mrthods: These methods model a multi-agent decision-making environment
+where each agent has the authority to restore a single layer and has full information
+about her respective layer and minimal or no information about other layers. It is assumed
+that agents communicatie poorly and not in a timely manner. This kind of methods includes 
+Judgment Call (JC) method [cite] with and without Auction-based resource allocations [cite] and
+Interdependent Network Restoration Simultaneous Games (INRSG) and Bayesian Games (INRBG) [cite].
 '''
 
 # %%
@@ -38,7 +54,7 @@ except OSError:
 4. `FILTER_SCE`(optional): The address of the list of scenarios that should be 
 	included in the analyses. It is used to remove less damaging scenarios from
 	the list of damage scenarios. Set it to *None* if you don't want to use this option.
-5. `PAYOFF_DIR`(only for Games): The address of the folder that contaions the objects
+5. `PAYOFF_DIR`(optional, only for Games): The address of the folder that contaions the objects
 	that store the payoff values for the game so that they are read from file and
 	not calcualted again. Set it to *None* if you don't want to use this option.
 '''
@@ -276,7 +292,9 @@ There are five choices of method:
 ### Post-processing 
 First, you have to set a few parameters and then call functions that read outputs
 and generate the panda datframes that are needed for plotting the results.
+
 ##### Post-processing parameters
+
 1. `COST_TYPES`: type of cost that should be used in processing the outputs. Options 
 are *Total*, *Under Supply*, *Over Supply*, *Node*, *Arc*, *Flow*, *Space Prep*, *Under Supply Perc*.
 2. `REF_METHOD`: the method that served as the reference in computing the reative performance
@@ -288,6 +306,7 @@ two players where the first player is non-cooperative and uses uninformative bel
 and the second one is cooperative and uses the inverse false consensus belief).
 
 ##### Post-processing functions
+
 1. `generate_combinations`: generate all the combination of oututs that should be read and
 save them in `COMBS` and `OPTIMAL_COMBS` lists.
 2. `read_results`: read results for combinations in `COMBS` and `OPTIMAL_COMBS` lists.
