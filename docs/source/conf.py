@@ -24,7 +24,7 @@ copyright = '2021, SISRRA'
 author = 'Hesam Talebiyan'
 
 # The full version, including alpha/beta/rc tags
-version = '0.4.0'
+version = '0.4.1'
 release = version
 
 

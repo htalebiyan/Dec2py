@@ -4,11 +4,12 @@
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
-    <meta property="article:modified_time" content="2021-04-13T22:02:38-05:00" />
+  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <meta property="article:modified_time" content="2021-04-16T15:58:36-05:00" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Interdepndent Network Restoration Decision-making (Complete Analysis Dashboard) &mdash; Dec2py 1b6f5e3 documentation</title>
+  <title>Interdepndent Network Restoration Decision-making (Complete Analysis Dashboard) &mdash; Dec2py 32663ab documentation</title>
   
 
   
@@ -66,7 +67,7 @@
             
             
               <div class="version">
-                0.4.0
+                0.4.1
               </div>
             
           
@@ -91,12 +92,12 @@
               
             
             
-              <p class="caption"><span class="caption-text">Topics</span></p>
+              <p><span class="caption-text">Topics</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="run_samples.html">Interdepndent Network Restoration Decision-making (toy example)</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Interdepndent Network Restoration Decision-making (Complete Analysis Dashboard)</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Run-a-toy-example-for-different-methods">Run a toy example for different methods</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Run-different-methods-for-different-networks,-postprocess-th-outputs,-and-plot-the-result">Run different methods for different networks, postprocess th outputs, and plot the result</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Run-a-toy-example-using-different-methods">Run a toy example using different methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Run-different-methods-for-different-networks,-post-process-the-outputs,-and-plot-the-result">Run different methods for different networks, post-process the outputs, and plot the result</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Input/Output-file-addresses">Input/Output file addresses</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Set-analysis-dictionaries">Set analysis dictionaries</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Set-analysis-parameters">Set analysis parameters</a></li>
@@ -450,16 +451,16 @@ div.rendered_html tbody tr:hover {
     text-align: unset;
 }
 </style>
-<div class="section" id="Interdepndent-Network-Restoration-Decision-making-(Complete-Analysis-Dashboard)">
+<section id="Interdepndent-Network-Restoration-Decision-making-(Complete-Analysis-Dashboard)">
 <h1>Interdepndent Network Restoration Decision-making (Complete Analysis Dashboard)<a class="headerlink" href="#Interdepndent-Network-Restoration-Decision-making-(Complete-Analysis-Dashboard)" title="Permalink to this headline">¶</a></h1>
-<p>This notebook finds restoration plans for synthetic or real-world of interdepndent networks subject to different initial seismic damage scenarios. Various restoration decision-making models are considered here:</p>
+<p>This notebook finds restoration plans for synthetic or real-world interdependent networks subject to different initial seismic damage scenarios. Various restoration decision-making models are considered here:</p>
 <ul class="simple">
-<li><p>Centralized methods: These method solve one optimization problem for the whole interdepndent network, which leads to the optimal restoration plan. The implication of such model setting is that the decison-maker is one entity who has has the complete information and authority to restore all layers of the interdepndent network. This kind of methods includes Interdepndent Network Desgin Problem (INDP) [cite] and time-dependnet INDP (td-INDP) [cite].</p></li>
-<li><p>Decentralized mrthods: These methods model a multi-agent decision-making environment where each agent has the authority to restore a single layer and has full information about her respective layer and minimal or no information about other layers. It is assumed that agents communicatie poorly and not in a timely manner. This kind of methods includes Judgment Call (JC) method [cite] with and without Auction-based resource allocations [cite] and Interdependent Network Restoration Simultaneous
-Games (INRSG) and Bayesian Games (INRBG) [cite].</p></li>
+<li><p>Centralized methods: These methods solve one optimization problem for the whole interdependent network, which leads to the optimal restoration plan. Such models imply that the decision-maker is one entity that has the complete information and authority to restore all layers of the interdependent network. These methods include Interdependent Network Design Problem (INDP) [cite] and time-dependent INDP (td-INDP) [cite].</p></li>
+<li><p>Decentralized methods: These methods model a multi-agent decision-making environment where each agent has the authority to restore a single layer and has complete information about her respective layer and minimal or no information about other layers. It is assumed that agents communicate poorly and not on time. This kind of methods includes Judgment Call (JC) method [cite] with and without Auction-based resource allocations [cite] and Interdependent Network Restoration Simultaneous Games
+(INRSG) and Bayesian Games (INRBG) [cite].</p></li>
 </ul>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -487,10 +488,10 @@ Games (INRSG) and Bayesian Games (INRBG) [cite].</p></li>
 Directory changed to C:/Users/ht20/Documents/GitHub/td-DINDP/pyindp
 </pre></div></div>
 </div>
-<div class="section" id="Run-a-toy-example-for-different-methods">
-<h2>Run a toy example for different methods<a class="headerlink" href="#Run-a-toy-example-for-different-methods" title="Permalink to this headline">¶</a></h2>
+<section id="Run-a-toy-example-using-different-methods">
+<h2>Run a toy example using different methods<a class="headerlink" href="#Run-a-toy-example-using-different-methods" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -499,20 +500,20 @@ Directory changed to C:/Users/ht20/Documents/GitHub/td-DINDP/pyindp
 </pre></div>
 </div>
 </div>
-</div>
-<div class="section" id="Run-different-methods-for-different-networks,-postprocess-th-outputs,-and-plot-the-result">
-<h2>Run different methods for different networks, postprocess th outputs, and plot the result<a class="headerlink" href="#Run-different-methods-for-different-networks,-postprocess-th-outputs,-and-plot-the-result" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="Input/Output-file-addresses">
+</section>
+<section id="Run-different-methods-for-different-networks,-post-process-the-outputs,-and-plot-the-result">
+<h2>Run different methods for different networks, post-process the outputs, and plot the result<a class="headerlink" href="#Run-different-methods-for-different-networks,-post-process-the-outputs,-and-plot-the-result" title="Permalink to this headline">¶</a></h2>
+<section id="Input/Output-file-addresses">
 <h3>Input/Output file addresses<a class="headerlink" href="#Input/Output-file-addresses" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">BASE_DIR</span></code>: the address of the folder where the basic network information (topology, parameters, etc.) is stored</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">DAMAGE_DIR</span></code>: the address of the folder where the damage information is stored</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">OUTPUT_DIR</span></code>: the address of the folder where the output files should be written</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">FILTER_SCE</span></code>(optional): The address of the list of scenarios that should be included in the analyses. It is used to remove less damaging scenarios from the list of damage scenarios. Set it to <em>None</em> if you don’t want to use this option.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PAYOFF_DIR</span></code>(optional, only for Games): The address of the folder that contaions the objects that store the payoff values for the game so that they are read from file and not calcualted again. Set it to <em>None</em> if you don’t want to use this option.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PAYOFF_DIR</span></code>(optional, only for Games): The address of the folder that contains the objects that store the payoff values for the game so that they are read from file and not calculated again. Set it to <em>None</em> if you don’t want to use this option.</p></li>
 </ol>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -549,19 +550,19 @@ Directory changed to C:/Users/ht20/Documents/GitHub/td-DINDP/pyindp
 </pre></div>
 </div>
 </div>
-</div>
-<div class="section" id="Set-analysis-dictionaries">
+</section>
+<section id="Set-analysis-dictionaries">
 <h3>Set analysis dictionaries<a class="headerlink" href="#Set-analysis-dictionaries" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic">
-<li><p><code class="docutils literal notranslate"><span class="pre">FAIL_SCE_PARAM</span></code>: stores informatiom on the type of the damage scenario and network dataset. This dictionary should have the following items:</p>
+<li><p><code class="docutils literal notranslate"><span class="pre">FAIL_SCE_PARAM</span></code>: stores information on the type of the damage scenario and network dataset. This dictionary should have the following items:</p>
 <ol class="arabic simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">TYPE</span></code>: type of the network. Options are <code class="docutils literal notranslate"><span class="pre">shelby</span></code> for the infrastructure network of Shelby County, TN, and <code class="docutils literal notranslate"><span class="pre">synthetic</span></code> for the synthetic interdepndent dataset.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">MAGS</span></code>: the damage scenarios for all datasets comes in a two-level format. The implication of each level is different as explained below. <code class="docutils literal notranslate"><span class="pre">MAGS</span></code> sets the range of the scenarios in the first level that should be included in the analysis.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TYPE</span></code>: type of the network. Options are <code class="docutils literal notranslate"><span class="pre">shelby</span></code> for the infrastructure network of Shelby County, TN, and <code class="docutils literal notranslate"><span class="pre">synthetic</span></code> for the synthetic interdependent dataset.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MAGS</span></code>: the damage scenarios for all datasets come in a two-level format. The implication of each level is different, as explained below. <code class="docutils literal notranslate"><span class="pre">MAGS</span></code> sets the range of the scenarios in the first level that should be included in the analysis.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">SAMPLE_RANGE</span></code>: sets the range of the scenarios in the second level that should be included in the analysis.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">BASE_DIR</span></code>: sets the folder where the basic network information is stored.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">DAMAGE_DIR</span></code>: sets the folder where the damage information is stored</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">FILTER_SCE</span></code> (optional): sets a given list of scenarios that should be included in the analyses, and exculde the rest (mostly used with <strong>WU format</strong> below).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">TOPO</span></code> (only when <code class="docutils literal notranslate"><span class="pre">TYPE</span></code>=<em>synthetic</em>): sets the topology of the sunthetic networks that should be analyzed When the network dataset is the infrastructure network of Shelby County, TN, there are three formats for network data and damage scenarios files:</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FILTER_SCE</span></code> (optional): sets a given list of scenarios that should be included in the analyses and exclude the rest (mostly used with <strong>WU format</strong> below).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TOPO</span></code> (only when <code class="docutils literal notranslate"><span class="pre">TYPE</span></code>=<em>synthetic</em>): sets the topology of the synthetic networks that should be analyzed When the network dataset is the infrastructure network of Shelby County, TN, there are three formats for network data and damage scenarios files:</p></li>
 </ol>
 <ul class="simple">
 <li><p><strong>ANDRES</strong>: this the old format that Andres Gonzalez employed during the development of INDP, and is based on the input data for Xpress software. The network data that are available in this format are the first version Shleby County dataset [cite] and the damage data are 1000 realizations of hazard maps correponding to hypothetical earthquakes with Magnitudes 6 to 9 occuring at a specific epicenter [cite] . To use this format, set the dictionary to:
@@ -569,32 +570,32 @@ Directory changed to C:/Users/ht20/Documents/GitHub/td-DINDP/pyindp
 <li><p><strong>WU</strong>: this is the new format that is designed by Hesam Talebiyan and used in the Shelby County data paper [cite]. The damage data for this dataset comes in a format similar to the hazard maps from Jason Wu [cite], which consist of N sets (<code class="docutils literal notranslate"><span class="pre">SAMPLE_RANGE</span></code>) of M damage scenarios (<code class="docutils literal notranslate"><span class="pre">MAGS</span></code>). For shelby county, for example, N=50 and M=96. To use this format, set the dictionary to:
 <code class="docutils literal notranslate"><span class="pre">{'TYPE':&quot;WU&quot;,</span> <span class="pre">'SAMPLE_RANGE':range(50),</span> <span class="pre">'MAGS':range(96),'FILTER_SCE':FILTER_SCE,</span>&#160;&#160;&#160; <span class="pre">'BASE_DIR':BASE_DIR,</span> <span class="pre">'DAMAGE_DIR':DAMAGE_DIR}</span></code></p></li>
 <li><p><strong>from_csv</strong>: this type uses the same network data format as the <strong>WU format</strong>. However, the damage data come in the form of two csv files that contain all damage data for nodes and arcs. This is a more compressed representation of damage data. In this format, there is only one <code class="docutils literal notranslate"><span class="pre">MAGS</span></code>=0, and <code class="docutils literal notranslate"><span class="pre">SAMPLE_RANGE</span></code> defines all scenarios that should be analyzed. To use this format, set the dictionary to:
-<code class="docutils literal notranslate"><span class="pre">{'TYPE':&quot;from_csv&quot;,</span> <span class="pre">'SAMPLE_RANGE':range(100),</span> <span class="pre">'MAGS':range(0,</span> <span class="pre">1),</span> <span class="pre">'FILTER_SCE':None,</span>&#160;&#160;&#160; <span class="pre">'BASE_DIR':BASE_DIR,</span> <span class="pre">'DAMAGE_DIR':DAMAGE_DIR}</span></code> When the network dataset is synthetic, there are one format for network data and damage scenarios files:</p></li>
-<li><p><strong>synthetic</strong>: in this format network data and damage data are in the same folder, and hence, <code class="docutils literal notranslate"><span class="pre">BASE_DIR</span></code>= <code class="docutils literal notranslate"><span class="pre">DAMAGE_DIR</span></code>. Also, <code class="docutils literal notranslate"><span class="pre">MAGS</span></code> represents the range of network configuration, and <code class="docutils literal notranslate"><span class="pre">SAMPLE_RANGE</span></code> sets the range of sampele network for each configuraytion in the analysis. To use this format, set the dictionary to: <code class="docutils literal notranslate"><span class="pre">{'TYPE':&quot;synthetic&quot;,</span> <span class="pre">'SAMPLE_RANGE':range(0,</span> <span class="pre">1),</span> <span class="pre">'MAGS':range(0,</span> <span class="pre">100),</span> <span class="pre">'FILTER_SCE':None,</span>&#160;&#160;&#160; <span class="pre">'TOPO':'General',</span> <span class="pre">'BASE_DIR':BASE_DIR,</span> <span class="pre">'DAMAGE_DIR':DAMAGE_DIR}</span></code></p></li>
+<code class="docutils literal notranslate"><span class="pre">{'TYPE':&quot;from_csv&quot;,</span> <span class="pre">'SAMPLE_RANGE':range(100),</span> <span class="pre">'MAGS':range(0,</span> <span class="pre">1),</span> <span class="pre">'FILTER_SCE':None,</span>&#160;&#160;&#160; <span class="pre">'BASE_DIR':BASE_DIR,</span> <span class="pre">'DAMAGE_DIR':DAMAGE_DIR}</span></code> When the network dataset is synthetic, there is one format for network data and damage scenarios files:</p></li>
+<li><p><strong>synthetic</strong>: in this format, network data and damage data are in the same folder, and hence, <code class="docutils literal notranslate"><span class="pre">BASE_DIR</span></code>= <code class="docutils literal notranslate"><span class="pre">DAMAGE_DIR</span></code>. Also, <code class="docutils literal notranslate"><span class="pre">MAGS</span></code> represents the range of network configuration, and <code class="docutils literal notranslate"><span class="pre">SAMPLE_RANGE</span></code> sets the range of sample networks for each configuration in the analysis. To use this format, set the dictionary to: <code class="docutils literal notranslate"><span class="pre">{'TYPE':&quot;synthetic&quot;,</span> <span class="pre">'SAMPLE_RANGE':range(0,</span> <span class="pre">1),</span> <span class="pre">'MAGS':range(0,</span> <span class="pre">100),</span> <span class="pre">'FILTER_SCE':None,</span>&#160;&#160;&#160; <span class="pre">'TOPO':'General',</span> <span class="pre">'BASE_DIR':BASE_DIR,</span> <span class="pre">'DAMAGE_DIR':DAMAGE_DIR}</span></code></p></li>
 </ul>
 </li>
-<li><p><code class="docutils literal notranslate"><span class="pre">DYNAMIC_PARAMS</span></code>: sets the features of the models that incorporate dynamic parameters into the analysis. Set it to <em>None</em> if you want to use static paramters that are constant for different time steps. So far, we only have one type of dynamic paramters, which is the dynamic demand that is calculated based on population dislocation models, for which, the dictionary should have the following items:</p>
+<li><p><code class="docutils literal notranslate"><span class="pre">DYNAMIC_PARAMS</span></code>: sets the features of the models that incorporate dynamic parameters into the analysis. Set it to <em>None</em> if you want to use static parameters that are constant for different time steps. So far, we only have one type of dynamic parameters, which is the dynamic demand that is calculated based on population dislocation models, for which, the dictionary should have the following items:</p>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">TYPE</span></code>: type of the dislocation data (see below).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">RETURN</span></code>: type of the model for the return of dislocated population. Options are <em>step_function</em> and <em>linear</em>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RETURN</span></code>: type of the model for the return of the dislocated population. Options are <em>step_function</em> and <em>linear</em>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">DIR</span></code>: sets the folder where the dislocation data are stored.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">TESTBED</span></code> (only when <code class="docutils literal notranslate"><span class="pre">TYPE</span></code>=<em>incore</em>) : sets the name of the testbed in analysis. The are two types of dislocation data:</p></li>
 </ol>
 <ul class="simple">
-<li><p><strong>shelby_adopted</strong>: this is a precalculated dictionary that stores stylized dislocation data for Shelby County dataset and the code reads those files. To use this type, set the dictionary to: <code class="docutils literal notranslate"><span class="pre">{'TYPE':</span> <span class="pre">'shelby_adopted',</span> <span class="pre">'RETURN':</span> <span class="pre">'step_function',</span> <span class="pre">'DIR':</span> <span class="pre">'C:/Users/ht20/Documents/Files/dynamic_demand/'}</span></code></p></li>
-<li><p><strong>incore</strong>: this type uses the population dislocation models and household unit allocation data from IN-CORE (stored locally) to calculate demand values in each time step of the analysis. To use this type, set the dictionary to: <code class="docutils literal notranslate"><span class="pre">{'TYPE':</span> <span class="pre">'incore',</span> <span class="pre">'RETURN':</span> <span class="pre">'step_function',</span> <span class="pre">'TESTBED':'Joplin',</span> <span class="pre">'DIR':</span> <span class="pre">'C:/Users/ht20/Documents/GitHub/NIST_testbeds/'}</span></code></p></li>
+<li><p><strong>shelby_adopted</strong>: this is a precalculated dictionary that stores stylized dislocation data for the Shelby County dataset, and the code reads those files. To use this type, set the dictionary to: <code class="docutils literal notranslate"><span class="pre">{'TYPE':</span> <span class="pre">'shelby_adopted',</span> <span class="pre">'RETURN':</span> <span class="pre">'step_function',</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">'DIR':</span> <span class="pre">'C:/Users/ht20/Documents/Files/dynamic_demand/'}</span></code></p></li>
+<li><p><strong>incore</strong>: this type uses the population dislocation models and household unit allocation data from IN-CORE (stored locally) to calculate demand values in each time step of the analysis. To use this type, set the dictionary to: <code class="docutils literal notranslate"><span class="pre">{'TYPE':</span> <span class="pre">'incore',</span> <span class="pre">'RETURN':</span> <span class="pre">'step_function',</span> <span class="pre">'TESTBED':'Joplin',</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">'DIR':</span> <span class="pre">'C:/Users/ht20/Documents/GitHub/NIST_testbeds/'}</span></code></p></li>
 </ul>
 </li>
-<li><p><code class="docutils literal notranslate"><span class="pre">STM_MODEL_DICT</span></code>: contains information about the statistical models approximating INDP, which are used for valution methods in auction-based resource allocation. Set it to <em>None</em> if <code class="docutils literal notranslate"><span class="pre">VAL_TYPE</span></code> does not include <em>STM</em> (see below). Otherwise, the dictionary should have the following items:</p>
+<li><p><code class="docutils literal notranslate"><span class="pre">STM_MODEL_DICT</span></code>: contains information about the statistical models approximating INDP used for valuation methods in auction-based resource allocation. Set it to <em>None</em> if <code class="docutils literal notranslate"><span class="pre">VAL_TYPE</span></code> does not include <em>STM</em> (see below). Otherwise, the dictionary should have the following items:</p>
 <ol class="arabic simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">num_pred</span></code>: number of model prediction that are used to calculate each valuation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">num_pred</span></code>: number of model predictions that are used to calculate each valuation.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">model_dir</span></code>: the folder that contains the statistical model files.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">param_folder</span></code>: the folder that contains the statistical model parameters. Example: <code class="docutils literal notranslate"><span class="pre">MODEL_DIR</span> <span class="pre">=</span> <span class="pre">'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'</span>&#160; <span class="pre">STM_MODEL_DICT</span> <span class="pre">=</span> <span class="pre">{'num_pred':1,</span> <span class="pre">'model_dir':MODEL_DIR+'/traces',</span> <span class="pre">'param_folder':MODEL_DIR+'/parameters'}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">param_folder</span></code>: the folder that contains the statistical model parameters. Example: <code class="docutils literal notranslate"><span class="pre">MODEL_DIR</span> <span class="pre">=</span> <span class="pre">'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'</span>&#160; <span class="pre">STM_MODEL_DICT</span> <span class="pre">=</span> <span class="pre">{'num_pred':1,</span> <span class="pre">'model_dir':MODEL_DIR+'/traces',</span>&#160;&#160; <span class="pre">'param_folder':MODEL_DIR+'/parameters'}</span></code></p></li>
 </ol>
 </li>
 </ol>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -612,8 +613,8 @@ Directory changed to C:/Users/ht20/Documents/GitHub/td-DINDP/pyindp
 </pre></div>
 </div>
 </div>
-</div>
-<div class="section" id="Set-analysis-parameters">
+</section>
+<section id="Set-analysis-parameters">
 <h3>Set analysis parameters<a class="headerlink" href="#Set-analysis-parameters" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">RC</span></code>: list of resource caps or the number of available reousrces in each step of the analysis.</p>
@@ -637,7 +638,7 @@ Directory changed to C:/Users/ht20/Documents/GitHub/td-DINDP/pyindp
 <li><p><code class="docutils literal notranslate"><span class="pre">VAL_TYPE</span></code>: list of valuation types that are used in auction-based resource allocation method [cite], i.e. when <code class="docutils literal notranslate"><span class="pre">RES_ALLOC_TYPE</span></code> includes at least one of the options <em>MDA</em>, <em>MAA</em>, or <em>MCA</em>. Options are <em>DTC</em>, <em>DTC_uniform</em>, <em>MDDN</em>, <em>STM</em>, and <em>DTC-LP</em>.</p></li>
 </ol>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -649,18 +650,18 @@ Directory changed to C:/Users/ht20/Documents/GitHub/td-DINDP/pyindp
 </pre></div>
 </div>
 </div>
-</div>
-<div class="section" id="Run-method(s)">
+</section>
+<section id="Run-method(s)">
 <h3>Run method(s)<a class="headerlink" href="#Run-method(s)" title="Permalink to this headline">¶</a></h3>
 <p>There are five choices of method: 1. <code class="docutils literal notranslate"><span class="pre">INDP</span></code>: runs Interdependent Network Restoration Problem (INDP) [cite]. To run this method, you have to call: <code class="docutils literal notranslate"><span class="pre">runutils.run_method(FAIL_SCE_PARAM,</span> <span class="pre">RC,</span> <span class="pre">LAYERS,</span> <span class="pre">method='INDP',</span> <span class="pre">output_dir=OUTPUT_DIR,</span>&#160;&#160;&#160;&#160; <span class="pre">misc</span> <span class="pre">=</span> <span class="pre">{'DYNAMIC_PARAMS':DYNAMIC_PARAMS})</span></code> 2. <code class="docutils literal notranslate"><span class="pre">TDINDP</span></code>: runs time-dependent INDP (td-INDP) [cite]. To run this method, you have to call:
 <code class="docutils literal notranslate"><span class="pre">runutils.run_method(FAIL_SCE_PARAM,</span> <span class="pre">RC,</span> <span class="pre">LAYERS,</span> <span class="pre">method='TDINDP',</span> <span class="pre">output_dir=OUTPUT_DIR,</span>&#160;&#160;&#160;&#160; <span class="pre">misc</span> <span class="pre">=</span> <span class="pre">{'DYNAMIC_PARAMS':DYNAMIC_PARAMS}))</span></code> 3. <code class="docutils literal notranslate"><span class="pre">JC</span></code>: runs Judgment Call (JC) method, which is a decentralized version of INDP [cite]. To run this method, you have to call:
 <code class="docutils literal notranslate"><span class="pre">runutils.run_method(FAIL_SCE_PARAM,</span> <span class="pre">RC,</span> <span class="pre">LAYERS,</span> <span class="pre">method='JC',</span> <span class="pre">judgment_type=JUDGE_TYPE,</span>&#160;&#160;&#160;&#160; <span class="pre">res_alloc_type=RES_ALLOC_TYPE,</span> <span class="pre">valuation_type=VAL_TYPE,</span>&#160;&#160;&#160;&#160; <span class="pre">output_dir=OUTPUT_DIR,</span> <span class="pre">dynamic_params=DYNAMIC_PARAMS,</span>&#160;&#160;&#160;&#160; <span class="pre">misc</span> <span class="pre">=</span> <span class="pre">{'STM_MODEL':STM_MODEL_DICT,</span> <span class="pre">'DYNAMIC_PARAMS':DYNAMIC_PARAMS})</span></code> 4. <code class="docutils literal notranslate"><span class="pre">NORMALGAME</span></code>: runs Interdependent Network Restoration Normal Game (INRNG), which is a decentralized version of INDP [cite]. To run this method, you have to call:
-<code class="docutils literal notranslate"><span class="pre">runutils.run_method(FAIL_SCE_PARAM,</span> <span class="pre">RC,</span> <span class="pre">LAYERS,</span> <span class="pre">method='NORMALGAME',</span> <span class="pre">judgment_type=JUDGE_TYPE,</span>&#160;&#160;&#160;&#160; <span class="pre">res_alloc_type=RES_ALLOC_TYPE,</span> <span class="pre">valuation_type=VAL_TYPE,</span> <span class="pre">output_dir=OUTPUT_DIR,</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">misc</span> <span class="pre">=</span> <span class="pre">{'PAYOFF_DIR':PAYOFF_DIR,</span> <span class="pre">'DYNAMIC_PARAMS':DYNAMIC_PARAMS,</span>&#160;&#160;&#160; <span class="pre">'REDUCED_ACTIONS':'EDM'}</span></code> Here, <code class="docutils literal notranslate"><span class="pre">misc['REDUCED_ACTIONS']</span></code> sets the hueristic method to reduce the number of actions of each player to add Bounded Rationality to the analysis. Options are <em>ER</em> for exhasuting resources, and <em>EDM</em> for expert
-decision maker. 5. <code class="docutils literal notranslate"><span class="pre">BAYESGAME</span></code>: runs Interdependent Network Restoration Bayesian Game (INRBG), which is a decentralized version of INDP [cite]. To run this method, you have to call:
+<code class="docutils literal notranslate"><span class="pre">runutils.run_method(FAIL_SCE_PARAM,</span> <span class="pre">RC,</span> <span class="pre">LAYERS,</span> <span class="pre">method='NORMALGAME',</span> <span class="pre">judgment_type=JUDGE_TYPE,</span>&#160;&#160;&#160;&#160; <span class="pre">res_alloc_type=RES_ALLOC_TYPE,</span> <span class="pre">valuation_type=VAL_TYPE,</span> <span class="pre">output_dir=OUTPUT_DIR,</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">misc</span> <span class="pre">=</span> <span class="pre">{'PAYOFF_DIR':PAYOFF_DIR,</span> <span class="pre">'DYNAMIC_PARAMS':DYNAMIC_PARAMS,</span>&#160;&#160;&#160; <span class="pre">'REDUCED_ACTIONS':'EDM'}</span></code> Here, <code class="docutils literal notranslate"><span class="pre">misc['REDUCED_ACTIONS']</span></code> sets the heuristic method to reduce the number of actions of each player to add Bounded Rationality to the analysis. Options are <em>ER</em> for exhausting resources and <em>EDM</em> for the expert
+decision-maker. 5. <code class="docutils literal notranslate"><span class="pre">BAYESGAME</span></code>: runs Interdependent Network Restoration Bayesian Game (INRBG), which is a decentralized version of INDP [cite]. To run this method, you have to call:
 <code class="docutils literal notranslate"><span class="pre">runutils.run_method(FAIL_SCE_PARAM,</span> <span class="pre">RC,</span> <span class="pre">LAYERS,</span> <span class="pre">method='BAYESGAME',</span> <span class="pre">judgment_type=JUDGE_TYPE,</span>&#160;&#160;&#160;&#160; <span class="pre">res_alloc_type=RES_ALLOC_TYPE,</span> <span class="pre">valuation_type=VAL_TYPE,</span> <span class="pre">output_dir=OUTPUT_DIR,</span>&#160;&#160;&#160;&#160; <span class="pre">misc</span> <span class="pre">=</span> <span class="pre">{'PAYOFF_DIR':PAYOFF_DIR,</span> <span class="pre">'DYNAMIC_PARAMS':DYNAMIC_PARAMS,</span>&#160;&#160;&#160;&#160; <span class="pre">&quot;SIGNALS&quot;:{1:'C',</span> <span class="pre">2:'C'},</span> <span class="pre">&quot;BELIEFS&quot;:{1:'U',</span> <span class="pre">2:'U'},</span>&#160;&#160;&#160;&#160; <span class="pre">'REDUCED_ACTIONS':'EDM'}</span></code> Here, <code class="docutils literal notranslate"><span class="pre">misc['SIGNALS']</span></code> sets the actual type of each player in the game. Options are <em>C</em> for cooperative and <em>N</em> for non-cooperative. Also, <code class="docutils literal notranslate"><span class="pre">misc['BELIEFS']</span></code>
 sets the belief of each player in the game. Options are <em>U</em> for uniformed belief, <em>F</em> for false consensus bias, and <em>I</em> for inverse false consensus bias.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -684,22 +685,22 @@ sets the belief of each player in the game. Options are <em>U</em> for uniformed
 </pre></div>
 </div>
 </div>
-</div>
-<div class="section" id="Post-processing">
+</section>
+<section id="Post-processing">
 <h3>Post-processing<a class="headerlink" href="#Post-processing" title="Permalink to this headline">¶</a></h3>
-<p>First, you have to set a few parameters and then call functions that read outputs and generate the panda datframes that are needed for plotting the results.</p>
-<div class="section" id="Post-processing-parameters">
+<p>First, you have to set a few parameters and then call functions that read outputs and generate the pandas DataFrames that are needed for plotting the results.</p>
+<section id="Post-processing-parameters">
 <h4>Post-processing parameters<a class="headerlink" href="#Post-processing-parameters" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">COST_TYPES</span></code>: type of cost that should be used in processing the outputs. Options are <em>Total</em>, <em>Under Supply</em>, <em>Over Supply</em>, <em>Node</em>, <em>Arc</em>, <em>Flow</em>, <em>Space Prep</em>, <em>Under Supply Perc</em>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">REF_METHOD</span></code>: the method that served as the reference in computing the reative performance and allocation gap. Usually, this is aan optimal methods like <code class="docutils literal notranslate"><span class="pre">indp</span></code> or <code class="docutils literal notranslate"><span class="pre">tdindp</span></code>. However, it can be any other method lik <code class="docutils literal notranslate"><span class="pre">jc</span></code>, <code class="docutils literal notranslate"><span class="pre">ng</span></code>, or else.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">METHOD_NAMES</span></code>: methods whose output should be read. Options are <code class="docutils literal notranslate"><span class="pre">indp</span></code>, <code class="docutils literal notranslate"><span class="pre">tdindp</span></code>, <code class="docutils literal notranslate"><span class="pre">jc</span></code>, <code class="docutils literal notranslate"><span class="pre">ng</span></code>, <code class="docutils literal notranslate"><span class="pre">dp_indp</span></code>, <code class="docutils literal notranslate"><span class="pre">dp_jc</span></code>, <code class="docutils literal notranslate"><span class="pre">bg????</span></code> (For example <code class="docutils literal notranslate"><span class="pre">bgNCUI</span></code> means the Bayesiab game with two players where the first player is non-cooperative and uses uninformative belief, and the second one is cooperative and uses the inverse false consensus belief).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">REF_METHOD</span></code>: the method served as the reference in computing the relative performance and allocation gap. Usually, this is an optimal method like <code class="docutils literal notranslate"><span class="pre">indp</span></code> or <code class="docutils literal notranslate"><span class="pre">tdindp</span></code>. However, it can be any other method like <code class="docutils literal notranslate"><span class="pre">jc</span></code>, <code class="docutils literal notranslate"><span class="pre">ng</span></code>, or else.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">METHOD_NAMES</span></code>: methods whose output should be read. Options are <code class="docutils literal notranslate"><span class="pre">indp</span></code>, <code class="docutils literal notranslate"><span class="pre">tdindp</span></code>, <code class="docutils literal notranslate"><span class="pre">jc</span></code>, <code class="docutils literal notranslate"><span class="pre">ng</span></code>, <code class="docutils literal notranslate"><span class="pre">dp_indp</span></code>, <code class="docutils literal notranslate"><span class="pre">dp_jc</span></code>, <code class="docutils literal notranslate"><span class="pre">bg????</span></code> (For example, <code class="docutils literal notranslate"><span class="pre">bgNCUI</span></code> means the Bayesian game with two players where the first player is non-cooperative and uses uninformative belief, and the second one is cooperative and uses the inverse false consensus belief).</p></li>
 </ol>
-</div>
-<div class="section" id="Post-processing-functions">
+</section>
+<section id="Post-processing-functions">
 <h4>Post-processing functions<a class="headerlink" href="#Post-processing-functions" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">generate_combinations</span></code>: generate all the combination of oututs that should be read and save them in <code class="docutils literal notranslate"><span class="pre">COMBS</span></code> and <code class="docutils literal notranslate"><span class="pre">OPTIMAL_COMBS</span></code> lists.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">generate_combinations</span></code>: generate all the combination of outputs that should be read and save them in <code class="docutils literal notranslate"><span class="pre">COMBS</span></code> and <code class="docutils literal notranslate"><span class="pre">OPTIMAL_COMBS</span></code> lists.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">read_results</span></code>: read results for combinations in <code class="docutils literal notranslate"><span class="pre">COMBS</span></code> and <code class="docutils literal notranslate"><span class="pre">OPTIMAL_COMBS</span></code> lists.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">relative_performance</span></code>: computes relative performance measures for different combinations.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">read_resourcec_allocation</span></code>: read the resource allocations by different methods and compute allocation gaps for different combinations.</p></li>
@@ -707,7 +708,7 @@ sets the belief of each player in the game. Options are <em>U</em> for uniformed
 <li><p><code class="docutils literal notranslate"><span class="pre">analyze_NE</span></code>: analyze the characteristics of Nash equilibria for different combinations.</p></li>
 </ol>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -737,13 +738,13 @@ sets the belief of each player in the game. Options are <em>U</em> for uniformed
 </pre></div>
 </div>
 </div>
-</div>
-</div>
-<div class="section" id="Save-Variables-to-file">
+</section>
+</section>
+<section id="Save-Variables-to-file">
 <h3>Save Variables to file<a class="headerlink" href="#Save-Variables-to-file" title="Permalink to this headline">¶</a></h3>
 <p>All dictionaries that are made in the postprocessing step are saved here.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -756,13 +757,13 @@ sets the belief of each player in the game. Options are <em>U</em> for uniformed
 </pre></div>
 </div>
 </div>
-</div>
-<div class="section" id="Plot-results">
+</section>
+<section id="Plot-results">
 <h3>Plot results<a class="headerlink" href="#Plot-results" title="Permalink to this headline">¶</a></h3>
 <p>Plot functions use the dictionaries that are made in the postprocessing step to make output figures: 1. <code class="docutils literal notranslate"><span class="pre">plot_performance_curves</span></code>: plots costs (in <code class="docutils literal notranslate"><span class="pre">COST_TYPES</span></code>) and unmet demand vs. time. 2. <code class="docutils literal notranslate"><span class="pre">plot_seperated_perform_curves</span></code>: plots costs (in <code class="docutils literal notranslate"><span class="pre">COST_TYPES</span></code>) vs. time for each layer sepearately. 3. <code class="docutils literal notranslate"><span class="pre">plot_relative_performance</span></code>: plots relative performances. 4. <code class="docutils literal notranslate"><span class="pre">plot_auction_allocation</span></code>: plots reosurce allocation vs. time. 5. <code class="docutils literal notranslate"><span class="pre">plot_relative_allocation</span></code>: plots allocation gaps. 6.
 <code class="docutils literal notranslate"><span class="pre">plot_run_time</span></code>: plots run time vs. time. 7. <code class="docutils literal notranslate"><span class="pre">plot_ne_analysis</span></code>: plots NE analysis measures vs. time (for games only). 8. <code class="docutils literal notranslate"><span class="pre">plot_ne_cooperation</span></code>: plots action types vs. time (for games only). 9. <code class="docutils literal notranslate"><span class="pre">plot_payoff_hist</span></code>: plots size of the payoff matrix vs. time (for games only).</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -791,9 +792,9 @@ sets the belief of each player in the game. Options are <em>U</em> for uniformed
 </pre></div>
 </div>
 </div>
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
            </div>
@@ -811,7 +812,7 @@ sets the belief of each player in the game. Options are <em>U</em> for uniformed
     <p>
         &#169; Copyright 2021, SISRRA.
       <span class="lastupdated">
-        Last updated on Apr 13, 2021.
+        Last updated on Apr 16, 2021.
       </span>
 
     </p>

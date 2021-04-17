@@ -1,22 +1,22 @@
 # %%
 '''
 # Interdepndent Network Restoration Decision-making (Complete Analysis Dashboard) 
-This notebook finds restoration plans for synthetic or real-world of interdepndent
+This notebook finds restoration plans for synthetic or real-world interdependent 
 networks subject to different initial seismic damage scenarios. Various restoration 
 decision-making models are considered here:
 
-* Centralized methods: These method solve one optimization problem for the whole
-interdepndent network, which leads to the optimal restoration plan. The implication 
-of such model setting is that the decison-maker is one entity who has the complete
-information and authority to restore all layers of the interdepndent network. This 
-kind of methods includes Interdepndent Network Desgin Problem (INDP) [cite] and 
-time-dependnet INDP (td-INDP) [cite].
-* Decentralized mrthods: These methods model a multi-agent decision-making environment
-where each agent has the authority to restore a single layer and has full information
-about her respective layer and minimal or no information about other layers. It is assumed
-that agents communicatie poorly and not in a timely manner. This kind of methods includes 
-Judgment Call (JC) method [cite] with and without Auction-based resource allocations [cite] and
-Interdependent Network Restoration Simultaneous Games (INRSG) and Bayesian Games (INRBG) [cite].
+* Centralized methods: These methods solve one optimization problem for the whole 
+interdependent network, which leads to the optimal restoration plan. Such models 
+imply that the decision-maker is one entity that has the complete information and 
+authority to restore all layers of the interdependent network. These methods include 
+Interdependent Network Design Problem (INDP) [cite] and time-dependent INDP (td-INDP) [cite].
+
+* Decentralized methods: These methods model a multi-agent decision-making environment where
+ each agent has the authority to restore a single layer and has complete information about 
+ her respective layer and minimal or no information about other layers. It is assumed that 
+ agents communicate poorly and not on time. This kind of methods includes Judgment Call (JC)
+ method [cite] with and without Auction-based resource allocations [cite] and Interdependent 
+ Network Restoration Simultaneous Games (INRSG) and Bayesian Games (INRBG) [cite].
 '''
 
 # %%
@@ -36,7 +36,7 @@ except OSError:
 
 # %%
 ''' 
-## Run a toy example for different methods 
+## Run a toy example using different methods 
 '''
 
 # %%
@@ -45,7 +45,7 @@ except OSError:
 
 # %%
 ''' 
-## Run different methods for different networks, postprocess th outputs, and plot the result
+## Run different methods for different networks, post-process the outputs, and plot the result
 ### Input/Output file addresses
 1. `BASE_DIR`: the address of the folder where the basic network information
 	(topology, parameters, etc.) is stored
@@ -54,9 +54,9 @@ except OSError:
 4. `FILTER_SCE`(optional): The address of the list of scenarios that should be 
 	included in the analyses. It is used to remove less damaging scenarios from
 	the list of damage scenarios. Set it to *None* if you don't want to use this option.
-5. `PAYOFF_DIR`(optional, only for Games): The address of the folder that contaions the objects
+5. `PAYOFF_DIR`(optional, only for Games): The address of the folder that contains the objects
 	that store the payoff values for the game so that they are read from file and
-	not calcualted again. Set it to *None* if you don't want to use this option.
+	not calculated again. Set it to *None* if you don't want to use this option.
 '''
 
 # %%
@@ -94,22 +94,22 @@ PAYOFF_DIR = OUTPUT_DIR+'General/results/reudced_action_matrix_100/'
 # %%
 ''' 
 ### Set analysis dictionaries 
-1. `FAIL_SCE_PARAM`: stores informatiom on the type of the damage scenario and 
-	network dataset. This dictionary should have the following items:
+1. `FAIL_SCE_PARAM`: stores information on the type of the damage scenario and 
+    network dataset. This dictionary should have the following items:
 	1. `TYPE`: type of the network. Options are `shelby` for the infrastructure network 
-	of Shelby County, TN, and `synthetic` for the synthetic interdepndent dataset.
-	2. `MAGS`: the damage scenarios for all datasets comes in a two-level format.
-	The implication of each level is different as explained below. `MAGS` sets 
+	of Shelby County, TN, and `synthetic` for the synthetic interdependent dataset.
+	2. `MAGS`: the damage scenarios for all datasets come in a two-level format.
+	The implication of each level is different, as explained below. `MAGS` sets 
 	the range of the scenarios in the first level that should be included in the 
 	analysis.
-	3. `SAMPLE_RANGE`: sets  the range of the scenarios in the second level that
-	should be included in the analysis.
+	3. `SAMPLE_RANGE`: sets the range of the scenarios in the second level that 
+    should be included in the analysis.
 	4. `BASE_DIR`: sets the folder where the basic network information is stored.
 	5. `DAMAGE_DIR`: sets the folder where the damage information is stored
 	6. `FILTER_SCE` (optional): sets a given list of scenarios that should be 
-	included in the analyses, and exculde the rest (mostly used with **WU format** below). 
-	7. `TOPO` (only when `TYPE`=*synthetic*): sets the topology of the sunthetic networks that
-	should be analyzed
+    included in the analyses and exclude the rest (mostly used with **WU format** below). 
+	7. `TOPO` (only when `TYPE`=*synthetic*): sets the topology of the synthetic 
+    networks that should be analyzed
 	<br><br>
 	When the network dataset is the infrastructure network of Shelby County, TN,
 	there are three formats for network data and damage scenarios files:
@@ -132,52 +132,55 @@ PAYOFF_DIR = OUTPUT_DIR+'General/results/reudced_action_matrix_100/'
 	  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}`
 	* **from_csv**: this type uses the same network data format as the **WU format**.
 	However, the damage data come in the form of two csv files that contain all damage data
-	for nodes and arcs. This is a more compressed representation of damage data. In this format,
-	there is only one `MAGS`=0, and `SAMPLE_RANGE` defines all scenarios that should be analyzed.
-	To use this format, set the dictionary to:<br>
+	for nodes and arcs. This is a more compressed representation of damage data. In this 
+    format, 	there is only one `MAGS`=0, and `SAMPLE_RANGE` defines all scenarios that 
+    should be analyzed. 	To use this format, set the dictionary to:<br>
 	`{'TYPE':"from_csv", 'SAMPLE_RANGE':range(100), 'MAGS':range(0, 1), 'FILTER_SCE':None,
 	  'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}`
 	<br><br>
-	When the network dataset is synthetic, there are one format for network data and
+	When the network dataset is synthetic, there is one format for network data and
 	damage scenarios files:<br><br>
-	* **synthetic**: in this format network data and damage data are in the same folder, and
+	* **synthetic**: in this format, network data and damage data are in the same folder, and
 	hence, `BASE_DIR`= `DAMAGE_DIR`. Also, `MAGS` represents the range of network configuration, and 
-	`SAMPLE_RANGE` sets the range of sampele network for each configuraytion in the analysis.
+	`SAMPLE_RANGE` sets the range of sample networks for each configuration in the analysis.
 	To use this format, set the dictionary to:<br>
 	`{'TYPE':"synthetic", 'SAMPLE_RANGE':range(0, 1), 'MAGS':range(0, 100), 'FILTER_SCE':None,
 	  'TOPO':'General', 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}`
 	<br><br>
-2. `DYNAMIC_PARAMS`: sets the features of the models that incorporate dynamic parameters
-	into the analysis. Set it to *None* if you want to use static paramters that are
-	constant for different time steps. So far, we only have one type of dynamic paramters,
+2. `DYNAMIC_PARAMS`: sets the features of the models that incorporate dynamic parameters 
+    into the analysis. Set it to *None* if you want to use static parameters that are 
+    constant for different time steps. So far, we only have one type of dynamic parameters,
 	which is the dynamic demand that is calculated based on population dislocation models, 
 	for which, the dictionary should have the following items:
 	1. `TYPE`: type of the dislocation data (see below).
-	2. `RETURN`: type of the model for the return of dislocated population. Options
+	2. `RETURN`: type of the model for the return of the dislocated population. Options
 	are *step_function* and *linear*.
 	3. `DIR`: sets the folder where the dislocation data are stored.
 	4. `TESTBED` (only when `TYPE`=*incore*) : sets the name of the testbed in analysis.
 	<br><br>
 	The are two types of dislocation data:
 	* **shelby_adopted**: this is a precalculated dictionary that stores stylized 
-	dislocation  data for Shelby County dataset and the code reads those files.
+	dislocation data for the Shelby County dataset, and the code reads those files.
 	To use this type, set the dictionary to:<br> 
-	`{'TYPE': 'shelby_adopted', 'RETURN': 'step_function', 'DIR': 'C:/Users/ht20/Documents/Files/dynamic_demand/'}`
+	`{'TYPE': 'shelby_adopted', 'RETURN': 'step_function', 
+       'DIR': 'C:/Users/ht20/Documents/Files/dynamic_demand/'}`
 	* **incore**: this type uses the population dislocation models and household
 	unit allocation data from IN-CORE (stored locally) to calculate demand values 
 	in each time step of the analysis. To use this type, set the dictionary to:<br>
-	`{'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'Joplin', 'DIR': 'C:/Users/ht20/Documents/GitHub/NIST_testbeds/'}`
+	`{'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'Joplin', 
+       'DIR': 'C:/Users/ht20/Documents/GitHub/NIST_testbeds/'}`
 	<br><br>
-3. `STM_MODEL_DICT`: contains information about the statistical models approximating INDP,
-	which are used for valution methods in auction-based resource allocation. Set it to *None*
+3. `STM_MODEL_DICT`: contains information about the statistical models approximating 
+    INDP used for valuation methods in auction-based resource allocation. Set it to *None*
 	if `VAL_TYPE` does not include *STM* (see below). Otherwise, the dictionary should have
 	the following items:
-	1. `num_pred`: number of model prediction that are used to calculate each valuation.
+	1. `num_pred`: number of model predictions that are used to calculate each valuation.
 	2. `model_dir`: the folder that contains the statistical model files.
 	3. `param_folder`: the folder that contains the statistical model parameters.<br>
 	Example: <br>
 	`MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
-	STM_MODEL_DICT = {'num_pred':1, 'model_dir':MODEL_DIR+'/traces', 'param_folder':MODEL_DIR+'/parameters'}`
+	STM_MODEL_DICT = {'num_pred':1, 'model_dir':MODEL_DIR+'/traces', 
+    'param_folder':MODEL_DIR+'/parameters'}`
 '''
 
 # %%
@@ -240,8 +243,8 @@ There are five choices of method:
 	you have to call:<br>
 	`runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
 	misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS}))`
-3. `JC`: runs Judgment Call (JC) method, which is a decentralized version of INDP [cite]. To run this method,
-	you have to call:<br>
+3. `JC`: runs Judgment Call (JC) method, which is a decentralized version of INDP [cite]. 
+    To run this method,	you have to call:<br>
 	`runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
 	res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
 	output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS,
@@ -252,9 +255,9 @@ There are five choices of method:
 	res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR, 
 	misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
    'REDUCED_ACTIONS':'EDM'}`<br>
-	Here, `misc['REDUCED_ACTIONS']` sets the hueristic method to reduce the number of actions of
-	each player to add Bounded Rationality to the analysis. Options are *ER* for exhasuting resources, 
-	and *EDM* for expert decision maker.
+	Here, `misc['REDUCED_ACTIONS']` sets the heuristic method to reduce the number of actions of
+	each player to add Bounded Rationality to the analysis. Options are *ER* for exhausting resources 
+	and *EDM* for the expert decision-maker.
 5. `BAYESGAME`: runs Interdependent Network Restoration Bayesian Game (INRBG), which is a
 	decentralized version of INDP [cite]. To run this method, you have to call:<br>
 	`runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
@@ -262,8 +265,8 @@ There are five choices of method:
 	misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
 	"SIGNALS":{1:'C', 2:'C'}, "BELIEFS":{1:'U', 2:'U'},
 	'REDUCED_ACTIONS':'EDM'}`<br>
-	Here, `misc['SIGNALS']` sets the actual type of each player in the game. Options are *C* for
-	cooperative and *N* for non-cooperative.<br>
+	Here, `misc['SIGNALS']` sets the actual type of each player in the game. Options 
+    are *C* for	cooperative and *N* for non-cooperative.<br>
 	Also, `misc['BELIEFS']` sets the belief of each player in the game. Options are *U* for
 	uniformed belief, *F* for false consensus bias, and *I* for inverse false consensus bias.
 '''
@@ -291,28 +294,28 @@ There are five choices of method:
 ''' 
 ### Post-processing 
 First, you have to set a few parameters and then call functions that read outputs
-and generate the panda datframes that are needed for plotting the results.
+and generate the pandas DataFrames that are needed for plotting the results.
 
 ##### Post-processing parameters
 
 1. `COST_TYPES`: type of cost that should be used in processing the outputs. Options 
 are *Total*, *Under Supply*, *Over Supply*, *Node*, *Arc*, *Flow*, *Space Prep*, *Under Supply Perc*.
-2. `REF_METHOD`: the method that served as the reference in computing the reative performance
-and allocation gap. Usually, this is aan optimal methods like `indp` or `tdindp`. However,
-it can be any other method lik `jc`, `ng`, or else.
+2. `REF_METHOD`: the method served as the reference in computing the relative performance
+and allocation gap. Usually, this is an optimal method like `indp` or `tdindp`. However,
+it can be any other method like `jc`, `ng`, or else.
 3. `METHOD_NAMES`: methods whose output should be read. Options are `indp`, `tdindp`, `jc`,
-`ng`, `dp_indp`, `dp_jc`, `bg????` (For example `bgNCUI` means the Bayesiab game with
+`ng`, `dp_indp`, `dp_jc`, `bg????` (For example, `bgNCUI` means the Bayesian game with
 two players where the first player is non-cooperative and uses uninformative belief,
 and the second one is cooperative and uses the inverse false consensus belief).
 
 ##### Post-processing functions
 
-1. `generate_combinations`: generate all the combination of oututs that should be read and
+1. `generate_combinations`: generate all the combination of outputs that should be read and
 save them in `COMBS` and `OPTIMAL_COMBS` lists.
 2. `read_results`: read results for combinations in `COMBS` and `OPTIMAL_COMBS` lists.
-3. `relative_performance`: computes relative performance measures  for different combinations.
+3. `relative_performance`: computes relative performance measures for different combinations.
 4. `read_resourcec_allocation`: read the resource allocations by different methods and
-compute allocation gaps  for different combinations.
+compute allocation gaps for different combinations.
 5. `read_run_time`: compute run time for different combinations.
 6. `analyze_NE`: analyze the characteristics of Nash equilibria for different combinations.
 '''

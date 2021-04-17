@@ -17,16 +17,53 @@ import sys
 
 def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
          forced_actions=False, fixed_nodes={}, print_cmd=True, time_limit=None,
-         co_location=True, solution_pool=False):
-    """INDP optimization problem. Also solves td-INDP if T > 1.
-    :param N: An InfrastructureNetwork instance (created in infrastructure.py)
-    :param v_r: Vector of number of resources given to each layer in each timestep. If the size of the vector is 1, it shows the total number of resources for all layers.
-    :param T: Number of timesteps to optimize over.
-    :param layers: Layer IDs of N included in the optimization. (Default is water (1) and power (3)).
-    :param controlled_layers: Layer IDs that can be recovered in this optimization. Used for decentralized optimization.
-    :param functionality: Dictionary of nodes to functionality values for non-controlled nodes. Used for decentralized optimization.
-    :returns: A list of the form [actions,costs] for a successful optimization.
-    """
+         co_location=True, solution_pool=None):
+    '''
+    INDP optimization problem. It also solves td-INDP if T > 1.
+
+    Parameters
+    ----------
+    N : :class:`~infrastructure.InfrastructureNetwork`
+        An InfrastructureNetwork instance.
+    v_r : list
+        Vector of the number of resources given to each layer in each timestep. 
+        If the size of the vector is 1, it shows the total number of resources for all layers.
+    T : int, optional
+        Number of timesteps to optimize over. The default is 1.
+    layers : list, optional
+        Layer IDs of N included in the optimization. The default is [1,3]
+        (1 for water and 3 for power in the Shelby County database).
+    controlled_layers : list, optional
+        Layer IDs that can be recovered in this optimization. Used for decentralized 
+        optimization. The default is [1,3].
+    functionality : dict, optional
+        Dictionary of nodes to functionality values for non-controlled nodes. 
+        Used for decentralized optimization. The default is {}.
+    forced_actions : bool, optional
+        If true, it forces the optimizer to repair at least one element. The default is False.
+    fixed_nodes : dict, optional
+        It fixes the functionality of given elements to a given value. The default is {}.
+    print_cmd : bool, optional
+        If true, analysis information is written to the console. The default is True.
+    time_limit : int, optional
+        Time limit for the optimizer to stop. The default is None.
+    co_location : bool, optional
+        If false, exclude geographical interdependency from the optimization. The default is True.
+    solution_pool : int, optional
+        The number of solutions that should be retrieved from the optimizer in addition to 
+        the optimal one. The default is None.
+
+    Returns
+    -------
+    : list
+        A list of the form ``[m, results]`` for a successful optimization where m is the
+        Gurobi optimization model and results is a :class:`~indputils.INDPResults` object
+        generated using :func:`collect_results`.
+        If :envvar:`solution_pool` is set to a number, the function returns ``[m, results, sol_pool_results]``
+        where `sol_pool_results` is dictionary of solution that should be retrieved from the 
+        optimizer in addition to the optimal one collected using :func:`collect_solutoon_pool`.
+
+    '''
     #print "T=",T
     #if functionality:
     #    for t in functionality:
@@ -328,6 +365,26 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
         return None
 
 def collect_solutoon_pool(m, T, N_hat_prime, A_hat_prime):
+    '''
+    
+
+    Parameters
+    ----------
+    m : TYPE
+        DESCRIPTION.
+    T : TYPE
+        DESCRIPTION.
+    N_hat_prime : TYPE
+        DESCRIPTION.
+    A_hat_prime : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    sol_pool_results : TYPE
+        DESCRIPTION.
+
+    '''
     sol_pool_results={}
     for sol in range(m.SolCount):
         m.setParam('SolutionNumber', sol)
@@ -350,6 +407,34 @@ def collect_solutoon_pool(m, T, N_hat_prime, A_hat_prime):
     return sol_pool_results
 
 def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=True):
+    '''
+    
+
+    Parameters
+    ----------
+    m : TYPE
+        DESCRIPTION.
+    controlled_layers : TYPE
+        DESCRIPTION.
+    T : TYPE
+        DESCRIPTION.
+    N_hat : TYPE
+        DESCRIPTION.
+    N_hat_prime : TYPE
+        DESCRIPTION.
+    A_hat_prime : TYPE
+        DESCRIPTION.
+    S : TYPE
+        DESCRIPTION.
+    coloc : TYPE, optional
+        DESCRIPTION. The default is True.
+
+    Returns
+    -------
+    indp_results : TYPE
+        DESCRIPTION.
+
+    '''
     layers = controlled_layers
     indp_results=INDPResults(layers)
     # compute total demand of all layers and each layer
@@ -442,6 +527,23 @@ def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=
     return indp_results
 
 def apply_recovery(N,indp_results,t):
+    '''
+    
+
+    Parameters
+    ----------
+    N : :class:`~infrastructure.InfrastructureNetwork`
+        DESCRIPTION.
+    indp_results : TYPE
+        DESCRIPTION.
+    t : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    '''
     for action in indp_results[t]['actions']:
         if "/" in action:
             # Edge recovery action.
@@ -457,14 +559,30 @@ def apply_recovery(N,indp_results,t):
             N.G.nodes[node]['data']['inf_data'].functionality=1.0
 
 def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
-    """Creates a functionality map for input into the functionality parameter in the indp function.
-    :param N: An InfrastructureNetwork instance (created in infrastructure.py)
-    :param T: Number of timesteps to optimize over.
-    :param layers: Layer IDs of N included in the optimization.
-    :param actions: An array of actions from a previous optimization. Likely taken from an INDPResults variable 'indp_result[t]['actions']'.
-    :param strategy_type: If no actions are provided, assigns a default functionality. Options are: "OPTIMISTIC", "PESSIMISTIC" or "INFO_SHARE"
-    :returns: A functionality dictionary used for input into indp.
-    """
+    '''
+    Creates a functionality map for input into the functionality parameter in the indp function.
+
+    Parameters
+    ----------
+    N : :class:`~infrastructure.InfrastructureNetwork`
+        An InfrastructureNetwork instance .
+    T : int
+        Number of timesteps to optimize over..
+    layers : list
+        Layer IDs of N included in the optimization..
+    actions : list
+        An array of actions from a previous optimization. Likely taken from an 
+        INDPResults variable 'indp_result[t]['actions']'..
+    strategy_type : str, optional
+        If no actions are provided, assigns a default functionality. Options are:
+        "OPTIMISTIC", "PESSIMISTIC" or "INFO_SHARE". The default is "OPTIMISTIC".
+
+    Returns
+    -------
+    functionality : dict
+        A functionality dictionary used for input into indp..
+
+    '''
     functionality={}
     G_prime_nodes = [n[0] for n in N.G.nodes(data=True) if n[1]['data']['inf_data'].net_id in layers]
     G_prime = N.G.subgraph(G_prime_nodes)
@@ -505,14 +623,45 @@ def create_functionality_matrix(N,T,layers,actions,strategy_type="OPTIMISTIC"):
 def initialize_network(BASE_DIR="../data/INDP_7-20-2015/", external_interdependency_dir=None,
                        sim_number=1, cost_scale=1, magnitude=6, sample=0, v=3, 
                        infrastructure_data=True, topology='Random'):
-    """ Initializes an InfrastructureNetwork from Shelby County data.
-    :param BASE_DIR: Base directory of Shelby County data.
-    :param sim_number: Which simulation number to use as input.
-    :param cost_scale: Scales the cost to improve efficiency.
-    :param magnitude: Magnitude of earthquake.
-    :param v: v parameter
-    :returns: An interdependent InfrastructureNetwork.
-    """
+    '''
+    Initializes an :class:`~infrastructure.InfrastructureNetwork` object from 
+    Shelby County data or synthetic networks.
+
+    Parameters
+    ----------
+    BASE_DIR : str, optional
+        Base directory of Shelby County data or synthetic networks. The default is 
+        "../data/INDP_7-20-2015/".
+    external_interdependency_dir : str, optional
+        Directory of external interdependencies for Shelby County data. The default is None.
+    sim_number : int, optional
+        Which simulation number to use as input. The default is 1.
+    cost_scale : float, optional
+        Scales the cost to improve efficiency. The default is 1.
+    magnitude : int, optional
+        Magnitude parameter of the initial disruption. The default is 6.
+    sample : int, optional
+        Sample number paramter of the initial disruption. The default is 0.
+    v : int, list, optional
+        Number of avaialable resources or resource cap. The default is 3.
+    infrastructure_data : bool, optional
+        If the data are for infrastructure. It should be set to False if a synthetic network
+        is being analyzed. The default is True.
+    topology : str, optional
+        Topology of the synthetic network that is being analyzed. The default is 'Random'.
+
+    Returns
+    -------
+    InterdepNet : :class:`~infrastructure.InfrastructureNetwork`
+        The object containing the network data.
+    v_temp : int, list
+        Number of avaialable resources or resource cap. Used for synthetic networks 
+        where each sample network has a different resource cap.
+    layers_temp : list
+        List of layers in the analysis. Used for synthetic networks where each sample 
+        network has different layers.
+
+    '''
     layers_temp=[]
     v_temp = 0
     if infrastructure_data:
