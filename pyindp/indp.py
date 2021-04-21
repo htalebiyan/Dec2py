@@ -341,7 +341,8 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
     m.update()
     if solution_pool:
         m.setParam('PoolSearchMode', 1)
-        m.setParam('PoolSolutions', solution_pool)
+        m.setParam('PoolSolutions', 10000)
+        m.setParam('PoolGap', solution_pool)
     m.optimize()
     run_time = time.time()-start_time
     # Save results.
@@ -351,7 +352,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
         results=collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=co_location)
         results.add_run_time(t,run_time)
         if solution_pool:
-            sol_pool_results =  collect_solutoon_pool(m, T, N_hat_prime, A_hat_prime)
+            sol_pool_results =  collect_solution_pool(m, T, N_hat_prime, A_hat_prime)
             return [m, results, sol_pool_results]
         return [m, results]
     else:
@@ -364,7 +365,7 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
                     print('%s' % c.constrName)
         return None
 
-def collect_solutoon_pool(m, T, N_hat_prime, A_hat_prime):
+def collect_solution_pool(m, T, N_hat_prime, A_hat_prime):
     '''
     
 
@@ -386,8 +387,10 @@ def collect_solutoon_pool(m, T, N_hat_prime, A_hat_prime):
 
     '''
     sol_pool_results={}
+    current_sol_count = 0
     for sol in range(m.SolCount):
         m.setParam('SolutionNumber', sol)
+        # print(m.PoolObjVal)
         sol_pool_results[sol] = {'nodes':[], 'arcs':[]}
         for t in range(T):
             # Record node recovery actions.
@@ -404,6 +407,10 @@ def collect_solutoon_pool(m, T, N_hat_prime, A_hat_prime):
                     arcVar='y_'+str(u)+","+str(v)+","+str(t)
                 if round(m.getVarByName(arcVar).x)==1:
                     sol_pool_results[sol]['arcs'].append((u,v))
+        if sol>0 and sol_pool_results[sol] == sol_pool_results[current_sol_count]:
+            del sol_pool_results[sol]
+        elif sol>0:
+            current_sol_count = sol
     return sol_pool_results
 
 def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=True):
