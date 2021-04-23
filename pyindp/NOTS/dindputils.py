@@ -398,7 +398,7 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
 
     return lambda_df
 
-def read_resourcec_allocation(result_df, combinations, optimal_combinations, objs,
+def read_resource_allocation(result_df, combinations, optimal_combinations, objs,
                               ref_method='indp', root_result_dir='../results/'):
     '''
     This functions reads the resource allocation vectors by INDP and JC. Also,

@@ -13,12 +13,16 @@ import pickle
 import random
 # import numpy as np
 # import pandas as pd
-import gambit
+
 import dindpclasses
 import indpalt
 import indp
 import indputils
 #import plots
+try:
+    import gambit
+except ModuleNotFoundError:
+    print("Can't find module 'gambit'")
 
 class NormalGame:
     '''
@@ -74,7 +78,8 @@ class NormalGame:
     optimal_solution : dict
         Optimal Solution from INDP. It is populated by :meth:`find_optimal_solution`.
     '''
-    def __init__(self, L, net, v_r, act_rduc=False):
+
+    def __init__(self, L, net, v_r, act_rduc=None):
         self.players = L
         self.net = net
         self.v_r = v_r
@@ -97,7 +102,7 @@ class NormalGame:
         the game and read it later and add it to to the unpickled object
         """
         state = self.__dict__.copy()
-        state["normgame"] =  {}
+        state["normgame"] = {}
         return state
 
     def __setstate__(self, state):
@@ -123,17 +128,17 @@ class NormalGame:
             Dictionary of all relavant restoration actions.
 
         '''
-        for u,v,a in self.net.G.edges(data=True):
+        for u, v, a in self.net.G.edges(data=True):
             if a['data']['inf_data'].is_interdep and u[1] in self.players and v[1] in self.players:
                 if u not in self.dependee_nodes:
-                    self.dependee_nodes[u]=[]
-                self.dependee_nodes[u].append((v,a['data']['inf_data'].gamma))
+                    self.dependee_nodes[u] = []
+                self.dependee_nodes[u].append((v, a['data']['inf_data'].gamma))
         actions = {}
         for l in self.players:
-            damaged_nodes = [n for n, d in self.net.G.nodes(data=True) if\
-                        d['data']['inf_data'].functionality == 0.0 and n[1] == l]
-            damaged_arcs = [(u, v) for u, v, a in self.net.G.edges(data=True) if\
-                        a['data']['inf_data'].functionality == 0.0 and u[1] == l and v[1] == l]
+            damaged_nodes = [n for n, d in self.net.G.nodes(data=True) if \
+                             d['data']['inf_data'].functionality == 0.0 and n[1] == l]
+            damaged_arcs = [(u, v) for u, v, a in self.net.G.edges(data=True) if \
+                            a['data']['inf_data'].functionality == 0.0 and u[1] == l and v[1] == l]
             '''
             Arc repaire actions are collected under "other action (OA)" since
             the arc actions do not affect the decision of other palyers
@@ -152,26 +157,71 @@ class NormalGame:
                 else:
                     other_action = True
             if other_action:
-                rel_actions.extend([('OA',l)])
+                rel_actions.extend([('OA', l)])
             actions[l] = []
             for v in range(self.v_r[l]):
-                actions[l].extend(list(itertools.combinations(rel_actions, v+1)))
-            '''
-            "No Action (NA)" is added to possible actions
-            '''
-            actions[l].extend([('NA',l)])
-            
-            if self.actions_reduced:
-                if other_action:
-                    min_len = min(self.v_r[l], len(rel_actions)-1)
-                else:
-                    min_len = min(self.v_r[l], len(rel_actions))
-                remove_list = []
-                for a in actions[l]:
-                    if len(a)<min_len and ('OA',l) not in a and a!=('NA',l):
-                        remove_list.append(a)
-                actions[l] = [a for a in actions[l] if a not in remove_list]
+                actions[l].extend(list(itertools.combinations(rel_actions, v + 1)))
+
+            '''"No Action (NA)" is added to possible actions '''
+            actions[l].extend([('NA', l)])
         return actions
+
+    def apply_bounded_rationality(self):
+        if self.actions_reduced == 'EDM':
+            v_r = sum([x for key, x in self.v_r.items()])
+            indp_res = indp.indp(self.net, v_r=v_r, T=1, layers=self.players,
+                                 controlled_layers=self.players, functionality={},
+                                 print_cmd=False, solution_pool=.5)[2]
+            solution_pool = {l: [] for l in self.players}
+            for _, val in indp_res.items():
+                for l in self.players:
+                    act = ()
+                    for x in val['nodes']:
+                        if x[1] == l:
+                            if x in self.dependee_nodes.keys():
+                                act += (x,)
+                            elif ('OA', l) not in act:
+                                act += (('OA', l),)
+                    for x in val['arcs']:
+                        if x[0][1] == l and ('OA', l) not in act:
+                            act += (('OA', l),)
+                    if act not in solution_pool[l]:
+                        solution_pool[l].append(act)
+        ''' Remove action due to the bounded rationality '''
+        for l in self.players:
+            ''' non-cooperative actions is excluded from the choice reduction '''
+            OA_in_actions = True
+            self.actions[l].remove(('NA', l))
+            try:
+                self.actions[l].remove((('OA', l),))
+            except ValueError:
+                OA_in_actions = False
+
+            remove_list = []
+            if self.actions_reduced == 'ER':
+                for a in self.actions[l]:
+                    if len(a) < self.v_r[l] and ('OA', l) not in a:
+                        remove_list.append(a)
+                self.actions[l] = [a for a in self.actions[l] if a not in remove_list]
+            if self.actions_reduced == 'EDM':
+                for a in self.actions[l]:
+                    is_in_sol_pool = False
+                    sa = tuple(sorted(a, key=lambda item: str(item[0])))
+                    for x in solution_pool[l]:
+                        sx = tuple(sorted(x, key=lambda item: str(item[0])))
+                        if sa == sx:
+                            is_in_sol_pool = True
+                            break
+                    if not is_in_sol_pool:
+                        remove_list.append(a)
+                self.actions[l] = [a for a in self.actions[l] if a not in remove_list]
+                while len(self.actions[l]) > 20: #!!! The number 20 is arbitrary
+                    self.actions[l].remove(random.choice(self.actions[l]))
+
+            ''' non-cooperative actions are added to possible actions '''
+            if OA_in_actions:
+                self.actions[l].extend([(('OA', l),)])
+            self.actions[l].extend([('NA', l)])
 
     def compute_payoffs(self, save_model=None, payoff_dir=None):
         '''
@@ -196,7 +246,7 @@ class NormalGame:
 
         '''
         actions_super_set = []
-        memory_threshold =  5000
+        memory_threshold = 5000
         for l in self.players:
             actions_super_set.append([])
             actions_super_set[-1].extend(self.actions[l])
@@ -226,11 +276,11 @@ class NormalGame:
                         self.payoff_time[idx] = flow_results[1].results[0]['run_time']
                 else:
                     for idxl, l in enumerate(self.players):
-                        payoff_layer = -1e100 #!!! Change this to work for general case
+                        payoff_layer = -1e100  # !!! Change this to work for general case
                         self.payoffs[idx][l] = [ac[idxl], payoff_layer]
                         self.payoff_time[idx] = 0.0
-                if len(action_comb)>memory_threshold and idx%memory_threshold==0 and idx!=0:
-                    print(str(idx//memory_threshold), '*', str(memory_threshold))
+                if len(action_comb) > memory_threshold and idx % memory_threshold == 0 and idx != 0:
+                    print(str(idx // memory_threshold), '*', str(memory_threshold))
                 #     temp_dir = './temp_payoff_objs'
                 #     if not os.path.exists(temp_dir):
                 #         os.makedirs(temp_dir)
@@ -238,6 +288,7 @@ class NormalGame:
                 #         pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
                 #         self.payoffs = {}
                 #         self.payoff_time = {}
+
     def flow_problem(self, action):
         '''
         Solves a flow problem for a given combination of actions
@@ -282,17 +333,17 @@ class NormalGame:
             None.
 
         '''
-        adjusted_v_r = {key:val for key, val in self.v_r.items()}
+        adjusted_v_r = {key: val for key, val in self.v_r.items()}
         fixed_nodes = {}
         for u in self.dependee_nodes.keys():
             if self.net.G.nodes[u]['data']['inf_data'].functionality != 1.0:
                 fixed_nodes[u] = 0.0
         for idxl, l in enumerate(self.players):
-            if action[idxl] != ('NA',l):
+            if action[idxl] != ('NA', l):
                 for act in action[idxl]:
-                    if act != ('OA',l):
+                    if act != ('OA', l):
                         fixed_nodes[act] = 1.0
-                if ('OA',l) not in action[idxl]:
+                if ('OA', l) not in action[idxl]:
                     adjusted_v_r[l] = len(action[idxl])
             else:
                 adjusted_v_r[l] = 0
@@ -336,10 +387,10 @@ class NormalGame:
         if save_model:
             if not os.path.exists(save_model):
                 os.makedirs(save_model)
-            with open(save_model+'/norm_game_'+suffix+".txt", "w") as text_file:
+            with open(save_model + '/norm_game_' + suffix + ".txt", "w") as text_file:
                 text_file.write(self.normgame.write(format='native')[2:-1].replace('\\n', '\n'))
 
-    def solve_game(self, method='enumerate_pure', print_to_cmd=False, 
+    def solve_game(self, method='enumerate_pure', print_to_cmd=False,
                    game_info=None):
         '''
         This function solves the normal restoration game given a solving method
@@ -371,12 +422,15 @@ class NormalGame:
         game = self.normgame
         player_list = self.players
         action_list = self.actions
+        payoff_list = self.payoffs
         if game_info:
             game = game_info[0]
             player_list = game_info[1]
             action_list = game_info[2]
+            payoff_list = game_info[3]
 
         start_time = time.time()
+        no_solution = False
         if method == 'enumerate_pure':
             gambit_solution = gambit.nash.enumpure_solve(game)
         elif method == 'enumerate_mixed_2p':
@@ -393,23 +447,44 @@ class NormalGame:
             gambit_solution = gambit.nash.gnm_solve(game)
         else:
             sys.exit('The solution method is not valid')
-        if len(gambit_solution)==0:
+        if len(gambit_solution) == 0 and method != 'enumerate_pure':
             print('No solution found: switching to pure enumeratiom method')
             gambit_solution = gambit.nash.enumpure_solve(game)
-        self.solving_time = time.time()-start_time
+        if len(gambit_solution) == 0:
+            print('No pure Nash equilibrium - both choose randomly')
+            no_solution = True
+        self.solving_time = time.time() - start_time
 
         self.solution = GameSolution(player_list, gambit_solution, action_list)
+        # Choose a random action profile when there is no equilibrium
+        if no_solution:
+            max_payoff = -1e100
+            while max_payoff == -1e100:
+                act_profile = random.choice(list(payoff_list.values()))
+                max_payoff = max([x[1] for x in act_profile.values()])
+            self.solution.sol = {0: {}}
+            for l in player_list:
+                self.solution.sol[0]['P' + str(l) + ' payoff'] = act_profile[l][1]
+                act_profile_coorected = ()
+                for x in act_profile[l][0]:
+                    y = list(x)
+                    y[1] = l
+                    x = tuple(y)
+                    act_profile_coorected += (x,)
+                self.solution.sol[0]['P' + str(l) + ' actions'] = [act_profile_coorected]
+                self.solution.sol[0]['P' + str(l) + ' action probs'] = [1.0]
+            self.solution.sol[0]['total cost'] = -sum([x[1] for x in act_profile.values()])
+        # Find all combination of action in the case of mixed strategy
         for _, sol in self.solution.sol.items():
-            # Find all combination of action in the case of mixed strategy
             sol_super_set = []
             for l in player_list:
-                sol_super_set.append(sol['P'+str(l)+' actions'])
+                sol_super_set.append(sol['P' + str(l) + ' actions'])
             sol['solution combination'] = list(itertools.product(*sol_super_set))
         # Print to console
         if print_to_cmd:
             print("NE (pure or mixed) Solutions(s)")
             for idx, x in enumerate(gambit_solution):
-                print('%d.'%(idx+1))
+                print('%d.' % (idx + 1))
                 print([float(y) for y in x])
                 print([float(y) for y in x.payoff()])
 
@@ -438,7 +513,7 @@ class NormalGame:
 
         total_cost_dict = {}
         for key, sol in self.solution.sol.items():
-            exclude_payoffs = sum([-sol['P'+str(x)+' payoff'] for x in excluded_palyers])
+            exclude_payoffs = sum([-sol['P' + str(x) + ' payoff'] for x in excluded_palyers])
             total_cost_dict[key] = sol['total cost'] - exclude_payoffs
         min_val = min(total_cost_dict.values())
         min_keys = [k for k, v in total_cost_dict.items() if v == min_val]
@@ -455,14 +530,14 @@ class NormalGame:
             max_prob_idx = {}
             chosen_profile = ()
             for l in included_palyers:
-                probs = self.solution.sol[sol_key]['P'+str(l)+' action probs']
+                probs = self.solution.sol[sol_key]['P' + str(l) + ' action probs']
                 max_prob = max(probs)[1]
                 max_keys = [c for c in range(len(probs)) if probs[c] == max_prob]
                 if len(max_keys) == 1:
                     max_prob_idx[l] = max_keys[0]
                 else:
                     max_prob_idx[l] = random.choice(max_keys)
-                chosen_profile += self.solution.sol[sol_key]['P'+str(l)+' action'][max_prob_idx[l]]
+                chosen_profile += self.solution.sol[sol_key]['P' + str(l) + ' action'][max_prob_idx[l]]
             mixed_index = self.solution.sol[sol_key]['solution combination'].index(chosen_profile)
 
         self.chosen_equilibrium = self.solution.sol[sol_key]
@@ -478,7 +553,7 @@ class NormalGame:
                     self.chosen_equilibrium['total cost'] = total_cost_dict[sol_key]
                 ac_old = []
                 for x in ac:
-                    if x[0]=='NA':
+                    if x[0] == 'NA':
                         if x[1] in included_palyers:
                             ac_old.append(x)
                     elif x[0][1] in included_palyers:
@@ -487,7 +562,7 @@ class NormalGame:
                 ac = ()
                 for x in ac_old:
                     new_a = ()
-                    if x[0] =='NA':
+                    if x[0] == 'NA':
                         new_a += ((x[0], x[1][1]))
                     else:
                         for y in x:
@@ -498,8 +573,8 @@ class NormalGame:
         if len(self.chosen_equilibrium['full result']) == 1 and not preferred_players:
             original_tc = self.chosen_equilibrium['total cost']
             re_comp_tc = self.chosen_equilibrium['full result'][0].results[0]['costs']['Total']
-            assert abs((re_comp_tc-original_tc)/original_tc)<0.01,\
-            'Error: the re-computed total cost does not match the original one.'
+            assert abs((re_comp_tc - original_tc) / original_tc) < 0.01, \
+                'Error: the re-computed total cost does not match the original one.'
 
     def find_optimal_solution(self):
         '''
@@ -512,28 +587,29 @@ class NormalGame:
             None.
 
         '''
-        v_r = sum([x for key,x in self.v_r.items()])
+        v_r = sum([x for key, x in self.v_r.items()])
         indp_res = indp.indp(self.net, v_r=v_r, T=1, layers=self.players,
                              controlled_layers=self.players, functionality={},
                              print_cmd=False, time_limit=None)[1]
 
         for _, l in enumerate(self.players):
-            self.optimal_solution['P'+str(l)+' actions'] = ()
+            self.optimal_solution['P' + str(l) + ' actions'] = ()
             for act in indp_res.results_layer[l][0]['actions']:
-                if '/' in act: 
-                    if ('OA',l) not in self.optimal_solution['P'+str(l)+' actions']:
-                        self.optimal_solution['P'+str(l)+' actions'] += (('OA', l),)
+                if '/' in act:
+                    if ('OA', l) not in self.optimal_solution['P' + str(l) + ' actions']:
+                        self.optimal_solution['P' + str(l) + ' actions'] += (('OA', l),)
                 else:
                     act = [int(y) for y in act.split(".")]
                     if ((act[0], act[1])) in self.dependee_nodes.keys():
-                        self.optimal_solution['P'+str(l)+' actions'] += ((act[0], act[1]),)
-                    elif ('OA',l) not in self.optimal_solution['P'+str(l)+' actions']:
-                        self.optimal_solution['P'+str(l)+' actions'] += (('OA', l),)
+                        self.optimal_solution['P' + str(l) + ' actions'] += ((act[0], act[1]),)
+                    elif ('OA', l) not in self.optimal_solution['P' + str(l) + ' actions']:
+                        self.optimal_solution['P' + str(l) + ' actions'] += (('OA', l),)
             if len(indp_res.results_layer[l][0]['actions']) == 0:
-                self.optimal_solution['P'+str(l)+' actions'] += ('NA', l)
-            self.optimal_solution['P'+str(l)+' payoff'] = indp_res.results_layer[l][0]['costs']['Total']
+                self.optimal_solution['P' + str(l) + ' actions'] += ('NA', l)
+            self.optimal_solution['P' + str(l) + ' payoff'] = indp_res.results_layer[l][0]['costs']['Total']
         self.optimal_solution['total cost'] = indp_res.results[0]['costs']['Total']
         self.optimal_solution['full result'] = indp_res
+
 
 class BayesianGame(NormalGame):
     '''
@@ -557,8 +633,9 @@ class BayesianGame(NormalGame):
         List of bayesian players of the game comprising combiantion of players 
         and their types.
     '''
-    def __init__(self, L, net, v_r, act_rduc=False):
-        super().__init__(L, net, v_r)
+
+    def __init__(self, L, net, v_r, act_rduc=None):
+        super().__init__(L, net, v_r, act_rduc)
         self.fundamental_types = ['C', 'N']
         self.states = {}
         self.states_payoffs = {}
@@ -574,8 +651,8 @@ class BayesianGame(NormalGame):
         the game and read it later and add it to to the unpickled object
         """
         state = self.__dict__.copy()
-        state["normgame"] =  {}
-        state["bayesian_game"] =  {}
+        state["normgame"] = {}
+        state["bayesian_game"] = {}
         return state
 
     def label_actions(self, action):
@@ -609,7 +686,7 @@ class BayesianGame(NormalGame):
             label = 'C'
             for a in action:
                 if a[0] == 'OA':
-                    label = 'C' #'P'
+                    label = 'C'  # 'P'
                     break
         return label
 
@@ -620,25 +697,24 @@ class BayesianGame(NormalGame):
         of actions that are not consistant with the player's type.
 
         .. todo::
-            Games: refine how to reduce importance of action not consistant with
-            the player's type.
+            Games: refine how to reduce importance of other types
 
         Returns
         -------
         None.
 
         '''
-        comb_w_rep = list(itertools.combinations(self.fundamental_types*len(self.players),
+        comb_w_rep = list(itertools.combinations(self.fundamental_types * len(self.players),
                                                  len(self.players)))
         self.states = list(set(comb_w_rep))
         # Assign payoff matrix for each state
         for s in self.states:
-            self.states_payoffs[s] = copy.deepcopy(self.payoffs) #!!!deepcopy
+            self.states_payoffs[s] = copy.deepcopy(self.payoffs)  # !!!deepcopy
             for key, val in self.states_payoffs[s].items():
                 for idx, l in enumerate(self.players):
                     label = self.label_actions(val[l][0])
                     if label != s[idx]:
-                        val[l][1] *= 2 #!!!refine how to reduce importance of other types
+                        val[l][1] *= 2  # !!!
 
     def set_types(self, beliefs):
         '''
@@ -661,34 +737,34 @@ class BayesianGame(NormalGame):
         N = len(self.players)
         T = len(self.fundamental_types)
         for idx, l in enumerate(self.players):
-            self.types[l] = {x:{} for x in self.fundamental_types}
-            if beliefs[l]=="U": #Uninformed
+            self.types[l] = {x: {} for x in self.fundamental_types}
+            if beliefs[l] == "U":  # Uninformed
                 for t in self.fundamental_types:
                     for s in self.states:
-                        if s[idx]==t:
-                            self.types[l][t][s] = 1/T/(N-1)
+                        if s[idx] == t:
+                            self.types[l][t][s] = 1 / T / (N - 1)
                         else:
                             self.types[l][t][s] = 0.0
-            elif beliefs[l]=="F": #false consensus effect or consensus bias
-                P = (2**N)/(2**(N+1)-2)
-                prob_dict = {n:[scipy.special.comb(N-1, N-n, exact=True)*(T-1)**(N-n),
-                                P/(2**(N-n))] for n in range(1, N+1)}
+            elif beliefs[l] == "F":  # false consensus effect or consensus bias
+                P = (2 ** N) / (2 ** (N + 1) - 2)
+                prob_dict = {n: [scipy.special.comb(N - 1, N - n, exact=True) * (T - 1) ** (N - n),
+                                 P / (2 ** (N - n))] for n in range(1, N + 1)}
                 for t in self.fundamental_types:
                     for s in self.states:
-                        if s[idx]==t:
-                            num_agree = len([x for x in s if x==t])
-                            self.types[l][t][s] = prob_dict[num_agree][1]/prob_dict[num_agree][0]
+                        if s[idx] == t:
+                            num_agree = len([x for x in s if x == t])
+                            self.types[l][t][s] = prob_dict[num_agree][1] / prob_dict[num_agree][0]
                         else:
                             self.types[l][t][s] = 0.0
-            elif beliefs[l]=="I": # Inverse false consensus effect 
-                P = (2**N)/(2**(N+1)-2)
-                prob_dict = {n:[scipy.special.comb(N-1, N-n, exact=True)*(T-1)**(N-n),
-                                P/(2**(n-1))] for n in range(1, N+1)}
+            elif beliefs[l] == "I":  # Inverse false consensus effect
+                P = (2 ** N) / (2 ** (N + 1) - 2)
+                prob_dict = {n: [scipy.special.comb(N - 1, N - n, exact=True) * (T - 1) ** (N - n),
+                                 P / (2 ** (n - 1))] for n in range(1, N + 1)}
                 for t in self.fundamental_types:
                     for s in self.states:
-                        if s[idx]==t:
-                            num_agree = len([x for x in s if x==t])
-                            self.types[l][t][s] = prob_dict[num_agree][1]/prob_dict[num_agree][0]
+                        if s[idx] == t:
+                            num_agree = len([x for x in s if x == t])
+                            self.types[l][t][s] = prob_dict[num_agree][1] / prob_dict[num_agree][0]
                         else:
                             self.types[l][t][s] = 0.0
             else:
@@ -721,7 +797,7 @@ class BayesianGame(NormalGame):
                 payoff = 0
                 for s in self.states:
                     prob_state = self.types[b[1]][b[0]][s]
-                    if prob_state>0:
+                    if prob_state > 0:
                         payoff_dict = self.states_payoffs[s]
                         payoff_keys = list(payoff_dict.keys())
                         for idxl, l in enumerate(self.players):
@@ -734,7 +810,7 @@ class BayesianGame(NormalGame):
                         if len(payoff_keys) != 1:
                             sys.exit('Error: cannot find the payoff value for', ac)
                         utility_val = payoff_dict[payoff_keys[0]][b[1]][1]
-                        payoff += prob_state*utility_val
+                        payoff += prob_state * utility_val
                 self.bayesian_payoffs[idx][b] = [ac[idxb], payoff]
 
     def build_bayesian_game(self, save_model=None, suffix=''):
@@ -772,8 +848,9 @@ class BayesianGame(NormalGame):
         if save_model:
             if not os.path.exists(save_model):
                 os.makedirs(save_model)
-            with open(save_model+'/bayes_game_'+suffix+".txt", "w") as text_file:
+            with open(save_model + '/bayes_game_' + suffix + ".txt", "w") as text_file:
                 text_file.write(self.bayesian_game.write(format='native')[2:-1].replace('\\n', '\n'))
+
 
 class GameSolution:
     '''
@@ -814,7 +891,7 @@ class GameSolution:
         """
         self.__dict__.update(state)
         state["gambit_sol"] = {}
-        
+
     def extract_solution(self, actions):
         '''
         This function extracts the solution of the normal game from the solution
@@ -839,8 +916,8 @@ class GameSolution:
         for idx, x in enumerate(self.gambit_sol):
             sol[idx] = {}
             for l in self.players:
-                sol[idx]['P'+str(l)+' actions'] = []
-                sol[idx]['P'+str(l)+' action probs'] = []
+                sol[idx]['P' + str(l) + ' actions'] = []
+                sol[idx]['P' + str(l) + ' action probs'] = []
             c = -1
             for y in x:
                 c += 1
@@ -849,22 +926,20 @@ class GameSolution:
                     for l in self.players:
                         if act in actions[l]:
                             plyr = l
-                    sol[idx]['P'+str(plyr)+' actions'].append(act)
-                    sol[idx]['P'+str(plyr)+' action probs'].append(float(y))
+                    sol[idx]['P' + str(plyr) + ' actions'].append(act)
+                    sol[idx]['P' + str(plyr) + ' action probs'].append(float(y))
             total_cost = 0
             for idxl, l in enumerate(self.players):
-                sol[idx]['P'+str(l)+' payoff'] = float(x.payoff()[idxl])
+                sol[idx]['P' + str(l) + ' payoff'] = float(x.payoff()[idxl])
                 total_cost -= float(x.payoff()[idxl])
             sol[idx]['total cost'] = total_cost
         return sol
+
 
 class InfrastructureGame:
     '''
     This class is employed to find the restoration strategy for an interdepndent network
     using game theoretic methods over a given time horizon
-
-    .. todo::
-        Games: Add bayesian games
 
     Attributes
     ----------
@@ -909,6 +984,7 @@ class InfrastructureGame:
     output_dir : str
         Directory to which the results are written, set by :meth:`set_out_dir`
     '''
+
     def __init__(self, params):
         self.layers = params['L']
         self.game_type = params['ALGORITHM']
@@ -920,7 +996,7 @@ class InfrastructureGame:
         self.actions_reduced = params["REDUCED_ACTIONS"]
         self.net = self.set_network(params)
         self.time_steps = self.set_time_steps(params['T'], params['NUM_ITERATIONS'])
-        self.objs = {t:0 for t in range(1,self.time_steps+1)}
+        self.objs = {t: 0 for t in range(1, self.time_steps + 1)}
         self.judgments = dindpclasses.JudgmentModel(params, self.time_steps)
         self.results = indputils.INDPResults(self.layers)
         self.resource = dindpclasses.ResourceModel(params, self.time_steps)
@@ -930,7 +1006,7 @@ class InfrastructureGame:
         self.payoff_dir = self.set_payoff_dir(params['PAYOFF_DIR'])
 
     def run_game(self, print_cmd=True, compute_optimal=False, save_results=True,
-                 plot=False, save_model=False,):
+                 plot=False, save_model=False, ):
         '''
         Runs the infrastructure restoarion game for a given number of :attr:`time_steps`
 
@@ -964,24 +1040,24 @@ class InfrastructureGame:
                                                               time_step=t,
                                                               print_cmd=print_cmd,
                                                               compute_poa=True)
-            self.resource.time[t] = time.time()-res_alloc_time_start
+            self.resource.time[t] = time.time() - res_alloc_time_start
             # Create game object
             if self.game_type == 'NORMALGAME':
-                self.objs[t] = NormalGame(self.layers, self.net, self.v_r[t], 
-                                          act_rduc = self.actions_reduced)
+                self.objs[t] = NormalGame(self.layers, self.net, self.v_r[t],
+                                          act_rduc=self.actions_reduced)
             elif self.game_type == 'BAYESGAME':
-                self.objs[t] = BayesianGame(self.layers, self.net, self.v_r[t], 
-                                          act_rduc = self.actions_reduced)
+                self.objs[t] = BayesianGame(self.layers, self.net, self.v_r[t],
+                                            act_rduc=self.actions_reduced)
             else:
                 sys.exit('Error: wrong algorithm name for Infrastructure Game.')
             # Compute payoffs
             if print_cmd:
                 print("Computing payoffs...")
             if save_payoff_info:
-                save_payoff_info = [self.output_dir+'/payoff_models', t]
+                save_payoff_info = [self.output_dir + '/payoff_models', t]
             if set(self.objs[t].first_actions) == {'NA'}:
-                pass
-            elif t==1 and self.payoff_dir:
+                print('No further action for any of players')
+            elif t == 1 and self.payoff_dir:
                 if print_cmd:
                     print("Reading payoffs...")
                 self.objs[t].compute_payoffs(save_model=save_payoff_info,
@@ -993,8 +1069,10 @@ class InfrastructureGame:
                         self.v_r[t] = self.objs[t].v_r
                         self.resource.v_r[t] = self.objs[t].v_r
             else:
+                if self.actions_reduced:
+                    self.objs[t].apply_bounded_rationality()
                 self.objs[t].compute_payoffs(save_model=save_payoff_info)
-                if save_results: #!!! removewhen don't need to save after payoff
+                if save_results:  # !!! remove when don't need to save after payoff
                     self.save_object_to_file()
             # Solve game
             if self.objs[t].payoffs:
@@ -1002,30 +1080,29 @@ class InfrastructureGame:
                     print("Building and Solving the game...")
                 if compute_optimal:
                     self.objs[t].find_optimal_solution()
-
                 if self.game_type == 'NORMALGAME':
                     if save_model_dir:
-                        save_model_dir = self.output_dir+'/games'
+                        save_model_dir = self.output_dir + '/games'
                     self.objs[t].build_game(save_model=save_model_dir,
-                                            suffix=str(self.sample)+'_t'+str(t))
+                                            suffix=str(self.sample) + '_t' + str(t))
                     game_start = time.time()
                     self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd)
-                    game_time = time.time()-game_start
+                    game_time = time.time() - game_start
                     self.objs[t].choose_equilibrium()
-                    if plot and len(self.layers)==2:
-                        if not os.path.exists(self.output_dir+'/payoff_matrix'):
-                            os.makedirs(self.output_dir+'/payoff_matrix')
-                        plots.plot_ne_sol_2player(self.objs[t], suffix=str(self.sample)+'_t'+str(t),
-                                                  plot_dir=self.output_dir+'/payoff_matrix')
+                    if plot and len(self.layers) == 2:
+                        if not os.path.exists(self.output_dir + '/payoff_matrix'):
+                            os.makedirs(self.output_dir + '/payoff_matrix')
+                        plots.plot_ne_sol_2player(self.objs[t], suffix=str(self.sample) + '_t' + str(t),
+                                                  plot_dir=self.output_dir + '/payoff_matrix')
                 elif self.game_type == 'BAYESGAME':
                     self.objs[t].set_states()
                     self.objs[t].set_types(self.beliefs)
                     self.objs[t].create_bayesian_players()
                     self.objs[t].compute_bayesian_payoffs()
                     if save_model:
-                        save_model_dir = self.output_dir+'/bayesian_games'
+                        save_model_dir = self.output_dir + '/bayesian_games'
                     self.objs[t].build_bayesian_game(save_model=save_model_dir,
-                                                     suffix=str(self.sample)+'_t'+str(t))
+                                                     suffix=str(self.sample) + '_t' + str(t))
                     ### Game info needed to pass to the solver
                     game_info = [self.objs[t].bayesian_game, self.objs[t].bayesian_players]
                     action_list = {}
@@ -1040,14 +1117,15 @@ class InfrastructureGame:
                                     temp += ((a[0], b),)
                                 action_list[b][idx] = temp
                     game_info.append(action_list)
+                    game_info.append(self.objs[t].bayesian_payoffs)
                     game_start = time.time()
                     self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd,
                                             game_info=game_info)
-                    game_time = time.time()-game_start
+                    game_time = time.time() - game_start
                     ### Use signals to find interim NE as the chosen solution
-                    preferred_players = {'included': [(x,i) for i,x in self.signals.items()]}
-                    preferred_players['excluded'] =  [x for x in self.objs[t].bayesian_players\
-                                                      if x not in preferred_players['included']]
+                    preferred_players = {'included': [(x, i) for i, x in self.signals.items()]}
+                    preferred_players['excluded'] = [x for x in self.objs[t].bayesian_players \
+                                                     if x not in preferred_players['included']]
                     self.objs[t].choose_equilibrium(preferred_players=preferred_players)
 
                 mixed_index = self.objs[t].chosen_equilibrium['chosen mixed profile action']
@@ -1056,22 +1134,22 @@ class InfrastructureGame:
                 self.results.extend(ne_results, t_offset=t)
                 indp.apply_recovery(self.net, self.results, t)
             else:
-                print('No further action for any of players')
+                print('Saving current performance as results')
                 ne_results = indputils.INDPResults(self.layers)
-                ne_results.results[0] = copy.deepcopy(self.results[t-1]) #!!!deepcopy
+                ne_results.results[0] = copy.deepcopy(self.results[t - 1])  # !!!deepcopy
                 costs = ne_results.results[0]['costs']
-                costs['Total'] -= costs['Arc']+costs['Node']+costs['Space Prep']
-                costs['Total no disconnection'] -= costs['Arc']+costs['Node']+costs['Space Prep']
+                costs['Total'] -= costs['Arc'] + costs['Node'] + costs['Space Prep']
+                costs['Total no disconnection'] -= costs['Arc'] + costs['Node'] + costs['Space Prep']
                 costs['Arc'] = 0.0
                 costs['Node'] = 0.0
                 costs['Space Prep'] = 0.0
                 ne_results.results[0]['actions'] = []
                 ne_results.results[0]['run_time'] = 0
                 for l in self.layers:
-                    ne_results.results_layer[l][0] = copy.deepcopy(self.results.results_layer[l][t-1]) #!!!deepcopy
+                    ne_results.results_layer[l][0] = copy.deepcopy(self.results.results_layer[l][t - 1])  # !!!deepcopy
                     costs = ne_results.results_layer[l][0]['costs']
-                    costs['Total'] -= costs['Arc']+costs['Node']+costs['Space Prep']
-                    costs['Total no disconnection'] -= costs['Arc']+costs['Node']+costs['Space Prep']
+                    costs['Total'] -= costs['Arc'] + costs['Node'] + costs['Space Prep']
+                    costs['Total no disconnection'] -= costs['Arc'] + costs['Node'] + costs['Space Prep']
                     costs['Arc'] = 0.0
                     costs['Node'] = 0.0
                     costs['Space Prep'] = 0.0
@@ -1097,12 +1175,12 @@ class InfrastructureGame:
             Directory to which the results are written
 
         '''
-        output_dir = root+'_L'+str(len(self.layers))+'_m'+str(self.magnitude)+"_v"+\
-            str(self.resource.sum_resource)+'_'+self.judgments.judgment_type+\
-            '_'+self.res_alloc_type
+        output_dir = root + '_L' + str(len(self.layers)) + '_m' + str(self.magnitude) + "_v" + \
+                     str(self.resource.sum_resource) + '_' + self.judgments.judgment_type + \
+                     '_' + self.res_alloc_type
         if self.res_alloc_type == 'AUCTION':
-            output_dir += '_'+self.resource.auction_model.auction_type+\
-                '_'+self.resource.auction_model.valuation_type
+            output_dir += '_' + self.resource.auction_model.auction_type + \
+                          '_' + self.resource.auction_model.valuation_type
         return output_dir
 
     def set_payoff_dir(self, root):
@@ -1122,13 +1200,13 @@ class InfrastructureGame:
 
         '''
         if root:
-            payoff_dir = root+'_L'+str(len(self.layers))+'_m'+str(self.magnitude)+"_v"+\
-                str(self.resource.sum_resource)+'_'+self.judgments.judgment_type+\
-                '_'+self.res_alloc_type
+            payoff_dir = root + '_L' + str(len(self.layers)) + '_m' + str(self.magnitude) + "_v" + \
+                         str(self.resource.sum_resource) + '_' + self.judgments.judgment_type + \
+                         '_' + self.res_alloc_type
             if self.res_alloc_type == 'AUCTION':
-                payoff_dir += '_'+self.resource.auction_model.auction_type+\
-                    '_'+self.resource.auction_model.valuation_type
-            return payoff_dir+'/objs_'+str(self.sample)+'.pkl'
+                payoff_dir += '_' + self.resource.auction_model.auction_type + \
+                              '_' + self.resource.auction_model.valuation_type
+            return payoff_dir + '/objs_' + str(self.sample) + '.pkl'
         else:
             return None
 
@@ -1150,10 +1228,10 @@ class InfrastructureGame:
 
         '''
         if "N" not in params:
-            sys.exit('No initial network object for: '+self.judge_type+', '+\
+            sys.exit('No initial network object for: ' + self.judge_type + ', ' + \
                      self.res_alloc_type)
         else:
-            return copy.deepcopy(params["N"]) #!!! deepcopy
+            return copy.deepcopy(params["N"])  # !!! deepcopy
 
     @staticmethod
     def set_time_steps(T, num_iter):
@@ -1177,7 +1255,7 @@ class InfrastructureGame:
             Number of time steps.
 
         '''
-        if T != 1:#!!! to be modified in futher expansions
+        if T != 1:  # !!! to be modified in futher expansions
             sys.exit('ERROR: T!=1, JC currently only supports iINDP, not td_INDP.')
         else:
             return num_iter
@@ -1199,7 +1277,7 @@ class InfrastructureGame:
         '''
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
-        with open(self.output_dir+'/objs_'+str(self.sample)+'.pkl', 'wb') as output:
+        with open(self.output_dir + '/objs_' + str(self.sample) + '.pkl', 'wb') as output:
             pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
 
     def save_results_to_file(self):
@@ -1217,7 +1295,7 @@ class InfrastructureGame:
             None.
 
         '''
-        output_dir_agents = self.output_dir+'/agents'
+        output_dir_agents = self.output_dir + '/agents'
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
         if not os.path.exists(output_dir_agents):

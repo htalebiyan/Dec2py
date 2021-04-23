@@ -17,7 +17,7 @@ import sys
 
 def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
          forced_actions=False, fixed_nodes={}, print_cmd=True, time_limit=None,
-         co_location=True):
+         co_location=True, solution_pool=None):
     """INDP optimization problem. Also solves td-INDP if T > 1.
     :param N: An InfrastructureNetwork instance (created in infrastructure.py)
     :param v_r: Vector of number of resources given to each layer in each timestep. If the size of the vector is 1, it shows the total number of resources for all layers.
@@ -302,6 +302,10 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
 
 #    print "Solving..."
     m.update()
+    if solution_pool:
+        m.setParam('PoolSearchMode', 1)
+        m.setParam('PoolSolutions', 10000)
+        m.setParam('PoolGap', solution_pool)
     m.optimize()
     run_time = time.time()-start_time
     # Save results.
@@ -310,7 +314,10 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
             print ('\nOptimizer time limit, gap = %1.3f\n' % m.MIPGap)
         results=collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=co_location)
         results.add_run_time(t,run_time)
-        return [m,results]
+        if solution_pool:
+            sol_pool_results =  collect_solution_pool(m, T, N_hat_prime, A_hat_prime)
+            return [m, results, sol_pool_results]
+        return [m, results]
     else:
         m.computeIIS()
         if m.status==9:
@@ -320,6 +327,54 @@ def indp(N,v_r,T=1,layers=[1,3],controlled_layers=[1,3],functionality={},
                 if c.IISConstr:
                     print('%s' % c.constrName)
         return None
+
+def collect_solution_pool(m, T, N_hat_prime, A_hat_prime):
+    '''
+    
+
+    Parameters
+    ----------
+    m : TYPE
+        DESCRIPTION.
+    T : TYPE
+        DESCRIPTION.
+    N_hat_prime : TYPE
+        DESCRIPTION.
+    A_hat_prime : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    sol_pool_results : TYPE
+        DESCRIPTION.
+
+    '''
+    sol_pool_results={}
+    current_sol_count = 0
+    for sol in range(m.SolCount):
+        m.setParam('SolutionNumber', sol)
+        # print(m.PoolObjVal)
+        sol_pool_results[sol] = {'nodes':[], 'arcs':[]}
+        for t in range(T):
+            # Record node recovery actions.
+            for n,d in N_hat_prime:
+                nodeVar='w_tilde_'+str(n)+","+str(t)
+                if T == 1:
+                    nodeVar='w_'+str(n)+","+str(t)
+                if round(m.getVarByName(nodeVar).xn)==1:
+                    sol_pool_results[sol]['nodes'].append(n)
+            # Record edge recovery actions.
+            for u,v,a in A_hat_prime:
+                arcVar='y_tilde_'+str(u)+","+str(v)+","+str(t)
+                if T == 1:
+                    arcVar='y_'+str(u)+","+str(v)+","+str(t)
+                if round(m.getVarByName(arcVar).x)==1:
+                    sol_pool_results[sol]['arcs'].append((u,v))
+        if sol>0 and sol_pool_results[sol] == sol_pool_results[current_sol_count]:
+            del sol_pool_results[sol]
+        elif sol>0:
+            current_sol_count = sol
+    return sol_pool_results
 
 def collect_results(m,controlled_layers,T,N_hat,N_hat_prime,A_hat_prime,S,coloc=True):
     layers = controlled_layers
@@ -620,7 +675,6 @@ def run_indp(params, layers=[1,2,3], controlled_layers=[], functionality={},T=1,
             os.makedirs(output_dir+'/agents')
         indp_results.to_csv_layer(output_dir+'/agents',params["SIM_NUMBER"],suffix=suffix)
     return indp_results
-
 
 def run_info_share(params,layers=[1,2,3],T=1,validate=False,suffix=""):
     """Applies rounds of information sharing between INDP runs. Assumes each layer is controlled by a separate player.

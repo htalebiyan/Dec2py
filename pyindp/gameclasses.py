@@ -16,12 +16,10 @@ import indpalt
 import indp
 import indputils
 import plots
-
 try:
     import gambit
 except ModuleNotFoundError:
     print("Can't find module 'gambit'")
-
 
 class NormalGame:
     '''
