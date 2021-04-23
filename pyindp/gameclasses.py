@@ -421,10 +421,12 @@ class NormalGame:
         game = self.normgame
         player_list = self.players
         action_list = self.actions
+        payoff_list = self.payoffs
         if game_info:
             game = game_info[0]
             player_list = game_info[1]
             action_list = game_info[2]
+            payoff_list = game_info[3]
 
         start_time = time.time()
         no_solution = False
@@ -457,12 +459,18 @@ class NormalGame:
         if no_solution:
             max_payoff = -1e100
             while max_payoff == -1e100:
-                act_profile = random.choice(list(self.payoffs.values()))
+                act_profile = random.choice(list(payoff_list.values()))
                 max_payoff = max([x[1] for x in act_profile.values()])
             self.solution.sol = {0: {}}
             for l in player_list:
                 self.solution.sol[0]['P' + str(l) + ' payoff'] = act_profile[l][1]
-                self.solution.sol[0]['P' + str(l) + ' actions'] = [act_profile[l][0]]
+                act_profile_coorected = ()
+                for x in act_profile[l][0]:
+                    y = list(x)
+                    y[1] = l
+                    x = tuple(y)
+                    act_profile_coorected += (x,)
+                self.solution.sol[0]['P' + str(l) + ' actions'] = [act_profile_coorected]
                 self.solution.sol[0]['P' + str(l) + ' action probs'] = [1.0]
             self.solution.sol[0]['total cost'] = -sum([x[1] for x in act_profile.values()])
         # Find all combination of action in the case of mixed strategy
@@ -1108,6 +1116,7 @@ class InfrastructureGame:
                                     temp += ((a[0], b),)
                                 action_list[b][idx] = temp
                     game_info.append(action_list)
+                    game_info.append(self.objs[t].bayesian_payoffs)
                     game_start = time.time()
                     self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd,
                                             game_info=game_info)
