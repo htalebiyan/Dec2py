@@ -60,11 +60,11 @@ def topo_param(net_type, no_nodes):
     return topo_param, no_nodes, mean_num_arcs
 
 # Input values
-no_samples = 1 # Number of sample sets of network
+no_samples = 5 # Number of sample sets of network
 no_config = 100 # Number of configurations
 noZones = 4 # noZones by noZones tile of zones
 paramError = 0.1
-rootfolder = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/' # Root folder where the database is
+rootfolder = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/' # Root folder where the database is
 #'C:\\Users\\ht20\Documents\\Files\Generated_Network_Dataset_v3.1\\'
 rootfolder += 'GeneralNetworks/' #'GridNetworks/' # choose relevant dataset folder
 prefix = 'GEN'
@@ -104,7 +104,7 @@ while cnfg<no_config:
 
     for k in range(1,no_layers+1):
         # Choose a network type randomly
-        net_type[k] = random.choice(['grid','scalefree','random', 'tree', 'mpg']) #['grid','scalefree','random', 'tree', 'mpg']
+        net_type[k] = random.choice(['grid','scalefree','random', 'tree', 'mpg'])
         no_nodes_dict[k] = int(round(no_nodes*(1+np.random.normal(0, paramError))))
         topo_param_dict[k], no_nodes_dict[k], mean_dam_arcs[k] = topo_param(net_type=net_type[k],
                                                                             no_nodes=no_nodes_dict[k])
@@ -116,7 +116,7 @@ while cnfg<no_config:
                 int_prob_dict[(kt,k)]=int_prob*(1+np.random.normal(0, paramError))
     # Restoration Resource Cap for each network
     # based on the sum of mean number of damaged nodes and arcs
-    max_res_cap = 0.5*(sum([x for x in mean_dam_nodes.values()])+sum([x for x in mean_dam_arcs.values()]))
+    max_res_cap = 0.33*(sum([x for x in mean_dam_nodes.values()])+sum([x for x in mean_dam_arcs.values()]))
     res_cap = np.random.randint(low=2, high=max(4,max_res_cap))
     fList.close()
     nodes={}

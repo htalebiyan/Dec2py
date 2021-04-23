@@ -302,8 +302,8 @@ def plot_Evaluation_Results(noConfig, dmRatioSum, aveConn, allPairsConn,folder):
     plt.clf()
 
 # # Input values
-noSamples = 1
-rootfolder = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/'
+noSamples = 5
+rootfolder = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 #"C:\\Users\ht20\Documents\\Files\\Generated_Network_Dataset_v3.1\\" # Root folder where the database is
 rootfolder += 'GeneralNetworks/'
   # choose relevant dataset folder 
