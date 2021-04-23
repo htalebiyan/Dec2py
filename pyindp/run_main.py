@@ -25,6 +25,8 @@ import matplotlib.pyplot as plt
 import runutils
 import dindputils
 import gameutils
+import plots
+import pickle
 try:
     # Change the current working Directory
     DIR_MAIN = 'C:/Users/ht20/Documents/GitHub/td-DINDP/pyindp'
@@ -224,7 +226,7 @@ method [cite], i.e. when `RES_ALLOC_TYPE` includes at least one of the options *
 RC = [0]
 LAYERS = [1, 2, 3, 4]
 JUDGE_TYPE = ["OPTIMISTIC"]
-RES_ALLOC_TYPE = ['UNIFORM'] #'OPTIMAL'
+RES_ALLOC_TYPE = ['UNIFORM', 'OPTIMAL']
 VAL_TYPE = ['DTC']
 
 # %%
@@ -266,23 +268,23 @@ uniformed belief, *F* for false consensus bias, and *I* for inverse false consen
 '''
 
 # %%
-# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
-#                     misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS})
-# # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
-# #                     misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
-# # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
-# #                     res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
-# #                     output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS,
-# #                     misc = {'STM_MODEL':STM_MODEL_DICT, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
-runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
- 					res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
- 					misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
- 					'REDUCED_ACTIONS': 'EDM'})
-# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
-#  			res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-#  			misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-#  					"SIGNALS":{1:'C', 2:'C'}, "BELIEFS":{1:'U', 2:'U'},
-#  					'REDUCED_ACTIONS':'EDM'})
+# # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
+# #                     misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS})
+# # # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
+# # #                     misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
+# # # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
+# # #                     res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
+# # #                     output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS,
+# # #                     misc = {'STM_MODEL':STM_MODEL_DICT, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
+# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
+#  					res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+#  					misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+#  					'REDUCED_ACTIONS': 'EDM'})
+runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
+ 			res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+ 			misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+ 					"SIGNALS":{1:'C', 2:'C'}, "BELIEFS":{1:'U', 2:'U'},
+ 					'REDUCED_ACTIONS':'EDM'})
 
 # %%
 ''' 
@@ -315,29 +317,29 @@ compute allocation gaps for different combinations.
 '''
 
 # %%
-# COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
-# REF_METHOD = 'indp'
-# METHOD_NAMES = ['indp','ng', 'bgCCUU']
-# # #'ng', 'jc', 'dp_indp', 'tdindp',
-# # #'bgNNNNUUUU','bgCCCCUUUU', 'bgCCNCUUUU', 'bgCCCCFFFF', 'bgNNNNFFFF', 'bgCCNCFFFF'
-# # #'bgCCCCIIII','bgNNNNIIII', 'bgCCNCIIII',
+COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
+REF_METHOD = 'indp'
+METHOD_NAMES = ['indp','ng']
+# #'ng', 'jc', 'dp_indp', 'tdindp',
+# #'bgNNNNUUUU','bgCCCCUUUU', 'bgCCNCUUUU', 'bgCCCCFFFF', 'bgNNNNFFFF', 'bgCCNCFFFF'
+# #'bgCCCCIIII','bgNNNNIIII', 'bgCCNCIIII',
 
-# COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
-# 			FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
-# 			RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE,
-# 			list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
-# 			synthetic_dir=SYNTH_DIR)
+COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
+ 			FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
+ 			RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE,
+ 			list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
+ 			synthetic_dir=SYNTH_DIR)
 
-# BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
-# 									root_result_dir=OUTPUT_DIR, deaggregate=True)
+BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
+ 									root_result_dir=OUTPUT_DIR, deaggregate=True)
 
-# LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
-# 										ref_method=REF_METHOD, cost_type=COST_TYPES[0])
-# RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resource_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
-# 															  objs, root_result_dir=OUTPUT_DIR,
-# 															  ref_method=REF_METHOD)
-# RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
-# ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
+LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS,
+										ref_method=REF_METHOD, cost_type=COST_TYPES[0])
+RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resource_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
+ 															  objs, root_result_dir=OUTPUT_DIR,
+ 															  ref_method=REF_METHOD)
+RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
+ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
 
 # %%
 ''' 
@@ -346,12 +348,12 @@ All dictionaries that are made in the postprocessing step are saved here.
 '''
 
 # %%
-# OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
-#             RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]
+OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
+            RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]
 
-# ## Saving the objects ###
-# with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
-#     pickle.dump(OBJ_LIST, f)
+## Saving the objects ###
+with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
+    pickle.dump(OBJ_LIST, f)
 
 # %%
 ''' 
@@ -370,18 +372,18 @@ make output figures:
 '''
 
 # %%
-plt.close('all')
-# ### Getting back the objects ###
-# with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'rb') as f:
-#     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
-#       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
+# plt.close('all')
+# # ### Getting back the objects ###
+# # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'rb') as f:
+# #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
+# #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
 
 # plots.plot_performance_curves(BASE_DF,
 #                               cost_type='Total', ci=95,
-#                               deaggregate=False, plot_resilience=False)
+#                               deaggregate=False, plot_resilience=True)
 
-# # plots.plot_separated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
-# #                                     ci=95, normalize=False)
+# # # plots.plot_separated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
+# # #                                     ci=95, normalize=False)
 
 # plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
 # # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)

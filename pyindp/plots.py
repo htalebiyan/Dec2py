@@ -67,10 +67,10 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
 
-    row_plot = [auction_type, 'auction_type'] # valuation_type
+    row_plot = [topology, 'topology'] # valuation_type
     col_plot = [topology, 'topology'] # no_resources, judgment_type, topology
-    hue_type = [rationality, 'rationality'] #auction_type, rationality
-    style_type = 'decision_type' #decision_type
+    hue_type = [auction_type, 'auction_type'] #auction_type, rationality
+    style_type = 'rationality' #decision_type
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
@@ -197,8 +197,8 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
     row_plot = [judgment_type, 'judgment_type'] #valuation_type
-    col_plot = [topology , 'topology'] #auction_type, topology
-    hue_type = [auction_type , 'auction_type'] #rationality,decision_type
+    col_plot = [auction_type , 'auction_type'] #auction_type, topology
+    hue_type = [rationality , 'rationality'] #rationality,decision_type
     x = 'decision_type'#'no_resources' 
     # Initialize plot properties
     dpi = 300
@@ -674,7 +674,7 @@ def plot_ne_analysis(df, x='t', ci=None):
     T = len(df[x].unique().tolist())
     row_plot=['action_similarity', 'payoff_ratio', 'no_ne'] #, 'total_cost_ratio'
     col_plot = [topology, 'topology'] # no_resources, judgment_type, topology
-    hue_type = [decision_type, 'decision_type'] #auction_type, rationality
+    hue_type = [rationality, 'rationality'] #auction_type, rationality
     style_type = 'auction_type'  #decision_type
     # Initialize plot properties
     dpi = 300
@@ -737,7 +737,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
     row_plot = [auction_type, 'auction_type'] #topology, auction_type
-    col_plot = [decision_type, 'decision_type'] # no_resources, judgment_type,rationality
+    col_plot = [rationality, 'rationality'] # no_resources, judgment_type,rationality
 
     # value_vars = ['cooperative', 'partially_cooperative', 'OA', 'NA', 'NA_possible',
     #               'opt_cooperative', 'opt_partially_cooperative', 'opt_OA',
@@ -857,6 +857,7 @@ def plot_payoff_hist(df, compute_payoff_numbers=True, outlier=False):
     fig.legend(handles, labels, loc='center right', ncol=1, framealpha=0.35,
                 bbox_to_anchor=(.83, 0.6))
     plt.savefig('payoff_hists.png', dpi=dpi, bbox_inches='tight')
+
 def correct_legend_labels(labels):
     '''
     Parameters
