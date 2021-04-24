@@ -283,7 +283,7 @@ uniformed belief, *F* for false consensus bias, and *I* for inverse false consen
 runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
  			res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
  			misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
- 					"SIGNALS":{1:'C', 2:'C'}, "BELIEFS":{1:'U', 2:'U'},
+ 					"SIGNALS":{1:'C', 2:'N'}, "BELIEFS":{1:'U', 2:'U'},
  					'REDUCED_ACTIONS':'EDM'})
 
 # %%
@@ -314,15 +314,15 @@ save them in `COMBS` and `OPTIMAL_COMBS` lists.
 compute allocation gaps for different combinations.
 5. `read_run_time`: compute run time for different combinations.
 6. `analyze_NE`: analyze the characteristics of Nash equilibria for different combinations.
+7. `relative_actions`: computes the relative usage of different action types compared to the
+optimal solution.
 '''
 
 # %%
 COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
 REF_METHOD = 'indp'
-METHOD_NAMES = ['indp','ng']
-# #'ng', 'jc', 'dp_indp', 'tdindp',
-# #'bgNNNNUUUU','bgCCCCUUUU', 'bgCCNCUUUU', 'bgCCCCFFFF', 'bgNNNNFFFF', 'bgCCNCFFFF'
-# #'bgCCCCIIII','bgNNNNIIII', 'bgCCNCIIII',
+METHOD_NAMES = ['indp','bgCNUU']
+# 'ng', 'jc', 'dp_indp', 'tdindp', 'bgCCNCIIII',
 
 COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
  			FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
@@ -340,6 +340,7 @@ RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resource_allocation(BASE_DF, COMBS,
  															  ref_method=REF_METHOD)
 RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
 ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
+REL_ACTION_DF = gameutils.relative_actions(ANALYZE_NE_DF, COMBS)
 
 # %%
 ''' 
@@ -347,9 +348,9 @@ ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
 All dictionaries that are made in the postprocessing step are saved here.
 '''
 
-# %%
-OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF,
-            RES_ALLOC_DF, ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF]
+%%
+OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF, 
+            ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF, REL_ACTION_DF]
 
 ## Saving the objects ###
 with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
@@ -369,28 +370,31 @@ make output figures:
 7. `plot_ne_analysis`: plots NE analysis measures vs. time (for games only).
 8. `plot_ne_cooperation`: plots action types vs. time (for games only).
 9. `plot_payoff_hist`: plots size of the payoff matrix vs. time (for games only).
+10. `plot_relative_actions`: plots relative action usage (for games only).
 '''
 
 # %%
 # plt.close('all')
 # # ### Getting back the objects ###
-# # with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'rb') as f:
-# #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
-# #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF] = pickle.load(f)
+# import pickle
+# results_dir = '/home/hesam/Desktop/Files/Game_synthetic/v4/postprocess/' #OUTPUT_DIR
+# with open(results_dir+'postprocess_dicts.pkl', 'rb') as f: #postprocess_dicts
+#     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
+#       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF, REL_ACTION_DF] = pickle.load(f)
 
 # plots.plot_performance_curves(BASE_DF,
 #                               cost_type='Total', ci=95,
 #                               deaggregate=False, plot_resilience=True)
+# plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
+# plots.plot_ne_analysis(ANALYZE_NE_DF, ci=None)
+# plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=None)
+# plots.plot_relative_actions(REL_ACTION_DF[(REL_ACTION_DF['auction_type']!='UNIFORM')])
 
 # # # plots.plot_separated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
 # # #                                     ci=95, normalize=False)
-
-# plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
 # # plots.plot_auction_allocation(RES_ALLOC_DF, ci=95)
 # # plots.plot_relative_allocation(ALLOC_GAP_DF, distance_type='gap')
 # # plots.plot_run_time(RUN_TIME_DF, ci=95)
-# plots.plot_ne_analysis(ANALYZE_NE_DF, ci=95)
-# plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=95)
 # plots.plot_payoff_hist(ANALYZE_NE_DF, compute_payoff_numbers=True, outlier=False)
 
 # [(ANALYZE_NE_DF['auction_type']!='UNIFORM')]

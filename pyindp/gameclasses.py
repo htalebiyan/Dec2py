@@ -16,10 +16,12 @@ import indpalt
 import indp
 import indputils
 import plots
+
 try:
     import gambit
 except ModuleNotFoundError:
     print("Can't find module 'gambit'")
+
 
 class NormalGame:
     '''
@@ -448,7 +450,7 @@ class NormalGame:
             print('No solution found: switching to pure enumeratiom method')
             gambit_solution = gambit.nash.enumpure_solve(game)
         if len(gambit_solution) == 0:
-            print('No pure Nash equilibrium - both choose randomly')
+            print('No pure Nash equilibrium - players choose actions randomly')
             no_solution = True
         self.solving_time = time.time() - start_time
 
