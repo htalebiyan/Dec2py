@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import pickle
 import indp
 import dindputils
-import plots
+#import plots
 import gametree
 import itertools
 # import Metaheuristics.metaheuristics as mh
