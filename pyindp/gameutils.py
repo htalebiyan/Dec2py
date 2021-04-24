@@ -9,6 +9,7 @@ import gameclasses
 import indp
 import dindputils
 import pandas as pd
+import numpy as np
 
 def run_game(params, save_results=True, print_cmd=True, save_model=False, plot2D=False):
     '''
@@ -137,8 +138,7 @@ def analyze_NE(objs, combinations, optimal_combinations):
                             action_key = 'P'+str(l)+' actions'
                             if x[4][:2] == 'bg':
                                 action_key = bayesian_actions_relable(x[4], l, idxl)+' actions'
-                            label = label_action(val[action_key][0],
-                                                 game.actions[l])
+                            label = label_action(val[action_key][0], game.actions[l])
                             if not label:
                                 sys.exit('Type of action cannot be found')
                             cooperation[label] += 1/len(game.players)/len(game.solution.sol.keys())
@@ -161,6 +161,52 @@ def analyze_NE(objs, combinations, optimal_combinations):
             sys.exit('Error: The combination or folder does not exist'+str(x))
     dindputils.update_progress(len(combinations), len(combinations))
     return cmplt_analyze
+
+def relative_actions(df, combinations):
+    '''
+    This functions computes the relative measure of % of player that take each type of
+    action compared to the optimal solution.
+
+    Parameters
+    ----------
+    df : dict
+        Dictionary that contains complete results by JC and INDP collected by
+        :func:`read_results`.
+    combinations : dict
+        All combinations of magnitude, sample, judgment type, resource allocation type
+        involved in the JC (or any other decentralized results) collected by
+        :func:`generate_combinations`.
+    Returns
+    -------
+    df_rel : dict
+        Dictionary that contains ...
+    '''
+    act_types = ['cooperative', 'partially_cooperative', 'OA', 'NA', 'NA_possible']
+    cols = ['decision_type', 'judgment_type', 'auction_type', 'valuation_type', 'sample',
+            'Magnitude', 'no_resources']+['rel_'+ac for ac in act_types]
+    T = max(df.t.unique().tolist())
+    df_rel = pd.DataFrame(columns=cols)
+    print('\nRelative Actions')
+    for idx, x in enumerate(combinations):
+        rel_dict = {'decision_type':x[4], 'judgment_type':x[5], 'auction_type':x[6],
+                    'valuation_type':x[7], 'sample':x[1], 'Magnitude':x[0], 'no_resources':x[3]}
+        row = (df['decision_type'] == x[4])&(df['sample'] == x[1])&(df['Magnitude'] == x[0])&\
+        (df['no_resources'] == x[3])&(df['auction_type'] == x[6])&\
+        (df['valuation_type'] == x[7])&(df['judgment_type'] == x[5])
+        vec_act = {ac:np.zeros(T) for ac in act_types}
+        vec_act_optimal = {ac:np.zeros(T) for ac in act_types}
+        for ac in act_types:
+            for t in range(T):
+                vec_act[ac][t] = df.loc[(df['t'] == t+1)&row, ac]
+                vec_act_optimal[ac][t] = df.loc[(df['t'] == t+1)&row, 'opt_'+ac]
+            # # Area between
+            distance = sum(vec_act_optimal[ac]-vec_act[ac])
+            rel_dict['rel_'+ac] = distance
+        df_rel = df_rel.append(rel_dict, ignore_index=True)
+        if idx%(len(combinations)/10+1) == 0:
+            dindputils.update_progress(idx+1, len(combinations))
+    dindputils.update_progress(idx+1, len(combinations))
+    return df_rel
 
 def compare_sol(opt, ne, layers):
     sum_lyr_act = 0

@@ -10,11 +10,8 @@ sns.set(context='notebook', style='darkgrid', font_scale=1)
 plt.rc('text', usetex=True)
 plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
-def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
-                                   decision_type=None, judgment_type=None,
-                                   auction_type=None, valuation_type=None,
-                                   ci=None, normalize=False, deaggregate=False,
-                                   plot_resilience=False):
+def plot_performance_curves(df, x='t', y='cost', cost_type='Total', ci=None,
+                            normalize=False, deaggregate=False, plot_resilience=False):
     '''
 
     Parameters
@@ -27,12 +24,6 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
         DESCRIPTION. The default is 'cost'.
     cost_type : TYPE, optional
         DESCRIPTION. The default is 'Total'.
-    decision_type : TYPE
-        DESCRIPTION.
-    auction_type : TYPE, optional
-        DESCRIPTION. The default is None.
-    valuation_type : TYPE, optional
-        DESCRIPTION. The default is None.
     ci : TYPE, optional
         DESCRIPTION. The default is None.
     normalize : TYPE, optional
@@ -51,25 +42,21 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
     no_resources = df.no_resources.unique().tolist()
     rationality = df.rationality.unique().tolist()
     topology = df.topology.unique().tolist()
-    if not decision_type:
-        decision_type = df.decision_type.unique().tolist()
-    if not judgment_type:
-        judgment_type = df.judgment_type.unique().tolist()
+    decision_type = df.decision_type.unique().tolist()
+    judgment_type = df.judgment_type.unique().tolist()
     if 'nan' in judgment_type:
         judgment_type.remove('nan')
-    if not auction_type:
-        auction_type = df.auction_type.unique().tolist()
+    auction_type = df.auction_type.unique().tolist()
     if 'nan' in auction_type:
         auction_type.remove('nan')
-    if not valuation_type:
-        valuation_type = df.valuation_type.unique().tolist()
+    valuation_type = df.valuation_type.unique().tolist()
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
 
     row_plot = [topology, 'topology'] # valuation_type
-    col_plot = [topology, 'topology'] # no_resources, judgment_type, topology
-    hue_type = [auction_type, 'auction_type'] #auction_type, rationality
+    col_plot = [auction_type, 'auction_type'] # no_resources, judgment_type, topology
+    hue_type = [decision_type, 'decision_type'] #auction_type, rationality
     style_type = 'rationality' #decision_type
     # Initialize plot properties
     dpi = 300
@@ -83,8 +70,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
         for idx_r, val_r in enumerate(row_plot[0]):
             ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
             cost_data = df[(df.cost_type == cost_type)&
-                           (df.decision_type.isin(decision_type))&
-                           (df[col_plot[1]] == val_c)&
+                           ((df[col_plot[1]] == val_c)|(df[col_plot[1]] == 'nan'))&
                            ((df[row_plot[1]] == val_r)|(df[row_plot[1]] == 'nan'))]
             with pal:
                 sns.lineplot(x=x, y=y, hue=hue_type[1], style=style_type, markers=True,
@@ -113,8 +99,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total',
 
             if plot_resilience:
                 resilience_data = df[(df.cost_type == 'Under Supply Perc')&
-                                     (df.decision_type.isin(decision_type))&
-                                     (df[col_plot[1]] == val_c)&
+                                     ((df[col_plot[1]] == val_c)|(df[col_plot[1]] == 'nan'))&
                                      ((df[row_plot[1]] == val_r)|(df[row_plot[1]] == 'nan'))]
                 divider = make_axes_locatable(ax)
                 ax_2 = divider.append_axes("bottom", size="100%", pad=0.12, sharex=ax)
@@ -737,7 +722,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
     row_plot = [auction_type, 'auction_type'] #topology, auction_type
-    col_plot = [rationality, 'rationality'] # no_resources, judgment_type,rationality
+    col_plot = [decision_type, 'decision_type'] # no_resources, judgment_type,rationality
 
     # value_vars = ['cooperative', 'partially_cooperative', 'OA', 'NA', 'NA_possible',
     #               'opt_cooperative', 'opt_partially_cooperative', 'opt_OA',
@@ -790,6 +775,74 @@ def plot_ne_cooperation(df, x='t', ci=None):
         for idx, ax in enumerate(axs_c):
             ax.set_title(r'$R_c=$%s'%(str(col_plot[0][idx])))
         plt.savefig('ne_cooperation_'+str(suffix[idxvv])+'.png', dpi=dpi, bbox_inches='tight')
+
+def plot_relative_actions(df, act_types = ['cooperative', 'partially_cooperative',
+                                           'OA', 'NA', 'NA_possible']):
+    '''
+    Parameters
+    ----------
+    df : TYPE
+        DESCRIPTION.
+    act_types : TYPE, optional
+        DESCRIPTION. The default is ???.
+
+    Returns
+    -------
+    None.
+
+    '''
+    #: Make lists
+    no_resources = df.no_resources.unique().tolist()
+    try:
+        rationality = df.rationality.unique().tolist()
+        topology = df.topology.unique().tolist()
+    except:
+        pass
+    decision_type = df.decision_type.unique().tolist()
+    judgment_type = df.judgment_type.unique().tolist()
+    if 'nan' in judgment_type:
+        judgment_type.remove('nan')
+    auction_type = df.auction_type.unique().tolist()
+    if 'nan' in auction_type:
+        auction_type.remove('nan')
+    valuation_type = df.valuation_type.unique().tolist()
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
+    col_plot = act_types
+    row_plot = [auction_type, 'auction_type'] #valuation_type, topology
+    hue_type = [rationality , 'rationality'] #rationality,decision_type
+    x = 'decision_type'#'no_resources' 
+    # Initialize plot properties
+    dpi = 300
+    fig, axs = plt.subplots(len(row_plot[0]), len(col_plot), sharex=True,
+                            sharey=True, figsize=(3000/dpi, 1200/dpi))
+    for idx_c, val_c in enumerate(col_plot):
+        for idx_r, val_r in enumerate(row_plot[0]):
+            ax, _, _ = find_ax(axs, row_plot[0], col_plot, idx_r, idx_c)
+            selected_data = df[((df[row_plot[1]] == val_r)|(df[row_plot[1]] == 'nan'))]
+            with sns.color_palette("Greens", 4): #sns.color_palette("RdYlGn", 8)
+                sns.barplot(x=x, y='rel_'+val_c,
+                            hue=hue_type[1], data=selected_data, linewidth=0.5,
+                            edgecolor=[.25, .25, .25], capsize=.05,
+                            errcolor=[.25, .25, .25], errwidth=1, ax=ax) 
+                ax.get_legend().set_visible(False)
+                ax.set_xlabel('')
+                if idx_r == len(row_plot[0])-1:
+                    ax.set_xlabel(r'%s'%(correct_legend_labels([val_c])[0]))
+                ax.set_ylabel('')
+                if idx_c == 0:
+                    ax.set_ylabel(r'Rel. Action, %s'%(row_plot[0][idx_r]))
+                # ax.get_xaxis().set_ticks([])
+                # ax.xaxis.set_label_position('bottom')
+    handles, labels = ax.get_legend_handles_labels()
+    labels = correct_legend_labels(labels)
+    fig.legend(handles, labels, loc='lower right', bbox_to_anchor = (0.8,0.16),
+                frameon=True, framealpha=.75, ncol=1, fontsize='x-small')
+    # _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
+    # for idx, ax in enumerate(axs_c):
+    #     corrected_label = correct_legend_labels([col_plot[idx]])[0]
+    #     ax.set_title(r'%s'%(corrected_label), fontsize='small')
+    plt.savefig('Relative_actions.png', dpi=dpi, bbox_inches='tight')
 
 def plot_payoff_hist(df, compute_payoff_numbers=True, outlier=False):
     '''
@@ -897,9 +950,9 @@ def correct_legend_labels(labels):
     labels = ['Total Cost Ratio' if x == 'total_cost_ratio' else x for x in labels]
     labels = ['\# NE' if x == 'no_ne' else x for x in labels]
     labels = ['Cooperative' if x == 'cooperative' else x for x in labels]
-    labels = ['Par. Cooperative' if x == 'partially_cooperative' else x for x in labels]
-    labels = ['Non Cooperative (OA)' if x == 'OA' else x for x in labels]
-    labels = ['Non Cooperative (NA)' if x == 'NA' else x for x in labels]
+    labels = ['Par. Coop.' if x == 'partially_cooperative' else x for x in labels]
+    labels = ['Non Coop. (OA)' if x == 'OA' else x for x in labels]
+    labels = ['Non Coop. (NA)' if x == 'NA' else x for x in labels]
     labels = ['No More Actions (NA)' if x == 'NA_possible' else x for x in labels]
     labels = ['Bayes. Game-All CU' if x == 'bgCCCCUUUU' else x for x in labels]
     labels = ['Bayes. Game-All CU ex. Power' if x == 'bgCCNCUUUU' else x for x in labels]
@@ -944,7 +997,7 @@ def find_ax(axs, row_plot, col_plot, idx_r=0, idx_c=0):
         axs_r = axs[:, 0]
     return ax, axs_c, axs_r
 
-# Color repository
+#### Color repository
 # clrs = [['azure', 'light blue'], ['gold', 'khaki'], ['strawberry', 'salmon pink'],
 #         ['green', 'light green']] #['purple', 'orchid'
 # clrs = [['strawberry','salmon pink'],['azure','light blue'],['green','light green'],['bluish purple','orchid']]
