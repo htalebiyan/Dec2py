@@ -29,8 +29,8 @@ def run_parallel(i):
     dynamic_params_dir = None
     payoff_dir = None
 
-    sample_no = 0
-    mag_no = i
+    sample_no = i//100
+    mag_no = i%100
 
     fail_sce_param = {"TYPE": "synthetic", "SAMPLE_RANGE": range(sample_no, sample_no + 1),
                       "MAGS": range(mag_no, mag_no + 1), 'FILTER_SCE': filter_sce, 'TOPO': 'General',
@@ -38,7 +38,7 @@ def run_parallel(i):
     rc = [0]
     layers = [1, 2]
     judge_type = ["OPTIMISTIC"]  # OPTIMISTIC #'DET-DEMAND' #PESSIMISTIC
-    res_alloc_type = ["OPTIMAL"]  # "MDA", "MAA", "MCA", 'UNIFORM' "OPTIMAL"
+    res_alloc_type = ["OPTIMAL", 'UNIFORM']  # "MDA", "MAA", "MCA", 'UNIFORM' "OPTIMAL"
     val_type = ['DTC']  # 'DTC'
 
     misc = {'PAYOFF_DIR': payoff_dir, 'DYNAMIC_PARAMS': dynamic_params_dir, 'REDUCED_ACTIONS': None}
@@ -63,4 +63,4 @@ if __name__ == "__main__":
     NUM_CORES = multiprocessing.cpu_count()
     print('number of cores:' + str(NUM_CORES) + '\n')
     POOL = multiprocessing.Pool(NUM_CORES)
-    RESULTS = POOL.map(run_parallel, range(100))
+    RESULTS = POOL.map(run_parallel, range(500))

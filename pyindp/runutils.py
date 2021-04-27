@@ -253,7 +253,7 @@ def run_game_sample(layers, judge_types, auction_type, valuation_type,
     gameutils.run_game(params, save_results=True, print_cmd=True, save_model=True, plot2D=True)
     for jt, rst, vt in itertools.product(judge_types, auction_type, valuation_type):
         print('\n\nPlot restoration plan by Game',jt,rst,vt)
-        if rst == 'UNIFORM':
+        if rst == 'UNIFORM' or 'FIXED_LAYER':
             indp.plot_indp_sample(params, folderSuffix='_'+jt+'_'+rst, suffix="")
         else:
             indp.plot_indp_sample(params, folderSuffix='_'+jt+'_AUCTION_'+rst+'_'+vt, suffix="")
@@ -274,20 +274,20 @@ def run_mh_sample(layers):
 
 def run_sample_problems(): 
     layers=[1,2]#,3]
-    auction_type = [ "UNIFORM"]#"MCA", "MAA", "MDA"
+    auction_type = ['UNIFORM']#"MCA", "MAA", "MDA", "LAYER_FIXED"
     valuation_type = ["DTC"]
     judge_types = ["OPTIMISTIC"]#"PESSIMISTIC",
-    run_indp_sample(layers)
-    run_tdindp_sample(layers)
-    run_jc_sample(layers, judge_types, auction_type, valuation_type)
-    # run_game_sample(layers, judge_types, auction_type, valuation_type,
-    #                 game_type="NORMALGAME", reduced_act='EDM')
+    # run_indp_sample(layers)
+    # run_tdindp_sample(layers)
+    # run_jc_sample(layers, judge_types, auction_type, valuation_type)
+    run_game_sample(layers, judge_types, auction_type, valuation_type,
+                    game_type="NORMALGAME", reduced_act='EDM')
     # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="BAYESGAME",
     #                 beliefs={1:'I', 2:'I'}, signals={1:'N', 2:'C'})
     # # result_mh = run_mh_sample(layers) #!!!
 
     # with open('../results/ng_sample_12Node_results_L2_m0_v4_OPTIMISTIC_UNIFORM/objs_0.pkl', 'rb') as f:
-    #     obj = pickle.load(f)
+        # obj = pickle.load(f)
     # COMBS = []
     # OPTIMAL_COMBS = [[0, 0, len(layers), len(layers), 'indp_sample_12Node', 'nan',
     #                   'nan', 'nan', ''],

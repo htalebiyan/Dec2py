@@ -42,7 +42,7 @@ except OSError:
 
 # %%
 # plt.close('all')
-# runutils.run_sample_problems()
+runutils.run_sample_problems()
 
 # %%
 """
@@ -86,7 +86,8 @@ OUTPUT_DIR = '/home/hesam/Desktop/Files/Game_synthetic/v4/results/'
 # 'C:/Users/ht20/Documents/Files/Shelby_data_paper/Restoration_results/'
 # FAIL_SCE_PARAM['TOPO']+'/results/'
 
-FILTER_SCE = '../data/damagedElements_sliceQuantile_0.90.csv'
+FILTER_SCE = None
+# '../data/damagedElements_sliceQuantile_0.90.csv'
 
 PAYOFF_DIR = None #OUTPUT_DIR + 'General/results/reduced_action_matrix_100/'
 # '/home/hesam/Desktop/Files/Game_Shelby_County/results_NE_only_objs/'
@@ -184,7 +185,7 @@ the following items:
 
 # %%
 FAIL_SCE_PARAM = {'TYPE': "synthetic", 'SAMPLE_RANGE': range(0, 1), 'MAGS': range(0, 100),
-                  'FILTER_SCE': None, 'TOPO': 'General', 'BASE_DIR': BASE_DIR,
+                  'FILTER_SCE': FILTER_SCE, 'TOPO': 'General', 'BASE_DIR': BASE_DIR,
                   'DAMAGE_DIR': DAMAGE_DIR}
 DYNAMIC_PARAMS = None
 STM_MODEL_DICT = None
@@ -283,7 +284,7 @@ uniformed belief, *F* for false consensus bias, and *I* for inverse false consen
 runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
  			res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
  			misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
- 					"SIGNALS":{1:'C', 2:'N'}, "BELIEFS":{1:'U', 2:'U'},
+ 					"SIGNALS":{1:'C', 2:'C'}, "BELIEFS":{1:'F', 2:'F'},
  					'REDUCED_ACTIONS':'EDM'})
 
 # %%
@@ -321,7 +322,7 @@ optimal solution.
 # %%
 COST_TYPES = ['Total'] # 'Under Supply', 'Over Supply'
 REF_METHOD = 'indp'
-METHOD_NAMES = ['indp','bgCNUU']
+METHOD_NAMES = ['indp','bgCCFF']
 # 'ng', 'jc', 'dp_indp', 'tdindp', 'bgCCNCIIII',
 
 COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
@@ -348,7 +349,8 @@ REL_ACTION_DF = gameutils.relative_actions(ANALYZE_NE_DF, COMBS)
 All dictionaries that are made in the postprocessing step are saved here.
 '''
 
-%%
+#%%
+
 OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF, 
             ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF, REL_ACTION_DF]
 
@@ -374,8 +376,8 @@ make output figures:
 '''
 
 # %%
-# plt.close('all')
-# # ### Getting back the objects ###
+plt.close('all')
+# ### Getting back the objects ###
 # import pickle
 # results_dir = '/home/hesam/Desktop/Files/Game_synthetic/v4/postprocess/' #OUTPUT_DIR
 # with open(results_dir+'postprocess_dicts.pkl', 'rb') as f: #postprocess_dicts
@@ -388,7 +390,7 @@ make output figures:
 # plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
 # plots.plot_ne_analysis(ANALYZE_NE_DF, ci=None)
 # plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=None)
-# plots.plot_relative_actions(REL_ACTION_DF[(REL_ACTION_DF['auction_type']!='UNIFORM')])
+# plots.plot_relative_actions(REL_ACTION_DF)
 
 # # # plots.plot_separated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',
 # # #                                     ci=95, normalize=False)
@@ -397,4 +399,4 @@ make output figures:
 # # plots.plot_run_time(RUN_TIME_DF, ci=95)
 # plots.plot_payoff_hist(ANALYZE_NE_DF, compute_payoff_numbers=True, outlier=False)
 
-# [(ANALYZE_NE_DF['auction_type']!='UNIFORM')]
+# [(REL_ACTION_DF['auction_type']!='UNIFORM')]

@@ -200,7 +200,7 @@ def relative_actions(df, combinations):
                 vec_act[ac][t] = df.loc[(df['t'] == t+1)&row, ac]
                 vec_act_optimal[ac][t] = df.loc[(df['t'] == t+1)&row, 'opt_'+ac]
             # # Area between
-            distance = sum(vec_act_optimal[ac]-vec_act[ac])
+            distance = sum(vec_act[ac]-vec_act_optimal[ac])
             rel_dict['rel_'+ac] = distance
         df_rel = df_rel.append(rel_dict, ignore_index=True)
         if idx%(len(combinations)/10+1) == 0:

@@ -183,8 +183,8 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
         valuation_type.remove('nan')
     row_plot = [judgment_type, 'judgment_type'] #valuation_type
     col_plot = [auction_type , 'auction_type'] #auction_type, topology
-    hue_type = [rationality , 'rationality'] #rationality,decision_type
-    x = 'decision_type'#'no_resources' 
+    hue_type = [decision_type , 'decision_type'] #rationality,decision_type
+    x = 'rationality'#'no_resources' 
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
@@ -198,7 +198,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
                                        (lambda_df[col_plot[1]] == 'nan'))&\
                                       ((lambda_df[row_plot[1]] == val_r)|\
                                        (lambda_df[row_plot[1]] == 'nan'))]
-            with sns.color_palette("Reds", 4): #sns.color_palette("RdYlGn", 8)
+            with sns.color_palette("Reds"): #sns.color_palette("RdYlGn", 8)
                 sns.barplot(x=x, y='lambda_'+lambda_type,
                             hue=hue_type[1], data=selected_data, linewidth=0.5,
                             edgecolor=[.25, .25, .25], capsize=.05,
@@ -658,9 +658,9 @@ def plot_ne_analysis(df, x='t', ci=None):
         valuation_type.remove('nan')
     T = len(df[x].unique().tolist())
     row_plot=['action_similarity', 'payoff_ratio', 'no_ne'] #, 'total_cost_ratio'
-    col_plot = [topology, 'topology'] # no_resources, judgment_type, topology
-    hue_type = [rationality, 'rationality'] #auction_type, rationality
-    style_type = 'auction_type'  #decision_type
+    col_plot = [auction_type, 'auction_type'] # no_resources, judgment_type, topology
+    hue_type = [decision_type, 'decision_type'] #auction_type, rationality
+    style_type = 'rationality'  #decision_type
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot), len(col_plot[0]), sharex=True, sharey='row',
@@ -810,8 +810,8 @@ def plot_relative_actions(df, act_types = ['cooperative', 'partially_cooperative
         valuation_type.remove('nan')
     col_plot = act_types
     row_plot = [auction_type, 'auction_type'] #valuation_type, topology
-    hue_type = [rationality , 'rationality'] #rationality,decision_type
-    x = 'decision_type'#'no_resources' 
+    hue_type = [decision_type , 'decision_type'] #rationality,decision_type
+    x = 'rationality'#'no_resources' 
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot), sharex=True,
@@ -820,7 +820,7 @@ def plot_relative_actions(df, act_types = ['cooperative', 'partially_cooperative
         for idx_r, val_r in enumerate(row_plot[0]):
             ax, _, _ = find_ax(axs, row_plot[0], col_plot, idx_r, idx_c)
             selected_data = df[((df[row_plot[1]] == val_r)|(df[row_plot[1]] == 'nan'))]
-            with sns.color_palette("Greens", 4): #sns.color_palette("RdYlGn", 8)
+            with sns.color_palette("Greens", len(hue_type[0])): #sns.color_palette("RdYlGn", 8)
                 sns.barplot(x=x, y='rel_'+val_c,
                             hue=hue_type[1], data=selected_data, linewidth=0.5,
                             edgecolor=[.25, .25, .25], capsize=.05,

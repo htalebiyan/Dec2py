@@ -497,15 +497,12 @@ class ResourceModel:
         None.
 
         '''
-        try:
-            len(params['V']) == len(params['L'])
-        except:
-            sys.exit('Length of resource vector and layer vector should be the same for '+\
-                     'the resource allocation type FIXED_LAYER.')
-        self.sum_resource = sum(params['V'])
+        assert len(params['V']) == len(params['L']),'Length of resource vector and layer '+\
+            'vector should be the same for the resource allocation type FIXED_LAYER.'
+        self.sum_resource = sum([x for _,x in params['V'].items()])
         for t in range(self.t_steps):
             for l in params['L']:
-                self.v_r[t+1][l] = int(params['V'][params['L'].index(l)])
+                self.v_r[t+1][l] = int(params['V'][l])
 
 # %%
 class AuctionModel():

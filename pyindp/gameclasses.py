@@ -214,7 +214,7 @@ class NormalGame:
                     if not is_in_sol_pool:
                         remove_list.append(a)
                 self.actions[l] = [a for a in self.actions[l] if a not in remove_list]
-                while len(self.actions[l]) > 20: #!!! The number 20 is arbitrary
+                while len(self.actions[l]) > 20:  # !!! The number 20 is arbitrary
                     self.actions[l].remove(random.choice(self.actions[l]))
 
             ''' non-cooperative actions are added to possible actions '''
@@ -466,9 +466,12 @@ class NormalGame:
                 self.solution.sol[0]['P' + str(l) + ' payoff'] = act_profile[l][1]
                 act_profile_coorected = ()
                 for x in act_profile[l][0]:
-                    y = list(x)
-                    y[1] = l
-                    x = tuple(y)
+                    try:
+                        y = list(x)
+                        y[1] = l
+                        x = tuple(y)
+                    except TypeError:
+                        x = ('OA',l)
                     act_profile_coorected += (x,)
                 self.solution.sol[0]['P' + str(l) + ' actions'] = [act_profile_coorected]
                 self.solution.sol[0]['P' + str(l) + ' action probs'] = [1.0]
