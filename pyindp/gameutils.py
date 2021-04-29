@@ -170,16 +170,17 @@ def relative_actions(df, combinations):
     Parameters
     ----------
     df : dict
-        Dictionary that contains complete results by JC and INDP collected by
-        :func:`read_results`.
-    combinations : dict
+        Dictionary that contains complete results of NE analysis computed by
+        :func:`analyze_NE`.
+    combinations : list
         All combinations of magnitude, sample, judgment type, resource allocation type
         involved in the JC (or any other decentralized results) collected by
-        :func:`generate_combinations`.
+        :func:`dindputils.generate_combinations`.
     Returns
     -------
     df_rel : dict
-        Dictionary that contains ...
+        Dictionary that contains the difference between action of various type between
+        the palyers and the optimal choice
     '''
     act_types = ['cooperative', 'partially_cooperative', 'OA', 'NA', 'NA_possible']
     cols = ['decision_type', 'judgment_type', 'auction_type', 'valuation_type', 'sample',
@@ -207,6 +208,66 @@ def relative_actions(df, combinations):
             dindputils.update_progress(idx+1, len(combinations))
     dindputils.update_progress(idx+1, len(combinations))
     return df_rel
+
+def cooperation_gain(df, combinations, ref_state, states, lambda_type='U'):
+    '''
+    This functions compares the gain from moving from one state of the game to other
+    states for each player by changing their type.
+
+    Parameters
+    ----------
+    df : dict
+        Dictionary that contains complete relative performance results computed by
+        :func:`dindputils.relative_performance`.
+    combinations : list
+        All combinations of magnitude, sample, judgment type, resource allocation type
+        involved in the JC (or any other decentralized results) collected by
+        :func:`dindputils.generate_combinations`.
+    ref_state : str
+        ...
+    states : list
+        ...
+    lambda_type : str, optional
+        ...
+    Returns
+    -------
+    df_gain : dict
+        Dictionary that contains ...
+    '''
+    decision_types = df.decision_type.unique().tolist()
+    layers = df.layer.unique().tolist()
+    assert ref_state in decision_types, 'ref_state '+ref_state+' is not in decision types'
+    assert layers!=['nan'], 'Lambda has not bee computed fro layers'
+    for x in states:
+        assert x in decision_types, 'state '+x+' is not in decision types'
+
+    cols = ['judgment_type', 'auction_type', 'valuation_type', 'sample', 'Magnitude',
+            'no_resources', 'layer']+[ref_state+' to '+x for x in states]
+    df_gain = pd.DataFrame(columns=cols)
+    print('\nCooperation Gain')
+    for idx, x in enumerate(combinations):
+        rows = (df_gain['sample'] == x[1])&(df_gain['Magnitude'] == x[0])&\
+        (df_gain['no_resources'] == x[3])&(df_gain['auction_type'] == x[6])&\
+        (df_gain['valuation_type'] == x[7])&(df_gain['judgment_type'] == x[5])
+        if not sum(rows):
+            row = (df['sample'] == x[1])&(df['Magnitude'] == x[0])&\
+            (df['no_resources'] == x[3])&(df['auction_type'] == x[6])&\
+            (df['valuation_type'] == x[7])&(df['judgment_type'] == x[5])
+            for l in [x for x in layers if x!='nan']:
+                gain_dict = {'judgment_type':x[5], 'auction_type':x[6],
+                             'valuation_type':x[7], 'sample':x[1], 'Magnitude':x[0],
+                             'no_resources':x[3], 'layer':l}
+                ref_lambda = df.loc[row&(df['layer']==l)&(df['decision_type']==ref_state),
+                                    'lambda_'+lambda_type]
+                for s in states:
+                    state_lambda = df.loc[row&(df['layer']==l)&(df['decision_type']==s),
+                                          'lambda_'+lambda_type]
+                    gain_dict[ref_state+' to '+s] = float(state_lambda)-float(ref_lambda)
+                df_gain = df_gain.append(gain_dict, ignore_index=True)
+        if idx%(len(combinations)/10+1) == 0:
+            dindputils.update_progress(idx+1, len(combinations))
+    dindputils.update_progress(idx+1, len(combinations))
+    return df_gain
 
 def compare_sol(opt, ne, layers):
     sum_lyr_act = 0

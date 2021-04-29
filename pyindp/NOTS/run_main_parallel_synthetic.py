@@ -29,8 +29,8 @@ def run_parallel(i):
     dynamic_params_dir = None
     payoff_dir = None
 
-    sample_no = i//100
-    mag_no = i%100
+    sample_no = i // 100
+    mag_no = i % 100
 
     fail_sce_param = {"TYPE": "synthetic", "SAMPLE_RANGE": range(sample_no, sample_no + 1),
                       "MAGS": range(mag_no, mag_no + 1), 'FILTER_SCE': filter_sce, 'TOPO': 'General',
@@ -41,22 +41,22 @@ def run_parallel(i):
     res_alloc_type = ["OPTIMAL", 'UNIFORM']  # "MDA", "MAA", "MCA", 'UNIFORM' "OPTIMAL"
     val_type = ['DTC']  # 'DTC'
 
-    misc = {'PAYOFF_DIR': payoff_dir, 'DYNAMIC_PARAMS': dynamic_params_dir, 'REDUCED_ACTIONS': None}
+    misc = {'PAYOFF_DIR': payoff_dir, 'DYNAMIC_PARAMS': dynamic_params_dir, 'REDUCED_ACTIONS': 'EDM'}
 
-    runutils.run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir,
-                        misc={'DYNAMIC_PARAMS': dynamic_params_dir})
+    # runutils.run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir,
+    #                     misc={'DYNAMIC_PARAMS': dynamic_params_dir})
     # runutils.run_method(fail_sce_param, rc, layers, method='TD_INDP', output_dir=output_dir, 
     # misc = {'DYNAMIC_PARAMS':dynamic_params_dir})
 
-    runutils.run_method(fail_sce_param, rc, layers, method='NORMALGAME', judgment_type=judge_type,
-                        res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
-                        misc=misc)
-    # for sig in [{1:'C', 2:'C'}, {1:'C', 2:'N'}, {1:'N', 2:'C'}, {1:'N', 2:'N'}]:#{x:'N' for x in layers}
-    # misc["SIGNALS"] = s
-    # misc["BELIEFS"] = {1:'U', 2:'U'}
-    # runutils.run_method(fail_sce_param, rc, layers, method='BAYESGAME', judgment_type=judge_type,
-    # res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
-    # misc = misc)
+    # runutils.run_method(fail_sce_param, rc, layers, method='NORMALGAME', judgment_type=judge_type,
+    #                     res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
+    #                     misc=misc)
+    for sig in [{1: 'C', 2: 'C'}, {1: 'C', 2: 'N'}, {1: 'N', 2: 'C'}, {1: 'N', 2: 'N'}]:  # {x:'N' for x in layers}
+        misc["SIGNALS"] = sig
+        misc["BELIEFS"] = {1: 'U', 2: 'U'}
+        runutils.run_method(fail_sce_param, rc, layers, method='BAYESGAME', judgment_type=judge_type,
+                            res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
+                            misc=misc)
 
 
 if __name__ == "__main__":

@@ -166,6 +166,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     #: Make lists
     no_resources = lambda_df.no_resources.unique().tolist()
     rationality = lambda_df.rationality.unique().tolist()
+    layer = lambda_df.layer.unique().tolist()
     topology = lambda_df.topology.unique().tolist()
     decision_type = lambda_df.decision_type.unique().tolist()
     if 'indp_sample_12Node' in decision_type:
@@ -200,7 +201,8 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
                                        (lambda_df[row_plot[1]] == 'nan'))]
             with sns.color_palette("Reds"): #sns.color_palette("RdYlGn", 8)
                 sns.barplot(x=x, y='lambda_'+lambda_type,
-                            hue=hue_type[1], data=selected_data, linewidth=0.5,
+                            hue=hue_type[1], linewidth=0.5,
+                            data=selected_data[(selected_data['layer'] == 'nan')],
                             edgecolor=[.25, .25, .25], capsize=.05,
                             errcolor=[.25, .25, .25], errwidth=1, ax=ax) 
                 ax.get_legend().set_visible(False)
@@ -843,6 +845,81 @@ def plot_relative_actions(df, act_types = ['cooperative', 'partially_cooperative
     #     corrected_label = correct_legend_labels([col_plot[idx]])[0]
     #     ax.set_title(r'%s'%(corrected_label), fontsize='small')
     plt.savefig('Relative_actions.png', dpi=dpi, bbox_inches='tight')
+
+def plot_cooperation_gain(df, ref_state, states):
+    '''
+    This function plots....
+    
+    Parameters
+    ----------
+    df : TYPE
+        DESCRIPTION.
+    ref_state : str
+        DESCRIPTION.
+    states : list
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    '''
+    #: Make lists
+    no_resources = df.no_resources.unique().tolist()
+    layer = df.layer.unique().tolist()
+    try:
+        topology = df.topology.unique().tolist()
+    except:
+        pass
+    judgment_type = df.judgment_type.unique().tolist()
+    if 'nan' in judgment_type:
+        judgment_type.remove('nan')
+    auction_type = df.auction_type.unique().tolist()
+    if 'nan' in auction_type:
+        auction_type.remove('nan')
+    valuation_type = df.valuation_type.unique().tolist()
+    if 'nan' in valuation_type:
+        valuation_type.remove('nan')
+    col_plot = [layer, 'layer']
+    row_plot = [auction_type, 'auction_type'] #valuation_type, topology
+    value_vars = [ref_state+' to '+x for x in states]
+    id_vars = [x for x in df.columns if x not in value_vars]
+    # Initialize plot properties
+    dpi = 300
+    fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
+                            sharey=True, figsize=(3000/dpi, 1200/dpi))
+    for idx_c, val_c in enumerate(col_plot[0]):
+        for idx_r, val_r in enumerate(row_plot[0]):
+            ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
+            selected_data = df[((df[col_plot[1]] == val_c)|(df[col_plot[1]] == 'nan'))&\
+                               ((df[row_plot[1]] == val_r)|(df[row_plot[1]] == 'nan'))]
+            cg_data = pd.melt(selected_data, id_vars=id_vars, value_vars=value_vars,
+                              var_name='Gain Type')
+            with sns.color_palette():
+                ax = sns.histplot(cg_data, x='value', hue='Gain Type', element="bars",
+                                  stat="probability", discrete=True, multiple="dodge",
+                                  shrink=.9, ax=ax)
+                if idx_r != 0 or idx_c != 0:
+                    ax.get_legend().set_visible(False)
+                ax.set_xlabel('')
+                if idx_r == len(row_plot[0])-1:
+                    ax.set_xlabel(r'Cooperation gain of $\lambda_U$')
+                if idx_c == 0:
+                    ax.set_ylabel(ax.get_ylabel()+', %s'%(correct_legend_labels([val_r])[0]))
+                else:
+                    ax.set_ylabel('')
+                # ax.xaxis.set_label_position('bottom')
+    # legend = ax.get_legend()
+    # handles = legend.legendHandles
+    # labels = legend.get_label()
+    # labels = correct_legend_labels(labels)
+    # fig.legend(handles, labels, loc='lower right', bbox_to_anchor = (0.8,0.16),
+    #             frameon=True, framealpha=.75, ncol=1, fontsize='x-small')
+    _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
+    for idx, ax in enumerate(axs_c):
+        corrected_label = correct_legend_labels([col_plot[0][idx]])[0]
+        ax.set_title(r'%s: %s'%(col_plot[1], corrected_label), fontsize='small')
+    plt.savefig('cooperation_gain.png', dpi=dpi, bbox_inches='tight')
 
 def plot_payoff_hist(df, compute_payoff_numbers=True, outlier=False):
     '''
