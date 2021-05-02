@@ -465,14 +465,17 @@ class NormalGame:
             for l in player_list:
                 self.solution.sol[0]['P' + str(l) + ' payoff'] = act_profile[l][1]
                 act_profile_coorected = ()
-                for x in act_profile[l][0]:
-                    try:
-                        y = list(x)
-                        y[1] = l
-                        x = tuple(y)
-                    except TypeError:
-                        x = ('OA',l)
-                    act_profile_coorected += (x,)
+                if act_profile[l][1] == ('NA',l):
+                    act_profile_coorected = (('NA',l))
+                else:
+                    for x in act_profile[l][0]:
+                        try:
+                            y = list(x)
+                            y[1] = l
+                            x = tuple(y)
+                        except TypeError:
+                            x = ('OA',l)
+                        act_profile_coorected += (x,)
                 self.solution.sol[0]['P' + str(l) + ' actions'] = [act_profile_coorected]
                 self.solution.sol[0]['P' + str(l) + ' action probs'] = [1.0]
             self.solution.sol[0]['total cost'] = -sum([x[1] for x in act_profile.values()])

@@ -286,8 +286,11 @@ def run_sample_problems():
     #                 beliefs={1:'I', 2:'I'}, signals={1:'N', 2:'C'})
     # # result_mh = run_mh_sample(layers) #!!!
 
-    # with open('../results/ng_sample_12Node_results_L2_m0_v4_OPTIMISTIC_UNIFORM/objs_0.pkl', 'rb') as f:
-        # obj = pickle.load(f)
+    # # folder = '/home/hesam/Desktop/Files/Game_synthetic/v4.1/results/General/results/ng_results_L2_m1_v7_OPTIMISTIC_OPTIMAL/'
+    # folder = '../results/ng_sample_12Node_results_L2_m0_v4_OPTIMISTIC_UNIFORM/'
+    # with open(folder+'objs_1.pkl', 'rb') as f:
+    #     obj = pickle.load(f)
+
     # COMBS = []
     # OPTIMAL_COMBS = [[0, 0, len(layers), len(layers), 'indp_sample_12Node', 'nan',
     #                   'nan', 'nan', ''],

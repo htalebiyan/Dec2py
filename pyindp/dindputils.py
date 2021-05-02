@@ -391,7 +391,7 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
             if not rows.empty:
                 row_all = rows[(rows['layer'] == 'nan')]
                 ref_area_tc = lambda_df.loc[cond & (lambda_df['layer'] == 'nan'), 'Area_TC']
-                ref_area_P = lambda_df.loc[cond  & (lambda_df['layer'] == 'nan'), 'Area_P']
+                ref_area_P = lambda_df.loc[cond & (lambda_df['layer'] == 'nan'), 'Area_P']
                 area_tc = trapz_int(y=list(row_all[row_all['cost_type'] == cost_type].cost[:T]),
                                     x=list(row_all[row_all['cost_type'] == cost_type].t[:T]))
                 area_p = -trapz_int(y=list(row_all[row_all['cost_type'] == 'Under Supply Perc'].cost[:T]),
@@ -406,7 +406,7 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
                     for l in range(x[2]):
                         row_lyr = rows[(rows['layer'] == l + 1)]
                         ref_area_tc = lambda_df.loc[cond & (lambda_df['layer'] == l + 1), 'Area_TC']
-                        ref_area_P = lambda_df.loc[cond  & (lambda_df['layer'] == l + 1), 'Area_P']
+                        ref_area_P = lambda_df.loc[cond & (lambda_df['layer'] == l + 1), 'Area_P']
                         area_tc = trapz_int(y=list(row_lyr[row_lyr['cost_type'] == cost_type].cost[:T]),
                                             x=list(row_lyr[row_lyr['cost_type'] == cost_type].t[:T]))
                         area_p = -trapz_int(y=list(row_lyr[row_lyr['cost_type'] == 'Under Supply Perc'].cost[:T]),
@@ -425,6 +425,7 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
 
     return lambda_df
 
+
 def compute_lambdas(ref_area_tc, ref_area_P, area_tc, area_p):
     lambda_tc = 'nan'
     lambda_p = 'nan'
@@ -440,11 +441,12 @@ def compute_lambdas(ref_area_tc, ref_area_P, area_tc, area_p):
         pass
     return lambda_tc, lambda_p
 
+
 def read_resource_allocation(result_df, combinations, optimal_combinations, objs,
                              ref_method='indp', root_result_dir='../results/'):
-    '''
+    """
     This functions reads the resource allocation vectors by INDP and JC. Also,
-    it computes the allocation gap between the respurce allocation by JC and
+    it computes the allocation gap between the resource allocation by JC and
     and the optimal allocation by INDP :cite:`Talebiyan2020a`.
 
     Parameters
@@ -460,7 +462,7 @@ def read_resource_allocation(result_df, combinations, optimal_combinations, objs
         All combinations of magnitude, sample, judgment type, resource allocation type
         involved in the INDP (or any other optimal results) collected by :func:`generate_combinations`.
     ref_method : str, optional
-        Referece method to computue relative measure in comparison to. The default is 'indp'.
+        Reference method to compute relative measure in comparison to. The default is 'indp'.
     root_result_dir : str, optional
         Directory that contains the results. The default is '../results/'.
 
@@ -470,7 +472,7 @@ def read_resource_allocation(result_df, combinations, optimal_combinations, objs
         Dictionary that contain the resoruce allcoation vectors.
     df_alloc_gap : dict
         Dictionary that contain the allcoation gap values.
-    '''
+    """
     cols = ['t', 'resource', 'decision_type', 'judgment_type', 'auction_type',
             'valuation_type', 'sample', 'Magnitude', 'layer', 'no_resources',
             'normalized_resource', 'poa']
@@ -574,7 +576,7 @@ def read_resource_allocation(result_df, combinations, optimal_combinations, objs
 
 
 def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../results/'):
-    '''
+    """
     This function reads the run time of computing restoration strategies by different methods.
 
     Parameters
@@ -597,7 +599,7 @@ def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../
     run_time_results : dict
         Dictionary that contain run time of for all computed strategies.
 
-    '''
+    """
     columns = ['t', 'Magnitude', 'decision_type', 'judgment_type', 'auction_type', 'valuation_type',
                'no_resources', 'sample', 'decision_time', 'auction_time', 'valuation_time']
     run_time_results = pd.DataFrame(columns=columns, dtype=int)
@@ -632,10 +634,13 @@ def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../
                     decision_time = obj.results.results[t]['run_time']
                 else:
                     payoff_time = 0
-                    if obj.objs[t].payoff_time.items():
-                        payoff_time = max(obj.objs[t].payoff_time.items(),
-                                          key=operator.itemgetter(1))[1]
-                    decision_time = obj.objs[t].solving_time + payoff_time
+                    try:
+                        if obj.objs[t].payoff_time.items():
+                            payoff_time = max(obj.objs[t].payoff_time.items(),
+                                              key=operator.itemgetter(1))[1]
+                        decision_time = obj.objs[t].solving_time + payoff_time
+                    except:
+                        print(x)
             else:
                 sys.exit('Error: Wrong method name in computing decision time')
             auction_time = 0
@@ -657,10 +662,10 @@ def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../
 def generate_combinations(database, mags, sample, layers, no_resources, decision_type,
                           judgment_type, res_alloc_type, valuation_type,
                           list_high_dam_add=None, synthetic_dir=None):
-    '''
-    This fucntion returns all combinations of magnitude, sample, judgment type,
+    """
+    This function returns all combinations of magnitude, sample, judgment type,
     resource allocation type, and valuation type (if applicable) involved in
-    decentralized and centralized analyses. The returend dictionary are used by
+    decentralized and centralized analyses. The returned dictionary are used by
     other functions to read results and calculate comparison measures.
 
     Parameters
@@ -681,7 +686,7 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
     decision_type : list
         List of methods.
     res_alloc_type : list
-        List of resoure allocation methods.
+        List of resource allocation methods.
     valuation_type : list
         List of valuation types.
     list_high_dam_add : str, optional
@@ -699,7 +704,7 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
         All combinations of magnitude, sample, judgment type, resource allocation type
         involved in the INDP (or any other optimal results).
 
-    '''
+    """
     combinations = []
     optimal_combinations = []
     optimal_method = ['tdindp', 'indp', 'sample_indp_12Node', 'dp_indp']
