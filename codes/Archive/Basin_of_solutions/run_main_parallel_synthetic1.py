@@ -25,7 +25,7 @@ def run_parallel(i):
     filter_sce = None
     base_dir = '/scratch/ht20/Generated_Network_Dataset_v4.1/'
     damage_dir = '/scratch/ht20/Generated_Network_Dataset_v4.1/'
-    output_dir = '/scratch/ht20/results/'
+    output_dir = '/scratch/ht20/results_EDM/'
     dynamic_params_dir = None
     payoff_dir = None
 
@@ -41,7 +41,7 @@ def run_parallel(i):
     res_alloc_type = ["OPTIMAL", 'UNIFORM']  # "MDA", "MAA", "MCA", 'UNIFORM' "OPTIMAL"
     val_type = ['DTC']  # 'DTC'
 
-    misc = {'PAYOFF_DIR': payoff_dir, 'DYNAMIC_PARAMS': dynamic_params_dir, 'REDUCED_ACTIONS': None}
+    misc = {'PAYOFF_DIR': payoff_dir, 'DYNAMIC_PARAMS': dynamic_params_dir, 'REDUCED_ACTIONS': 'EDM'}
 
     # runutils.run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir,
     #                     misc={'DYNAMIC_PARAMS': dynamic_params_dir})

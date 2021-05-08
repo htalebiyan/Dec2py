@@ -184,7 +184,7 @@ the following items:
 '''
 
 # %%
-FAIL_SCE_PARAM = {'TYPE': "synthetic", 'SAMPLE_RANGE': range(0, 5), 'MAGS': range(0, 100),
+FAIL_SCE_PARAM = {'TYPE': "synthetic", 'SAMPLE_RANGE': range(0, 3), 'MAGS': range(0, 100),
                   'FILTER_SCE': FILTER_SCE, 'TOPO': 'General', 'BASE_DIR': BASE_DIR,
                   'DAMAGE_DIR': DAMAGE_DIR}
 DYNAMIC_PARAMS = None
@@ -277,15 +277,15 @@ uniformed belief, *F* for false consensus bias, and *I* for inverse false consen
 # # #                     res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
 # # #                     output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS,
 # # #                     misc = {'STM_MODEL':STM_MODEL_DICT, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
-runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
- 					res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
- 					misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
- 					'REDUCED_ACTIONS': 'EDM'})
-# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
-#  			res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-#  			misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-#  					"SIGNALS":{1:'C', 2:'C'}, "BELIEFS":{1:'I', 2:'I'},
-#  					'REDUCED_ACTIONS':'EDM'})
+# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
+#  					res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+#  					misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+#  					'REDUCED_ACTIONS': 'EDM'})
+runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
+ 			res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+ 			misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+ 					"SIGNALS":{1:'C', 2:'C'}, "BELIEFS":{1:'U', 2:'U'},
+ 					'REDUCED_ACTIONS':'EDM'})
 
 # %%
 ''' 
@@ -323,7 +323,7 @@ optimal solution.
 # %%
 COST_TYPES = ['Total']  # 'Under Supply', 'Over Supply'
 REF_METHOD = 'indp'
-METHOD_NAMES = ['indp', 'ng']
+METHOD_NAMES = ['indp', 'bgCCUU']
 # 'ng', 'jc', 'dp_indp', 'tdindp', 'bgCCNCIIII',
 
 COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],

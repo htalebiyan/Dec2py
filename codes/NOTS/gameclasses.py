@@ -215,7 +215,7 @@ class NormalGame:
                     if not is_in_sol_pool:
                         remove_list.append(a)
                 self.actions[l] = [a for a in self.actions[l] if a not in remove_list]
-                while len(self.actions[l]) > 20: #!!! The number 20 is arbitrary
+                while len(self.actions[l]) > 10: #!!! The number 20 is arbitrary
                     self.actions[l].remove(random.choice(self.actions[l]))
 
             ''' non-cooperative actions are added to possible actions '''

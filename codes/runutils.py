@@ -280,10 +280,10 @@ def run_sample_problems():
     # run_indp_sample(layers)
     # run_tdindp_sample(layers)
     # run_jc_sample(layers, judge_types, auction_type, valuation_type)
-    run_game_sample(layers, judge_types, auction_type, valuation_type,
-                    game_type="NORMALGAME", reduced_act='EDM')
-    # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="BAYESGAME",
-    #                 beliefs={1:'I', 2:'I'}, signals={1:'N', 2:'C'})
+    # run_game_sample(layers, judge_types, auction_type, valuation_type,
+    #                 game_type="NORMALGAME", reduced_act='EDM')
+    run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="BAYESGAME",
+                    beliefs={1:'U', 2:'U'}, signals={1:'C', 2:'C'})
     # # result_mh = run_mh_sample(layers) #!!!
 
     # # folder = '/home/hesam/Desktop/Files/Game_synthetic/v4.1/results/General/results/ng_results_L2_m1_v7_OPTIMISTIC_OPTIMAL/'
