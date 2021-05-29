@@ -214,7 +214,7 @@ class NormalGame:
                     if not is_in_sol_pool:
                         remove_list.append(a)
                 self.actions[l] = [a for a in self.actions[l] if a not in remove_list]
-                while len(self.actions[l]) > 20:  # !!! The number 20 is arbitrary
+                while len(self.actions[l]) > 10:  # !!! The number 20 is arbitrary
                     self.actions[l].remove(random.choice(self.actions[l]))
 
             ''' non-cooperative actions are added to possible actions '''
@@ -457,15 +457,20 @@ class NormalGame:
         self.solution = GameSolution(player_list, gambit_solution, action_list)
         # Choose a random action profile when there is no equilibrium
         if no_solution:
-            max_payoff = -1e100
-            while max_payoff == -1e100:
+            min_payoff = -1e100
+            while min_payoff == -1e100:
                 act_profile = random.choice(list(payoff_list.values()))
-                max_payoff = max([x[1] for x in act_profile.values()])
+                min_payoff = min([x[1] for x in act_profile.values()])
             self.solution.sol = {0: {}}
             for l in player_list:
                 self.solution.sol[0]['P' + str(l) + ' payoff'] = act_profile[l][1]
                 act_profile_coorected = ()
-                if act_profile[l][1] == ('NA',l):
+                
+                if type(l) is int:
+                    player_num = l
+                else:
+                    player_num = l[1]
+                if act_profile[l][0] == ('NA',player_num):
                     act_profile_coorected = (('NA',l))
                 else:
                     for x in act_profile[l][0]:

@@ -2,17 +2,24 @@ import numpy as np
 import pandas as pd
 import pickle
 
-folder = '/home/hesam/Desktop/Files/Game_synthetic/v4/postprocess/'
-df1 = pd.read_pickle(folder+'postprocess_dicts.pkl')
-df2 = pd.read_pickle(folder+'postprocess_dicts_BAYESGAME_bgNNUU_EDM20_OPTIMALandUNIFORM.pkl')
+folder = 'C:/Users/ht20/Documents/Files/Game_synthetic/v4.1/postprocess/'
+# 'C:/Users/ht20/Documents/Files/Game_synthetic/v4.1/postprocess/'
+# '/home/hesam/Desktop/Files/Game_synthetic/v4.1/postprocess/'
+
+df1 = pd.read_pickle(folder+'postprocess_dicts_EDM10.pkl')
+df2 = pd.read_pickle(folder+'postprocess_dicts_EDM20.pkl')
 
 for i in [2, 4, 5, 6, 7, 9, 10]:
     # df1[i].loc[:, 'topology'] = 'general'
     # df1[i].loc[df1[i]['decision_type']=='ng', 'rationality'] = 'unbounded'
     # df1[i].loc[df1[i]['decision_type']=='indp', 'rationality'] = 'optimal'
-    df2[i].loc[:, 'topology'] = 'general'
-    df2[i].loc[df2[i]['decision_type']=='bgNNUU', 'rationality'] = 'bounded'
-    df2[i].loc[df2[i]['decision_type']=='indp', 'rationality'] = 'optimal'
+    # df2[i].loc[:, 'topology'] = 'general'
+    # df2[i].loc[df2[i]['decision_type']=='bgNNUU', 'rationality'] = 'bounded'
+    # df2[i].loc[df2[i]['decision_type']=='indp', 'rationality'] = 'optimal'
+
+
+    df1[i].loc[:, 'br_level'] = 'Max 12'
+    df2[i].loc[:, 'br_level'] = 'Max 22'
 for i in [0, 1, 3, 8]:
     for x in df2[i]:
         if x not in df1[i]:

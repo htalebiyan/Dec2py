@@ -48,19 +48,19 @@ def run_parallel(i):
     # runutils.run_method(fail_sce_param, rc, layers, method='TD_INDP', output_dir=output_dir, 
     # misc = {'DYNAMIC_PARAMS':dynamic_params_dir})
 
-    # runutils.run_method(fail_sce_param, rc, layers, method='NORMALGAME', judgment_type=judge_type,
-    #                     res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
-    #                     misc=misc)
-    for sig in [{1: 'C', 2: 'N'}]:#, {1: 'C', 2: 'N'}, {1: 'N', 2: 'C'}, {1: 'N', 2: 'N'}]:  # {x:'N' for x in layers}
-        misc["SIGNALS"] = sig
-        misc["BELIEFS"] = {1: 'U', 2: 'U'}
-        runutils.run_method(fail_sce_param, rc, layers, method='BAYESGAME', judgment_type=judge_type,
-                            res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
-                            misc=misc)
+    runutils.run_method(fail_sce_param, rc, layers, method='NORMALGAME', judgment_type=judge_type,
+                        res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
+                        misc=misc)
+    # for sig in [{1: 'C', 2: 'C'}, {1: 'C', 2: 'N'}, {1: 'N', 2: 'C'}, {1: 'N', 2: 'N'}]:  # {x:'N' for x in layers}
+    #     misc["SIGNALS"] = sig
+    #     misc["BELIEFS"] = {1: 'U', 2: 'U'}
+    #     runutils.run_method(fail_sce_param, rc, layers, method='BAYESGAME', judgment_type=judge_type,
+    #                         res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
+    #                         misc=misc)
 
 
 if __name__ == "__main__":
     NUM_CORES = multiprocessing.cpu_count()
     print('number of cores:' + str(NUM_CORES) + '\n')
     POOL = multiprocessing.Pool(NUM_CORES)
-    RESULTS = POOL.map(run_parallel, range(200))
+    RESULTS = POOL.map(run_parallel, range(500))

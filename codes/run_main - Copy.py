@@ -380,35 +380,38 @@ make output figures:
 # %%
 plt.close('all')
 ### Getting back the objects ###
-# import pickle
+import pickle
 import importlib
+
 importlib.reload(plots)
 import plots
 
-# results_dir = 'C:/Users/ht20/Documents/Files/Game_synthetic/v4/postprocess/'  # OUTPUT_DIR
+# results_dir = 'C:/Users/ht20/Documents/Files/Game_synthetic/v4.1/postprocess/'  # OUTPUT_DIR
 # with open(results_dir + 'postprocess_dicts.pkl', 'rb') as f:  # postprocess_dicts
 #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
-#       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF, REL_ACTION_DF] = pickle.load(f)
-#
-# plots.plot_performance_curves(BASE_DF[((BASE_DF['decision_type'] == 'indp') | \
-#                                        (BASE_DF['decision_type'] == 'bgNNUU')) & \
-#                                       (BASE_DF['rationality'] != 'unbounded')& \
-#                                       (BASE_DF['auction_type'] != 'UNIFORM')],
-#                               cost_type='Total', ci=None,
-#                               deaggregate=False, plot_resilience=True)
-# plots.plot_relative_performance(LAMBDA_DF[(LAMBDA_DF['rationality'] != 'unbounded') & \
-#                                     (LAMBDA_DF['decision_type'] != 'bgCCII') &\
-#                                     (LAMBDA_DF['decision_type'] != 'bgCCFF')], lambda_type='U')
-# plots.plot_ne_analysis(ANALYZE_NE_DF, ci=None)
-# plots.plot_ne_cooperation(ANALYZE_NE_DF[((ANALYZE_NE_DF['decision_type'] == 'indp') | \
-#                                        (ANALYZE_NE_DF['decision_type'] == 'bgNNUU')) & \
-#                                       (ANALYZE_NE_DF['rationality'] != 'unbounded')& \
-#                                       (ANALYZE_NE_DF['auction_type'] != 'UNIFORM')], ci=None)
-plots.plot_relative_actions(REL_ACTION_DF[(REL_ACTION_DF['rationality'] != 'unbounded') & \
-                                    (REL_ACTION_DF['decision_type'] != 'bgCCII') &\
-                                    (REL_ACTION_DF['decision_type'] != 'bgCCFF')])
+#      ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF, REL_ACTION_DF] = pickle.load(f)
 
-# plots.plot_cooperation_gain(COOP_GAIN, ref_state = 'bgNNUU',
+# plots.plot_performance_curves(BASE_DF,
+#                               cost_type='Total', normalize=False, ci=None,
+#                               deaggregate=True, plot_resilience=True)
+# [((BASE_DF['decision_type'] == 'indp') | (BASE_DF['decision_type'] == 'ng')) & \
+#                                       (BASE_DF['rationality'] != 'unbounded') & \
+#                                       (BASE_DF['auction_type'] != 'OPTIMAL') & \
+#                                       (BASE_DF['Magnitude'] == 77) & (BASE_DF['sample'] == 0)]
+
+plots.plot_relative_performance(LAMBDA_DF[(LAMBDA_DF['rationality'] != 'unbounded')], lambda_type='U', layer='nan')
+
+# plots.plot_ne_analysis(ANALYZE_NE_DF, ci=None)
+# plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=None)
+# [((ANALYZE_NE_DF['decision_type'] == 'indp') | \
+#                                          (ANALYZE_NE_DF['decision_type'] == 'ng')) & \
+#                                         (ANALYZE_NE_DF['rationality'] != 'unbounded') & \
+#                                         (ANALYZE_NE_DF['auction_type'] != 'OPTIMAL') & \
+#                                         (ANALYZE_NE_DF['Magnitude'] == 77) & (ANALYZE_NE_DF['sample'] == 0)]
+# plots.plot_relative_actions(REL_ACTION_DF[(REL_ACTION_DF['rationality'] != 'unbounded')])
+
+
+# plots.plot_cooperation_gain(COOP_GAIN[COOP_GAIN['auction_type']!='UNIFORM'], ref_state = 'bgNNUU',
 #                             states = ['bgCCUU', 'bgCNUU', 'bgNCUU'])
 
 # # # plots.plot_separated_perform_curves(BASE_DF, x='t', y='cost', cost_type='Total',

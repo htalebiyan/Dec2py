@@ -1,4 +1,4 @@
-'''plots'''
+"""plots"""
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib as mplt
@@ -12,18 +12,13 @@ plt.rc('text', usetex=True)
 plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 
-def plot_performance_curves(df, x='t', y='cost', cost_type='Total', ci=None,
-                            normalize=False, deaggregate=False, plot_resilience=False):
-    '''
+def plot_performance_curves(df, cost_type='Total', ci=None, normalize=False, deaggregate=False, plot_resilience=False):
+    """
 
     Parameters
     ----------
     df : TYPE
         DESCRIPTION.
-    x : TYPE, optional
-        DESCRIPTION. The default is 't'.
-    y : TYPE, optional
-        DESCRIPTION. The default is 'cost'.
     cost_type : TYPE, optional
         DESCRIPTION. The default is 'Total'.
     ci : TYPE, optional
@@ -39,7 +34,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total', ci=None,
     -------
     None.
 
-    '''
+    """
     #: Make lists
     no_resources = df.no_resources.unique().tolist()
     rationality = df.rationality.unique().tolist()
@@ -54,7 +49,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total', ci=None,
     valuation_type = df.valuation_type.unique().tolist()
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
-    T = len(df[x].unique().tolist())
+    time = len(df['t'].unique().tolist())
 
     row_plot = [topology, 'topology']  # valuation_type
     col_plot = [auction_type, 'auction_type']  # no_resources, judgment_type, topology
@@ -63,7 +58,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total', ci=None,
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
-                            figsize=(2500 / dpi, 1500 / dpi))
+                            figsize=(1500 / dpi, 1500 / dpi))
     # colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
     # colors = ['r', 'b', 'k']
     # pal = sns.color_palette(colors)
@@ -75,7 +70,12 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total', ci=None,
                            ((df[col_plot[1]] == val_c) | (df[col_plot[1]] == 'nan')) &
                            ((df[row_plot[1]] == val_r) | (df[row_plot[1]] == 'nan'))]
             with pal:
-                sns.lineplot(x=x, y=y, hue=hue_type[1], style=style_type, markers=True,
+                y = 'cost'
+                lab = ''
+                if normalize:
+                    y = 'normalized_cost'
+                    lab = 'Norm. '
+                sns.lineplot(x='t', y=y, hue=hue_type[1], style=style_type, markers=True,
                              ci=ci, ax=ax, data=cost_data[cost_data.layer == 'nan'],
                              **{'markersize': 5})
             if deaggregate:
@@ -92,12 +92,12 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total', ci=None,
                 layers.sort(reverse=True)
                 for l in layers:
                     pal_adj = sns.color_palette([[xx * l / len(layers) for xx in x] for x in pal])
-                    sns.barplot(x=x, y=l, hue=hue_type[1], ax=ax, linewidth=0.5, ci=None,
+                    sns.barplot(x='t', y=l, hue=hue_type[1], ax=ax, linewidth=0.5, ci=None,
                                 data=cost_lyr_pivot, hue_order=hue_type[0],
                                 palette=pal_adj, **{'alpha': 0.35})
-            ax.set(xlabel=r'time step $t$', ylabel=cost_type + ' Cost')  # r'\% Unmet Demand')
+            ax.set(xlabel=r'time step $t$', ylabel=lab + cost_type + ' Cost')  # r'\% Unmet Demand')
             ax.get_legend().set_visible(False)
-            ax.xaxis.set_ticks(np.arange(0, T, 1.0))  # ax.get_xlim()
+            ax.xaxis.set_ticks(np.arange(0, time, 1.0))  # ax.get_xlim()
             # ax.yaxis.set_ticks(np.arange(-.4, 0.05, 0.05))
 
             if plot_resilience:
@@ -107,7 +107,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total', ci=None,
                 divider = make_axes_locatable(ax)
                 ax_2 = divider.append_axes("bottom", size="100%", pad=0.12, sharex=ax)
                 with pal:
-                    sns.lineplot(x=x, y=y, hue=hue_type[1], style=style_type, markers=True,
+                    sns.lineplot(x='t', y='cost', hue=hue_type[1], style=style_type, markers=True,
                                  ci=ci, ax=ax_2, legend='full',
                                  data=resilience_data[resilience_data.layer == 'nan'])
                 if deaggregate:
@@ -124,20 +124,20 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total', ci=None,
                     layers.sort(reverse=True)
                     for l in layers:
                         pal_adj = sns.color_palette([[xx * l / len(layers) for xx in x] for x in pal])
-                        sns.barplot(x=x, y=l, hue=hue_type[1], ax=ax_2, linewidth=0.5,
+                        sns.barplot(x='t', y=l, hue=hue_type[1], ax=ax_2, linewidth=0.5,
                                     ci=None, data=cost_lyr_pivot, hue_order=hue_type[0],
                                     palette=pal_adj, **{'alpha': 0.35})
-                ax_2.set(ylabel=r'\% Unmet Demand')
+                ax_2.set(xlabel=r'time step $t$', ylabel=r'\% Unmet Demand')
                 ax_2.get_legend().set_visible(False)
                 if idx_c != 0.0:
                     ax_2.set_ylabel('')
                     ax_2.set_yticklabels([])
                 ax.xaxis.set_ticks([])
-                ax_2.xaxis.set_ticks(np.arange(0, T, 1.0))  # ax.get_xlim()
+                ax_2.xaxis.set_ticks(np.arange(0, time, 1.0))  # ax.get_xlim()
     # Add overll x- and y-axis titles
     _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
-        ax.set_title(r'$R_c=$%s' % (str(col_plot[0][idx])))
+        ax.set_title(r'Res. Alloc. = %s' % (str(col_plot[0][idx])))
     for idx, ax in enumerate(axs_r):
         ax.annotate(str(row_plot[0][idx]), xy=(0, 0.5),
                     xytext=(-ax.yaxis.labelpad - 4, 0), xycoords=ax.yaxis.label,
@@ -152,7 +152,7 @@ def plot_performance_curves(df, x='t', y='cost', cost_type='Total', ci=None,
                 bbox_extra_artists=(lgd,))
 
 
-def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
+def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', layer='nan'):
     '''
     Parameters
     ----------
@@ -162,7 +162,8 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
         DESCRIPTION. The default is 'Total'.
     lambda_type : TYPE, optional
         DESCRIPTION. The default is 'U'.
-
+    layer : TYPE, optional
+        DESCRIPTION. The default is 'nan'.
     Returns
     -------
     None.
@@ -171,8 +172,9 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
     #: Make lists
     no_resources = lambda_df.no_resources.unique().tolist()
     rationality = lambda_df.rationality.unique().tolist()
-    layer = lambda_df.layer.unique().tolist()
+    layers = lambda_df.layer.unique().tolist()
     topology = lambda_df.topology.unique().tolist()
+    br_level = lambda_df.br_level.unique().tolist()
     decision_type = lambda_df.decision_type.unique().tolist()
     if 'indp_sample_12Node' in decision_type:
         decision_type.remove('indp_sample_12Node')
@@ -189,12 +191,12 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
         valuation_type.remove('nan')
     row_plot = [judgment_type, 'judgment_type']  # valuation_type
     col_plot = [auction_type, 'auction_type']  # auction_type, topology
-    hue_type = [decision_type, 'decision_type']  # rationality,decision_type
-    x = 'rationality'  # 'no_resources'
+    hue_type = [br_level, 'br_level']  # rationality,decision_type
+    x = 'decision_type'  # 'no_resources'
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
-                            sharey=True, figsize=(2000 / dpi, 1200 / dpi))
+                            sharey=True, figsize=(2000 / dpi, 800 / dpi))
     for idx_c, val_c in enumerate(col_plot[0]):
         for idx_r, val_r in enumerate(row_plot[0]):
             ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
@@ -207,26 +209,31 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U'):
             with sns.color_palette("Reds", 5):  # sns.color_palette("RdYlGn", 8)
                 sns.barplot(x=x, y='lambda_' + lambda_type,
                             hue=hue_type[1], linewidth=0.5,
-                            data=selected_data[(selected_data['layer'] == 'nan')],
+                            data=selected_data[(selected_data['layer'] == layer)],
                             edgecolor=[.25, .25, .25], capsize=.05,
                             errcolor=[.25, .25, .25], errwidth=1, ax=ax)
+                # sns.histplot(data=selected_data[(selected_data['layer'] == layer)], x='lambda_' + lambda_type,
+                #              hue=hue_type[1], element="poly", stat="probability", ax=ax)
                 ax.get_legend().set_visible(False)
-                ax.set_xlabel(r'$R_c$')
+
+                # ax.set_xlabel(r'$R_c$')
                 if idx_r != len(valuation_type) - 1:
                     ax.set_xlabel('')
-                ax.set_ylabel(r'E[$\lambda_{%s}$], $%s$' % (lambda_type, row_plot[0][idx_r]))
+                # ax.set_ylabel(r'E[$\lambda_{%s}$], $%s$' % (lambda_type, row_plot[0][idx_r]))
                 ax.set_ylabel(r'E[$\lambda_{%s}$]' % lambda_type)
                 if idx_c != 0:
                     ax.set_ylabel('')
                 ax.xaxis.set_label_position('bottom')
+                # ax.set_xlabel(r'$\lambda_U$')
+                # ax.set_xlim(-1.5, 0)
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='lower right', bbox_to_anchor=(0.8, 0.16),
+    fig.legend(handles, labels, loc='lower right', bbox_to_anchor=(0.75, 0.1),
                frameon=True, framealpha=.75, ncol=1, fontsize='x-small')
     _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
         corrected_label = correct_legend_labels([col_plot[0][idx]])[0]
-        ax.set_title(r'%s' % (corrected_label))
+        ax.set_title(r'Res. Alloc.: %s' % (corrected_label))
     plt.savefig('Relative_perforamnce.png', dpi=dpi, bbox_inches='tight')
 
 
@@ -751,7 +758,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
         # Initialize plot properties
         dpi = 300
         fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey='row',
-                                figsize=(3000 / dpi, 1500 / dpi))
+                                figsize=(1500 / dpi, 1000 / dpi))
         # colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
         # pal = sns.color_palette(colors)
         pal = sns.color_palette()
@@ -762,7 +769,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
                              (df[col_plot[1]] == val_c) & (df[row_plot[1]] == val_r)]
                 ne_data = pd.melt(ne_data, id_vars=id_vars, value_vars=value_vars,
                                   var_name='Cooperation Status')
-                ne_data['Method'] = np.where((ne_data['Cooperation Status'] == 'cooperative') | \
+                ne_data['Decision Type'] = np.where((ne_data['Cooperation Status'] == 'cooperative') | \
                                              (ne_data['Cooperation Status'] == 'partially_cooperative') | \
                                              (ne_data['Cooperation Status'] == 'OA') | \
                                              (ne_data['Cooperation Status'] == 'NA') | \
@@ -773,19 +780,20 @@ def plot_ne_cooperation(df, x='t', ci=None):
                                           ['cooperative', 'partially_cooperative', 'OA',
                                            'NA', 'NA_possible'])
                 with pal:
-                    sns.lineplot(x=x, y='value', hue='Cooperation Status', style='Method',
+                    sns.lineplot(x=x, y='value', hue='Cooperation Status', style='Decision Type',
                                  markers=True, ci=ci, ax=ax, data=ne_data,
-                                 style_order=['Optimal','bgNNUU'],
+                                 style_order=['Optimal', 'ng'],
                                  **{'markersize': 5})
                 ax.set(xlabel=r'time step $t$', ylabel='\% of Players, ' + row_plot[0][idx_r])
                 ax.get_legend().set_visible(False)
                 ax.xaxis.set_ticks(np.arange(1, T + 1, 1.0))  # ax.get_xlim()
+                # ax.set_ylim(-.05,1.05)
         # Rebuild legend
         handles, labels = ax.get_legend_handles_labels()
         handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
         labels = correct_legend_labels(labels)
         fig.legend(handles, labels, loc='center right', ncol=1, framealpha=0.35,
-                   bbox_to_anchor=(.83, 0.55))
+                   bbox_to_anchor=(.92, 0.7), fontsize='x-small')
         # Add overll x- and y-axis titles
         _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
         for idx, ax in enumerate(axs_c):
@@ -850,7 +858,7 @@ def plot_relative_actions(df, act_types=None):
                     ax.set_xlabel(r'%s' % (correct_legend_labels([val_c])[0]))
                 ax.set_ylabel('')
                 if idx_c == 0:
-                    ax.set_ylabel(r'Rel. Action, %s' % (row_plot[0][idx_r]))
+                    ax.set_ylabel(r'E$[\theta]$, %s' % (row_plot[0][idx_r]))
                 # ax.get_xaxis().set_ticks([])
                 # ax.xaxis.set_label_position('bottom')
     handles, labels = ax.get_legend_handles_labels()
@@ -1037,8 +1045,8 @@ def correct_legend_labels(labels):
     labels = ['td-INDP' if x == 'tdindp' else x for x in labels]
     labels = ['Judge. Call' if x == 'jc' else x for x in labels]
     labels = ['Judge. Call' if x == 'jc_sample_12Node' else x for x in labels]
-    labels = ['Normal Game' if x == 'ng' else x for x in labels]
-    labels = ['Normal Game' if x == 'ng_sample_12Node' else x for x in labels]
+    labels = ['N-INRG' if x == 'ng' else x for x in labels]
+    labels = ['N-INRG' if x == 'ng_sample_12Node' else x for x in labels]
     labels = ['$R_c$' if x == 'no_resources' else x for x in labels]
     labels = ['$R_c$' if x == 'no_resource' else x for x in labels]
     labels = ['Payoff Similarity' if x == 'payoff_similarity' else x for x in labels]
@@ -1050,14 +1058,16 @@ def correct_legend_labels(labels):
     labels = ['Par. Coop.' if x == 'partially_cooperative' else x for x in labels]
     labels = ['Non Coop. (OA)' if x == 'OA' else x for x in labels]
     labels = ['Non Coop. (NA)' if x == 'NA' else x for x in labels]
-    labels = ['No More Actions (NA)' if x == 'NA_possible' else x for x in labels]
-    labels = ['Bayes. Game-All CU' if x == 'bgCCCCUUUU' else x for x in labels]
-    labels = ['Bayes. Game-All CU ex. Power' if x == 'bgCCNCUUUU' else x for x in labels]
-    labels = ['Bayes. Game-All NU' if x == 'bgNNNNUUUU' else x for x in labels]
-    labels = ['Bayes. Game-NN' if x == 'bgNNUU' else x for x in labels]
-    labels = ['Bayes. Game-CN' if x == 'bgCNUU' else x for x in labels]
-    labels = ['Bayes. Game-NC' if x == 'bgNCUU' else x for x in labels]
-    labels = ['Bayes. Game-CC' if x == 'bgCCUU' else x for x in labels]
+    labels = ['No More Act. (NA)' if x == 'NA_possible' else x for x in labels]
+    labels = ['B-INRG-All cu' if x == 'bgCCCCUUUU' else x for x in labels]
+    labels = ['B-INRG-All cu ex. Power' if x == 'bgCCNCUUUU' else x for x in labels]
+    labels = ['B-INRG-All nu' if x == 'bgNNNNUUUU' else x for x in labels]
+    labels = ['B-INRG-nn' if x == 'bgNNUU' else x for x in labels]
+    labels = ['B-INRG-cn' if x == 'bgCNUU' else x for x in labels]
+    labels = ['B-INRG-nc' if x == 'bgNCUU' else x for x in labels]
+    labels = ['B-INRG-cc' if x == 'bgCCUU' else x for x in labels]
+    labels = ['Rationality' if x == 'rationality' else x for x in labels]
+    labels = ['br_level' if x == 'bounded rationality level' else x for x in labels]
     return labels
 
 

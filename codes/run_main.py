@@ -62,30 +62,29 @@ not calculated again. Set it to *None* if you don't want to use this option.
 """
 
 # %%
-BASE_DIR = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
-# '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/'
+BASE_DIR = "../data/Extended_Shelby_County/"
+# '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # "../data/Extended_Shelby_County/"
 # 'C:/Users/ht20/Box Sync/Shelby County Database/Node_arc_info'
-# "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v3.1/"
+# "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
 
-DAMAGE_DIR = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
-# '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/'
+DAMAGE_DIR = "../data/Wu_Damage_scenarios/"
+# '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # ../data/random_disruption_shelby/"
 # "../data/Wu_Damage_scenarios/"
-# "C:\\Users\\ht20\\Documents\\Files\\Generated_Network_Dataset_v3.1\\"
-# "/home/hesam/Desktop/Files/Generated_Network_Dataset_v3.1"
+# "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
 # 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios'
 
-OUTPUT_DIR = '/home/hesam/Desktop/Files/Game_synthetic/v4.1/results/'
-# '/home/hesam/Desktop/Files/Game_synthetic/v4/results/'
+OUTPUT_DIR = '../results/'
+# '/home/hesam/Desktop/Files/Game_synthetic/v4.1/results/'
 # '/home/hesam/Desktop/Files/Game_Shelby_County/results_NE/'
 # 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
 # '../results/'
-# 'C:/Users/ht20/Documents/Files/Game_synthetic/v4/results/'
+# 'C:/Users/ht20/Documents/Files/Game_synthetic/v4.1/results/'
 # 'C:/Users/ht20/Documents/Files/Shelby_data_paper/Restoration_results/'
 # FAIL_SCE_PARAM['TOPO']+'/results/'
 
-FILTER_SCE = None
+FILTER_SCE = '../data/damagedElements_sliceQuantile_0.90.csv'
 # '../data/damagedElements_sliceQuantile_0.90.csv'
 
 PAYOFF_DIR = None
@@ -184,9 +183,11 @@ the following items:
 '''
 
 # %%
-FAIL_SCE_PARAM = {'TYPE': "synthetic", 'SAMPLE_RANGE': range(0, 3), 'MAGS': range(0, 100),
-                  'FILTER_SCE': FILTER_SCE, 'TOPO': 'General', 'BASE_DIR': BASE_DIR,
-                  'DAMAGE_DIR': DAMAGE_DIR}
+# FAIL_SCE_PARAM = {'TYPE': "synthetic", 'SAMPLE_RANGE': range(0, 2), 'MAGS': range(0, 100),
+#                   'FILTER_SCE': FILTER_SCE, 'TOPO': 'General', 'BASE_DIR': BASE_DIR,
+#                   'DAMAGE_DIR': DAMAGE_DIR}
+FAIL_SCE_PARAM = {'TYPE':"WU", 'SAMPLE_RANGE':range(50), 'MAGS':range(3),
+                  'FILTER_SCE':FILTER_SCE, 'BASE_DIR':BASE_DIR, 'DAMAGE_DIR':DAMAGE_DIR}
 DYNAMIC_PARAMS = None
 STM_MODEL_DICT = None
 
@@ -224,7 +225,7 @@ method [cite], i.e. when `RES_ALLOC_TYPE` includes at least one of the options *
 '''
 
 # %%
-RC = [0]
+RC = [3]
 LAYERS = [1, 2, 3, 4]
 JUDGE_TYPE = ["OPTIMISTIC"]
 RES_ALLOC_TYPE = ['UNIFORM', 'OPTIMAL']
@@ -269,22 +270,24 @@ uniformed belief, *F* for false consensus bias, and *I* for inverse false consen
 '''
 
 # %%
-# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
-#                     misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS})
+runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
+                    misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS})
 # # # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
 # # #                     misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
 # # # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
 # # #                     res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
 # # #                     output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS,
 # # #                     misc = {'STM_MODEL':STM_MODEL_DICT, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
-# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
-#  					res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-#  					misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-#  					'REDUCED_ACTIONS': 'EDM'})
+print('EDM considers 10 actions')
+print('Cooperation factor is 2')
+runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
+ 					res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+ 					misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+ 					'REDUCED_ACTIONS': 'EDM'})
 runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
  			res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
  			misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
- 					"SIGNALS":{1:'C', 2:'C'}, "BELIEFS":{1:'U', 2:'U'},
+ 					"SIGNALS":{1:'C', 2:'C', 3:'C', 4:'C'}, "BELIEFS":{1:'U', 2:'U', 3:'U', 4:'U'},
  					'REDUCED_ACTIONS':'EDM'})
 
 # %%
@@ -324,7 +327,7 @@ optimal solution.
 COST_TYPES = ['Total']  # 'Under Supply', 'Over Supply'
 REF_METHOD = 'indp'
 METHOD_NAMES = ['indp', 'bgCCUU']
-# 'ng', 'jc', 'dp_indp', 'tdindp', 'bgCCNCIIII',
+# 'ng', 'jc', 'dp_indp', 'tdindp', 'bgNNUU',
 
 COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
                                                         FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
@@ -378,10 +381,13 @@ make output figures:
 '''
 
 # %%
-# plt.close('all')
-# ### Getting back the objects ###
+plt.close('all')
+### Getting back the objects ###
 # import pickle
 # results_dir = '/home/hesam/Desktop/Files/Game_synthetic/v4.1/postprocess/' #OUTPUT_DIR
+# # 'C:/Users/ht20/Documents//Files/Game_synthetic/v4.1/postprocess/'
+# # '/home/hesam/Desktop/Files/Game_synthetic/v4.1/postprocess/'
+
 # with open(results_dir+'postprocess_dicts.pkl', 'rb') as f: #postprocess_dicts
 #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
 #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF, REL_ACTION_DF] = pickle.load(f)
