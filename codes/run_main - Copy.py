@@ -386,14 +386,14 @@ import importlib
 importlib.reload(plots)
 import plots
 
-# results_dir = 'C:/Users/ht20/Documents/Files/Game_synthetic/v4.1/postprocess/'  # OUTPUT_DIR
-# with open(results_dir + 'postprocess_dicts.pkl', 'rb') as f:  # postprocess_dicts
-#     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
-#      ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF, REL_ACTION_DF] = pickle.load(f)
+results_dir = 'C:/Users/ht20/Documents/Files/Game_synthetic/v4.1/postprocess/'  # OUTPUT_DIR
+with open(results_dir + 'postprocess_dicts_EDM10_CF125.pkl', 'rb') as f:  # postprocess_dicts
+    [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
+     ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF, REL_ACTION_DF] = pickle.load(f)
 
-# plots.plot_performance_curves(BASE_DF,
-#                               cost_type='Total', normalize=False, ci=None,
-#                               deaggregate=True, plot_resilience=True)
+plots.plot_performance_curves(BASE_DF,
+                              cost_type='Total', normalize=True, ci=None,
+                              deaggregate=False, plot_resilience=True)
 # [((BASE_DF['decision_type'] == 'indp') | (BASE_DF['decision_type'] == 'ng')) & \
 #                                       (BASE_DF['rationality'] != 'unbounded') & \
 #                                       (BASE_DF['auction_type'] != 'OPTIMAL') & \

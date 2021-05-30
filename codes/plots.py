@@ -174,7 +174,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
     rationality = lambda_df.rationality.unique().tolist()
     layers = lambda_df.layer.unique().tolist()
     topology = lambda_df.topology.unique().tolist()
-    br_level = lambda_df.br_level.unique().tolist()
+    # br_level = lambda_df.br_level.unique().tolist()
     decision_type = lambda_df.decision_type.unique().tolist()
     if 'indp_sample_12Node' in decision_type:
         decision_type.remove('indp_sample_12Node')
@@ -191,8 +191,8 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
         valuation_type.remove('nan')
     row_plot = [judgment_type, 'judgment_type']  # valuation_type
     col_plot = [auction_type, 'auction_type']  # auction_type, topology
-    hue_type = [br_level, 'br_level']  # rationality,decision_type
-    x = 'decision_type'  # 'no_resources'
+    hue_type = [decision_type, 'decision_type']  # rationality,decision_type, br_level
+    x = 'rationality'  # 'no_resources'
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,

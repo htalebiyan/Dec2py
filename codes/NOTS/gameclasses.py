@@ -451,26 +451,32 @@ class NormalGame:
             print('No solution found: switching to pure enumeratiom method')
             gambit_solution = gambit.nash.enumpure_solve(game)
         if len(gambit_solution) == 0:
-            print('No pure Nash equilibrium - both choose randomly')
+            print('No pure Nash equilibrium - players choose actions randomly')
             no_solution = True
         self.solving_time = time.time() - start_time
 
         self.solution = GameSolution(player_list, gambit_solution, action_list)
         # Choose a random action profile when there is no equilibrium
         if no_solution:
-            max_payoff = -1e100
-            while max_payoff == -1e100:
+            min_payoff = -1e100
+            while min_payoff == -1e100:
                 act_profile = random.choice(list(payoff_list.values()))
-                max_payoff = max([x[1] for x in act_profile.values()])
+                min_payoff = min([x[1] for x in act_profile.values()])
             self.solution.sol = {0: {}}
             for l in player_list:
                 self.solution.sol[0]['P' + str(l) + ' payoff'] = act_profile[l][1]
                 act_profile_coorected = ()
-                for x in act_profile[l][0]:
-                    y = list(x)
-                    y[1] = l
-                    x = tuple(y)
-                    act_profile_coorected += (x,)
+                if act_profile[l][0] == ('NA',l[1]):
+                    act_profile_coorected = (('NA',l))
+                else:
+                    for x in act_profile[l][0]:
+                        try:
+                            y = list(x)
+                            y[1] = l
+                            x = tuple(y)
+                        except TypeError:
+                            x = ('OA',l)
+                        act_profile_coorected += (x,)
                 self.solution.sol[0]['P' + str(l) + ' actions'] = [act_profile_coorected]
                 self.solution.sol[0]['P' + str(l) + ' action probs'] = [1.0]
             self.solution.sol[0]['total cost'] = -sum([x[1] for x in act_profile.values()])

@@ -6,34 +6,34 @@ folder = 'C:/Users/ht20/Documents/Files/Game_synthetic/v4.1/postprocess/'
 # 'C:/Users/ht20/Documents/Files/Game_synthetic/v4.1/postprocess/'
 # '/home/hesam/Desktop/Files/Game_synthetic/v4.1/postprocess/'
 
-df1 = pd.read_pickle(folder+'postprocess_dicts_EDM10.pkl')
-df2 = pd.read_pickle(folder+'postprocess_dicts_EDM20.pkl')
+df1 = pd.read_pickle(folder + 'postprocess_dicts_EDM10_CF125.pkl')
+df2 = pd.read_pickle(folder + 'postprocess_dicts_BAYESGAME_bgCCUU_EDM10_OPTIMALandUNIFORM_CF125.pkl')
 
 for i in [2, 4, 5, 6, 7, 9, 10]:
     # df1[i].loc[:, 'topology'] = 'general'
     # df1[i].loc[df1[i]['decision_type']=='ng', 'rationality'] = 'unbounded'
     # df1[i].loc[df1[i]['decision_type']=='indp', 'rationality'] = 'optimal'
-    # df2[i].loc[:, 'topology'] = 'general'
-    # df2[i].loc[df2[i]['decision_type']=='bgNNUU', 'rationality'] = 'bounded'
-    # df2[i].loc[df2[i]['decision_type']=='indp', 'rationality'] = 'optimal'
+    df2[i].loc[:, 'topology'] = 'general'
+    df2[i].loc[df2[i]['decision_type'] == 'bgCCUU', 'rationality'] = 'bounded'
+    df2[i].loc[df2[i]['decision_type'] == 'indp', 'rationality'] = 'optimal'
 
-
-    df1[i].loc[:, 'br_level'] = 'Max 12'
-    df2[i].loc[:, 'br_level'] = 'Max 22'
+    # df1[i].loc[:, 'br_level'] = 'Max 12'
+    # df2[i].loc[:, 'br_level'] = 'Max 22'
 for i in [0, 1, 3, 8]:
     for x in df2[i]:
         if x not in df1[i]:
             df1[i].append(x)
 
 for i in [2, 4, 5, 6, 7, 10]:
-    df1[i] = pd.concat([df1[i],df2[i]]).drop_duplicates().reset_index(drop=True)
+    df1[i] = pd.concat([df1[i], df2[i]]).drop_duplicates().reset_index(drop=True)
 
-df1[9] = pd.concat([df1[9],df2[9]]).drop_duplicates(subset=df1[9].columns.difference(['no_payoffs'])).reset_index(drop=True)
+df1[9] = pd.concat([df1[9], df2[9]]).drop_duplicates(subset=df1[9].columns.difference(['no_payoffs'])).reset_index(
+    drop=True)
 
-with open(folder+'postprocess_dicts.pkl', 'wb') as f:
+with open(folder + 'postprocess_dicts_EDM10_CF125.pkl', 'wb') as f:
     pickle.dump(df1, f)
 
-########-----------------------------------------------------------------------
+####---------------------------------------------------------------------------------------------------------
 # config_list_folder = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4/GeneralNetworks/'
 # data = pd.read_csv(config_list_folder+'List_of_Configurations.txt',
 #                  header=0, sep="\t")
@@ -62,4 +62,3 @@ with open(folder+'postprocess_dicts.pkl', 'wb') as f:
 # # ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 
 # # comp_df.columns
-
