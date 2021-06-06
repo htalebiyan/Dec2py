@@ -37,8 +37,8 @@ def plot_performance_curves(df, cost_type='Total', ci=None, normalize=False, dea
     """
     #: Make lists
     no_resources = df.no_resources.unique().tolist()
-    rationality = df.rationality.unique().tolist()
-    topology = df.topology.unique().tolist()
+    # rationality = df.rationality.unique().tolist()
+    # topology = df.topology.unique().tolist()
     decision_type = df.decision_type.unique().tolist()
     judgment_type = df.judgment_type.unique().tolist()
     if 'nan' in judgment_type:
@@ -51,10 +51,10 @@ def plot_performance_curves(df, cost_type='Total', ci=None, normalize=False, dea
         valuation_type.remove('nan')
     time = len(df['t'].unique().tolist())
 
-    row_plot = [topology, 'topology']  # valuation_type
-    col_plot = [auction_type, 'auction_type']  # no_resources, judgment_type, topology
+    row_plot = [judgment_type, 'judgment_type']  # valuation_type, topology
+    col_plot = [judgment_type, 'judgment_type']  # no_resources, judgment_type, topology
     hue_type = [decision_type, 'decision_type']  # auction_type, rationality
-    style_type = 'rationality'  # decision_type
+    style_type = 'decision_type'  # decision_type, rationality
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
@@ -175,6 +175,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
     layers = lambda_df.layer.unique().tolist()
     topology = lambda_df.topology.unique().tolist()
     # br_level = lambda_df.br_level.unique().tolist()
+    # cf_level = lambda_df.cf_level.unique().tolist()
     decision_type = lambda_df.decision_type.unique().tolist()
     if 'indp_sample_12Node' in decision_type:
         decision_type.remove('indp_sample_12Node')
@@ -191,7 +192,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
         valuation_type.remove('nan')
     row_plot = [judgment_type, 'judgment_type']  # valuation_type
     col_plot = [auction_type, 'auction_type']  # auction_type, topology
-    hue_type = [decision_type, 'decision_type']  # rationality,decision_type, br_level
+    hue_type = [decision_type, 'decision_type']  # rationality,decision_type, br_level, cf_level
     x = 'rationality'  # 'no_resources'
     # Initialize plot properties
     dpi = 300
@@ -206,7 +207,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
                                        (lambda_df[col_plot[1]] == 'nan')) & \
                                       ((lambda_df[row_plot[1]] == val_r) | \
                                        (lambda_df[row_plot[1]] == 'nan'))]
-            with sns.color_palette("Reds", 5):  # sns.color_palette("RdYlGn", 8)
+            with sns.color_palette("Reds", 5):  # sns.color_palette("Set2")
                 sns.barplot(x=x, y='lambda_' + lambda_type,
                             hue=hue_type[1], linewidth=0.5,
                             data=selected_data[(selected_data['layer'] == layer)],
@@ -225,7 +226,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
                     ax.set_ylabel('')
                 ax.xaxis.set_label_position('bottom')
                 # ax.set_xlabel(r'$\lambda_U$')
-                # ax.set_xlim(-1.5, 0)
+                # ax.set_xlim(-1, 0)
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_legend_labels(labels)
     fig.legend(handles, labels, loc='lower right', bbox_to_anchor=(0.75, 0.1),
@@ -770,11 +771,11 @@ def plot_ne_cooperation(df, x='t', ci=None):
                 ne_data = pd.melt(ne_data, id_vars=id_vars, value_vars=value_vars,
                                   var_name='Cooperation Status')
                 ne_data['Decision Type'] = np.where((ne_data['Cooperation Status'] == 'cooperative') | \
-                                             (ne_data['Cooperation Status'] == 'partially_cooperative') | \
-                                             (ne_data['Cooperation Status'] == 'OA') | \
-                                             (ne_data['Cooperation Status'] == 'NA') | \
-                                             (ne_data['Cooperation Status'] == 'NA_possible'),
-                                             ne_data['decision_type'], 'Optimal')
+                                                    (ne_data['Cooperation Status'] == 'partially_cooperative') | \
+                                                    (ne_data['Cooperation Status'] == 'OA') | \
+                                                    (ne_data['Cooperation Status'] == 'NA') | \
+                                                    (ne_data['Cooperation Status'] == 'NA_possible'),
+                                                    ne_data['decision_type'], 'Optimal')
                 ne_data = ne_data.replace(['opt_cooperative', 'opt_partially_cooperative',
                                            'opt_OA', 'opt_NA', 'opt_NA_possible'],
                                           ['cooperative', 'partially_cooperative', 'OA',
@@ -863,7 +864,7 @@ def plot_relative_actions(df, act_types=None):
                 # ax.xaxis.set_label_position('bottom')
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='lower left', bbox_to_anchor=(.15, .9),
+    fig.legend(handles, labels, loc='lower left', bbox_to_anchor=(.23, .9),
                frameon=True, framealpha=.75, ncol=len(hue_type[0]), fontsize='x-small')
     # _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
     # for idx, ax in enumerate(axs_c):

@@ -579,7 +579,20 @@ class NormalGame:
                             new_a += ((y[0], y[1][1]),)
                     ac += (new_a,)
                 self.chosen_equilibrium['solution combination'][idx] = ac
-            self.chosen_equilibrium['full result'].append(self.flow_problem(ac)[1])
+            try:
+                self.chosen_equilibrium['full result'].append(self.flow_problem(ac)[1])
+            except TypeError:
+                print('Infeasible chosen equilibrium. Set NE to no actions.')
+                ac = ()
+                for x in included_palyers:
+                    ac += (('NA', x[1]),)
+                    self.chosen_equilibrium['P' + str(x) + ' actions'] = [('NA', x[1])]
+                    self.chosen_equilibrium['P' + str(x) + ' payoff'] = 0
+                self.chosen_equilibrium['full result'].append(self.flow_problem(ac)[1])
+                self.chosen_equilibrium['solution combination'][idx] = ac
+                tc = self.chosen_equilibrium['full result'][0].results[0]['costs']['Total']
+                self.chosen_equilibrium['total cost'] = tc
+
         if len(self.chosen_equilibrium['full result']) == 1 and not preferred_players:
             original_tc = self.chosen_equilibrium['total cost']
             re_comp_tc = self.chosen_equilibrium['full result'][0].results[0]['costs']['Total']

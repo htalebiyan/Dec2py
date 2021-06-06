@@ -6,8 +6,8 @@ from math import pi
 import scikit_posthocs as sp
 
 sns.set(style='darkgrid', font_scale=1)
-# plt.rc('text', usetex=True)
-# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 plt.close('all')
 
 
@@ -78,7 +78,7 @@ def correct_legend_labels(labels):
 
 
 '''Plot results'''
-[corr, sens_perf, delta_dict_perf, anova_perf] = pd.read_pickle('postprocess_dicts_sens_synth_EDM10.pkl')
+[corr, sens_perf, delta_dict_perf, anova_perf] = pd.read_pickle('postprocess_dicts_sens_synth.pkl')
 
 for idx, r in sens_perf.iterrows():
     sens_perf.loc[idx, "Decision/Res. Alloc."] = correct_legend_labels([r["decision"]])[0] + '\n' + r["auction"]
@@ -86,23 +86,23 @@ for idx, r in corr.iterrows():
     corr.loc[idx, "Decision/Res. Alloc."] = correct_legend_labels([r["decision_type"]])[0] + '-' + r["auction_type"]
 
 '''Radar plot'''
-sens_perf_pivot = sens_perf.pivot_table(values='rank_corrected', index='config_param', columns='Decision/Res. Alloc.')
-sens_perf_pivot.reset_index()
-plot_radar(sens_perf_pivot, sens_perf_pivot.index.values, sens_perf_pivot.columns, suffix='performance')
-print(sens_perf_pivot.mean(axis=1))
+# sens_perf_pivot = sens_perf.pivot_table(values='rank_corrected', index='config_param', columns='Decision/Res. Alloc.')
+# sens_perf_pivot.reset_index()
+# plot_radar(sens_perf_pivot, sens_perf_pivot.index.values, sens_perf_pivot.columns, suffix='performance')
+# print(sens_perf_pivot.mean(axis=1))
 
 '''Correlation plot'''
-sns.set(font_scale=1.2)
-dpi = 300
-corr['config param'] = corr['config_param'].replace({' No. Nodes': r'$N$', ' Interconnection Prob': r'$P_i$',
-                                                     ' Damage Prob': r'$P_d$', ' Resource Cap ': r'$R_c$'})
-for y in corr.y.unique():
-    corr_fig = corr[(corr['y'] == y) & (corr['pearson_corr'] != 'nan')]
-    corr_fig = corr_fig.pivot_table(values='pearson_corr', index='Decision/Res. Alloc.', columns='config param')
-    plt.figure(figsize=[1500 / dpi, 1000 / dpi])
-    ax = sns.heatmap(corr_fig, annot=False, fmt="1.2f", vmin=-1, vmax=1,
-                     cmap="RdYlGn")
-    plt.savefig('corr_' + y + '.png', dpi=dpi, bbox_inches='tight')
+# sns.set(font_scale=1.2)
+# dpi = 300
+# corr['config param'] = corr['config_param'].replace({' No. Nodes': r'$N$', ' Interconnection Prob': r'$P_i$',
+#                                                      ' Damage Prob': r'$P_d$', ' Resource Cap ': r'$R_c$'})
+# for y in corr.y.unique():
+#     corr_fig = corr[(corr['y'] == y) & (corr['pearson_corr'] != 'nan')]
+#     corr_fig = corr_fig.pivot_table(values='pearson_corr', index='Decision/Res. Alloc.', columns='config param')
+#     plt.figure(figsize=[1500 / dpi, 1000 / dpi])
+#     ax = sns.heatmap(corr_fig, annot=False, fmt="1.2f", vmin=-1, vmax=1,
+#                      cmap="RdYlGn")
+#     plt.savefig('corr_' + y + '.png', dpi=dpi, bbox_inches='tight')
 
 '''Line plot'''
 # plt.figure()
@@ -110,46 +110,90 @@ for y in corr.y.unique():
 #              markers=True, dashes=False, data=sens_perf)
 # plt.show()
 
-'''Bar plot'''
-plt.figure()
-c = 1
-for row in sens_perf.decision.unique():
-    for col in sens_perf.auction.unique():
-        plt.subplot(3, 4, c)
-        c += 1
-        data = sens_perf[(sens_perf['decision'] == row) & (sens_perf['auction'] == col)]
-        plt.bar(x=data['config_param'], height=data['delta'], yerr=data['delta_CI'], capsize=6)
-        plt.title(data["Decision/Res. Alloc."].unique())
-        xmin, xmax, ymin, ymax = plt.axis()
-        plt.ylim(0.05, ymax)
-plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.35,
-                    wspace=0.35)
-plt.show()
+'''anova bar plot'''
+# plt.figure()
+# c = 1
+# for row in sens_perf.decision.unique():
+#     for col in sens_perf.auction.unique():
+#         plt.subplot(3, 4, c)
+#         c += 1
+#         data = sens_perf[(sens_perf['decision'] == row) & (sens_perf['auction'] == col)]
+#         plt.bar(x=data['config_param'], height=data['delta'], yerr=data['delta_CI'], capsize=6)
+#         plt.title(data["Decision/Res. Alloc."].unique())
+#         xmin, xmax, ymin, ymax = plt.axis()
+#         plt.ylim(0.05, ymax)
+# plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.35,
+#                     wspace=0.35)
 
-'''Violin plot'''
-plt.figure()
-c = 1
-for name, val in delta_dict_perf.items():
-    plt.subplot(3, 4, c)
-    c += 1
-    df = pd.melt(val, id_vars=[], value_vars=val.columns)
-    sns.violinplot(x="variable", y="value", data=df)
-    plt.title(name)
-    xmin, xmax, ymin, ymax = plt.axis()
-    plt.ylim(0.05, ymax)
-plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.35,
-                    wspace=0.35)
-plt.show()
-plt.figure()
-c = 1
-for name, val in anova_perf.items():
-    plt.subplot(3, 4, c)
-    plt.title(name)
-    c += 1
-    df = val['posthoc_matrix']
-    heatmap_args = {'linewidths': 0.1, 'linecolor': '0.5', 'clip_on': False,
-                    'square': True, 'cbar_ax_bbox': [0.01, 0.35, 0.04, 0.3]}
-    sp.sign_plot(df, **heatmap_args)
-plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.35,
-                    wspace=0.35)
-plt.show()
+''' posthoc plot'''
+# plt.figure()
+# c = 1
+# for name, val in delta_dict_perf.items():
+#     plt.subplot(3, 4, c)
+#     c += 1
+#     df = pd.melt(val, id_vars=[], value_vars=val.columns)
+#     sns.violinplot(x="variable", y="value", data=df)
+#     plt.title(name)
+#     xmin, xmax, ymin, ymax = plt.axis()
+#     plt.ylim(0.05, ymax)
+# plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.35,
+#                     wspace=0.35)
+# plt.show()
+# plt.figure()
+# c = 1
+# for name, val in anova_perf.items():
+#     plt.subplot(3, 4, c)
+#     plt.title(name)
+#     c += 1
+#     df = val['posthoc_matrix']
+#     heatmap_args = {'linewidths': 0.1, 'linecolor': '0.5', 'clip_on': False,
+#                     'square': True, 'cbar_ax_bbox': [0.01, 0.35, 0.04, 0.3]}
+#     sp.sign_plot(df, **heatmap_args)
+# plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.35,
+#                     wspace=0.35)
+
+''' Layer Topology '''
+config_list_folder = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/GeneralNetworks/'
+config_data = pd.read_csv(config_list_folder + 'List_of_Configurations.txt', header=0, sep="\t")
+config_data = config_data.assign(topology='general')
+
+results_folder = 'C:/Users/ht20/Documents/Files/Game_synthetic/v4.1/postprocess/'
+dfs = pd.read_pickle(results_folder + 'postprocess_dicts_EDM10.pkl')
+comp_df = pd.merge(dfs[4], config_data, left_on=['Magnitude'], right_on=['Config Number'])
+comp_df['lambda_U'] = pd.to_numeric(comp_df['lambda_U'], errors='coerce')
+for idx, row in comp_df.iterrows():
+    params = comp_df.loc[idx, ' Topology Parameter'].split(',')
+    if row['layer'] == 1:
+        comp_df.loc[idx, 'Topo.'] = comp_df.loc[idx, ' Net Types'][2]
+        comp_df.loc[idx, 'Topo. Param'] = float(params[0][1:])
+    elif row['layer'] == 2:
+        comp_df.loc[idx, 'Topo.'] = comp_df.loc[idx, ' Net Types'][-3]
+        comp_df.loc[idx, 'Topo. Param'] = float(params[1][:-1])
+
+layer_topo = comp_df[~pd.isnull(comp_df['Topo.']) & ~pd.isnull(comp_df['lambda_U'])]
+layer_topo = layer_topo.replace({'r': 'Random', 's': 'Scale Free', 'g': 'Grid', 't': 'Tree', 'm': 'MPG'})
+layer_topo = layer_topo.replace({'ng': 'N-INRG', 'bgNNUU': 'B-INRG-nn', 'bgCNUU': 'B-INRG-cn',
+                                 'bgNCUU': 'B-INRG-nc', 'bgCCUU': 'B-INRG-cc'})
+layer_topo = layer_topo.rename(columns={'lambda_U': 'lambda U', 'decision_type': 'decision type'})
+fig_df = layer_topo[(layer_topo['lambda U'] > -20) & (layer_topo['rationality'] != 'unbounded')]
+# & (layer_topo['auction_type'] == 'UNIFORM')
+
+my_dpi = 300
+plt.figure(figsize=(1600 / my_dpi, 1600 / my_dpi), dpi=my_dpi)
+pal = sns.color_palette('Set1')
+with pal:
+    ax = sns.boxplot(x="decision type", y="lambda U", hue="Topo.", data=fig_df,
+                     fliersize=.1, showfliers=True, linewidth=.5)
+    ax.set_ylabel(r'$\lambda_U$ of a single layer')
+    ax.set_xlabel('Decision Type')
+    ax.set_ylim(-3, 0.5)
+plt.savefig('topo_sens.png', dpi=my_dpi, bbox_inches="tight")
+
+# with pal:
+#     g = sns.lmplot(x=' Resource Cap ', y='lambda U', hue="decision type", col='Topo.', data=fig_df,
+#                    lowess=True, scatter_kws={"s": 3}, sharex=False, height=6, aspect=1,
+#                    scatter=True)  #, col='Topo.'
+#     for ax in g.axes.flat:
+#         ax.set_ylabel(r'$\lambda_U$')
+#         ax.set_xlabel(r'$R_c$')
+#     g.set(ylim=(-2.5, 0))

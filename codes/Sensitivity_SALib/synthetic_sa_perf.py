@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from SALib.analyze import delta
@@ -7,22 +8,17 @@ import scipy.stats as ss
 import statsmodels.api as sa
 import scikit_posthocs as sp
 
-''' read and add configuration data'''
+# %% read and add configuration data
 config_list_folder = 'C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/GeneralNetworks/'
 config_data = pd.read_csv(config_list_folder + 'List_of_Configurations.txt', header=0, sep="\t")
 config_data = config_data.assign(topology='general')
 
 results_folder = 'C:/Users/ht20/Documents/Files/Game_synthetic/v4.1/postprocess/'
-dfs = pd.read_pickle(results_folder + 'postprocess_dicts_EDM20.pkl')
+dfs = pd.read_pickle(results_folder + 'postprocess_dicts_EDM10.pkl')
 comp_df = pd.merge(dfs[4], config_data, left_on=['Magnitude'], right_on=['Config Number'])
 comp_df['lambda_U'] = pd.to_numeric(comp_df['lambda_U'], errors='coerce')
-comp_df['T1'] = 0
-comp_df['T2'] = 0
-for idx, row in comp_df.iterrows():
-    comp_df.loc[idx, 'T1'] = comp_df.loc[idx, ' Net Types'][2]
-    comp_df.loc[idx, 'T2'] = comp_df.loc[idx, ' Net Types'][-3]
 
-'''Compute sensitivity'''
+# %% Compute sensitivity
 sens_perf = pd.DataFrame(columns=['config_param', 'auction', 'decision', 'delta', 'delta_CI'])
 delta_dict_perf = {}
 decision_types = ['ng', 'bgCCUU', 'bgCNUU', 'bgNCUU', 'bgNNUU']
@@ -51,7 +47,7 @@ for decision in decision_types:
         delta_dict_perf[auc, decision] = pd.DataFrame.from_dict(
             {x: delta_perf['delta_vec'][idx] for idx, x in enumerate(delta_perf['names'])})
 
-'''Compute correlation '''
+# %% Compute correlation
 col = "auction_type"
 row = "decision_type"
 params = [' No. Nodes', ' Interconnection Prob', ' Damage Prob', ' Resource Cap ']
@@ -66,14 +62,14 @@ for r in decision_types:
             corr = corr.append({'y': "lambda_U", 'config_param': x, col: c, row: r, 'pearson_corr': pc,
                                 'p_value': p}, ignore_index=True)
 
-''' compute ranking '''
+# %%  compute ranking
 sens_perf.loc[:, 'delta_CI/delta'] = sens_perf['delta_CI'] / sens_perf['delta']
 for decision in decision_types:
     for auc in auction_types:
         cond = (sens_perf['decision'] == decision) & (sens_perf['auction'] == auc)
         sens_perf.loc[cond, 'rank'] = sens_perf.loc[cond, 'delta'].rank(method='average', ascending=False)
 
-''' ANOVA and posthoc tests'''
+# %%  ANOVA and posthoc tests
 anova_perf = {}
 for decision in decision_types:
     for auc in auction_types:
@@ -83,8 +79,8 @@ for decision in decision_types:
         ph = sp.posthoc_conover(df, val_col='value', group_col='variable', p_adjust='holm')
         anova_perf[auc, decision] = {'anova_p': p, 'posthoc_matrix': ph}
 
-''' Manually correct ranks'''
-# corrected = pd.read_csv('Results_perf.csv')
-# sens_perf['rank_corrected'] = corrected['rank_corrected']
-# with open('postprocess_dicts_sens_synth.pkl', 'wb') as f:
-#     pickle.dump([corr, sens_perf, delta_dict_perf, anova_perf], f)
+# %%  Manually correct ranks
+corrected = pd.read_csv('Results_perf.csv')
+sens_perf['rank_corrected'] = corrected['rank_corrected']
+with open('postprocess_dicts_sens_synth.pkl', 'wb') as f:
+    pickle.dump([corr, sens_perf, delta_dict_perf, anova_perf], f)

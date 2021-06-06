@@ -45,15 +45,15 @@ def run_parallel(i):
     misc = {'PAYOFF_DIR': payoff_dir, 'DYNAMIC_PARAMS': dynamic_params_dir,
             'REDUCED_ACTIONS': 'EDM'}
 
-    runutils.run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir,
-                        misc={'DYNAMIC_PARAMS': dynamic_params_dir})
+    # runutils.run_method(fail_sce_param, rc, layers, method='INDP', output_dir=output_dir,
+    #                     misc={'DYNAMIC_PARAMS': dynamic_params_dir})
     # runutils.run_method(fail_sce_param, rc, layers, method='TD_INDP', output_dir=output_dir, 
     # misc = {'DYNAMIC_PARAMS':dynamic_params_dir})
 
-    runutils.run_method(fail_sce_param, rc, layers, method='NORMALGAME', judgment_type=judge_type,
-                        res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
-                        misc=misc)
-    for sig in [{1: 'C', 2: 'C', 3: 'C', 4: 'C'}]:  # {x:'N' for x in layers}
+    # runutils.run_method(fail_sce_param, rc, layers, method='NORMALGAME', judgment_type=judge_type,
+    #                     res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
+    #                     misc=misc)
+    for sig in [{1: 'C', 2: 'C', 3: 'N', 4: 'C'}]:  # {x:'N' for x in layers}
         misc["SIGNALS"] = sig
         misc["BELIEFS"] = {1: 'U', 2: 'U', 3: 'U', 4: 'U'}
         runutils.run_method(fail_sce_param, rc, layers, method='BAYESGAME', judgment_type=judge_type,
