@@ -7,9 +7,9 @@ squeue -u ht20
 +++++++++Zip folder
 tar czvf /scratch/ht20/results.tar.gz /scratch/ht20/results
 +++++++++Unzip folder
-tar xf /scratch/ht20/results_NE_only_objs.tar.gz --directory=/scratch/ht20/
+tar xf /scratch/ht20/indp_shelby.tar.gz --directory=/scratch/ht20/
 tar xf /scratch/ht20/damages_data_shelby_old.tar.gz --directory=/scratch/ht20/
-tar xf /scratch/ht20/Generated_Network_Dataset_v4.tar.gz --directory=/scratch/ht20/
+tar xf /scratch/ht20/Generated_Network_Dataset_v4.1.tar.gz --directory=/scratch/ht20/
 +++++++++Install Gurobi
 module load GCC/8.3.0 OpenMPI/3.1.4 Python/3.7.0
 module load Gurobi/8.1.1

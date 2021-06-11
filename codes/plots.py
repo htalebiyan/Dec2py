@@ -52,8 +52,8 @@ def plot_performance_curves(df, cost_type='Total', ci=None, normalize=False, dea
     time = len(df['t'].unique().tolist())
 
     row_plot = [judgment_type, 'judgment_type']  # valuation_type, topology
-    col_plot = [judgment_type, 'judgment_type']  # no_resources, judgment_type, topology
-    hue_type = [decision_type, 'decision_type']  # auction_type, rationality
+    col_plot = [no_resources, 'no_resources']  # no_resources, judgment_type, topology
+    hue_type = [auction_type, 'auction_type']  # auction_type, rationality
     style_type = 'decision_type'  # decision_type, rationality
     # Initialize plot properties
     dpi = 300
@@ -171,9 +171,9 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
     '''
     #: Make lists
     no_resources = lambda_df.no_resources.unique().tolist()
-    rationality = lambda_df.rationality.unique().tolist()
+    # rationality = lambda_df.rationality.unique().tolist()
     layers = lambda_df.layer.unique().tolist()
-    topology = lambda_df.topology.unique().tolist()
+    # topology = lambda_df.topology.unique().tolist()
     # br_level = lambda_df.br_level.unique().tolist()
     # cf_level = lambda_df.cf_level.unique().tolist()
     decision_type = lambda_df.decision_type.unique().tolist()
@@ -190,10 +190,10 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
     valuation_type = lambda_df.valuation_type.unique().tolist()
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
-    row_plot = [judgment_type, 'judgment_type']  # valuation_type
+    row_plot = [no_resources, 'no_resources']  # valuation_type
     col_plot = [auction_type, 'auction_type']  # auction_type, topology
     hue_type = [decision_type, 'decision_type']  # rationality,decision_type, br_level, cf_level
-    x = 'rationality'  # 'no_resources'
+    x = 'no_resources'  # 'no_resources', 'rationality'
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
@@ -207,30 +207,36 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
                                        (lambda_df[col_plot[1]] == 'nan')) & \
                                       ((lambda_df[row_plot[1]] == val_r) | \
                                        (lambda_df[row_plot[1]] == 'nan'))]
-            with sns.color_palette("Reds", 5):  # sns.color_palette("Set2")
+            with sns.color_palette("Reds", len(hue_type[0])): #sns.color_palette("Set2"):
                 sns.barplot(x=x, y='lambda_' + lambda_type,
                             hue=hue_type[1], linewidth=0.5,
                             data=selected_data[(selected_data['layer'] == layer)],
                             edgecolor=[.25, .25, .25], capsize=.05,
                             errcolor=[.25, .25, .25], errwidth=1, ax=ax)
+                # sns.barplot(x='layer', y='lambda_' + lambda_type,
+                #             hue='decision_type', linewidth=0.5,
+                #             data=selected_data[(selected_data['layer'] != 'nan') & \
+                #                                (selected_data['decision_type'] != 'ng')],
+                #             edgecolor=[.25, .25, .25], capsize=.05,
+                #             errcolor=[.25, .25, .25], errwidth=1, ax=ax)
                 # sns.histplot(data=selected_data[(selected_data['layer'] == layer)], x='lambda_' + lambda_type,
                 #              hue=hue_type[1], element="poly", stat="probability", ax=ax)
                 ax.get_legend().set_visible(False)
 
-                # ax.set_xlabel(r'$R_c$')
-                if idx_r != len(valuation_type) - 1:
-                    ax.set_xlabel('')
+                ax.set_xlabel(r'$R_c$')
+                # if idx_r != len(valuation_type) - 1:
+                #     ax.set_xlabel('')
                 # ax.set_ylabel(r'E[$\lambda_{%s}$], $%s$' % (lambda_type, row_plot[0][idx_r]))
                 ax.set_ylabel(r'E[$\lambda_{%s}$]' % lambda_type)
                 if idx_c != 0:
                     ax.set_ylabel('')
                 ax.xaxis.set_label_position('bottom')
                 # ax.set_xlabel(r'$\lambda_U$')
-                # ax.set_xlim(-1, 0)
+                # ax.set_xlim(-5, 0)
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='lower right', bbox_to_anchor=(0.75, 0.1),
-               frameon=True, framealpha=.75, ncol=1, fontsize='x-small')
+    fig.legend(handles, labels, loc='lower right', bbox_to_anchor=(0.9, 0.1),
+               frameon=True, framealpha=.75, ncol=1, fontsize='xx-small')
     _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
         corrected_label = correct_legend_labels([col_plot[0][idx]])[0]
@@ -665,8 +671,8 @@ def plot_ne_analysis(df, x='t', ci=None):
     '''
     #: Make lists
     no_resources = df.no_resources.unique().tolist()
-    rationality = df.rationality.unique().tolist()
-    topology = df.topology.unique().tolist()
+    # rationality = df.rationality.unique().tolist()
+    # topology = df.topology.unique().tolist()
     decision_type = df.decision_type.unique().tolist()
     judgment_type = df.judgment_type.unique().tolist()
     if 'nan' in judgment_type:
@@ -681,7 +687,7 @@ def plot_ne_analysis(df, x='t', ci=None):
     row_plot = ['action_similarity', 'payoff_ratio', 'no_ne']  # , 'total_cost_ratio'
     col_plot = [auction_type, 'auction_type']  # no_resources, judgment_type, topology
     hue_type = [decision_type, 'decision_type']  # auction_type, rationality
-    style_type = 'rationality'  # decision_type
+    style_type = 'no_resources'  # decision_type, rationality
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot), len(col_plot[0]), sharex=True, sharey='row',
@@ -729,8 +735,8 @@ def plot_ne_cooperation(df, x='t', ci=None):
 
     '''
     #: Make lists
-    rationality = df.rationality.unique().tolist()
-    topology = df.topology.unique().tolist()
+    # rationality = df.rationality.unique().tolist()
+    # topology = df.topology.unique().tolist()
     no_resources = df.no_resources.unique().tolist()
     decision_type = df.decision_type.unique().tolist()
     judgment_type = df.judgment_type.unique().tolist()
@@ -839,11 +845,11 @@ def plot_relative_actions(df, act_types=None):
     col_plot = act_types
     row_plot = [auction_type, 'auction_type']  # valuation_type, topology
     hue_type = [decision_type, 'decision_type']  # rationality,decision_type
-    x = 'rationality'  # 'no_resources'
+    x = 'no_resources'  # 'no_resources', rationality
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot), sharex=True,
-                            sharey=True, figsize=(3000 / dpi, 1600 / dpi))
+                            sharey='row', figsize=(3000 / dpi, 1600 / dpi))
     for idx_c, val_c in enumerate(col_plot):
         for idx_r, val_r in enumerate(row_plot[0]):
             ax, _, _ = find_ax(axs, row_plot[0], col_plot, idx_r, idx_c)

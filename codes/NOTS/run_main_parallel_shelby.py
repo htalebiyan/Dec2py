@@ -36,7 +36,7 @@ def run_parallel(i):
     fail_sce_param = {"TYPE": "WU", "SAMPLE_RANGE": range(sample_no, sample_no + 1),
                       "MAGS": range(mag_no, mag_no + 1), 'FILTER_SCE': filter_sce,
                       'BASE_DIR': base_dir, 'DAMAGE_DIR': damage_dir}
-    rc = [3, 6]  # [3,6,8,12]
+    rc = [8, 12]  # [3,6,8,12]
     layers = [1, 2, 3, 4]
     judge_type = ["OPTIMISTIC"]  # OPTIMISTIC #'DET-DEMAND' #PESSIMISTIC
     res_alloc_type = ["OPTIMAL", 'UNIFORM']  # "MDA", "MAA", "MCA", 'UNIFORM' "OPTIMAL"
@@ -53,7 +53,7 @@ def run_parallel(i):
     # runutils.run_method(fail_sce_param, rc, layers, method='NORMALGAME', judgment_type=judge_type,
     #                     res_alloc_type=res_alloc_type, valuation_type=val_type, output_dir=output_dir,
     #                     misc=misc)
-    for sig in [{1: 'C', 2: 'C', 3: 'N', 4: 'C'}]:  # {x:'N' for x in layers}
+    for sig in [{1: 'N', 2: 'N', 3: 'N', 4: 'N'}, {1: 'C', 2: 'C', 3: 'N', 4: 'C'}]:  # {x:'N' for x in layers}
         misc["SIGNALS"] = sig
         misc["BELIEFS"] = {1: 'U', 2: 'U', 3: 'U', 4: 'U'}
         runutils.run_method(fail_sce_param, rc, layers, method='BAYESGAME', judgment_type=judge_type,
