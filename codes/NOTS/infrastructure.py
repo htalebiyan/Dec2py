@@ -892,16 +892,16 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3", topo
                                     net_i = k
                                     j = int(v[1][1])
                                     net_j = kt
-                                    # a = InfrastructureInterdepArc(i, j, net_i, net_j, gamma=1.0)
-                                    # G.G.add_edge((a.source, a.source_layer), (a.dest, a.dest_layer),
-                                    #              data={'inf_data': a})
-                                    import random
-                                    if net_i == 1 and random.uniform(0, 1) > 0.5:
-                                        pass
-                                    else:
-                                        a = InfrastructureInterdepArc(i, j, net_i, net_j, gamma=1.0)
-                                        G.G.add_edge((a.source, a.source_layer), (a.dest, a.dest_layer),
-                                                     data={'inf_data': a})
+                                    a = InfrastructureInterdepArc(i, j, net_i, net_j, gamma=1.0)
+                                    G.G.add_edge((a.source, a.source_layer), (a.dest, a.dest_layer),
+                                                 data={'inf_data': a})
+                                    # import random
+                                    # if net_i == 1 and random.uniform(0, 1) > 0.5:
+                                    #     pass
+                                    # else:
+                                    #     a = InfrastructureInterdepArc(i, j, net_i, net_j, gamma=1.0)
+                                    #     G.G.add_edge((a.source, a.source_layer), (a.dest, a.dest_layer),
+                                    #                  data={'inf_data': a})
                             except:
                                 print('Empty file: ' + file)
     # add subspace data #!!!
