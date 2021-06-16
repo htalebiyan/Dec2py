@@ -207,7 +207,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
                                        (lambda_df[col_plot[1]] == 'nan')) & \
                                       ((lambda_df[row_plot[1]] == val_r) | \
                                        (lambda_df[row_plot[1]] == 'nan'))]
-            with sns.color_palette("Reds", len(hue_type[0])): #sns.color_palette("Set2"):
+            with sns.color_palette("Reds", len(hue_type[0])):  # sns.color_palette("Set2"):
                 sns.barplot(x=x, y='lambda_' + lambda_type,
                             hue=hue_type[1], linewidth=0.5,
                             data=selected_data[(selected_data['layer'] == layer)],
@@ -317,7 +317,7 @@ def plot_auction_allocation(df_res, ci=None):
 
 
 def plot_relative_allocation(gap_res, distance_type='gap'):
-    '''
+    """
     Parameters
     ----------
     gap_res : TYPE
@@ -329,7 +329,7 @@ def plot_relative_allocation(gap_res, distance_type='gap'):
     -------
     None.
 
-    '''
+    """
     #: Make lists
     # no_resources = gap_res.no_resources.unique().tolist()
     layer = gap_res.layer.unique().tolist()
@@ -373,7 +373,7 @@ def plot_relative_allocation(gap_res, distance_type='gap'):
             if idx_r != len(row_plot[0]) - 1:
                 ax.set_xlabel('')
             corrected_label = correct_legend_labels([row_plot[0][idx_r]])[0]
-            ax.set_ylabel(r'$E[\omega^k]$, %s' % (corrected_label))
+            ax.set_ylabel(r'$E[\omega^k]$, %s' % corrected_label)
             if idx_c != 0:
                 ax.set_ylabel('')
             ax.xaxis.set_label_position('bottom')
@@ -879,13 +879,15 @@ def plot_relative_actions(df, act_types=None):
     plt.savefig('Relative_actions.png', dpi=dpi, bbox_inches='tight')
 
 
-def plot_cooperation_gain(df, ref_state, states):
+def plot_cooperation_gain(df, df_time, ref_state, states):
     '''
     This function plots....
     
     Parameters
     ----------
     df : TYPE
+        DESCRIPTION.
+    df_time : TYPE
         DESCRIPTION.
     ref_state : str
         DESCRIPTION.
@@ -942,17 +944,51 @@ def plot_cooperation_gain(df, ref_state, states):
                 else:
                     ax.set_ylabel('')
                 # ax.xaxis.set_label_position('bottom')
-    # legend = ax.get_legend()
-    # handles = legend.legendHandles
-    # labels = legend.get_label()
-    # labels = correct_legend_labels(labels)
-    # fig.legend(handles, labels, loc='lower right', bbox_to_anchor = (0.8,0.16),
-    #             frameon=True, framealpha=.75, ncol=1, fontsize='x-small')
+    legend = ax.get_legend()
+    handles = legend.legendHandles
+    labels = legend.get_label()
+    labels = correct_legend_labels(labels)
+    fig.legend(handles, labels, loc='lower right', bbox_to_anchor=(0.8, 0.16),
+               frameon=True, framealpha=.75, ncol=1, fontsize='small')
     _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
         corrected_label = correct_legend_labels([col_plot[0][idx]])[0]
         ax.set_title(r'%s: %s' % (col_plot[1], corrected_label), fontsize='small')
     plt.savefig('cooperation_gain.png', dpi=dpi, bbox_inches='tight')
+
+    id_vars += ['t']
+    fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
+                            sharey=True, figsize=(3000 / dpi, 2000 / dpi))
+    for idx_c, val_c in enumerate(col_plot[0]):
+        for idx_r, val_r in enumerate(row_plot[0]):
+            ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
+            selected_data = df_time[((df_time[col_plot[1]] == val_c) | (df_time[col_plot[1]] == 'nan')) & \
+                                    ((df_time[row_plot[1]] == val_r) | (df_time[row_plot[1]] == 'nan'))]
+            cg_data = pd.melt(selected_data, id_vars=id_vars, value_vars=value_vars,
+                              var_name='Gain Type')
+            with sns.color_palette():
+                sns.lineplot(x='t', y='value', hue='Gain Type', style='Gain Type', markers=True,
+                             ci=95, data=cg_data, estimator='mean', alpha=1, lw=.5, legend=True,
+                             **{'markersize': 4, 'markeredgewidth': .25}, ax=ax)
+                ax.get_legend().set_visible(False)
+                ax.set_xlabel('')
+                if idx_r == len(row_plot[0]) - 1:
+                    ax.set_xlabel(r'Time Step $t$')
+                if idx_c == 0:
+                    ax.set_ylabel('gained \% unmet demand,' + val_r)
+                else:
+                    ax.set_ylabel('')
+                ax.xaxis.set_ticks(np.arange(0, 11, 1))  # ax.get_xlim()
+                # ax.xaxis.set_label_position('bottom')
+    handles, labels = ax.get_legend_handles_labels()
+    labels = correct_legend_labels(labels)
+    fig.legend(handles, labels, loc='lower right', bbox_to_anchor=(0.5, 0.5),
+               frameon=True, framealpha=.75, ncol=1, fontsize='medium')
+    _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
+    for idx, ax in enumerate(axs_c):
+        corrected_label = correct_legend_labels([col_plot[0][idx]])[0]
+        ax.set_title(r'%s: %s' % (col_plot[1], corrected_label), fontsize='small')
+    plt.savefig('cooperation_gain_time.png', dpi=dpi, bbox_inches='tight')
 
 
 def plot_payoff_hist(df, compute_payoff_numbers=True, outlier=False):
@@ -960,6 +996,8 @@ def plot_payoff_hist(df, compute_payoff_numbers=True, outlier=False):
 
     Parameters
     ----------
+    outlier :
+    compute_payoff_numbers :
     df : TYPE
         DESCRIPTION.
     ci : TYPE, optional
@@ -1075,6 +1113,9 @@ def correct_legend_labels(labels):
     labels = ['B-INRG-cc' if x == 'bgCCUU' else x for x in labels]
     labels = ['Rationality' if x == 'rationality' else x for x in labels]
     labels = ['br_level' if x == 'bounded rationality level' else x for x in labels]
+    labels = [r'nn $\rightarrow$ cc' if x == 'bgNNUU to bgCCUU' else x for x in labels]
+    labels = [r'nn $\rightarrow$ cn' if x == 'bgNNUU to bgCNUU' else x for x in labels]
+    labels = [r'nn $\rightarrow$ nc' if x == 'bgNNUU to bgNCUU' else x for x in labels]
     return labels
 
 

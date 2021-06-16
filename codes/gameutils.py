@@ -301,7 +301,7 @@ def cooperation_gain(base_df, lambda_df, combinations, ref_state, states, lambda
         if idx % (len(combinations) / 10 + 1) == 0:
             dindputils.update_progress(idx + 1, len(combinations))
     dindputils.update_progress(idx + 1, len(combinations))
-    return df_gain, gain_dict_t
+    return df_gain, df_gain_time
 
 
 def compare_sol(opt, ne, layers):
