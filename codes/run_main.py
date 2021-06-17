@@ -62,21 +62,21 @@ not calculated again. Set it to *None* if you don't want to use this option.
 """
 
 # %%
-BASE_DIR = "../data/Extended_Shelby_County/"
+BASE_DIR = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # "../data/Extended_Shelby_County/"
 # 'C:/Users/ht20/Box Sync/Shelby County Database/Node_arc_info'
 # "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
 
-DAMAGE_DIR = "../data/Wu_Damage_scenarios/"
+DAMAGE_DIR = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # ../data/random_disruption_shelby/"
 # "../data/Wu_Damage_scenarios/"
 # "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
 # 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios'
 
-OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Game_Shelby_County/results/'
-# '/home/hesam/Desktop/Files/Game_synthetic/v4.1/results/'
+OUTPUT_DIR = '/home/hesam/Desktop/Files/Game_synthetic/v4.1/results_temp/'
+# '/home/hesam/Desktop/Files/Game_synthetic/v4.1/results_temp/'
 # '/home/hesam/Desktop/Files/Game_Shelby_County/results/'
 # 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
 # '../results/'
@@ -85,7 +85,7 @@ OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Game_Shelby_County/results/'
 # 'C:/Users/ht20/Documents/Files/Shelby_data_paper/Restoration_results/'
 # FAIL_SCE_PARAM['TOPO']+'/results/'
 
-FILTER_SCE = '../data/damagedElements_sliceQuantile_0.90.csv'
+FILTER_SCE = None
 # '../data/damagedElements_sliceQuantile_0.90.csv'
 
 PAYOFF_DIR = None
@@ -184,11 +184,11 @@ the following items:
 '''
 
 # %%
-# FAIL_SCE_PARAM = {'TYPE': "synthetic", 'SAMPLE_RANGE': range(0, 5), 'MAGS': range(0, 100),
-#                   'FILTER_SCE': FILTER_SCE, 'TOPO': 'General', 'BASE_DIR': BASE_DIR,
-#                   'DAMAGE_DIR': DAMAGE_DIR}
-FAIL_SCE_PARAM = {'TYPE': "WU", 'SAMPLE_RANGE': range(50), 'MAGS': range(96),
-                  'FILTER_SCE': FILTER_SCE, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
+FAIL_SCE_PARAM = {'TYPE': "synthetic", 'SAMPLE_RANGE': range(0, 2), 'MAGS': range(0, 100),
+                  'FILTER_SCE': FILTER_SCE, 'TOPO': 'General', 'BASE_DIR': BASE_DIR,
+                  'DAMAGE_DIR': DAMAGE_DIR}
+# FAIL_SCE_PARAM = {'TYPE': "WU", 'SAMPLE_RANGE': range(50), 'MAGS': range(96),
+#                   'FILTER_SCE': FILTER_SCE, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
 DYNAMIC_PARAMS = None
 STM_MODEL_DICT = None
 
@@ -226,7 +226,7 @@ method [cite], i.e. when `RES_ALLOC_TYPE` includes at least one of the options *
 '''
 
 # %%
-RC = [3, 6, 8, 12]
+RC = [0]  # [3, 6, 8, 12]
 LAYERS = [1, 2, 3, 4]
 JUDGE_TYPE = ["OPTIMISTIC"]
 RES_ALLOC_TYPE = ['UNIFORM', 'OPTIMAL']
@@ -288,7 +288,7 @@ print('CF is 2 ')
 # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
 #                     res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
 #                     misc={'PAYOFF_DIR': PAYOFF_DIR, 'DYNAMIC_PARAMS': DYNAMIC_PARAMS,
-#                           "SIGNALS": {1: 'C', 2: 'C', 3: 'N', 4: 'C'}, "BELIEFS": {1: 'U', 2: 'U', 3: 'U', 4: 'U'},
+#                           "SIGNALS": {1: 'N', 2: 'C'}, "BELIEFS": {1: 'U', 2: 'U'},
 #                           'REDUCED_ACTIONS': 'EDM'})
 
 # %%
@@ -321,13 +321,13 @@ compute allocation gaps for different combinations.
 6. `analyze_NE`: analyze the characteristics of Nash equilibria for different combinations.
 7. `relative_actions`: computes the relative usage of different action types compared to the
 optimal solution.
-8. `cooperation_gain`: computes the gain for rach player from chainging thier types.
+8. `cooperation_gain`: computes the gain for each player from chainging thier types.
 '''
 
 # %%
 COST_TYPES = ['Total']  # 'Under Supply', 'Over Supply'
 REF_METHOD = 'indp'
-METHOD_NAMES = ['indp', 'ng', 'bgCCCCUUUU', 'bgNNNNUUUU', 'bgCCNCUUUU']
+METHOD_NAMES = ['indp', 'ng', 'bgCNUU', 'bgNCUU', 'bgNNUU', 'bgCCUU']
 # 'ng', 'jc', 'dp_indp', 'tdindp', 'bgNNUU',
 
 COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
@@ -347,8 +347,9 @@ RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resource_allocation(BASE_DF, COMBS,
 RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
 ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
 REL_ACTION_DF = gameutils.relative_actions(ANALYZE_NE_DF, COMBS)
-# COOP_GAIN = gameutils.cooperation_gain(LAMBDA_DF, COMBS, ref_state = 'bgNNUU',
-#                                         states = ['bgCCUU', 'bgCNUU', 'bgNCUU'])
+
+# COOP_GAIN, COOP_GAIN_TIME = gameutils.cooperation_gain(BASE_DF, LAMBDA_DF, COMBS, ref_state='bgNNUU',
+#                                                         states=['bgCCUU', 'bgCNUU', 'bgNCUU'])
 
 # %%
 ''' 
@@ -383,23 +384,23 @@ make output figures:
 
 # %%
 plt.close('all')
-### Getting back the objects ###
+# ### Getting back the objects ###
 # import pickle
-# results_dir = '/home/hesam/Desktop/Files/Game_synthetic/v4.1/postprocess/' #OUTPUT_DIR
+# results_dir = '/home/hesam/Desktop/Files/Game_synthetic/v4.1/postprocess/'
+# # OUTPUT_DIR
 # # 'C:/Users/ht20/Documents//Files/Game_synthetic/v4.1/postprocess/'
 # # '/home/hesam/Desktop/Files/Game_synthetic/v4.1/postprocess/'
-
-# with open(results_dir+'postprocess_dicts.pkl', 'rb') as f: #postprocess_dicts
+# with open(results_dir+'postprocess_dicts_EDM10.pkl', 'rb') as f: #postprocess_dicts
 #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
 #       ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF, REL_ACTION_DF] = pickle.load(f)
 
-plots.plot_performance_curves(BASE_DF,
-                              cost_type='Total', ci=None,
-                              deaggregate=False, plot_resilience=True)
-plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
-plots.plot_ne_analysis(ANALYZE_NE_DF, ci=None)
-plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=None)
-plots.plot_relative_actions(REL_ACTION_DF)
+# plots.plot_performance_curves(BASE_DF,
+#                               cost_type='Total', ci=None,
+#                               deaggregate=False, plot_resilience=True)
+# plots.plot_relative_performance(LAMBDA_DF, lambda_type='U')
+# plots.plot_ne_analysis(ANALYZE_NE_DF, ci=None)
+# plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=None)
+# plots.plot_relative_actions(REL_ACTION_DF)
 
 # plots.plot_cooperation_gain(COOP_GAIN, ref_state = 'bgNNUU',
 #                             states = ['bgCCUU', 'bgCNUU', 'bgNCUU'])

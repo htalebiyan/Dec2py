@@ -21,6 +21,8 @@ for i in [2, 4, 5, 6, 7, 9, 10]:
     # df2[i].loc[:, 'br_level'] = 'Max 22'
     # df1[i].loc[:, 'cf_level'] = '2'
     # df2[i].loc[:, 'cf_level'] = '1.25'
+    # df1[i].loc[:, 'dominance'] = 'No dominance'
+    # df2[i].loc[:, 'dominance'] = 'P2 dominance'
 for i in [0, 1, 3, 8]:
     for x in df2[i]:
         if x not in df1[i]:
@@ -32,7 +34,7 @@ for i in [2, 4, 5, 6, 7, 10]:
 df1[9] = pd.concat([df1[9], df2[9]]).drop_duplicates(subset=df1[9].columns.difference(['no_payoffs'])).reset_index(
     drop=True)
 
-with open(folder + 'postprocess_dicts_EDM10.pkl', 'wb') as f:
+with open(folder + 'postprocess_dicts_temp.pkl', 'wb') as f:
     pickle.dump(df1, f)
 
 ####---------------------------------------------------------------------------------------------------------

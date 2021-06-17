@@ -52,9 +52,9 @@ def plot_performance_curves(df, cost_type='Total', ci=None, normalize=False, dea
     time = len(df['t'].unique().tolist())
 
     row_plot = [judgment_type, 'judgment_type']  # valuation_type, topology
-    col_plot = [no_resources, 'no_resources']  # no_resources, judgment_type, topology
-    hue_type = [auction_type, 'auction_type']  # auction_type, rationality
-    style_type = 'decision_type'  # decision_type, rationality
+    col_plot = [judgment_type, 'judgment_type']  # no_resources, judgment_type, topology
+    hue_type = [decision_type, 'decision_type']  # auction_type, rationality
+    style_type = 'auction_type'  # decision_type, rationality
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey=True,
@@ -171,11 +171,12 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
     '''
     #: Make lists
     no_resources = lambda_df.no_resources.unique().tolist()
-    # rationality = lambda_df.rationality.unique().tolist()
     layers = lambda_df.layer.unique().tolist()
-    # topology = lambda_df.topology.unique().tolist()
+    topology = lambda_df.topology.unique().tolist()
+    rationality = lambda_df.rationality.unique().tolist()
     # br_level = lambda_df.br_level.unique().tolist()
     # cf_level = lambda_df.cf_level.unique().tolist()
+    dominance = lambda_df.dominance.unique().tolist()
     decision_type = lambda_df.decision_type.unique().tolist()
     if 'indp_sample_12Node' in decision_type:
         decision_type.remove('indp_sample_12Node')
@@ -190,10 +191,10 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
     valuation_type = lambda_df.valuation_type.unique().tolist()
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
-    row_plot = [no_resources, 'no_resources']  # valuation_type
+    row_plot = [topology, 'topology']  # valuation_type
     col_plot = [auction_type, 'auction_type']  # auction_type, topology
-    hue_type = [decision_type, 'decision_type']  # rationality,decision_type, br_level, cf_level
-    x = 'no_resources'  # 'no_resources', 'rationality'
+    hue_type = [dominance, 'dominance']  # rationality,decision_type, br_level, cf_level, 'dominance'
+    x = 'decision_type'  # 'no_resources', 'rationality'
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
