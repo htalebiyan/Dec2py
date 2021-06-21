@@ -52,7 +52,7 @@ def plot_performance_curves(df, cost_type='Total', ci=None, normalize=False, dea
     time = len(df['t'].unique().tolist())
 
     row_plot = [judgment_type, 'judgment_type']  # valuation_type, topology
-    col_plot = [judgment_type, 'judgment_type']  # no_resources, judgment_type, topology
+    col_plot = [no_resources, 'no_resources']  # no_resources, judgment_type, topology
     hue_type = [decision_type, 'decision_type']  # auction_type, rationality
     style_type = 'auction_type'  # decision_type, rationality
     # Initialize plot properties
@@ -172,11 +172,11 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
     #: Make lists
     no_resources = lambda_df.no_resources.unique().tolist()
     layers = lambda_df.layer.unique().tolist()
-    topology = lambda_df.topology.unique().tolist()
-    rationality = lambda_df.rationality.unique().tolist()
+    # topology = lambda_df.topology.unique().tolist()
+    # rationality = lambda_df.rationality.unique().tolist()
     # br_level = lambda_df.br_level.unique().tolist()
     # cf_level = lambda_df.cf_level.unique().tolist()
-    dominance = lambda_df.dominance.unique().tolist()
+    # dominance = lambda_df.dominance.unique().tolist()
     decision_type = lambda_df.decision_type.unique().tolist()
     if 'indp_sample_12Node' in decision_type:
         decision_type.remove('indp_sample_12Node')
@@ -191,10 +191,10 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
     valuation_type = lambda_df.valuation_type.unique().tolist()
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
-    row_plot = [topology, 'topology']  # valuation_type
+    row_plot = [judgment_type, 'judgment_type']  # valuation_type, judgment_type
     col_plot = [auction_type, 'auction_type']  # auction_type, topology
-    hue_type = [dominance, 'dominance']  # rationality,decision_type, br_level, cf_level, 'dominance'
-    x = 'decision_type'  # 'no_resources', 'rationality'
+    hue_type = [decision_type, 'decision_type']  # rationality,decision_type, br_level, cf_level, 'dominance'
+    x = 'no_resources'  # 'no_resources', 'rationality'
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True,
@@ -790,8 +790,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
                 with pal:
                     sns.lineplot(x=x, y='value', hue='Cooperation Status', style='Decision Type',
                                  markers=True, ci=ci, ax=ax, data=ne_data,
-                                 style_order=['Optimal', 'ng'],
-                                 **{'markersize': 5})
+                                 **{'markersize': 5}) #style_order=['Optimal', 'ng']
                 ax.set(xlabel=r'time step $t$', ylabel='\% of Players, ' + row_plot[0][idx_r])
                 ax.get_legend().set_visible(False)
                 ax.xaxis.set_ticks(np.arange(1, T + 1, 1.0))  # ax.get_xlim()
@@ -871,7 +870,7 @@ def plot_relative_actions(df, act_types=None):
                 # ax.xaxis.set_label_position('bottom')
     handles, labels = ax.get_legend_handles_labels()
     labels = correct_legend_labels(labels)
-    fig.legend(handles, labels, loc='lower left', bbox_to_anchor=(.23, .9),
+    fig.legend(handles, labels, loc='lower left', bbox_to_anchor=(.12, .9),
                frameon=True, framealpha=.75, ncol=len(hue_type[0]), fontsize='x-small')
     # _, axs_c, _ = find_ax(axs, row_plot[0], col_plot[0])
     # for idx, ax in enumerate(axs_c):
@@ -1106,7 +1105,8 @@ def correct_legend_labels(labels):
     labels = ['Non Coop. (NA)' if x == 'NA' else x for x in labels]
     labels = ['No More Act. (NA)' if x == 'NA_possible' else x for x in labels]
     labels = ['B-INRG-All cu' if x == 'bgCCCCUUUU' else x for x in labels]
-    labels = ['B-INRG-All cu ex. Power' if x == 'bgCCNCUUUU' else x for x in labels]
+    labels = ['B-INRG-All cu exc. Power' if x == 'bgCCNCUUUU' else x for x in labels]
+    labels = ['B-INRG-All nu exc. Power' if x == 'bgNNCNUUUU' else x for x in labels]
     labels = ['B-INRG-All nu' if x == 'bgNNNNUUUU' else x for x in labels]
     labels = ['B-INRG-nn' if x == 'bgNNUU' else x for x in labels]
     labels = ['B-INRG-cn' if x == 'bgCNUU' else x for x in labels]

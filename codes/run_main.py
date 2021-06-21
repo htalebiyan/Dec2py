@@ -62,20 +62,20 @@ not calculated again. Set it to *None* if you don't want to use this option.
 """
 
 # %%
-BASE_DIR = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
+BASE_DIR = "../data/Extended_Shelby_County/"
 # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # "../data/Extended_Shelby_County/"
 # 'C:/Users/ht20/Box Sync/Shelby County Database/Node_arc_info'
 # "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
 
-DAMAGE_DIR = '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
+DAMAGE_DIR = "../data/Wu_Damage_scenarios/"
 # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # ../data/random_disruption_shelby/"
 # "../data/Wu_Damage_scenarios/"
 # "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
 # 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios'
 
-OUTPUT_DIR = '/home/hesam/Desktop/Files/Game_synthetic/v4.1/results_temp/'
+OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Game_Shelby_County/results/'
 # '/home/hesam/Desktop/Files/Game_synthetic/v4.1/results_temp/'
 # '/home/hesam/Desktop/Files/Game_Shelby_County/results/'
 # 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
@@ -85,7 +85,7 @@ OUTPUT_DIR = '/home/hesam/Desktop/Files/Game_synthetic/v4.1/results_temp/'
 # 'C:/Users/ht20/Documents/Files/Shelby_data_paper/Restoration_results/'
 # FAIL_SCE_PARAM['TOPO']+'/results/'
 
-FILTER_SCE = None
+FILTER_SCE = '../data/damagedElements_sliceQuantile_0.90.csv'
 # '../data/damagedElements_sliceQuantile_0.90.csv'
 
 PAYOFF_DIR = None
@@ -184,11 +184,11 @@ the following items:
 '''
 
 # %%
-FAIL_SCE_PARAM = {'TYPE': "synthetic", 'SAMPLE_RANGE': range(0, 2), 'MAGS': range(0, 100),
-                  'FILTER_SCE': FILTER_SCE, 'TOPO': 'General', 'BASE_DIR': BASE_DIR,
-                  'DAMAGE_DIR': DAMAGE_DIR}
-# FAIL_SCE_PARAM = {'TYPE': "WU", 'SAMPLE_RANGE': range(50), 'MAGS': range(96),
-#                   'FILTER_SCE': FILTER_SCE, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
+# FAIL_SCE_PARAM = {'TYPE': "synthetic", 'SAMPLE_RANGE': range(5), 'MAGS': range(100),
+#                   'FILTER_SCE': FILTER_SCE, 'TOPO': 'General', 'BASE_DIR': BASE_DIR,
+#                   'DAMAGE_DIR': DAMAGE_DIR}
+FAIL_SCE_PARAM = {'TYPE': "WU", 'SAMPLE_RANGE': range(50), 'MAGS': range(96),
+                  'FILTER_SCE': FILTER_SCE, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
 DYNAMIC_PARAMS = None
 STM_MODEL_DICT = None
 
@@ -226,7 +226,7 @@ method [cite], i.e. when `RES_ALLOC_TYPE` includes at least one of the options *
 '''
 
 # %%
-RC = [0]  # [3, 6, 8, 12]
+RC = [3, 6, 8, 12]  # [3, 6, 8, 12]
 LAYERS = [1, 2, 3, 4]
 JUDGE_TYPE = ["OPTIMISTIC"]
 RES_ALLOC_TYPE = ['UNIFORM', 'OPTIMAL']
@@ -327,8 +327,9 @@ optimal solution.
 # %%
 COST_TYPES = ['Total']  # 'Under Supply', 'Over Supply'
 REF_METHOD = 'indp'
-METHOD_NAMES = ['indp', 'ng', 'bgCNUU', 'bgNCUU', 'bgNNUU', 'bgCCUU']
+METHOD_NAMES = ['indp', 'ng', 'bgCCCCUUUU', 'bgNNNNUUUU', 'bgCCNCUUUU', 'bgNNCNUUUU']
 # 'ng', 'jc', 'dp_indp', 'tdindp', 'bgNNUU',
+# 'bgCNUU', 'bgNCUU', 'bgNNUU', 'bgCCUU'
 
 COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
                                                         FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
