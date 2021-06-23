@@ -1,7 +1,7 @@
-'''
-This module contain the classes used for game theoritical analysis of interdpendent
+"""
+This module contain the classes used for game-theoretical analysis of interdependent
 network restoration
-'''
+"""
 import sys
 import os
 import time
@@ -12,7 +12,6 @@ import scipy
 import pickle
 import random
 import dindpclasses
-import indpalt
 import indp
 import indputils
 import plots
@@ -24,8 +23,8 @@ except ModuleNotFoundError:
 
 
 class NormalGame:
-    '''
-    This class models a normal (strategic) restoration game for a given time step 
+    """
+    This class models a normal (strategic) restoration game for a given time step
     and finds pure and mixed strategy nash equilibria.
 
     Attributes
@@ -37,11 +36,11 @@ class NormalGame:
         of :class:`NormalGame`
     v_r : dict
         Dictionary that stores the number of available resources, :math:`R_c`, for
-        the current time step, set based on 'v_r' from input variables of :class:`NormalGame` 
+        the current time step, set based on 'v_r' from input variables of :class:`NormalGame`
     dependee_nodes : dict
         Dictionary of all dependee nodes in the network
     actions : dict
-        Dictionary of all relavant restoration actions (including 'No Action (NA)' and
+        Dictionary of all relevant restoration actions (including 'No Action (NA)' and
         possibly 'Other Action (OA)'), which are used as the possible moves by players,
         set by :meth:`find_actions`
     first_actions : list
@@ -50,8 +49,8 @@ class NormalGame:
     actions_reduced : bool
         Provisional: If true, actions for at least one agent are more than 1000 and hence are reduced
     payoffs : dict
-        Dictionary of payoffs for all possible action profiles, calculated by solving 
-        INDP or the corresponfing flow problem. It is populated by :meth:`compute_payoffs`.
+        Dictionary of payoffs for all possible action profiles, calculated by solving
+        INDP or the corresponding flow problem. It is populated by :meth:`compute_payoffs`.
     payoff_time : dict
         Time to compute each entry in :attr:`payoffs`
     solving_time : float
@@ -66,7 +65,7 @@ class NormalGame:
         populated by :meth:`choose_equilibrium`.\n
         The solution is the one with lowest total cost assuming that after many games
         (as supposed in NE) people know which one has the overall lowest total cost.
-        If there are more than one minimum total cost equilibrium, one of them is 
+        If there are more than one minimum total cost equilibrium, one of them is
         chosen randomly. \n
         If the chosen NE is a mixed strategy, the mixed strategy with the highest
         probability is chosen. If there are more than one of such mixed strategy,
@@ -76,7 +75,7 @@ class NormalGame:
             Games: refine the way the game solution is chosen in each time step
     optimal_solution : dict
         Optimal Solution from INDP. It is populated by :meth:`find_optimal_solution`.
-    '''
+    """
 
     def __init__(self, L, net, v_r, act_rduc=None):
         self.players = L
@@ -113,20 +112,20 @@ class NormalGame:
         self.__dict__.update(state)
 
     def find_actions(self):
-        '''
+        """
         This function finds all relevant restoration actions for each player
-        
+
         .. todo::
             Games: Add the geographical interdependency to find actions, which means
-            to consider the arc repaires as indepndent actions rather than aggregate 
+            to consider the arc repaires as indepndent actions rather than aggregate
             them in the 'OA' action.
 
         Returns
         -------
         actions : dict
-            Dictionary of all relavant restoration actions.
+            Dictionary of all relevant restoration actions.
 
-        '''
+        """
         for u, v, a in self.net.G.edges(data=True):
             if a['data']['inf_data'].is_interdep and u[1] in self.players and v[1] in self.players:
                 if u not in self.dependee_nodes:
@@ -139,14 +138,14 @@ class NormalGame:
             damaged_arcs = [(u, v) for u, v, a in self.net.G.edges(data=True) if \
                             a['data']['inf_data'].functionality == 0.0 and u[1] == l and v[1] == l]
             '''
-            Arc repaire actions are collected under "other action (OA)" since
-            the arc actions do not affect the decision of other palyers
+            Arc repair actions are collected under "other action (OA)" since
+            the arc actions do not affect the decision of other players
             '''
             other_action = False
             if len(damaged_arcs) > 0:
                 other_action = True
             '''
-            Non-depndeee node repaire actions are collected under "other action (OA)"
+            Non-dependee node repair actions are collected under "other action (OA)"
             since these actions do not affect the decision of other palyers
             '''
             rel_actions = []
@@ -160,8 +159,9 @@ class NormalGame:
             actions[l] = []
             for v in range(self.v_r[l]):
                 actions[l].extend(list(itertools.combinations(rel_actions, v + 1)))
-
-            '''"No Action (NA)" is added to possible actions '''
+            '''
+            No Action (NA)" is added to possible actions
+            '''
             actions[l].extend([('NA', l)])
         return actions
 
@@ -189,12 +189,12 @@ class NormalGame:
         ''' Remove action due to the bounded rationality '''
         for l in self.players:
             ''' non-cooperative actions is excluded from the choice reduction '''
-            OA_in_actions = True
+            oa_in_actions = True
             self.actions[l].remove(('NA', l))
             try:
                 self.actions[l].remove((('OA', l),))
             except ValueError:
-                OA_in_actions = False
+                oa_in_actions = False
 
             remove_list = []
             if self.actions_reduced == 'ER':
@@ -218,7 +218,7 @@ class NormalGame:
                     self.actions[l].remove(random.choice(self.actions[l]))
 
             ''' non-cooperative actions are added to possible actions '''
-            if OA_in_actions:
+            if oa_in_actions:
                 self.actions[l].extend([(('OA', l),)])
             self.actions[l].extend([('NA', l)])
 
@@ -465,13 +465,13 @@ class NormalGame:
             for l in player_list:
                 self.solution.sol[0]['P' + str(l) + ' payoff'] = act_profile[l][1]
                 act_profile_coorected = ()
-                
+
                 if type(l) is int:
                     player_num = l
                 else:
                     player_num = l[1]
-                if act_profile[l][0] == ('NA',player_num):
-                    act_profile_coorected = (('NA',l))
+                if act_profile[l][0] == ('NA', player_num):
+                    act_profile_coorected = (('NA', l))
                 else:
                     for x in act_profile[l][0]:
                         try:
@@ -479,7 +479,7 @@ class NormalGame:
                             y[1] = l
                             x = tuple(y)
                         except TypeError:
-                            x = ('OA',l)
+                            x = ('OA', l)
                         act_profile_coorected += (x,)
                 self.solution.sol[0]['P' + str(l) + ' actions'] = [act_profile_coorected]
                 self.solution.sol[0]['P' + str(l) + ' action probs'] = [1.0]
@@ -573,7 +573,7 @@ class NormalGame:
                 for x in ac_old:
                     new_a = ()
                     if x[0] == 'NA':
-                        new_a += ((x[0], x[1][1]))
+                        new_a += (x[0], x[1][1])
                     else:
                         for y in x:
                             new_a += ((y[0], y[1][1]),)
@@ -592,7 +592,6 @@ class NormalGame:
                 self.chosen_equilibrium['solution combination'][idx] = ac
                 tc = self.chosen_equilibrium['full result'][0].results[0]['costs']['Total']
                 self.chosen_equilibrium['total cost'] = tc
-
         if len(self.chosen_equilibrium['full result']) == 1 and not preferred_players:
             original_tc = self.chosen_equilibrium['total cost']
             re_comp_tc = self.chosen_equilibrium['full result'][0].results[0]['costs']['Total']
@@ -714,19 +713,20 @@ class BayesianGame(NormalGame):
         return label
 
     def set_states(self):
-        '''
+        """
         This function set the states based on :attr:`fundamental_types` and for
         each state compute the payoff matrix of all players by doubling the payoff
-        of actions that are not consistant with the player's type.
+        of actions that are not consistent with the player's type.
 
         .. todo::
-            Games: refine how to reduce importance of other types
+            Games: refine how to reduce importance of action not consistent with
+            the player's type.
 
         Returns
         -------
         None.
 
-        '''
+        """
         comb_w_rep = list(itertools.combinations(self.fundamental_types * len(self.players),
                                                  len(self.players)))
         self.states = list(set(comb_w_rep))
@@ -737,16 +737,17 @@ class BayesianGame(NormalGame):
                 for idx, l in enumerate(self.players):
                     label = self.label_actions(val[l][0])
                     if label != s[idx]:
-                        val[l][1] *= 2  # !!!
+                        val[l][1] *= 2  # !!!refine how to reduce importance of other types
 
     def set_types(self, beliefs):
-        '''
+        """
         This function set players type based on the beliefs it receives. Currently,
-        it can interpret the follwoing signnals:
+        it can interpret the following signals:
 
             - Uninformed ('U'): Players  do not have any information about other players,
               and assign equal probability to other players' types.
-
+            - False consensus ('F'): false consensus effect or consensus bias.
+            - Inverse false consensus  ('I'): Inverse false consensus effect.
         Parameters
         ----------
         beliefs : dict
@@ -756,7 +757,7 @@ class BayesianGame(NormalGame):
         -------
         None.
 
-        '''
+        """
         N = len(self.players)
         T = len(self.fundamental_types)
         for idx, l in enumerate(self.players):
@@ -794,14 +795,14 @@ class BayesianGame(NormalGame):
                 sys.exit('Error: wrong signal name')
 
     def create_bayesian_players(self):
-        '''
+        """
         This function create one player for each combination of player and its types.
 
         Returns
         -------
         None.
 
-        '''
+        """
         for lyr, val in self.types.items():
             for typ, valtyp in val.items():
                 self.bayesian_players.append((typ, lyr))
@@ -837,8 +838,8 @@ class BayesianGame(NormalGame):
                 self.bayesian_payoffs[idx][b] = [ac[idxb], payoff]
 
     def build_bayesian_game(self, save_model=None, suffix=''):
-        '''
-        This function constructs the bayesian restoratuion game
+        """
+        This function constructs the bayesian restoration game
 
         Parameters
         ----------
@@ -853,7 +854,7 @@ class BayesianGame(NormalGame):
         :
             None.
 
-        '''
+        """
         dimensions = []
         for b in self.bayesian_players:
             dimensions.append(len(self.actions[b[1]]))
@@ -862,12 +863,12 @@ class BayesianGame(NormalGame):
             for idxal, al in enumerate(self.actions[l[1]]):
                 self.bayesian_game.players[idxl].strategies[idxal].label = str(al)
         for _, ac in self.bayesian_payoffs.items():
-            payoff_cell_corrdinate = []
+            payoff_cell_coordinate = []
             for keyl, l in ac.items():
-                payoff_cell_corrdinate.append(str(l[0]))
+                payoff_cell_coordinate.append(str(l[0]))
             for keyl, l in ac.items():
                 index = self.bayesian_players.index(keyl)
-                self.bayesian_game[tuple(payoff_cell_corrdinate)][index] = fractions.Fraction(l[1])
+                self.bayesian_game[tuple(payoff_cell_coordinate)][index] = fractions.Fraction(l[1])
         if save_model:
             if not os.path.exists(save_model):
                 os.makedirs(save_model)
@@ -876,7 +877,7 @@ class BayesianGame(NormalGame):
 
 
 class GameSolution:
-    '''
+    """
     This class extracts (from the gambit solution) and saves the solution of the normal game
 
     Attributes
@@ -889,7 +890,7 @@ class GameSolution:
     sol : dict
         Dictionary of solutions of the normal game, including actions, their probabilities,
         payoffs, and the total cost,  set by :meth:`extract_solution`.
-    '''
+    """
 
     def __init__(self, L, sol, actions):
         self.players = L
@@ -899,8 +900,8 @@ class GameSolution:
     def __getstate__(self):
         """
         Return state values to be pickled. gambit_sol is deleted when
-        pickling. To retirve it, user should save the game to file when building 
-        the game and read it later and add it to to the unpickled object
+        pickling. To retrieve it, user should save the game to file when building
+        the game and read it later and add it to to the un-pickled object
         """
         state = self.__dict__.copy()
         state["gambit_sol"] = {}
@@ -908,22 +909,22 @@ class GameSolution:
 
     def __setstate__(self, state):
         """
-        Restore state from the unpickled state values. gambit_sol is deleted when
+        Restore state from the un-pickled state values. gambit_sol is deleted when
         pickling. To retirve it, user should save the game to file when building 
-        the game and read it later and add it to to the unpickled object
+        the game and read it later and add it to to the un-pickled object
         """
         self.__dict__.update(state)
         state["gambit_sol"] = {}
 
     def extract_solution(self, actions):
-        '''
+        """
         This function extracts the solution of the normal game from the solution
         structure from gambit
 
         Parameters
         ----------
         actions : dict
-            Possible actions for each palyer.
+            Possible actions for each player.
 
         Returns
         -------
@@ -931,7 +932,7 @@ class GameSolution:
             Dictionary of solutions of the normal game, including actions, their probabilities,
             payoffs, and the total cost.
 
-        '''
+        """
         sup_action = []
         sol = {}
         for l in self.players:
@@ -960,8 +961,8 @@ class GameSolution:
 
 
 class InfrastructureGame:
-    '''
-    This class is employed to find the restoration strategy for an interdepndent network
+    """
+    This class is employed to find the restoration strategy for an interdependent network
     using game theoretic methods over a given time horizon
 
     Attributes
@@ -990,7 +991,7 @@ class InfrastructureGame:
     objs : dict of :class:`NormalGame`
         Dictionary of game objects (:class:`NormalGame`) for all time steps of the restoration
     judgments : :class:`~dindpclasses.JudgmentModel`
-        Object that stores the judgment attitude of agents, which is only needed 
+        Object that stores the judgment attitude of agents, which is only needed
         for computing the resource allocation when using auction. So, it is not
         used in building or solving the games
     results : :class:`~indputils.INDPResults`
@@ -1006,7 +1007,7 @@ class InfrastructureGame:
         all time steps of the restoration process
     output_dir : str
         Directory to which the results are written, set by :meth:`set_out_dir`
-    '''
+    """
 
     def __init__(self, params):
         self.layers = params['L']
@@ -1030,15 +1031,15 @@ class InfrastructureGame:
 
     def run_game(self, print_cmd=True, compute_optimal=False, save_results=True,
                  plot=False, save_model=False, ):
-        '''
-        Runs the infrastructure restoarion game for a given number of :attr:`time_steps`
+        """
+        Runs the infrastructure restoration game for a given number of :attr:`time_steps`
 
         Parameters
         ----------
         print_cmd : bool, optional
             Should the game solution be printed to the command line. The default is True.
         compute_optimal : bool, optional
-            Should the optimal restoarion action be found in each time step. The default is False.
+            Should the optimal restoration action be found in each time step. The default is False.
         save_results : bool, optional
             Should the results and game be written to file. The default is True.
         plot : bool, optional
@@ -1051,7 +1052,7 @@ class InfrastructureGame:
         :
             None
 
-        '''
+        """
         save_model_dir = save_model
         save_payoff_info = save_model
         for t in self.objs.keys():
@@ -1075,7 +1076,7 @@ class InfrastructureGame:
                 sys.exit('Error: wrong algorithm name for Infrastructure Game.')
             # Compute payoffs
             if print_cmd:
-                print("Computing payoffs...")
+                print("Computing (or reading) payoffs...")
             if save_payoff_info:
                 save_payoff_info = [self.output_dir + '/payoff_models', t]
             if set(self.objs[t].first_actions) == {'NA'}:
@@ -1103,6 +1104,7 @@ class InfrastructureGame:
                     print("Building and Solving the game...")
                 if compute_optimal:
                     self.objs[t].find_optimal_solution()
+
                 if self.game_type == 'NORMALGAME':
                     if save_model_dir:
                         save_model_dir = self.output_dir + '/games'
@@ -1126,7 +1128,7 @@ class InfrastructureGame:
                         save_model_dir = self.output_dir + '/bayesian_games'
                     self.objs[t].build_bayesian_game(save_model=save_model_dir,
                                                      suffix=str(self.sample) + '_t' + str(t))
-                    ### Game info needed to pass to the solver
+                    ''' Game info needed to pass to the solver '''
                     game_info = [self.objs[t].bayesian_game, self.objs[t].bayesian_players]
                     action_list = {}
                     for b in self.objs[t].bayesian_players:
@@ -1145,7 +1147,7 @@ class InfrastructureGame:
                     self.objs[t].solve_game(method=self.equib_alg, print_to_cmd=print_cmd,
                                             game_info=game_info)
                     game_time = time.time() - game_start
-                    ### Use signals to find interim NE as the chosen solution
+                    ''' Use signals to find interim NE as the chosen solution '''
                     preferred_players = {'included': [(x, i) for i, x in self.signals.items()]}
                     preferred_players['excluded'] = [x for x in self.objs[t].bayesian_players \
                                                      if x not in preferred_players['included']]
@@ -1184,7 +1186,7 @@ class InfrastructureGame:
             self.save_results_to_file()
 
     def set_out_dir(self, root):
-        '''
+        """
         This function generates and sets the directory to which the results are written
 
         Parameters
@@ -1197,7 +1199,7 @@ class InfrastructureGame:
         output_dir : str
             Directory to which the results are written
 
-        '''
+        """
         output_dir = root + '_L' + str(len(self.layers)) + '_m' + str(self.magnitude) + "_v" + \
                      str(self.resource.sum_resource) + '_' + self.judgments.judgment_type + \
                      '_' + self.res_alloc_type
@@ -1207,7 +1209,7 @@ class InfrastructureGame:
         return output_dir
 
     def set_payoff_dir(self, root):
-        '''
+        """
         This function generates and sets the directory to which the past results
         were written, from which the payoffs for the first time step are read
 
@@ -1221,7 +1223,7 @@ class InfrastructureGame:
         payoff_dir : str
             Directory from which the payoffs are read
 
-        '''
+        """
         if root:
             payoff_dir = root + '_L' + str(len(self.layers)) + '_m' + str(self.magnitude) + "_v" + \
                          str(self.resource.sum_resource) + '_' + self.judgments.judgment_type + \
@@ -1234,22 +1236,22 @@ class InfrastructureGame:
             return None
 
     def set_network(self, params):
-        '''
+        """
         Checks if the network object exists, and if so, make a deepcopy of it to
-        preserve the initial netowrk object as the initial netowrk object is used for
+        preserve the initial network object as the initial network object is used for
         all simulations , and must not be altered
 
         Parameters
         ----------
         params : dict
-            Dictionary of input paramters
+            Dictionary of input parameters
 
         Returns
         -------
         :class:`~infrastructure.InfrastructureNetwork`
             Network Object
 
-        '''
+        """
         if "N" not in params:
             sys.exit('No initial network object for: ' + self.judge_type + ', ' + \
                      self.res_alloc_type)
@@ -1258,17 +1260,17 @@ class InfrastructureGame:
 
     @staticmethod
     def set_time_steps(T, num_iter):
-        '''
+        """
         Checks if the window length is equal to one as the current version of
-        games is devised based on itrative INDP
+        games is devised based on iterative INDP
 
         .. todo::
-            Games: Exapnd the code to imitate td-INDP
+            Games: Expand the code to imitate td-INDP
 
         Parameters
         ----------
         T : int
-            Window lenght
+            Window length
         num_iter : TYPE
             Number of time steps
 
@@ -1277,47 +1279,37 @@ class InfrastructureGame:
         num_iter : int
             Number of time steps.
 
-        '''
-        if T != 1:  # !!! to be modified in futher expansions
+        """
+        if T != 1:  # !!! to be modified in further expansions
             sys.exit('ERROR: T!=1, JC currently only supports iINDP, not td_INDP.')
         else:
             return num_iter
 
     def save_object_to_file(self):
-        '''
+        """
         Writes the object to file using pickle
-
-        Parameters
-        ----------
-        sample : int
-            Sample paramter of the current simulation
 
         Returns
         -------
         :
             None.
 
-        '''
+        """
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
         with open(self.output_dir + '/objs_' + str(self.sample) + '.pkl', 'wb') as output:
             pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
 
     def save_results_to_file(self):
-        '''
+        """
         Writes results to file
-
-        Parameters
-        ----------
-        sample : int
-            Sample paramter of the current simulation
 
         Returns
         -------
         :
             None.
 
-        '''
+        """
         output_dir_agents = self.output_dir + '/agents'
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)

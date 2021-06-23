@@ -27,6 +27,7 @@ import dindputils
 import gameutils
 import plots
 import pickle
+import dislocationutils
 
 try:
     # Change the current working Directory
@@ -181,6 +182,7 @@ the following items:
     `MODEL_DIR = 'C:/Users/ht20/Documents/Files/STAR_models/Shelby_final_all_Rc'
     STM_MODEL_DICT = {'num_pred':1, 'model_dir':MODEL_DIR+'/traces',
     'param_folder':MODEL_DIR+'/parameters'}`
+4. `EXTRA_COMMODITY`: Multicommodity parameters dict
 '''
 
 # %%
@@ -190,6 +192,23 @@ the following items:
 FAIL_SCE_PARAM = {'TYPE': "WU", 'SAMPLE_RANGE': range(50), 'MAGS': range(96),
                   'FILTER_SCE': FILTER_SCE, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
 DYNAMIC_PARAMS = None
+    # DYNAMIC_PARAMS = {'TYPE': 'shelby_adopted', 'RETURN': 'step_function',
+    #                   'DIR': 'C:/Users/ht20/Documents/Files/dynamic_demand/'}
+    
+    # ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/"
+    # POP_DISLOC_DATA = ROOT_DISLOC+'Joplin_testbed/pop-dislocation-results.csv'
+    # DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'joplin',
+    #                   'OUT_DIR': BASE_DIR, 'POP_DISLOC_DATA': POP_DISLOC_DATA ,
+    #                   'MAPPING': {'POWER': ROOT_DISLOC+'/Power/Joplin interdependency table - buildings,\
+    #                               substations, and poles/Joplin_interdependency_table.csv'}}
+    
+    # ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
+    # DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'seaside',
+    #                   'OUT_DIR': ROOT_DISLOC+'Dislocation_models/',
+    #                   'POP_DISLOC_DATA': ROOT_DISLOC+'Dislocation_models/',
+    #                   'MAPPING': {'POWER': ROOT_DISLOC+'Power/bldgs2elec_Seaside.csv',
+    #                               'WATER': ROOT_DISLOC+'Water/bldgs2wter_Seaside.csv'}}
+
 STM_MODEL_DICT = None
 
 # Adjust output and base dir for synthetic database based on `FAIL_SCE_PARAM`
@@ -198,10 +217,12 @@ if FAIL_SCE_PARAM['TYPE'] == 'synthetic':
     SYNTH_DIR = BASE_DIR + FAIL_SCE_PARAM['TOPO'] + 'Networks/'
     OUTPUT_DIR += FAIL_SCE_PARAM['TOPO'] + '/results/'
 
+EXTRA_COMMODITY = None
+# EXTRA_COMMODITY = {1:['PW'], 3:[]}
 # %%
 ''' 
 ### Set analysis parameters 
-1. `RC`: list of resource caps or the number of available resources in each step of the
+1. [to be revised] `RC`: list of resource caps or the number of available resources in each step of the
 analysis. 
     * If `FAIL_SCE_PARAM[TYPE']`=*synthetic*, this item is not necessary since `R_c` is
     adjusted for each configuration. Set it to to `R_c`=[0]
@@ -226,7 +247,11 @@ method [cite], i.e. when `RES_ALLOC_TYPE` includes at least one of the options *
 '''
 
 # %%
-RC = [3, 6, 8, 12]  # [3, 6, 8, 12]
+RC = [{'budget':120000, 'time':35}, {'budget':240000, 'time':35},
+            {'budget':120000, 'time':70}, {'budget':120000, 'time':105},
+            {'budget':240000, 'time':105}]
+# Prescribed for each layer -> RC = [{'budget':{1:60000, 3:700}, 'time':{1:2, 3:10}}] 
+
 LAYERS = [1, 2, 3, 4]
 JUDGE_TYPE = ["OPTIMISTIC"]
 RES_ALLOC_TYPE = ['UNIFORM', 'OPTIMAL']
@@ -271,25 +296,30 @@ uniformed belief, *F* for false consensus bias, and *I* for inverse false consen
 '''
 
 # %%
-# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
-#                     misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS})
-# # # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
-# # #                     misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
-# # # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
-# # #                     res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
-# # #                     output_dir=OUTPUT_DIR, dynamic_params=DYNAMIC_PARAMS,
-# # #                     misc = {'STM_MODEL':STM_MODEL_DICT, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS})
 print('EDM considers 10 actions')
 print('CF is 2 ')
-# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
-#  					res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-#  					misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-#  					'REDUCED_ACTIONS': 'EDM'})
-# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
-#                     res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
-#                     misc={'PAYOFF_DIR': PAYOFF_DIR, 'DYNAMIC_PARAMS': DYNAMIC_PARAMS,
-#                           "SIGNALS": {1: 'N', 2: 'C'}, "BELIEFS": {1: 'U', 2: 'U'},
-#                           'REDUCED_ACTIONS': 'EDM'})
+
+# run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
+#             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+#                     'EXTRA_COMMODITY':EXTRA_COMMODITY,
+#                     'TIME_RESOURCE':True})
+# run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
+#             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+#                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
+# run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
+#             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
+#             output_dir=OUTPUT_DIR,
+#             misc = {'STM_MODEL':STM_MODEL_DICT, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+#                     'EXTRA_COMMODITY':EXTRA_COMMODITY, 'TIME_RESOURCE':False})
+# run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
+#             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+#             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+#                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
+# run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
+#             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+#             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
+#                     'EXTRA_COMMODITY':EXTRA_COMMODITY,
+#                     "SIGNALS":{x:'C' for x in LAYERS}, "BELIEFS":{x:'U' for x in LAYERS}})
 
 # %%
 ''' 
@@ -328,8 +358,7 @@ optimal solution.
 COST_TYPES = ['Total']  # 'Under Supply', 'Over Supply'
 REF_METHOD = 'indp'
 METHOD_NAMES = ['indp', 'ng', 'bgCCCCUUUU', 'bgNNNNUUUU', 'bgCCNCUUUU', 'bgNNCNUUUU']
-# 'ng', 'jc', 'dp_indp', 'tdindp', 'bgNNUU',
-# 'bgCNUU', 'bgNCUU', 'bgNNUU', 'bgCCUU'
+# 'ng', 'jc', 'tdindp', 'ng', 'bgCCCCUUUU', 'dp_indp', 'dp_jc', 'bgCNUU',
 
 COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
                                                         FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,

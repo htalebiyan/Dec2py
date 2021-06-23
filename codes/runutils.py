@@ -46,7 +46,7 @@ def batch_run(params, fail_sce_param):
         infrastructure_data = 'shelby_extended'
         if fail_sce_param['FILTER_SCE'] is not None:
             list_high_dam = pd.read_csv(fail_sce_param['FILTER_SCE'])
-    elif fail_sce_param['TYPE'] == 'random':
+    elif fail_sce_param['TYPE'] == 'from_csv':
         infrastructure_data = 'shelby_extended'
     elif fail_sce_param['TYPE'] == 'synthetic':
         topology = fail_sce_param['TOPO']
@@ -54,6 +54,8 @@ def batch_run(params, fail_sce_param):
     print('----Running for resources: '+str(params['V']))
     for m in fail_sce_param['MAGS']:
         for i in fail_sce_param['SAMPLE_RANGE']:
+            params["SIM_NUMBER"] = i
+            params["MAGNITUDE"] = m
             try:
                 list_high_dam
                 if len(list_high_dam.loc[(list_high_dam.set == i)&\
@@ -62,50 +64,55 @@ def batch_run(params, fail_sce_param):
             except NameError:
                 pass
 
+            # Check if the results exist 
+            #!!! move it after initializing network for synthetic nets since L is identified there
+            output_dir_full = ''
+            if params["ALGORITHM"] in ["INDP"]:
+                outDirSuffixRes = indp.get_resource_suffix(params)
+                output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
+                    str(params["MAGNITUDE"])+"_v"+outDirSuffixRes+'/actions_'+str(i)+'_.csv'
+            if os.path.exists(output_dir_full):
+                print('results are already there\n')
+                continue										 
             print('---Running Magnitude '+str(m)+' sample '+str(i)+'...')
+            if params['TIME_RESOURCE']:
+                print('Computing repair times...')
+                indp.time_resource_usage_curves(base_dir, damage_dir, m, i)
             print("Initializing network...")
             if infrastructure_data:
                 params["N"], _, _ = indp.initialize_network(BASE_DIR=base_dir,
                             external_interdependency_dir=ext_interdependency,
-                            sim_number=0, magnitude=6, sample=0, v=params["V"],
-                            infrastructure_data=infrastructure_data)
+                            sim_number=0, magnitude=m, sample=i, v=params["V"],
+                            infrastructure_data=infrastructure_data,
+							extra_commodity=params["EXTRA_COMMODITY"])
             else:
                 params["N"], params["V"], params['L'] = indp.initialize_network(BASE_DIR=base_dir,
                             external_interdependency_dir=ext_interdependency,
                             magnitude=m, sample=i, infrastructure_data=infrastructure_data,
                             topology=topology)
-            params["SIM_NUMBER"] = i
-            params["MAGNITUDE"] = m
-            # Check if the results exist
-            output_dir_full = ''
-            if params["ALGORITHM"] in ["INDP"]:
-                output_dir_full = params["OUTPUT_DIR"]+'_L'+str(len(params["L"]))+'_m'+\
-                    str(params["MAGNITUDE"])+"_v"+str(params["V"])+'/actions_'+str(i)+'_.csv'
-            if os.path.exists(output_dir_full):
-                print('results are already there\n')
-                continue
-
+            if params['DYNAMIC_PARAMS']:
+                    print("Computing dislocation data...")
+                    dyn_dmnd = dislocationutils.create_dynamic_param(params, N=params["N"], T=params["NUM_ITERATIONS"])
+                    params['DYNAMIC_PARAMS']['DEMAND_DATA'] = dyn_dmnd
             if fail_sce_param['TYPE'] == 'WU':
                 indp.add_Wu_failure_scenario(params["N"], DAM_DIR=damage_dir,
                                              noSet=i, noSce=m)
             elif fail_sce_param['TYPE'] == 'ANDRES':
                 indp.add_failure_scenario(params["N"], DAM_DIR=damage_dir,
                                           magnitude=m, v=params["V"], sim_number=i)
-            elif fail_sce_param['TYPE'] == 'random':
-                indp.add_random_failure_scenario(params["N"], DAM_DIR=damage_dir,
-                                                 sample=i)
+            elif fail_sce_param['TYPE'] == 'from_csv':
+                indp.add_from_csv_failure_scenario(params["N"], DAM_DIR=damage_dir,
+                                                 magnitude=m, sample=i)
             elif fail_sce_param['TYPE'] == 'synthetic':
                 indp.add_synthetic_failure_scenario(params["N"], DAM_DIR=base_dir,
                                                     topology=topology, config=m, sample=i)
 
             if params["ALGORITHM"] == "INDP":
                 indp.run_indp(params, validate=False, T=params["T"], layers=params['L'],
-                              controlled_layers=params['L'], saveModel=False, print_cmd_line=False,
-                              co_location=False)
+                              controlled_layers=params['L'], saveModel=False, print_cmd_line=False, co_location=False)
             if params["ALGORITHM"] == "MH":
                 mh.run_mh(params, validate=False, T=params["T"], layers=params['L'],
-                          controlled_layers=params['L'], saveModel=True, print_cmd_line=False,
-                          co_location=True)
+                          controlled_layers=params['L'], saveModel=True, print_cmd_line=False, co_location=True)
             elif params["ALGORITHM"] == "INFO_SHARE":
                 indp.run_info_share(params, layers=params['L'], T=params["T"])
             elif params["ALGORITHM"] == "INRG":
@@ -119,85 +126,6 @@ def batch_run(params, fail_sce_param):
             elif params["ALGORITHM"] in ["NORMALGAME", "BAYESGAME"]:
                 gameutils.run_game(params, save_results=True, print_cmd=False,
                                     save_model=False, plot2D=False) #!!!
-
-def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
-               res_alloc_type=None, valuation_type=None, output_dir='..', misc =None):
-    '''
-    This function runs a given method for different numbers of resources,
-    and a given judge, auction, and valuation type in the case of JC.
-
-    Parameters
-    ----------
-    fail_sce_param : dict
-        informaton of damage scenrios.
-    v_r : float, list of float, or list of lists of floats
-        number of resources,
-        if this is a list of floats, each float is interpreted as a different total
-        number of resources, and indp is run given the total number of resources.
-        It only works when auction_type != None.
-        If this is a list of lists of floats, each list is interpreted as fixed upper
-        bounds on the number of resources each layer can use (same for all time step)..
-    layers : TYPE
-        DESCRIPTION.
-    method : TYPE
-        DESCRIPTION.
-    judgment_type : str, optional
-        Type of Judgments in Judfment Call Method. The default is None.
-    res_alloc_type : str, optional
-        Type of resource allocation method for resource allocation. The default is None.
-    valuation_type : str, optional
-        Type of valuation in auction. The default is None.
-    output_dir : str, optional
-        DESCRIPTION. The default is '..'.
-    Returns
-    -------
-    None.  Writes to file
-
-    '''
-    for v in v_r:
-        if method == 'INDP':
-            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'indp_results',
-                      "V":v, "T":1, 'L':layers, "ALGORITHM":"INDP"}
-        elif method == 'TDINDP':
-            params = {"OUTPUT_DIR":output_dir+'/tdindp_results', "V":v, "T":10,
-                      'L':layers, "ALGORITHM":"INDP"} # "WINDOW_LENGTH":3, 
-        elif method == 'JC':
-            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'jc_results',
-                      "V":v, "T":1, 'L':layers, "ALGORITHM":"JC",
-                      "JUDGMENT_TYPE":judgment_type, "RES_ALLOC_TYPE":res_alloc_type,
-                      "VALUATION_TYPE":valuation_type}
-            if 'STM' in valuation_type:
-                params['STM_MODEL_DICT'] = misc['STM_MODEL']
-        elif method in ['NORMALGAME', 'BAYESGAME']:
-            if method == "NORMALGAME":
-                out_dir = output_dir+'ng_results'
-            elif method == "BAYESGAME":
-                out_dir = output_dir+'bg'+''.join(misc['SIGNALS'].values())+\
-                    ''.join(misc['BELIEFS'].values())+'_results'
-            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":out_dir,
-                      "V":v, "T":1, "L":layers, "ALGORITHM":method,
-                      'EQUIBALG':'enumerate_pure', "JUDGMENT_TYPE":judgment_type,
-                      "RES_ALLOC_TYPE":res_alloc_type, "VALUATION_TYPE":valuation_type}
-            if misc:
-                params['REDUCED_ACTIONS'] = misc['REDUCED_ACTIONS']
-                params['PAYOFF_DIR'] = misc['PAYOFF_DIR']
-                if params['PAYOFF_DIR']:
-                    params['PAYOFF_DIR'] += 'ng_results'
-            if method == 'BAYESGAME':
-                params["SIGNALS"] = misc['SIGNALS']
-                params["BELIEFS"] = misc['BELIEFS']
-            else:
-                params["SIGNALS"] = None
-                params["BELIEFS"] = None
-        else:
-            sys.exit('Wrong method name: '+method)
-
-        params['DYNAMIC_PARAMS'] = misc['DYNAMIC_PARAMS']
-        if misc['DYNAMIC_PARAMS']:
-            prefix = params['OUTPUT_DIR'].split('/')[-1]
-            params['OUTPUT_DIR'] = params['OUTPUT_DIR'].replace(prefix,'dp_'+prefix)
-
-        batch_run(params, fail_sce_param)
 
 def run_indp_sample(layers):
     interdep_net= indp.initialize_sample_network(layers=layers)
@@ -270,7 +198,87 @@ def run_mh_sample(layers):
     # print('\n\nPlot restoration plan by INDP')
     # indp.plot_indp_sample(params)
     # plt.show()
-    pass
+    pass							
+def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
+               res_alloc_type=None, valuation_type=None, output_dir='..', misc =None):
+    '''
+    This function runs a given method for different numbers of resources,
+    and a given judge, auction, and valuation type in the case of JC.
+
+    Parameters
+    ----------
+    fail_sce_param : dict
+        informaton of damage scenrios.
+    v_r : float, list of float, or list of lists of floats
+        number of resources,
+        if this is a list of floats, each float is interpreted as a different total
+        number of resources, and indp is run given the total number of resources.
+        It only works when auction_type != None.
+        If this is a list of lists of floats, each list is interpreted as fixed upper
+        bounds on the number of resources each layer can use (same for all time step)..
+    layers : TYPE
+        DESCRIPTION.
+    method : TYPE
+        DESCRIPTION.
+    judgment_type : str, optional
+        Type of Judgments in Judfment Call Method. The default is None.
+    res_alloc_type : str, optional
+        Type of resource allocation method for resource allocation. The default is None.
+    valuation_type : str, optional
+        Type of valuation in auction. The default is None.
+    output_dir : str, optional
+        DESCRIPTION. The default is '..'.
+    Returns
+    -------
+    None.  Writes to file
+
+    '''
+    for v in v_r:
+        if method == 'INDP':
+            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'indp_results',
+                      "V":v, "T":1, 'L':layers, "ALGORITHM":"INDP"}
+        elif method == 'TDINDP':
+            params = {"OUTPUT_DIR":output_dir+'/tdindp_results', "V":v, "T":10,
+                      'L':layers, "ALGORITHM":"INDP"} # "WINDOW_LENGTH":3, 
+        elif method == 'JC':
+            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":output_dir+'jc_results',
+                      "V":v, "T":1, 'L':layers, "ALGORITHM":"JC",
+                      "JUDGMENT_TYPE":judgment_type, "RES_ALLOC_TYPE":res_alloc_type,
+                      "VALUATION_TYPE":valuation_type}
+            if 'STM' in valuation_type:
+                params['STM_MODEL_DICT'] = misc['STM_MODEL']
+        elif method in ['NORMALGAME', 'BAYESGAME']:
+            if method == "NORMALGAME":
+                out_dir = output_dir+'ng_results'
+            elif method == "BAYESGAME":
+                out_dir = output_dir+'bg'+''.join(misc['SIGNALS'].values())+\
+                    ''.join(misc['BELIEFS'].values())+'_results'
+            params = {"NUM_ITERATIONS":10, "OUTPUT_DIR":out_dir,
+                      "V":v, "T":1, "L":layers, "ALGORITHM":method,
+                      'EQUIBALG':'enumerate_pure', "JUDGMENT_TYPE":judgment_type,
+                      "RES_ALLOC_TYPE":res_alloc_type, "VALUATION_TYPE":valuation_type}
+            if misc:
+                params['REDUCED_ACTIONS'] = misc['REDUCED_ACTIONS']
+                params['PAYOFF_DIR'] = misc['PAYOFF_DIR']
+                if params['PAYOFF_DIR']:
+                    params['PAYOFF_DIR'] += 'ng_results'
+            if method == 'BAYESGAME':
+                params["SIGNALS"] = misc['SIGNALS']
+                params["BELIEFS"] = misc['BELIEFS']
+            else:
+                params["SIGNALS"] = None
+                params["BELIEFS"] = None
+        else:
+            sys.exit('Wrong method name: '+method)
+
+        params['EXTRA_COMMODITY'] = misc['EXTRA_COMMODITY']
+        params['TIME_RESOURCE'] = misc['TIME_RESOURCE']
+        params['DYNAMIC_PARAMS'] = misc['DYNAMIC_PARAMS']
+        if misc['DYNAMIC_PARAMS']:
+            prefix = params['OUTPUT_DIR'].split('/')[-1]
+            params['OUTPUT_DIR'] = params['OUTPUT_DIR'].replace(prefix,'dp_'+prefix)
+
+        batch_run(params, fail_sce_param)
 
 def run_sample_problems(): 
     layers=[1,2]#,3]

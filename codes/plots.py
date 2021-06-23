@@ -134,7 +134,7 @@ def plot_performance_curves(df, cost_type='Total', ci=None, normalize=False, dea
                     ax_2.set_yticklabels([])
                 ax.xaxis.set_ticks([])
                 ax_2.xaxis.set_ticks(np.arange(0, time, 1.0))  # ax.get_xlim()
-    # Add overll x- and y-axis titles
+    # Add overall x- and y-axis titles
     _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
     for idx, ax in enumerate(axs_c):
         ax.set_title(r'Res. Alloc. = %s' % (str(col_plot[0][idx])))

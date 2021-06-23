@@ -1,8 +1,8 @@
-'''
+"""
 This module contains functions to run decentralized restoration for interdepndent networks
 using Judgment Call method :cite:`Talebiyan2019c,Talebiyan2019`, read the results,
 and compute comparison measures.
-'''
+"""
 import os.path
 import operator
 import copy
@@ -15,11 +15,12 @@ import pickle
 import indp
 import indputils
 from dindpclasses import JcModel
+import dislocationutils
 
 
 def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False):
-    '''
-    Finds interdepndent restoration strategies using a decentralized hueristic,
+    """
+    Finds interdependent restoration strategies using a decentralized heuristic,
     Judgment Call :cite:`Talebiyan2019c,Talebiyan2019`.
 
     Parameters
@@ -38,7 +39,7 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
     :
         None
 
-    '''
+    """
     if "NUM_ITERATIONS" not in params:
         params["NUM_ITERATIONS"] = 1
     num_iterations = params["NUM_ITERATIONS"]
@@ -47,13 +48,14 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
     c = 0
     objs = {}
     params_copy = copy.deepcopy(params)  # !!! deepcopy
+    out_dir_suffix_res = indp.get_resource_suffix(params_copy)
     for jc in params["JUDGMENT_TYPE"]:
         params_copy['JUDGMENT_TYPE'] = jc
         for rst in params["RES_ALLOC_TYPE"]:
             params_copy['RES_ALLOC_TYPE'] = rst
             if rst not in ["MDA", "MAA", "MCA"]:
                 output_dir_full = params["OUTPUT_DIR"] + '_L' + str(len(params["L"])) + '_m' + \
-                                  str(params["MAGNITUDE"]) + "_v" + str(params["V"]) + '_' + jc + '_' + \
+                                  str(params["MAGNITUDE"]) + "_v" + out_dir_suffix_res + '_' + jc + '_' + \
                                   rst + '/actions_' + str(params["SIM_NUMBER"]) + '_real.csv'
                 if os.path.exists(output_dir_full):
                     print('Judgment Call:', jc, rst, 'results are already there\n')
@@ -64,7 +66,7 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
                 for vt in params["VALUATION_TYPE"]:
                     params_copy['VALUATION_TYPE'] = vt
                     output_dir_full = params["OUTPUT_DIR"] + '_L' + str(len(params["L"])) + '_m' + \
-                                      str(params["MAGNITUDE"]) + "_v" + str(params["V"]) + '_' + jc + '_AUCTION_' + \
+                                      str(params["MAGNITUDE"]) + "_v" + out_dir_suffix_res + '_' + jc + '_AUCTION_' + \
                                       rst + '_' + vt + '/actions_' + str(params["SIM_NUMBER"]) + '_real.csv'
                     if os.path.exists(output_dir_full):
                         print('Judgment Call:', jc, rst, vt, 'results are already there\n')
@@ -74,15 +76,18 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
     if not objs:
         return 0
     # t=0 costs and performance.
-    indp_results_initial = indp.indp(objs[0].net, 0, 1, objs[0].layers,
-                                     controlled_layers=objs[0].layers)
+    if params['DYNAMIC_PARAMS']:
+        original_n = copy.deepcopy(objs[0].net)  # !!! deepcopy
+        dislocationutils.dynamic_parameters(objs[0].net, original_n, 0, params['DYNAMIC_PARAMS']['DEMAND_DATA'])
+    v_0 = {x: 0 for x in params["V"].keys()}
+    indp_results_initial = indp.indp(objs[0].net, v_0, 1, objs[0].layers, controlled_layers=objs[0].layers)
     for _, obj in objs.items():
         print('--Running JC: ' + obj.judge_type + ', resource allocation: ' + obj.res_alloc_type)
         if obj.resource.type == 'AUCTION':
-            print('auction type: ' + obj.resource.auction_model.auction_type + \
-                  ', valuation: ' + obj.resource.auction_model.valuation_type)
+            a_model = next(iter(obj.resource.auction_model.values()))
+            print('auction type: ' + a_model.auction_type + ', valuation: ' + a_model.valuation_type)
         if print_cmd:
-            print("Num iters=", params["NUM_ITERATIONS"])
+            print("Num iterations=", params["NUM_ITERATIONS"])
         # t=0 results.
         obj.results_judge = copy.deepcopy(indp_results_initial[1])  # !!! deepcopy
         obj.results_real = copy.deepcopy(indp_results_initial[1])  # !!! deepcopy
@@ -91,8 +96,9 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
             #: Resource Allocation
             res_alloc_time_start = time.time()
             if obj.resource.type == 'AUCTION':
-                obj.resource.auction_model.auction_resources(obj, i + 1, print_cmd=print_cmd,
-                                                             compute_poa=True)
+                for keya in obj.resource.auction_model.keys():
+                    obj.resource.auction_model[keya].auction_resources(obj, i + 1, print_cmd=print_cmd,
+                                                                       compute_poa=True)
             obj.resource.time[i + 1] = time.time() - res_alloc_time_start
             # Judgment-based Decisions
             if print_cmd:
@@ -105,6 +111,9 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
                 functionality[l] = obj.judgments.create_judgment_dict(obj, neg_layer)
                 obj.judgments.save_judgments(obj, functionality[l], l, i + 1)
                 # Make decision based on judgments before communication
+                if params['DYNAMIC_PARAMS']:
+                    dislocationutils.dynamic_parameters(objs[0].net, original_n, i + 1,
+                                                        params['DYNAMIC_PARAMS']['DEMAND_DATA'])
                 indp_results = indp.indp(obj.net, obj.v_r[i + 1][l], 1, layers=obj.layers,
                                          controlled_layers=[l], functionality=functionality[l],
                                          print_cmd=print_cmd, time_limit=time_limit)
@@ -179,7 +188,8 @@ def realized_performance(obj, t_step, functionality, judger_layer, print_cmd=Fal
             if print_cmd:
                 print('Correct judgment: ' + str(u) + '<-0')
         val.append(obj.net.G.nodes[u]['data']['inf_data'].functionality)
-    indp_results_real = indp.indp(obj.net, v_r=0, T=1, layers=obj.layers,
+    v_0 = {x: 0 for x in obj.resource.sum_resource.keys()}
+    indp_results_real = indp.indp(obj.net, v_r=v_0, T=1, layers=obj.layers,
                                   controlled_layers=[judger_layer],
                                   functionality=functionality_realized,
                                   print_cmd=print_cmd, time_limit=time_limit)
@@ -233,7 +243,7 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
     for idx, x in enumerate(joinedlist):
         #: Make the directory
         full_suffix = '_L' + str(x[2]) + '_m' + str(x[0]) + '_v' + str(x[3])
-        if x[4][:2] in ['jc', 'ng', 'bg']:
+        if x[4][:2] in ['jc', 'ng', 'bg'] or x[4][:5] in ['dp_jc']:
             full_suffix += '_' + x[5]
             if x[6] in ["MDA", "MAA", "MCA"]:
                 full_suffix += '_AUCTION_' + x[6] + '_' + x[7]
@@ -243,13 +253,12 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
         if os.path.exists(result_dir + '/actions_' + str(x[1]) + '_.csv'):
             # Save all results to Pandas dataframe
             sample_result = indputils.INDPResults()
-            sam_rslt_lyr = {l + 1: indputils.INDPResults() for l in range(x[2])}
-            ### !!! Assume the layer name is l+1
+            sam_rslt_lyr = {l: indputils.INDPResults() for l in x[9]}
             sample_result = sample_result.from_csv(result_dir, x[1], suffix=x[8])
             if deaggregate:
-                for l in range(x[2]):
-                    sam_rslt_lyr[l + 1] = sam_rslt_lyr[l + 1].from_csv(result_dir + rslt_dir_lyr, x[1],
-                                                                       suffix='L' + str(l + 1) + '_' + x[8])
+                for l in x[9]:
+                    sam_rslt_lyr[l] = sam_rslt_lyr[l].from_csv(result_dir + rslt_dir_lyr, x[1],
+                                                               suffix='L' + str(l) + '_' + x[8])
             initial_cost = {}
             for c in cost_types:
                 initial_cost[c] = sample_result[0]['costs'][c]
@@ -265,23 +274,23 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
                     cmplt_results = cmplt_results.append(dict(zip(columns, values)),
                                                          ignore_index=True)
             if deaggregate:
-                for l in range(x[2]):
+                for l in x[9]:
                     initial_cost = {}
                     for c in cost_types:
-                        initial_cost[c] = sam_rslt_lyr[l + 1][0]['costs'][c]
+                        initial_cost[c] = sam_rslt_lyr[l][0]['costs'][c]
                     norm_cost = 0
-                    for t in sam_rslt_lyr[l + 1].results:
+                    for t in sam_rslt_lyr[l].results:
                         for c in cost_types:
                             if initial_cost[c] != 0.0:
-                                norm_cost = sam_rslt_lyr[l + 1][t]['costs'][c] / initial_cost[c]
+                                norm_cost = sam_rslt_lyr[l][t]['costs'][c] / initial_cost[c]
                             else:
                                 norm_cost = -1.0
                             values = [t, x[0], c, x[4], x[5], x[6], x[7], x[3], x[1],
-                                      float(sam_rslt_lyr[l + 1][t]['costs'][c]), norm_cost, l + 1]
+                                      float(sam_rslt_lyr[l][t]['costs'][c]), norm_cost, l]
                             cmplt_results = cmplt_results.append(dict(zip(columns, values)),
                                                                  ignore_index=True)
             #: Getting back the JuCModel objects:
-            if x[4][:2] in ['jc', 'ng', 'bg']:
+            if x[4][:2] in ['jc', 'ng', 'bg'] or x[4][:5] in ['dp_jc']:
                 with open(result_dir + '/objs_' + str(x[1]) + '.pkl', 'rb') as f:
                     objs[str(x)] = pickle.load(f)
             if idx % (len(joinedlist) // 100 + 1) == 0:
@@ -383,7 +392,6 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
             if not cond.any():
                 sys.exit('Error:Reference type is not here! for %s,%s, m %d, resource %d' \
                          % (x[4], x[5], x[0], x[3]))
-
             rows = r_df[(r_df['Magnitude'] == x[0]) & (r_df['decision_type'] == x[4]) &
                         (r_df['judgment_type'] == x[5]) & (r_df['auction_type'] == x[6]) &
                         (r_df['valuation_type'] == x[7]) & (r_df['sample'] == x[1]) &
@@ -396,8 +404,7 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
                                     x=list(row_all[row_all['cost_type'] == cost_type].t[:T]))
                 area_p = -trapz_int(y=list(row_all[row_all['cost_type'] == 'Under Supply Perc'].cost[:T]),
                                     x=list(row_all[row_all['cost_type'] == 'Under Supply Perc'].t[:T]))
-                lambda_tc, lambda_p = compute_lambdas(float(ref_area_tc), float(ref_area_P),
-                                                      area_tc, area_p)
+                lambda_tc, lambda_p = compute_lambdas(float(ref_area_tc), float(ref_area_P), area_tc, area_p)
                 values = [x[0], cost_type, x[4], x[5], x[6], x[7], x[3], x[1], area_tc,
                           area_p, lambda_tc, lambda_p, (lambda_tc + lambda_p) / 2, 'nan']
                 lambda_df = lambda_df.append(dict(zip(columns, values)), ignore_index=True)
@@ -444,7 +451,7 @@ def compute_lambdas(ref_area_tc, ref_area_P, area_tc, area_p):
 
 def read_resource_allocation(result_df, combinations, optimal_combinations, objs,
                              ref_method='indp', root_result_dir='../results/'):
-    """
+    '''
     This functions reads the resource allocation vectors by INDP and JC. Also,
     it computes the allocation gap between the resource allocation by JC and
     and the optimal allocation by INDP :cite:`Talebiyan2020a`.
@@ -472,7 +479,7 @@ def read_resource_allocation(result_df, combinations, optimal_combinations, objs
         Dictionary that contain the resoruce allcoation vectors.
     df_alloc_gap : dict
         Dictionary that contain the allcoation gap values.
-    """
+    '''
     cols = ['t', 'resource', 'decision_type', 'judgment_type', 'auction_type',
             'valuation_type', 'sample', 'Magnitude', 'layer', 'no_resources',
             'normalized_resource', 'poa']
@@ -576,7 +583,7 @@ def read_resource_allocation(result_df, combinations, optimal_combinations, objs
 
 
 def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../results/'):
-    """
+    '''
     This function reads the run time of computing restoration strategies by different methods.
 
     Parameters
@@ -599,7 +606,7 @@ def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../
     run_time_results : dict
         Dictionary that contain run time of for all computed strategies.
 
-    """
+    '''
     columns = ['t', 'Magnitude', 'decision_type', 'judgment_type', 'auction_type', 'valuation_type',
                'no_resources', 'sample', 'decision_time', 'auction_time', 'valuation_time']
     run_time_results = pd.DataFrame(columns=columns, dtype=int)
@@ -662,10 +669,10 @@ def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../
 def generate_combinations(database, mags, sample, layers, no_resources, decision_type,
                           judgment_type, res_alloc_type, valuation_type,
                           list_high_dam_add=None, synthetic_dir=None):
-    """
-    This function returns all combinations of magnitude, sample, judgment type,
+    '''
+    This fucntion returns all combinations of magnitude, sample, judgment type,
     resource allocation type, and valuation type (if applicable) involved in
-    decentralized and centralized analyses. The returned dictionary are used by
+    decentralized and centralized analyses. The returend dictionary are used by
     other functions to read results and calculate comparison measures.
 
     Parameters
@@ -704,14 +711,14 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
         All combinations of magnitude, sample, judgment type, resource allocation type
         involved in the INDP (or any other optimal results).
 
-    """
+    '''
     combinations = []
     optimal_combinations = []
     optimal_method = ['tdindp', 'indp', 'sample_indp_12Node', 'dp_indp']
     print('\nCombination Generation\n', end='')
     idx = 0
     no_total = len(mags) * len(sample)
-    if database in ['shelby', 'random', 'ANDRES', 'WU']:
+    if database in ['shelby', 'from_csv', 'ANDRES', 'WU']:
         if list_high_dam_add:
             list_high_dam = pd.read_csv(list_high_dam_add)
         L = len(layers)
@@ -719,6 +726,12 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
             if list_high_dam_add is None or len(list_high_dam.loc[(list_high_dam.set == s) & \
                                                                   (list_high_dam.sce == m)].index):
                 for rc in no_resources:
+                    outDirSuffixRes = ''
+                    for res, val in rc.items():
+                        if isinstance(val, (int)):
+                            outDirSuffixRes += res[0] + str(val)
+                        else:
+                            outDirSuffixRes += res[0] + str(sum([lval for _, lval in val.items()])) + '_fixed_layer_Cap'
                     for dt, jt, at, vt in itertools.product(decision_type, judgment_type,
                                                             res_alloc_type, valuation_type):
                         if dt == 'jc':
@@ -727,14 +740,16 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
                             sf = ''
 
                         if (dt in optimal_method) and \
-                                [m, s, L, rc, dt, 'nan', 'nan', 'nan', ''] not in optimal_combinations:
-                            optimal_combinations.append([m, s, L, rc, dt, 'nan',
-                                                         'nan', 'nan', sf])
+                                [m, s, L, outDirSuffixRes, dt, 'nan', 'nan', 'nan',
+                                 '', layers, rc] not in optimal_combinations:
+                            optimal_combinations.append([m, s, L, outDirSuffixRes, dt, 'nan', 'nan', 'nan',
+                                                         sf, layers, rc])
                         elif (dt not in optimal_method) and (at not in ['UNIFORM', 'OPTIMAL']):
-                            combinations.append([m, s, L, rc, dt, jt, at, vt, sf])
+                            combinations.append([m, s, L, outDirSuffixRes, dt, jt, at, vt, sf, layers, rc])
                         elif (dt not in optimal_method) and (at in ['UNIFORM', 'OPTIMAL']):
-                            if [m, s, L, rc, dt, jt, at, 'nan', sf] not in combinations:
-                                combinations.append([m, s, L, rc, dt, jt, at, 'nan', sf])
+                            if [m, s, L, outDirSuffixRes, dt, jt, at, 'nan', sf, layers, rc] not in combinations:
+                                combinations.append([m, s, L, outDirSuffixRes, dt, jt, at,
+                                                     'nan', sf, layers, rc])
             idx += 1
             update_progress(idx, no_total)
     elif database == 'synthetic':
@@ -749,6 +764,12 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
             L = int(config_param.loc['No. Layers'])
             no_resources = int(config_param.loc['Resource Cap'])
             for rc in [no_resources]:
+                outDirSuffixRes = ''
+                for res, val in rc.items():
+                    if isinstance(val, (int)):
+                        outDirSuffixRes += res[0] + str(val)
+                    else:
+                        outDirSuffixRes += res[0] + str(sum([lval for _, lval in val.items()])) + '_fixed_layer_Cap'
                 for dt, jt, at, vt in itertools.product(decision_type, judgment_type,
                                                         res_alloc_type, valuation_type):
                     if dt == 'JC':
@@ -756,14 +777,17 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
                     else:
                         sf = ''
                     if (dt in optimal_method) and \
-                            [m, s, L, rc, dt, 'nan', 'nan', 'nan', ''] not in optimal_combinations:
-                        optimal_combinations.append([m, s, L, rc, dt, 'nan',
-                                                     'nan', 'nan', sf])
+                            [m, s, L, outDirSuffixRes, dt, 'nan', 'nan', 'nan', '',
+                             layers, rc] not in optimal_combinations:
+                        optimal_combinations.append([m, s, L, outDirSuffixRes, dt, 'nan',
+                                                     'nan', 'nan', sf, layers, rc])
                     elif (dt not in optimal_method) and (at not in ['UNIFORM', 'OPTIMAL']):
-                        combinations.append([m, s, L, rc, dt, jt, at, vt, sf])
+                        combinations.append([m, s, L, outDirSuffixRes, dt, jt, at,
+                                             vt, sf, layers, rc])
                     elif (dt not in optimal_method) and (at in ['UNIFORM', 'OPTIMAL']):
-                        if [m, s, L, rc, dt, jt, at, 'nan', sf] not in combinations:
-                            combinations.append([m, s, L, rc, dt, jt, at, 'nan', sf])
+                        if [m, s, L, outDirSuffixRes, dt, jt, at, 'nan', sf, layers, rc] not in combinations:
+                            combinations.append([m, s, L, outDirSuffixRes, dt, jt, at,
+                                                 'nan', sf, layers, rc])
             idx += 1
             update_progress(idx, no_total)
     else:
@@ -772,7 +796,7 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
 
 
 def update_progress(progress, total):
-    '''
+    """
     This function updates and writes a progress bar to console.
 
     Parameters
@@ -787,14 +811,14 @@ def update_progress(progress, total):
     :
         None.
 
-    '''
+    """
     print('\r[%s] %1.1f%%' % ('#' * int(progress / float(total) * 20),
                               (progress / float(total) * 100)), end='')
     sys.stdout.flush()
 
 
 def trapz_int(x, y):
-    '''
+    """
     This function computes the area underneath a curve (y) over time vector (x) including
     checking if the time vector is sorted.
 
@@ -810,7 +834,7 @@ def trapz_int(x, y):
     float
         Area underneath x-y curve.
 
-    '''
+    """
     if not np.all([i < j for i, j in zip(x[:-1], x[1:])]):
         x, y = (list(t) for t in zip(*sorted(zip(x, y))))
     return np.trapz(y, x)

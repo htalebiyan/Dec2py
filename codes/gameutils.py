@@ -1,7 +1,7 @@
-'''
-Functions that are used to run different types of games for the restoration of 
+"""
+Functions that are used to run different types of games for the restoration of
 interdependent networks
-'''
+"""
 import os
 import sys
 import copy
@@ -9,12 +9,11 @@ import gameclasses
 import indp
 import dindputils
 import pandas as pd
-import numpy as np
 
 
 def run_game(params, save_results=True, print_cmd=True, save_model=False, plot2D=False):
-    '''
-    Finds interdepndent restoration strategies using a decentralized hueristic,
+    """
+    Finds interdependent restoration strategies using a decentralized heuristic,
     Judgment Call :cite:`Talebiyan2019c,Talebiyan2019`.
 
     Parameters
@@ -35,7 +34,7 @@ def run_game(params, save_results=True, print_cmd=True, save_model=False, plot2D
     :
         None
 
-    '''
+    """
     if "NUM_ITERATIONS" not in params:
         params["NUM_ITERATIONS"] = 1
     num_iterations = params["NUM_ITERATIONS"]
@@ -89,7 +88,7 @@ def run_game(params, save_results=True, print_cmd=True, save_model=False, plot2D
 
 
 def analyze_NE(objs, combinations, optimal_combinations):
-    '''
+    """
     This function reads the results of analyses (INDP, JC, etc.) and the corresponding
     objects from file and aggregates the results in a dictionary.
 
@@ -107,8 +106,7 @@ def analyze_NE(objs, combinations, optimal_combinations):
 
     Returns
     -------
-    
-    '''
+    """
     columns = ['t', 'Magnitude', 'decision_type', 'judgment_type', 'auction_type',
                'valuation_type', 'no_resources', 'sample',
                'ne_total_cost', 'optimal_total_cost', 'action_similarity', 'payoff_ratio',
@@ -117,7 +115,6 @@ def analyze_NE(objs, combinations, optimal_combinations):
                'opt_partially_cooperative', 'opt_OA', 'opt_NA', 'opt_NA_possible']
     cmplt_analyze = pd.DataFrame(columns=columns, dtype=int)
     print("\nAnalyze NE")
-    joinedlist = combinations + optimal_combinations
     for idx, x in enumerate(combinations):
         if x[4][:2] in ['ng', 'bg']:
             obj = objs[str(x)]
@@ -128,6 +125,7 @@ def analyze_NE(objs, combinations, optimal_combinations):
                 lyr_act, opt_tc, ne_payoff, ne_tc = compare_sol(optimal_sol, ne_sol, obj.layers)
                 payoff_ratio = ne_payoff / opt_tc
                 tc_ratio = ne_tc / opt_tc
+
                 cooperation = {'C': 0, 'P': 0, 'OA': 0, 'NA': 0, 'NAP': 0}
                 cooperation_opt = {'C': 0, 'P': 0, 'OA': 0, 'NA': 0, 'NAP': 0}
                 no_ne = 0
@@ -149,6 +147,7 @@ def analyze_NE(objs, combinations, optimal_combinations):
                                              game.actions[l])
                         if not label:
                             sys.exit('Type of action cannot be found')
+
                         cooperation_opt[label] += 1 / len(game.players)
                 values = [t + 1, x[0], x[4], x[5], x[6], x[7], x[3], x[1], ne_payoff,
                           opt_tc, lyr_act, payoff_ratio, tc_ratio, no_ne, no_payoffs,
@@ -160,148 +159,10 @@ def analyze_NE(objs, combinations, optimal_combinations):
             if idx % (len(combinations) // 100 + 1) == 0:
                 dindputils.update_progress(idx + 1, len(combinations))
         else:
+
             sys.exit('Error: The combination or folder does not exist' + str(x))
     dindputils.update_progress(len(combinations), len(combinations))
     return cmplt_analyze
-
-
-def relative_actions(df, combinations):
-    '''
-    This functions computes the relative measure of % of player that take each type of
-    action compared to the optimal solution.
-
-    Parameters
-    ----------
-    df : dict
-        Dictionary that contains complete results of NE analysis computed by
-        :func:`analyze_NE`.
-    combinations : list
-        All combinations of magnitude, sample, judgment type, resource allocation type
-        involved in the JC (or any other decentralized results) collected by
-        :func:`dindputils.generate_combinations`.
-    Returns
-    -------
-    df_rel : dict
-        Dictionary that contains the difference between action of various type between
-        the palyers and the optimal choice
-    '''
-    act_types = ['cooperative', 'partially_cooperative', 'OA', 'NA', 'NA_possible']
-    cols = ['decision_type', 'judgment_type', 'auction_type', 'valuation_type', 'sample',
-            'Magnitude', 'no_resources'] + ['rel_' + ac for ac in act_types]
-    T = max(df.t.unique().tolist())
-    df_rel = pd.DataFrame(columns=cols)
-    print('\nRelative Actions')
-    for idx, x in enumerate(combinations):
-        rel_dict = {'decision_type': x[4], 'judgment_type': x[5], 'auction_type': x[6],
-                    'valuation_type': x[7], 'sample': x[1], 'Magnitude': x[0], 'no_resources': x[3]}
-        row = (df['decision_type'] == x[4]) & (df['sample'] == x[1]) & (df['Magnitude'] == x[0]) & \
-              (df['no_resources'] == x[3]) & (df['auction_type'] == x[6]) & \
-              (df['valuation_type'] == x[7]) & (df['judgment_type'] == x[5])
-        vec_act = {ac: np.zeros(T) for ac in act_types}
-        vec_act_optimal = {ac: np.zeros(T) for ac in act_types}
-        for ac in act_types:
-            for t in range(T):
-                vec_act[ac][t] = df.loc[(df['t'] == t + 1) & row, ac]
-                vec_act_optimal[ac][t] = df.loc[(df['t'] == t + 1) & row, 'opt_' + ac]
-            # # Area between
-            distance = sum(vec_act[ac] - vec_act_optimal[ac])
-            rel_dict['rel_' + ac] = distance
-        df_rel = df_rel.append(rel_dict, ignore_index=True)
-        if idx % (len(combinations) / 10 + 1) == 0:
-            dindputils.update_progress(idx + 1, len(combinations))
-    dindputils.update_progress(idx + 1, len(combinations))
-    return df_rel
-
-
-def cooperation_gain(base_df, lambda_df, combinations, ref_state, states, lambda_type='U'):
-    """
-    This functions compares the gain from moving from one state of the game to other
-    states for each player by changing their type.
-
-    Parameters
-    ----------
-    base_df : dict
-        Dictionary that contains complete results computed by
-        :func:`dindputils.read_results`.
-    lambda_df : dict
-        Dictionary that contains complete relative performance results computed by
-        :func:`dindputils.relative_performance`.
-    combinations : list
-        All combinations of magnitude, sample, judgment type, resource allocation type
-        involved in the JC (or any other decentralized results) collected by
-        :func:`dindputils.generate_combinations`.
-    ref_state : str
-        ...
-    states : list
-        ...
-    lambda_type : str, optional
-        ...
-    Returns
-    -------
-    df_gain : dict
-        Dictionary that contains ...
-    """
-    decision_types_base = base_df.decision_type.unique().tolist()
-    layers_base = base_df.layer.unique().tolist()
-    T = base_df.t.unique().tolist()
-    assert ref_state in decision_types_base, 'ref_state ' + ref_state + ' is not in decision types in base_df'
-    assert layers_base != ['nan'], 'Lambda has not been computed for layers in base_df'
-    for x in states:
-        assert x in decision_types_base, 'state ' + x + ' is not in decision types in base_df'
-
-    decision_types = lambda_df.decision_type.unique().tolist()
-    layers = lambda_df.layer.unique().tolist()
-    assert ref_state in decision_types, 'ref_state ' + ref_state + ' is not in decision types in lambda_df'
-    assert layers != ['nan'], 'Lambda has not been computed for layers in lambda_df'
-    for x in states:
-        assert x in decision_types, 'state ' + x + ' is not in decision types in lambda_df'
-
-    assert sorted(decision_types_base) == sorted(decision_types), \
-        'Discrepancy between decision_types in base_df and lambda_df'
-
-    cols = ['judgment_type', 'auction_type', 'valuation_type', 'sample', 'Magnitude',
-            'no_resources', 'layer'] + [ref_state + ' to ' + x for x in states]
-    df_gain = pd.DataFrame(columns=cols)
-    df_gain_time = pd.DataFrame(columns=cols + ['t'])
-    print('\nCooperation Gain')
-    for idx, x in enumerate(combinations):
-        rows = (df_gain['sample'] == x[1]) & (df_gain['Magnitude'] == x[0]) & \
-               (df_gain['no_resources'] == x[3]) & (df_gain['auction_type'] == x[6]) & \
-               (df_gain['valuation_type'] == x[7]) & (df_gain['judgment_type'] == x[5])
-        if not sum(rows):
-            row = (lambda_df['sample'] == x[1]) & (lambda_df['Magnitude'] == x[0]) & \
-                  (lambda_df['no_resources'] == x[3]) & (lambda_df['auction_type'] == x[6]) & \
-                  (lambda_df['valuation_type'] == x[7]) & (lambda_df['judgment_type'] == x[5])
-            row_t = (base_df['sample'] == x[1]) & (base_df['Magnitude'] == x[0]) & \
-                    (base_df['no_resources'] == x[3]) & (base_df['auction_type'] == x[6]) & \
-                    (base_df['valuation_type'] == x[7]) & (base_df['judgment_type'] == x[5]) & \
-                    (base_df['cost_type'] == 'Under Supply Perc')
-            for l in [x for x in layers if x != 'nan']:
-                gain_dict = {'judgment_type': x[5], 'auction_type': x[6],
-                             'valuation_type': x[7], 'sample': x[1], 'Magnitude': x[0],
-                             'no_resources': x[3], 'layer': l}
-                ref_lambda = lambda_df.loc[row & (lambda_df['layer'] == l) & (lambda_df['decision_type'] == ref_state),
-                                           'lambda_' + lambda_type]
-                for s in states:
-                    state_lambda = lambda_df.loc[row & (lambda_df['layer'] == l) & (lambda_df['decision_type'] == s),
-                                                 'lambda_' + lambda_type]
-                    gain_dict[ref_state + ' to ' + s] = float(state_lambda) - float(ref_lambda)
-                df_gain = df_gain.append(gain_dict, ignore_index=True)
-                for t in T:
-                    gain_dict_t = {'judgment_type': x[5], 'auction_type': x[6],
-                                   'valuation_type': x[7], 'sample': x[1], 'Magnitude': x[0],
-                                   'no_resources': x[3], 'layer': l, 't': t}
-                    ref_perf = base_df.loc[row_t & (base_df['layer'] == l) & (base_df['decision_type'] == ref_state) & \
-                                           (base_df['t'] == t), 'cost']
-                    for s in states:
-                        state_perf = base_df.loc[row_t & (base_df['layer'] == l) & (base_df['decision_type'] == s) & \
-                                                   (base_df['t'] == t), 'cost']
-                        gain_dict_t[ref_state + ' to ' + s] = float(state_perf) - float(ref_perf)
-                    df_gain_time = df_gain_time.append(gain_dict_t, ignore_index=True)
-        if idx % (len(combinations) / 10 + 1) == 0:
-            dindputils.update_progress(idx + 1, len(combinations))
-    dindputils.update_progress(idx + 1, len(combinations))
-    return df_gain, df_gain_time
 
 
 def compare_sol(opt, ne, layers):
@@ -334,7 +195,7 @@ def label_action(action, all_actions):
         if len(all_actions) != 1:
             label = 'NA'
         else:
-            label = 'NAP'  # No more actions possinble either becasue the sustems is repaired completely or Rc=0
+            label = 'NAP'  # No more actions possible either because the systems is repaired completely or Rc=0
     else:
         label = 'C'
         for a in action:

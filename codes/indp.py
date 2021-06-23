@@ -10,11 +10,8 @@ import time
 import math
 import pickle
 import sys
+import dislocationutils
 
-
-# HOME_DIR="/Users/Andrew/"
-# if platform.system() == "Linux":
-#    HOME_DIR="/home/andrew/"
 
 def indp(N, v_r, T=1, layers=[1, 3], controlled_layers=[1, 3], functionality={},
          forced_actions=False, fixed_nodes={}, print_cmd=True, time_limit=None,
@@ -84,7 +81,6 @@ def indp(N, v_r, T=1, layers=[1, 3], controlled_layers=[1, 3], functionality={},
     # Damaged arcs in controlled network.
     a_hat_prime = [(u, v, a) for u, v, a in a_prime if n_hat.has_node(u) and n_hat.has_node(v)]
     S = N.S
-
     # Populate interdependencies. Add nodes to N' if they currently rely on a non-functional node.
     interdep_nodes = {}
     for u, v, a in g_prime.edges(data=True):
@@ -106,7 +102,6 @@ def indp(N, v_r, T=1, layers=[1, 3], controlled_layers=[1, 3], functionality={},
                             interdep_nodes[t][v] = []
                         interdep_nodes[t][v].append((u, a['data']['inf_data'].gamma))
 
-    # print "N'=",[n for (n,d) in N_prime]
     for t in range(T):
         # Add geographical space variables.
         if co_location:
@@ -116,6 +111,9 @@ def indp(N, v_r, T=1, layers=[1, 3], controlled_layers=[1, 3], functionality={},
         for n, d in n_hat.nodes(data=True):
             m.addVar(name='delta+_' + str(n) + "," + str(t), lb=0.0)
             m.addVar(name='delta-_' + str(n) + "," + str(t), lb=0.0)
+            for l in d['data']['inf_data'].extra_com.keys():
+                m.addVar(name='delta+_' + str(n) + "," + str(t) + "," + str(l), lb=0.0)
+                m.addVar(name='delta-_' + str(n) + "," + str(t) + "," + str(l), lb=0.0)
         # Add functionality binary variables for each node in N'.
         for n, d in n_hat.nodes(data=True):
             m.addVar(name='w_' + str(n) + "," + str(t), vtype=GRB.BINARY)
@@ -126,9 +124,11 @@ def indp(N, v_r, T=1, layers=[1, 3], controlled_layers=[1, 3], functionality={},
         for key, val in fixed_nodes.items():
             m.getVarByName('w_' + str(key) + "," + str(0)).lb = val
             m.getVarByName('w_' + str(key) + "," + str(0)).ub = val
-        # Add flow variables for each arc.
+        # Add flow variables for each arc. (main commodity)
         for u, v, a in n_hat.edges(data=True):
             m.addVar(name='x_' + str(u) + "," + str(v) + "," + str(t), lb=0.0)
+            for l in a['data']['inf_data'].extra_com.keys():
+                m.addVar(name='x_' + str(u) + "," + str(v) + "," + str(t) + "," + str(l), lb=0.0)
         # Add functionality binary variables for each arc in A'.
         for u, v, a in a_hat_prime:
             m.addVar(name='y_' + str(u) + "," + str(v) + "," + str(t), vtype=GRB.BINARY)
@@ -158,8 +158,16 @@ def indp(N, v_r, T=1, layers=[1, 3], controlled_layers=[1, 3], functionality={},
         for n, d in n_hat.nodes(data=True):
             obj_func += d['data']['inf_data'].oversupply_penalty * m.getVarByName('delta+_' + str(n) + "," + str(t))
             obj_func += d['data']['inf_data'].undersupply_penalty * m.getVarByName('delta-_' + str(n) + "," + str(t))
+            for l, val in d['data']['inf_data'].extra_com.items():
+                obj_func += val['oversupply_penalty'] * m.getVarByName('delta+_' + str(n) + "," + str(t) + "," + str(l))
+                obj_func += val['undersupply_penalty'] * m.getVarByName(
+                    'delta-_' + str(n) + "," + str(t) + "," + str(l))
+
         for u, v, a in n_hat.edges(data=True):
             obj_func += a['data']['inf_data'].flow_cost * m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t))
+            for l, val in a['data']['inf_data'].extra_com.items():
+                obj_func += val['flow_cost'] * m.getVarByName(
+                    'x_' + str(u) + "," + str(v) + "," + str(t) + "," + str(l))
 
     m.setObjective(obj_func, GRB.MINIMIZE)
     m.update()
@@ -178,17 +186,17 @@ def indp(N, v_r, T=1, layers=[1, 3], controlled_layers=[1, 3], functionality={},
         # Time-dependent constraint.
         for n, d in n_hat_prime:
             if t > 0:
-                wTildeSum = LinExpr()
+                w_tilde_sum = LinExpr()
                 for t_prime in range(1, t + 1):
-                    wTildeSum += m.getVarByName('w_tilde_' + str(n) + "," + str(t_prime))
-                m.addConstr(m.getVarByName('w_' + str(n) + "," + str(t)), GRB.LESS_EQUAL, wTildeSum,
+                    w_tilde_sum += m.getVarByName('w_tilde_' + str(n) + "," + str(t_prime))
+                m.addConstr(m.getVarByName('w_' + str(n) + "," + str(t)), GRB.LESS_EQUAL, w_tilde_sum,
                             "Time dependent recovery constraint at node " + str(n) + "," + str(t))
         for u, v, a in a_hat_prime:
             if t > 0:
-                yTildeSum = LinExpr()
+                y_tilde_sum = LinExpr()
                 for t_prime in range(1, t + 1):
-                    yTildeSum += m.getVarByName('y_tilde_' + str(u) + "," + str(v) + "," + str(t_prime))
-                m.addConstr(m.getVarByName('y_' + str(u) + "," + str(v) + "," + str(t)), GRB.LESS_EQUAL, yTildeSum,
+                    y_tilde_sum += m.getVarByName('y_tilde_' + str(u) + "," + str(v) + "," + str(t_prime))
+                m.addConstr(m.getVarByName('y_' + str(u) + "," + str(v) + "," + str(t)), GRB.LESS_EQUAL, y_tilde_sum,
                             "Time dependent recovery constraint at arc " + str(u) + "," + str(v) + "," + str(t))
         # Enforce a_i,j to be fixed if a_j,i is fixed (and vice versa).
         for u, v, a in a_hat_prime:
@@ -202,99 +210,114 @@ def indp(N, v_r, T=1, layers=[1, 3], controlled_layers=[1, 3], functionality={},
                             "Arc reconstruction equality (" + str(u) + "," + str(v) + "," + str(t) + ")")
         # Conservation of flow constraint. (2) in INDP paper.
         for n, d in n_hat.nodes(data=True):
-            outFlowConstr = LinExpr()
-            inFlowConstr = LinExpr()
-            demandConstr = LinExpr()
+            out_flow_constr = LinExpr()
+            in_flow_constr = LinExpr()
+            demand_constr = LinExpr()
             for u, v, a in n_hat.out_edges(n, data=True):
-                outFlowConstr += m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t))
+                out_flow_constr += m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t))
             for u, v, a in n_hat.in_edges(n, data=True):
-                inFlowConstr += m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t))
-            demandConstr += d['data']['inf_data'].demand - m.getVarByName(
+                in_flow_constr += m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t))
+            demand_constr += d['data']['inf_data'].demand - m.getVarByName(
                 'delta+_' + str(n) + "," + str(t)) + m.getVarByName('delta-_' + str(n) + "," + str(t))
-            m.addConstr(outFlowConstr - inFlowConstr, GRB.EQUAL, demandConstr,
+            m.addConstr(out_flow_constr - in_flow_constr, GRB.EQUAL, demand_constr,
                         "Flow conservation constraint " + str(n) + "," + str(t))
+            for l, val in d['data']['inf_data'].extra_com.items():
+                out_flow_constr = LinExpr()
+                in_flow_constr = LinExpr()
+                demand_constr = LinExpr()
+                for u, v, a in n_hat.out_edges(n, data=True):
+                    out_flow_constr += m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t) + "," + str(l))
+                for u, v, a in n_hat.in_edges(n, data=True):
+                    in_flow_constr += m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t) + "," + str(l))
+                demand_constr += val['demand'] - \
+                                 m.getVarByName('delta+_' + str(n) + "," + str(t) + "," + str(l)) + \
+                                 m.getVarByName('delta-_' + str(n) + "," + str(t) + "," + str(l))
+                m.addConstr(out_flow_constr - in_flow_constr, GRB.EQUAL, demand_constr,
+                            "Flow conservation constraint " + str(n) + "," + str(t) + "," + str(l))
+
         # Flow functionality constraints.
         if not functionality:
             interdep_nodes_list = interdep_nodes.keys()  # Interdepndent nodes with a damaged dependee node
         else:
             interdep_nodes_list = interdep_nodes[t].keys()  # Interdepndent nodes with a damaged dependee node
         for u, v, a in n_hat.edges(data=True):
+            lhs = m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t)) + \
+                  sum([m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t) + "," + str(l)) \
+                       for l in a['data']['inf_data'].extra_com.keys()])
             if (u in [n for (n, d) in n_hat_prime]) | (u in interdep_nodes_list):
-                m.addConstr(m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t)), GRB.LESS_EQUAL,
+                m.addConstr(lhs, GRB.LESS_EQUAL,
                             a['data']['inf_data'].capacity * m.getVarByName('w_' + str(u) + "," + str(t)),
                             "Flow in functionality constraint(" + str(u) + "," + str(v) + "," + str(t) + ")")
             else:
-                m.addConstr(m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t)), GRB.LESS_EQUAL,
+                m.addConstr(lhs, GRB.LESS_EQUAL,
                             a['data']['inf_data'].capacity * N.G.nodes[u]['data']['inf_data'].functionality,
                             "Flow in functionality constraint (" + str(u) + "," + str(v) + "," + str(t) + ")")
             if (v in [n for (n, d) in n_hat_prime]) | (v in interdep_nodes_list):
-                m.addConstr(m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t)), GRB.LESS_EQUAL,
+                m.addConstr(lhs, GRB.LESS_EQUAL,
                             a['data']['inf_data'].capacity * m.getVarByName('w_' + str(v) + "," + str(t)),
                             "Flow out functionality constraint(" + str(u) + "," + str(v) + "," + str(t) + ")")
             else:
-                m.addConstr(m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t)), GRB.LESS_EQUAL,
+                m.addConstr(lhs, GRB.LESS_EQUAL,
                             a['data']['inf_data'].capacity * N.G.nodes[v]['data']['inf_data'].functionality,
                             "Flow out functionality constraint (" + str(u) + "," + str(v) + "," + str(t) + ")")
             if (u, v, a) in a_hat_prime:
-                m.addConstr(m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t)), GRB.LESS_EQUAL,
+                m.addConstr(lhs, GRB.LESS_EQUAL,
                             a['data']['inf_data'].capacity * m.getVarByName(
                                 'y_' + str(u) + "," + str(v) + "," + str(t)),
                             "Flow arc functionality constraint (" + str(u) + "," + str(v) + "," + str(t) + ")")
             else:
-                m.addConstr(m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t)), GRB.LESS_EQUAL,
+                m.addConstr(lhs, GRB.LESS_EQUAL,
                             a['data']['inf_data'].capacity * N.G[u][v]['data']['inf_data'].functionality,
                             "Flow arc functionality constraint(" + str(u) + "," + str(v) + "," + str(t) + ")")
 
         # Resource availability constraints.
-        is_sep_resource = False
-        if isinstance(v_r, int):
-            total_resource = v_r
-        else:
-            is_sep_resource = True
-            total_resource = sum([val for _, val in v_r.items()])
-            if len(v_r.keys()) != len(layers):
-                sys.exit("The number of resource cap values does not match the number of layers.\n")
-
-        resource_left_constr = LinExpr()
-        if is_sep_resource:
-            resource_left_constr_sep = {key: LinExpr() for key, _ in v_r.items()}
-
-        for u, v, a in a_hat_prime:
-            index_layer = a['data']['inf_data'].layer
-            if T == 1:
-                resource_left_constr += 0.5 * a['data']['inf_data'].resource_usage * m.getVarByName(
-                    'y_' + str(u) + "," + str(v) + "," + str(t))
-                if is_sep_resource:
-                    resource_left_constr_sep[index_layer] += 0.5 * a['data']['inf_data'].resource_usage * m.getVarByName(
-                        'y_' + str(u) + "," + str(v) + "," + str(t))
+        for rc, val in v_r.items():
+            is_sep_res = False
+            if isinstance(val, int):
+                total_resource = val
             else:
-                resource_left_constr += 0.5 * a['data']['inf_data'].resource_usage * m.getVarByName(
-                    'y_tilde_' + str(u) + "," + str(v) + "," + str(t))
-                if is_sep_resource:
-                    resource_left_constr_sep[index_layer] += 0.5 * a['data']['inf_data'].resource_usage * m.getVarByName(
-                        'y_tilde_' + str(u) + "," + str(v) + "," + str(t))
+                is_sep_res = True
+                total_resource = sum([lval for _, lval in val.items()])
+                assert len(val.keys()) == len(layers), "The number of resource \
+                    values does not match the number of layers."
 
-        for n, d in n_hat_prime:
-            index_layer = n[1]
-            if T == 1:
-                resource_left_constr += d['data']['inf_data'].resource_usage * m.getVarByName(
-                    'w_' + str(n) + "," + str(t))
-                if is_sep_resource:
-                    resource_left_constr_sep[index_layer] += d['data']['inf_data'].resource_usage * m.getVarByName(
-                        'w_' + str(n) + "," + str(t))
-            else:
-                resource_left_constr += d['data']['inf_data'].resource_usage * m.getVarByName(
-                    'w_tilde_' + str(n) + "," + str(t))
-                if is_sep_resource:
-                    resource_left_constr_sep[index_layer] += d['data']['inf_data'].resource_usage * m.getVarByName(
-                        'w_tilde_' + str(n) + "," + str(t))
+            resource_left_constr = LinExpr()
+            if is_sep_res:
+                res_left_constr_sep = {key: LinExpr() for key in val.keys()}
 
-        m.addConstr(resource_left_constr, GRB.LESS_EQUAL, total_resource,
-                    "Resource availability constraint at " + str(t) + ".")
-        if is_sep_resource:
-            for k, _ in v_r.items():
-                m.addConstr(resource_left_constr_sep[k], GRB.LESS_EQUAL, v_r[k],
-                            "Resource availability constraint at " + str(t) + " for layer " + str(k) + ".")
+            for u, v, a in a_hat_prime:
+                idx_lyr = a['data']['inf_data'].layer
+                res_use = 0.5 * a['data']['inf_data'].resource_usage['h_' + rc]
+                if T == 1:
+                    resource_left_constr += res_use * m.getVarByName('y_' + str(u) + "," + str(v) + "," + str(t))
+                    if is_sep_res:
+                        res_left_constr_sep[idx_lyr] += res_use * m.getVarByName(
+                            'y_' + str(u) + "," + str(v) + "," + str(t))
+                else:
+                    resource_left_constr += res_use * m.getVarByName('y_tilde_' + str(u) + "," + str(v) + "," + str(t))
+                    if is_sep_res:
+                        res_left_constr_sep[idx_lyr] += res_use * m.getVarByName(
+                            'y_tilde_' + str(u) + "," + str(v) + "," + str(t))
+
+            for n, d in n_hat_prime:
+                idx_lyr = n[1]
+                res_use = d['data']['inf_data'].resource_usage['p_' + rc]
+                if T == 1:
+                    resource_left_constr += res_use * m.getVarByName('w_' + str(n) + "," + str(t))
+                    if is_sep_res:
+                        res_left_constr_sep[idx_lyr] += res_use * m.getVarByName('w_' + str(n) + "," + str(t))
+                else:
+                    resource_left_constr += res_use * m.getVarByName('w_tilde_' + str(n) + "," + str(t))
+                    if is_sep_res:
+                        res_left_constr_sep[idx_lyr] += res_use * m.getVarByName('w_tilde_' + str(n) + "," + str(t))
+
+            m.addConstr(resource_left_constr, GRB.LESS_EQUAL, total_resource,
+                        "Resource availability constraint for " + rc + " at " + str(t) + ".")
+            if is_sep_res:
+                for k, lval in val.items():
+                    m.addConstr(res_left_constr_sep[k], GRB.LESS_EQUAL, lval,
+                                "Resource availability constraint for " + rc + " at " + \
+                                str(t) + " for layer " + str(k) + ".")
 
         # Interdependency constraints
         infeasible_actions = []
@@ -377,7 +400,20 @@ def indp(N, v_r, T=1, layers=[1, 3], controlled_layers=[1, 3], functionality={},
                                 'inf_data'].in_space(s.id), GRB.LESS_EQUAL,
                                         m.getVarByName('z_' + str(s.id) + "," + str(t)),
                                         "Geographical space constraint for arc (" + str(u) + "," + str(v) + ")")
-
+        # !!! Demand completion constraints for dependee nodes.
+        all_dependees = [y[0] for x in interdep_nodes.values() for y in x]
+        for n, d in n_hat.nodes(data=True):
+            if n in all_dependees:
+                if T == 1:  # !!! add this constraint for td-INDP
+                    dc_lhs = abs(d['data']['inf_data'].demand) * m.getVarByName('w_' + str(n) + "," + str(t))
+                    dc_rhs = abs(d['data']['inf_data'].demand) - m.getVarByName('delta-_' + str(n) + "," + str(t))
+                    m.addConstr(dc_lhs, GRB.LESS_EQUAL, dc_rhs,
+                                "Demand completion constraints for node " + str(n) + "," + str(t))
+                    for l, val in d['data']['inf_data'].extra_com.items():
+                        dc_lhs = abs(val['demand']) * m.getVarByName('w_' + str(n) + "," + str(t))
+                        dc_rhs = abs(val['demand']) - m.getVarByName('delta-_' + str(n) + "," + str(t) + "," + str(l))
+                        m.addConstr(dc_lhs, GRB.LESS_EQUAL, dc_rhs,
+                                    "Demand completion constraints for node " + str(n) + "," + str(t) + "," + str(l))
     #    print "Solving..."
     m.update()
     if solution_pool:
@@ -398,7 +434,8 @@ def indp(N, v_r, T=1, layers=[1, 3], controlled_layers=[1, 3], functionality={},
         return [m, results]
     else:
         m.computeIIS()
-        if m.status == 9:
+        if m.status == 3:
+            m.write("model.ilp")
             print(m.getAttr("Status"), ": SOLUTION NOT FOUND. (Check data and/or violated constraints).")
             print('\nThe following constraint(s) cannot be satisfied:')
             for c in m.getConstrs():
@@ -655,7 +692,7 @@ def create_functionality_matrix(N, T, layers, actions, strategy_type="OPTIMISTIC
                     functionality[t][key] = 1.0
         if strategy_type == "INFO_SHARE":
             for a in actions[t]:
-                if a and not "/" in a:
+                if a and "/" not in a:
                     node = int(string.split(a, ".")[0])
                     layer = int(string.split(a, ".")[1])
                     if layer in layers:
@@ -682,56 +719,56 @@ def create_functionality_matrix(N, T, layers, actions, strategy_type="OPTIMISTIC
 
 def initialize_network(base_dir="../data/INDP_7-20-2015/", external_interdependency_dir=None,
                        sim_number=1, cost_scale=1, magnitude=6, sample=0, v=3,
-                       infrastructure_data=True, topology='Random'):
+                       infrastructure_data=True, topology='Random', extra_commodity=None):
     """
-    Initializes an :class:`~infrastructure.InfrastructureNetwork` object from
-    Shelby County data or synthetic networks.
+     Initializes an :class:`~infrastructure.InfrastructureNetwork` object from
+     Shelby County data or synthetic networks.
 
-    Parameters
-    ----------
-    base_dir : str, optional
-        Base directory of Shelby County data or synthetic networks. The default is
-        "../data/INDP_7-20-2015/".
-    external_interdependency_dir : str, optional
-        Directory of external interdependencies for Shelby County data. The default is None.
-    sim_number : int, optional
-        Which simulation number to use as input. The default is 1.
-    cost_scale : float, optional
-        Scales the cost to improve efficiency. The default is 1.
-    magnitude : int, optional
-        Magnitude parameter of the initial disruption. The default is 6.
-    sample : int, optional
-        Sample number paramter of the initial disruption. The default is 0.
-    v : int, list, optional
-        Number of avaialable resources or resource cap. The default is 3.
-    infrastructure_data : bool, optional
-        If the data are for infrastructure. It should be set to False if a synthetic network
-        is being analyzed. The default is True.
-    topology : str, optional
-        Topology of the synthetic network that is being analyzed. The default is 'Random'.
+     Parameters
+     ----------
+     base_dir : str, optional
+         Base directory of Shelby County data or synthetic networks. The default is
+         "../data/INDP_7-20-2015/".
+     external_interdependency_dir : str, optional
+         Directory of external interdependencies for Shelby County data. The default is None.
+     sim_number : int, optional
+         Which simulation number to use as input. The default is 1.
+     cost_scale : float, optional
+         Scales the cost to improve efficiency. The default is 1.
+     magnitude : int, optional
+         Magnitude parameter of the initial disruption. The default is 6.
+     sample : int, optional
+         Sample number paramter of the initial disruption. The default is 0.
+     v : int, list, optional
+         Number of available resources or resource cap. The default is 3.
+     infrastructure_data : bool, optional
+         If the data are for infrastructure. It should be set to False if a synthetic network
+         is being analyzed. The default is True.
+     topology : str, optional
+         Topology of the synthetic network that is being analyzed. The default is 'Random'.
+     extra_commodity :
 
-    Returns
-    -------
-    InterdepNet : :class:`~infrastructure.InfrastructureNetwork`
-        The object containing the network data.
-    v_temp : int, list
-        Number of avaialable resources or resource cap. Used for synthetic networks
-        where each sample network has a different resource cap.
-    layers_temp : list
-        List of layers in the analysis. Used for synthetic networks where each sample
-        network has different layers.
+     Returns
+     -------
+     InterdepNet : :class:`~infrastructure.InfrastructureNetwork`
+         The object containing the network data.
+     v_temp : int, list
+         Number of avaialable resources or resource cap. Used for synthetic networks
+         where each sample network has a different resource cap.
+     layers_temp : list
+         List of layers in the analysis. Used for synthetic networks where each sample
+         network has different layers.
 
-    """
+     """
     layers_temp = []
     v_temp = 0
     if infrastructure_data:
-        #    print "Loading Shelby County data..." #!!!
         InterdepNet = load_infrastructure_data(BASE_DIR=base_dir,
                                                external_interdependency_dir=external_interdependency_dir,
                                                sim_number=sim_number, cost_scale=cost_scale,
                                                magnitude=magnitude, v=v,
-                                               data_format=infrastructure_data)
-    #    print "Data loaded." #!!!
+                                               data_format=infrastructure_data,
+                                               extra_commodity=extra_commodity)
     else:
         InterdepNet, v_temp, layers_temp = load_synthetic_network(BASE_DIR=base_dir, topology=topology,
                                                                   config=magnitude, sample=sample,
@@ -742,30 +779,49 @@ def initialize_network(base_dir="../data/INDP_7-20-2015/", external_interdepende
 def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T=1, validate=False,
              save=True, suffix="", forced_actions=False, saveModel=False, print_cmd_line=True,
              co_location=True):
-    """ Runs an INDP problem with specified parameters. Outputs to directory specified in params['OUTPUT_DIR'].
+    """
+
+    Parameters
+    ----------
+    params :
+    layers :
+    controlled_layers :
+    functionality :
+    T :
+    validate :
+    save :
+    suffix :
+    forced_actions :
+    saveModel :
+    print_cmd_line :
+    co_location :
+
+    Returns
+    -------
+
+
+    Runs an INDP problem with specified parameters. Outputs to directory specified in params['OUTPUT_DIR'].
     :param params: Global parameters.
     :param layers: Layers to consider in the infrastructure network.
     :param T: Number of timesteps to optimize over.
     :param validate: Validate solution.
+
     """
+
     # Initialize failure scenario.
-    InterdepNet = None
+    interdep_net = None
     if "N" not in params:
-        InterdepNet = initialize_network(base_dir="../data/INDP_7-20-2015/",
-                                         sim_number=params['SIM_NUMBER'],
-                                         magnitude=params["MAGNITUDE"])
+        interdep_net = initialize_network(base_dir="../data/INDP_7-20-2015/",
+                                          sim_number=params['SIM_NUMBER'],
+                                          magnitude=params["MAGNITUDE"])
     else:
-        InterdepNet = params["N"]
+        interdep_net = params["N"]
     if "NUM_ITERATIONS" not in params:
         params["NUM_ITERATIONS"] = 1
     if not controlled_layers:
         controlled_layers = layers
 
-    v_r = params["V"]
-    if isinstance(v_r, (int)):
-        outDirSuffixRes = str(v_r)
-    else:
-        outDirSuffixRes = str(sum([val for _, val in v_r.items()])) + '_fixed_layer_Cap'
+    outDirSuffixRes = get_resource_suffix(params)
 
     indp_results = INDPResults(params["L"])
     if T == 1:
@@ -774,30 +830,32 @@ def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T
             print("Num iters=", params["NUM_ITERATIONS"])
 
         # Run INDP for 1 time step (original INDP).
-        output_dir = params["OUTPUT_DIR"] + '_L' + str(len(layers)) + '_m' + str(
-            params["MAGNITUDE"]) + "_v" + outDirSuffixRes
+        output_dir = params["OUTPUT_DIR"] + '_L' + str(len(layers)) + \
+                     '_m' + str(params["MAGNITUDE"]) + "_v" + outDirSuffixRes
         # Initial calculations.
         if params['DYNAMIC_PARAMS']:
-            original_N = copy.deepcopy(InterdepNet)  # !!! deepcopy
-            dynamic_params = create_dynamic_param(params, N=original_N)
-            dynamic_parameters(InterdepNet, original_N, 0, dynamic_params)
-        results = indp(InterdepNet, 0, 1, layers, controlled_layers=controlled_layers,
+            original_N = copy.deepcopy(interdep_net)  # !!! deepcopy
+            dislocationutils.dynamic_parameters(interdep_net, original_N, 0,
+                                                params['DYNAMIC_PARAMS']['DEMAND_DATA'])
+        v_0 = {x: 0 for x in params["V"].keys()}
+        results = indp(interdep_net, v_0, 1, layers, controlled_layers=controlled_layers,
                        functionality=functionality, co_location=co_location)
         indp_results = results[1]
-        indp_results.add_components(0, INDPComponents.calculate_components(results[0], InterdepNet,
+        indp_results.add_components(0, INDPComponents.calculate_components(results[0], interdep_net,
                                                                            layers=controlled_layers))
         for i in range(params["NUM_ITERATIONS"]):
             print("-Time Step (iINDP)", i + 1, "/", params["NUM_ITERATIONS"])
             if params['DYNAMIC_PARAMS']:
-                dynamic_parameters(InterdepNet, original_N, i + 1, dynamic_params)
-            results = indp(InterdepNet, v_r, T, layers, controlled_layers=controlled_layers,
+                dislocationutils.dynamic_parameters(interdep_net, original_N, i + 1,
+                                                    params['DYNAMIC_PARAMS']['DEMAND_DATA'])
+            results = indp(interdep_net, params["V"], T, layers, controlled_layers=controlled_layers,
                            forced_actions=forced_actions, co_location=co_location)
             indp_results.extend(results[1], t_offset=i + 1)
             if saveModel:
                 save_INDP_model_to_file(results[0], output_dir + "/Model", i + 1)
             # Modify network to account for recovery and calculate components.
-            apply_recovery(InterdepNet, indp_results, i + 1)
-            indp_results.add_components(i + 1, INDPComponents.calculate_components(results[0], InterdepNet,
+            apply_recovery(interdep_net, indp_results, i + 1)
+            indp_results.add_components(i + 1, INDPComponents.calculate_components(results[0], interdep_net,
                                                                                    layers=controlled_layers))
     #            print "Num_iters=",params["NUM_ITERATIONS"]
     else:
@@ -815,10 +873,10 @@ def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T
 
         print("Running td-INDP (T=" + str(T) + ", Window size=" + str(time_window_length) + ")")
         # Initial percolation calculations.
-        results = indp(InterdepNet, 0, 1, layers, controlled_layers=controlled_layers,
+        results = indp(interdep_net, 0, 1, layers, controlled_layers=controlled_layers,
                        functionality=functionality, co_location=co_location)
         indp_results = results[1]
-        indp_results.add_components(0, INDPComponents.calculate_components(results[0], InterdepNet,
+        indp_results.add_components(0, INDPComponents.calculate_components(results[0], interdep_net,
                                                                            layers=controlled_layers))
         for n in range(num_time_windows):
             print("-Time window (td-INDP)", n + 1, "/", num_time_windows)
@@ -834,7 +892,7 @@ def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T
                     for d in range(diff):
                         functionality_t[max_t + d + 1] = functionality_t[max_t]
             # Run td-INDP.
-            results = indp(InterdepNet, v_r, time_window_length + 1, layers,
+            results = indp(interdep_net, params["V"], time_window_length + 1, layers,
                            controlled_layers=controlled_layers,
                            functionality=functionality_t, forced_actions=forced_actions,
                            co_location=co_location)
@@ -843,17 +901,17 @@ def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T
             if "WINDOW_LENGTH" in params:
                 indp_results.extend(results[1], t_offset=n + 1, t_start=1, t_end=2)
                 # Modify network for recovery actions and calculate components.
-                apply_recovery(InterdepNet, results[1], 1)
+                apply_recovery(interdep_net, results[1], 1)
                 indp_results.add_components(n + 1,
                                             INDPComponents.calculate_components(results[0],
-                                                                                InterdepNet, 1,
+                                                                                interdep_net, 1,
                                                                                 layers=controlled_layers))
             else:
                 indp_results.extend(results[1], t_offset=0)
                 for t in range(1, T):
                     # Modify network to account for recovery actions.
-                    apply_recovery(InterdepNet, indp_results, t)
-                    indp_results.add_components(1, INDPComponents.calculate_components(results[0], InterdepNet, t,
+                    apply_recovery(interdep_net, indp_results, t)
+                    indp_results.add_components(1, INDPComponents.calculate_components(results[0], interdep_net, t,
                                                                                        layers=controlled_layers))
     # Save results of current simulation.
     if save:
@@ -864,6 +922,7 @@ def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T
             os.makedirs(output_dir + '/agents')
         indp_results.to_csv_layer(output_dir + '/agents', params["SIM_NUMBER"], suffix=suffix)
     return indp_results
+
 
 def run_inrg(params, layers=[1, 2, 3], validate=False, player_ordering=[3, 1], suffix=""):
     InterdepNet = None
@@ -903,90 +962,6 @@ def run_inrg(params, layers=[1, 2, 3], validate=False, player_ordering=[3, 1], s
         os.makedirs(output_dir)
     for P in layers:
         player_strategies[P].to_csv(output_dir, params["SIM_NUMBER"], suffix="P" + str(P) + "_" + suffix)
-
-
-def create_dynamic_param(params, N=None):
-    print("Computing dislocation data...")
-    dynamic_param_dict = params['DYNAMIC_PARAMS']
-    return_type = dynamic_param_dict['RETURN']
-    dp_dict_col = ['time', 'node', 'current pop', 'total pop']
-    dynamic_params = {}
-    if dynamic_param_dict['TYPE'] == 'shelby_adopted':
-        print("Reading dislocation data from file...")
-        net_names = {'water': 1, 'gas': 2, 'power': 3, 'telecom': 4}
-        for key, val in net_names.items():
-            filename = dynamic_param_dict['DIR'] + 'dynamic_demand_' + return_type + '_' + key + '.pkl'
-            with open(filename, 'rb') as f:
-                dd_df = pickle.load(f)
-            dynamic_params[val] = dd_df[(dd_df['sce'] == params["MAGNITUDE"]) & \
-                                        (dd_df['set'] == params["SIM_NUMBER"])]
-    elif dynamic_param_dict['TYPE'] == 'incore':
-        testbed = dynamic_param_dict['TESTBED']
-        file_dir = dynamic_param_dict['DIR'] + testbed + '/Damage_scenarios/'
-        if os.path.exists(file_dir + 'pop_dislocation_data.pkl'):
-            print("Reading dislocation data from file...")
-            with open(file_dir + 'pop_dislocation_data.pkl', 'rb') as f:
-                dynamic_params = pickle.load(f)
-            return dynamic_params
-
-        pop_dislocation = pd.read_csv(file_dir + 'pop-dislocation-results.csv', low_memory=False)
-        mapping_data = pd.read_csv(file_dir + testbed + '_interdependency_table.csv', low_memory=False)
-        total_num_bldg = mapping_data.shape[0]
-        # total_num_hh = pop_dislocation[~(pd.isna(pop_dislocation['guid']))]
-        T = 10
-        for n, d in N.G.nodes(data=True):
-            if n[1] not in dynamic_params.keys():
-                dynamic_params[n[1]] = pd.DataFrame(columns=dp_dict_col)
-            guid = d['data']['inf_data'].guid
-            serv_area = mapping_data[mapping_data['substations_guid'] == guid]
-            # compute dynamic_params
-            num_dilocated = {t: 0 for t in range(T + 1)}
-            total_pop = 0
-            for _, bldg in serv_area.iterrows():
-                pop_bldg_dict = pop_dislocation[pop_dislocation['guid'] == bldg['buildings_guid']]
-                for _, hh in pop_bldg_dict.iterrows():
-                    total_pop += hh['numprec'] if ~np.isnan(hh['numprec']) else 0
-                    if hh['dislocated']:
-                        # !!! Lumebrton dislocation time paramters
-                        dt_params = {'DS1': 1.00, 'DS2': 2.33, 'DS3': 2.49, 'DS4': 3.62,
-                                     'white': 0.78, 'black': 0.88, 'hispanic': 0.83,
-                                     'income': -0.00, 'insurance': 1.06}
-                        race_white = 1 if hh['race'] == 1 else 0
-                        race_balck = 1 if hh['race'] == 2 else 0
-                        hispan = hh['hispan'] if ~np.isnan(hh['hispan']) else 0
-                        # !!! verfy that the explanatory variable correspond to columns in dt_params
-                        linear_term = hh['insignific'] * dt_params['DS1'] + \
-                                      hh['moderate'] * dt_params['DS2'] + \
-                                      hh['heavy'] * dt_params['DS3'] + \
-                                      hh['complete'] * dt_params['DS4'] + \
-                                      race_white * dt_params['white'] + \
-                                      race_balck * dt_params['black'] + \
-                                      hispan * dt_params['hispanic'] + \
-                                      np.random.choice([0, 1], p=[.15, .85]) * dt_params[
-                                          'insurance']  # !!! insurance data
-                        # hh['randincome']/1000*dt_params['income']+\#!!! income data
-                        disloc_time = np.exp(linear_term)
-                        return_time = math.ceil(disloc_time / 7)  # !!! assume each time step is one week
-                        for t in range(return_time):
-                            if t <= T:
-                                num_dilocated[t] += hh['numprec'] if ~np.isnan(hh['numprec']) else 0
-            for t in range(T + 1):
-                values = [t, n[0], total_pop - num_dilocated[t], total_pop]
-                dynamic_params[n[1]] = dynamic_params[n[1]].append(dict(zip(dp_dict_col, values)),
-                                                                   ignore_index=True)
-        with open(file_dir + 'pop_dislocation_data.pkl', 'wb') as f:
-            pickle.dump(dynamic_params, f)
-    return dynamic_params
-
-
-def dynamic_parameters(N, original_N, t, dynamic_params):
-    for n, d in N.G.nodes(data=True):
-        data = dynamic_params[d['data']['inf_data'].net_id]
-        if d['data']['inf_data'].demand < 0:
-            current_pop = data.loc[(data['node'] == n[0]) & (data['time'] == t), 'current pop'].iloc[0]
-            total_pop = data.loc[(data['node'] == n[0]) & (data['time'] == t), 'total pop'].iloc[0]
-            original_demand = original_N.G.nodes[n]['data']['inf_data'].demand
-            d['data']['inf_data'].demand = original_demand * current_pop / total_pop
 
 
 def save_INDP_model_to_file(model, outModelDir, t, l=0, suffix=''):
@@ -1176,3 +1151,123 @@ def plot_indp_sample(params, folderSuffix="", suffix=""):
             nx.draw_networkx_edges(InterdepNet.G, pos, edgelist=arc_dict[3], width=1, alpha=0.9, edge_color='g')
     plt.tight_layout()
     plt.savefig(output_dir + '/plot_net' + suffix + '.png', dpi=300)
+
+
+def get_resource_suffix(params):
+    outDirSuffixRes = ''
+    for rc, val in params["V"].items():
+        if isinstance(val, (int)):
+            outDirSuffixRes += rc[0] + str(val)
+        else:
+            outDirSuffixRes += rc[0] + str(sum([lval for _, lval in val.items()])) + '_fixed_layer_Cap'
+    return outDirSuffixRes
+
+
+def time_resource_usage_curves(base_dir, damage_dir, magnitude, sample_num):
+    """
+    This module calculate the repair time for nodes and arcs for the current
+    scenario based on their damage state and write them to the input files of
+    INDP. Currently , it is only compatible with NIST testbeds.
+
+    .. todo::
+        The calculated repair time and costs are written to node and arc info input
+        files. It makes it impossible to run the analyses parallelly because there
+        might be a conflict between two processes. Consider correcting this.
+
+    Parameters
+    ----------
+    base_dir : TYPE
+        DESCRIPTION.
+    damage_dir : TYPE
+        DESCRIPTION.
+    sample_num : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
+    files = [f for f in os.listdir(base_dir) if os.path.isfile(os.path.join(base_dir, f))]
+    nodes_reptime_func = pd.read_csv(base_dir + 'repair_time_curves_nodes.csv')
+    nodes_damge_ratio = pd.read_csv(base_dir + 'damage_ratio_nodes.csv')
+    arcs_reptime_func = pd.read_csv(base_dir + 'repair_time_curves_arcs.csv')
+    arcs_damge_ratio = pd.read_csv(base_dir + 'damage_ratio_arcs.csv')
+    dmg_sce_data = pd.read_csv(damage_dir + '/' + str(magnitude) + '/Initial_node_ds.csv',
+                               delimiter=',', header=None)
+    net_names = {'Water': 1, 'Power': 3}
+
+    for file in files:
+        fname = file[0:-4]
+        if fname[-5:] == 'Nodes':
+            with open(base_dir + file) as f:
+                node_data = pd.read_csv(f, delimiter=',')
+                for v in node_data.iterrows():
+                    reptime_func_node = nodes_reptime_func[nodes_reptime_func['Type'] == v[1]['Node Type']]
+                    dr_data = nodes_damge_ratio[nodes_damge_ratio['Type'] == v[1]['Node Type']]
+                    rep_time = 0
+                    repair_cost = 0
+                    if not reptime_func_node.empty:
+                        node_name = '(' + str(v[1]['ID']) + ',' + str(net_names[fname[:5]]) + ')'
+                        ds = dmg_sce_data[dmg_sce_data[0] == node_name].iloc[0][sample_num + 1]
+                        rep_time = reptime_func_node.iloc[0]['ds_' + ds + '_mean']
+                        # !!! Add repair time uncertainity here
+                        # rep_time = np.random.normal(reptime_func_node['ds_'+ds+'_mean'],
+                        #                             reptime_func_node['ds_'+ds+'_sd'], 1)[0]
+
+                        dr = dr_data.iloc[0]['dr_' + ds + '_be']
+                        # !!! Add damage ratio uncertainity here
+                        # dr = np.random.uniform(dr_data.iloc[0]['dr_'+ds+'_min'],
+                        #                       dr_data.iloc[0]['dr_'+ds+'_max'], 1)[0]
+                        repair_cost = v[1]['q (complete DS)'] * dr
+                    node_data.loc[v[0], 'p_time'] = rep_time if rep_time > 0 else 0
+                    node_data.loc[v[0], 'p_budget'] = repair_cost
+                    node_data.loc[v[0], 'q'] = repair_cost
+                node_data.to_csv(base_dir + file, sep=',', index=False)
+
+    for file in files:
+        fname = file[0:-4]
+        if fname[-4:] == 'Arcs':
+            with open(base_dir + file) as f:
+                data = pd.read_csv(f, delimiter=',')
+                dmg_data_all = pd.read_csv(damage_dir + '/' + str(magnitude) + '/pipe_dmg.csv',
+                                           delimiter=',')
+                for v in data.iterrows():
+                    dmg_data_arc = dmg_data_all[dmg_data_all['guid'] == v[1]['guid']]
+                    rep_time = 0
+                    repair_cost = 0
+                    if not dmg_data_arc.empty:
+                        if v[1]['diameter'] > 20:
+                            reptime_func_arc = arcs_reptime_func[arcs_reptime_func['Type'] == '>20 in']
+                            dr_data = arcs_damge_ratio[arcs_damge_ratio['Type'] == '>20 in']
+                        else:
+                            reptime_func_arc = arcs_reptime_func[arcs_reptime_func['Type'] == '<20 in']
+                            dr_data = arcs_damge_ratio[arcs_damge_ratio['Type'] == '<20 in']
+                        rep_rate = {'break': dmg_data_arc.iloc[0]['breakrate'],
+                                    'leak': dmg_data_arc.iloc[0]['leakrate']}
+                        rep_time = (rep_rate['break'] * reptime_func_arc['# Fixed Breaks/Day/Worker'] + \
+                                    rep_rate['leak'] * reptime_func_arc['# Fixed Leaks/Day/Worker']) * \
+                                   v[1]['Length (km)'] / 4  # assuming a 4-person crew per HAZUS
+                        dr = {'break': dr_data.iloc[0]['break_be'], 'leak': dr_data.iloc[0]['leak_be']}
+                        # !!! Add repair cost uncertainity here
+                        # dr = {'break': np.random.uniform(dr_data.iloc[0]['break_min'],
+                        #                                  dr_data.iloc[0]['break_max'], 1)[0],
+                        #       'leak': np.random.uniform(dr_data.iloc[0]['leak_min'],
+                        #                                  dr_data.iloc[0]['leak_max'], 1)[0]}
+
+                        num_20_ft_seg = v[1]['Length (ft)'] / 20
+                        num_breaks = rep_rate['break'] * v[1]['Length (km)']
+                        if num_breaks > num_20_ft_seg:
+                            repair_cost += v[1]['f (complete)'] * dr['break']
+                        else:
+                            repair_cost += v[1]['f (complete)'] / num_20_ft_seg * num_breaks * dr['break']
+                        num_leaks = rep_rate['leak'] * v[1]['Length (km)']
+                        if num_leaks > num_20_ft_seg:
+                            repair_cost += v[1]['f (complete)'] * dr['leak']
+                        else:
+                            repair_cost += v[1]['f (complete)'] / num_20_ft_seg * num_leaks * dr['leak']
+                        repair_cost = min(repair_cost, v[1]['f (complete)'])
+                    data.loc[v[0], 'h_time'] = float(rep_time)
+                    data.loc[v[0], 'h_budget'] = repair_cost
+                    data.loc[v[0], 'f'] = repair_cost
+                data.to_csv(base_dir + file, sep=',', index=False)

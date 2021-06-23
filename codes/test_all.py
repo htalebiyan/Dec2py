@@ -1,7 +1,6 @@
 import gameclasses
 import infrastructure
 import copy
-import pickle
 
 def bayesian_game_BoS():
     '''
@@ -59,27 +58,18 @@ def bayesian_game_BoS():
                 action_list[b][idx] = (ac[0], b)
     game_info.append(action_list)
     obj.solve_game(method='enumerate_pure', print_to_cmd=False, game_info=game_info)
-
+    
     solutions = []
     for idx, val in obj.solution.sol.items():
         solutions.append([])
         for x in val['solution combination'][0]:
             solutions[-1].append(x[0])
-    return solutions, obj.bayesian_payoffs
+    return solutions
 
 def test_bayesian_game_BoS():
     print('###Building the Bayesian game \'BoS\'###')
-    solutions, bayesian_payoffs = bayesian_game_BoS()
+    solutions = bayesian_game_BoS()
     assert ['B','B','B','S'] in solutions, "['B','B','B','S'] is a solution"
     assert ['S','B','S','S'] in solutions, "['S','B','S','S'] is a solution"
     assert len(solutions)==2, "Exactly two solutons"
-
-    with open('test_files/BoS_bayes_payoffs.pkl', 'rb') as f:
-        payoffs = pickle.load(f)
-    for key, val in payoffs.items():
-        assert key in bayesian_payoffs.keys(), str(key)+" is not in bayesian_payoffs keys"
-        for kp, valp in val.items():
-            assert kp in bayesian_payoffs[key].keys(), str(kp)+" deos is not in bayesian_payoffs["+str(key)+"] keys"
-            assert valp[0]==bayesian_payoffs[key][kp][0], "Wrong action for bayesian_payoffs["+str(key)+"]["+str(kp)+"]"
-            assert valp[1]==bayesian_payoffs[key][kp][1], "Wrong payoff for bayesian_payoffs["+str(key)+"]["+str(kp)+"]"
     print('The Bayesian game \'BoS\' was built and solved correctly')
