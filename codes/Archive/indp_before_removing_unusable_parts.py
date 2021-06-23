@@ -865,6 +865,61 @@ def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T
         indp_results.to_csv_layer(output_dir + '/agents', params["SIM_NUMBER"], suffix=suffix)
     return indp_results
 
+
+def run_info_share(params, layers=[1, 2, 3], T=1, validate=False, suffix=""):
+    """Applies rounds of information sharing between INDP runs. Assumes each layer is controlled by a separate player.
+    params["NUM_ITERATIONS"] determines how many rounds of sharing to perform.
+    NOTE: This is still not fully functional.
+    :param params: Global parameters.
+    :param layers: Specifies which layers to optimize over.
+    :param T: Number of timesteps to optimize over.
+    :param validate: (Currently not used.)
+    """
+    # Initialize network.
+    InterdepNet = None
+    num_iterations = params["NUM_ITERATIONS"]
+    if "N" not in params:
+        InterdepNet = initialize_network(base_dir="../data/INDP_7-20-2015/",
+                                         sim_number=params['SIM_NUMBER'],
+                                         magnitude=params["MAGNITUDE"])
+        params["N"] = InterdepNet
+    else:
+        InterdepNet = params["N"]
+    if "NUM_ITERATIONS" not in params:
+        params["NUM_ITERATIONS"] = 1
+    v_r = params["V"]
+    # Initialize player result variables.
+    player_strategies = {}
+    for P in layers:
+        player_strategies[P] = INDPResults()
+
+    # Begin Sharing Process.
+    for i in range(num_iterations):
+        results = {}
+        for P in layers:
+            negP = [x for x in layers if x != P]
+            print("P=", str(P), "i=", str(i))
+            if i == 0:
+                # Create functionality matrix. This corresponds to "OPTIMISTIC" or "PESSIMISTIC" in Sharkey paper.
+                # OPTIMISTIC implies that interdependencies are assumed to be fixed whenever a player needs them to be.
+                # PESSIMISTIC assumes interdependencies never become fixed.
+                functionality = create_functionality_matrix(InterdepNet, T, negP, actions=None,
+                                                            strategy_type="OPTIMISTIC")
+            else:
+                print("Next iteration!")
+                actions = []
+                for t in range(T):
+                    for l in negP:
+                        actions.append(player_strategies[l][t]["actions"])
+                functionality = create_functionality_matrix(InterdepNet, T, negP, actions=actions,
+                                                            strategy_type="INFO_SHARE")
+            params["N"] = InterdepNet.copy()
+            results[P] = run_indp(params, layers, controlled_layers=[P], T=T, functionality=functionality, save=True,
+                                  suffix="P" + str(P) + "_i" + str(i) + "_" + suffix, forced_actions=True)
+        for P in layers:
+            player_strategies[P] = results[P]
+
+
 def run_inrg(params, layers=[1, 2, 3], validate=False, player_ordering=[3, 1], suffix=""):
     InterdepNet = None
     output_dir = params["OUTPUT_DIR"] + "_m" + str(params["MAGNITUDE"]) + "_v" + str(params["V"])

@@ -43,7 +43,7 @@ except OSError:
 
 # %%
 # plt.close('all')
-# runutils.run_sample_problems()
+runutils.run_sample_problems()
 
 # %%
 """
