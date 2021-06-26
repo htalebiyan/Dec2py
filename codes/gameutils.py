@@ -208,3 +208,43 @@ def label_action(action, all_actions):
 def bayesian_actions_relable(method, layer, layer_idx):
     signal = method[2 + layer_idx]
     return 'P(\'' + signal + '\', ' + str(layer) + ')'
+
+# run extended form INRG
+def run_inrg(params, layers=[1, 2, 3], validate=False, player_ordering=[3, 1], suffix=""):
+    InterdepNet = None
+    output_dir = params["OUTPUT_DIR"] + "_m" + str(params["MAGNITUDE"]) + "_v" + str(params["V"])
+    if "N" not in params:
+        InterdepNet = initialize_network(base_dir="../data/INDP_7-20-2015/",
+                                         sim_number=params['SIM_NUMBER'],
+                                         magnitude=params["MAGNITUDE"])
+        params["N"] = InterdepNet
+    else:
+        InterdepNet = params["N"]
+    v_r = params["V"]
+    # Initialize player result variables.
+    player_strategies = {}
+    for P in layers:
+        player_strategies[P] = INDPResults()
+    num_iterations = params["NUM_ITERATIONS"]
+    params_temp = {}
+    for key in params:
+        params_temp[key] = params[key]
+    params_temp["NUM_ITERATIONS"] = 1
+    for i in range(num_iterations):
+        curr_player_ordering = player_ordering
+        if player_ordering == "RANDOM":
+            curr_player_ordering = random.sample(layers, len(layers))
+        for P in curr_player_ordering:
+            print("Iteration", i, ", Player", P)
+            # functionality=create_functionality_matrix(InterdepNet,1,[x for x in layers if x != P],strategy_type="REALISTIC")
+            results = run_indp(params_temp, layers, controlled_layers=[P], T=1, save=False,
+                               suffix="P" + str(P) + "_i" + str(i), forced_actions=True)
+            # print params["N"].G.node[(5,3)]['data']['inf_data'].functionality
+            if i == 0:
+                player_strategies[P] = results
+            else:
+                player_strategies[P].extend(results, t_offset=i + 1, t_start=1, t_end=2)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    for P in layers:
+        player_strategies[P].to_csv(output_dir, params["SIM_NUMBER"], suffix="P" + str(P) + "_" + suffix)

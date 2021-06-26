@@ -28,7 +28,7 @@ def batch_run(params,layers,player_ordering=[3,1]):
         params["N"]=InterdepNet
         params["SIM_NUMBER"]=i
         if params["ALGORITHM"]=="INDP":
-            run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers)
+            run_indp(params, layers=layers, controlled_layers=layers, T=params["T"])
         elif params["ALGORITHM"]=="INFO_SHARE":
             run_info_share(params,layers=layers,T=params["T"])
         elif params["ALGORITHM"]=="INRG":
@@ -58,7 +58,7 @@ def single_scenario_run(params,layers,player_ordering=[3,1],num_samples=1):
         params["N"]=InterdepNet
         suffix=str(i)
         if params["ALGORITHM"]=="INDP":
-            run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers,suffix=suffix)
+            run_indp(params, layers=layers, controlled_layers=layers, T=params["T"], suffix=suffix)
         elif params["ALGORITHM"]=="INFO_SHARE":
             run_info_share(params,layers=layers,T=params["T"],suffix=suffix)
         elif params["ALGORITHM"]=="INRG":
@@ -81,7 +81,7 @@ def one_flip_run(params,layers,player_ordering=[3,1]):
         params["N"]=InterdepNet_prime
         print([(u,v) for u,v,a in InterdepNet_prime.G.edges_iter(data=True) if a['data']['inf_data'].is_interdep and u[1] in layers and v[1] in layers])
         if params["ALGORITHM"]=="INDP":
-            run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers,suffix=suffix)
+            run_indp(params, layers=layers, controlled_layers=layers, T=params["T"], suffix=suffix)
         elif params["ALGORITHM"]=="INFO_SHARE":
             run_info_share(params,layers=layers,T=params["T"],suffix=suffix)
         elif params["ALGORITHM"]=="INRG":
@@ -107,7 +107,7 @@ def random_flip_run(params,layers,player_ordering=[3,1],num_samples=100,flip_pro
         params["N"]=InterdepNet_prime
         print([(u,v) for u,v,a in InterdepNet_prime.G.edges_iter(data=True) if a['data']['inf_data'].is_interdep and u[1] in layers and v[1] in layers])
         if params["ALGORITHM"]=="INDP":
-            run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers,suffix=suffix)
+            run_indp(params, layers=layers, controlled_layers=layers, T=params["T"], suffix=suffix)
         elif params["ALGORITHM"]=="INFO_SHARE":
             run_info_share(params,layers=layers,T=params["T"],suffix=suffix)
         elif params["ALGORITHM"]=="INRG":
@@ -164,7 +164,7 @@ def run_indp_sample():
     params["N"]=InterdepNet
     params["MAGNITUDE"]=0
     params["SIM_NUMBER"]=0
-    run_indp(params,layers=[1,2],T=params["T"],suffix="")
+    run_indp(params, layers=[1, 2], T=params["T"], suffix="")
 
 def run_percolation_model():
     #import percisland.supplynet as sn
@@ -200,7 +200,7 @@ def run_percolation_model():
     params["N"]=InterdepNet
     params["MAGNITUDE"]=0
     params["SIM_NUMBER"]=0
-    run_indp(params,layers=[0],T=params["T"],suffix="")
+    run_indp(params, layers=[0], T=params["T"], suffix="")
     
 def run_indp_L3_V3(mags):
     for m in mags:

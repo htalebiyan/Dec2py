@@ -106,9 +106,8 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                                                     topology=topology, config=m, sample=i)
 
             if params["ALGORITHM"] == "INDP":
-                indp.run_indp(params, validate=False, T=params["T"], layers=params['L'],
-                              controlled_layers=params['L'], saveModel=False, print_cmd_line=False,
-                              co_location=True)
+                indp.run_indp(params, layers=params['L'], controlled_layers=params['L'], T=params["T"], saveModel=False,
+                              print_cmd_line=False, co_location=True)
             if params["ALGORITHM"] == "MH":
                 mh.run_mh(params, validate=False, T=params["T"], layers=params['L'],
                           controlled_layers=params['L'], saveModel=True, print_cmd_line=False,
@@ -132,8 +131,7 @@ def run_indp_sample(layers):
     params={"NUM_ITERATIONS":7, "OUTPUT_DIR":'../results/indp_sample_12Node_results',
             "V":len(layers), "T":1, "L":layers, "WINDOW_LENGTH":1, "ALGORITHM":"INDP",
             "N":interdep_net, "MAGNITUDE":0, "SIM_NUMBER":0}
-    indp.run_indp(params, layers=layers, T=params["T"], suffix="", saveModel=True,
-              print_cmd_line=True)
+    indp.run_indp(params, layers=layers, T=params["T"], suffix="", saveModel=True, print_cmd_line=True)
     print('\n\nPlot restoration plan by INDP')
     indp.plot_indp_sample(params)
     plt.show()
@@ -143,8 +141,7 @@ def run_tdindp_sample(layers):
     params={"OUTPUT_DIR":'../results/tdindp_sample_12Node_results', "V":len(layers),
             "T":7, "L":layers, "ALGORITHM":"INDP", "WINDOW_LENGTH":3, 
             "N":interdep_net, "MAGNITUDE":0, "SIM_NUMBER":0} #"WINDOW_LENGTH":6, 
-    indp.run_indp(params, layers=layers, T=params["T"], suffix="", saveModel=True,
-              print_cmd_line=True)
+    indp.run_indp(params, layers=layers, T=params["T"], suffix="", saveModel=True, print_cmd_line=True)
     print('\n\nPlot restoration plan by INDP')
     indp.plot_indp_sample(params)
     plt.show()

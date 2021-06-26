@@ -27,7 +27,6 @@ import dindputils
 import gameutils
 import plots
 import pickle
-import dislocationutils
 
 try:
     # Change the current working Directory
@@ -44,7 +43,7 @@ except OSError:
 
 # %%
 # plt.close('all')
-runutils.run_sample_problems()
+# runutils.run_sample_problems()
 
 # %%
 """
@@ -76,7 +75,7 @@ DAMAGE_DIR = "../data/Wu_Damage_scenarios/"
 # "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
 # 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios'
 
-OUTPUT_DIR = 'C:/Users/ht20/Documents/Files/Game_Shelby_County/results/'
+OUTPUT_DIR = '../results/'
 # '/home/hesam/Desktop/Files/Game_synthetic/v4.1/results_temp/'
 # '/home/hesam/Desktop/Files/Game_Shelby_County/results/'
 # 'C:/Users/ht20/Documents/Files/Auction_Extended_Shelby_County_Data/results/'
@@ -189,25 +188,25 @@ the following items:
 # FAIL_SCE_PARAM = {'TYPE': "synthetic", 'SAMPLE_RANGE': range(5), 'MAGS': range(100),
 #                   'FILTER_SCE': FILTER_SCE, 'TOPO': 'General', 'BASE_DIR': BASE_DIR,
 #                   'DAMAGE_DIR': DAMAGE_DIR}
-FAIL_SCE_PARAM = {'TYPE': "WU", 'SAMPLE_RANGE': range(50), 'MAGS': range(96),
+FAIL_SCE_PARAM = {'TYPE': "WU", 'SAMPLE_RANGE': range(50), 'MAGS': range(3),
                   'FILTER_SCE': FILTER_SCE, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
 DYNAMIC_PARAMS = None
-    # DYNAMIC_PARAMS = {'TYPE': 'shelby_adopted', 'RETURN': 'step_function',
-    #                   'DIR': 'C:/Users/ht20/Documents/Files/dynamic_demand/'}
-    
-    # ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/"
-    # POP_DISLOC_DATA = ROOT_DISLOC+'Joplin_testbed/pop-dislocation-results.csv'
-    # DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'joplin',
-    #                   'OUT_DIR': BASE_DIR, 'POP_DISLOC_DATA': POP_DISLOC_DATA ,
-    #                   'MAPPING': {'POWER': ROOT_DISLOC+'/Power/Joplin interdependency table - buildings,\
-    #                               substations, and poles/Joplin_interdependency_table.csv'}}
-    
-    # ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
-    # DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'seaside',
-    #                   'OUT_DIR': ROOT_DISLOC+'Dislocation_models/',
-    #                   'POP_DISLOC_DATA': ROOT_DISLOC+'Dislocation_models/',
-    #                   'MAPPING': {'POWER': ROOT_DISLOC+'Power/bldgs2elec_Seaside.csv',
-    #                               'WATER': ROOT_DISLOC+'Water/bldgs2wter_Seaside.csv'}}
+# DYNAMIC_PARAMS = {'TYPE': 'shelby_adopted', 'RETURN': 'step_function',
+#                   'DIR': 'C:/Users/ht20/Documents/Files/dynamic_demand/'}
+
+# ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/"
+# POP_DISLOC_DATA = ROOT_DISLOC+'Joplin_testbed/pop-dislocation-results.csv'
+# DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'joplin',
+#                   'OUT_DIR': BASE_DIR, 'POP_DISLOC_DATA': POP_DISLOC_DATA ,
+#                   'MAPPING': {'POWER': ROOT_DISLOC+'/Power/Joplin interdependency table - buildings,\
+#                               substations, and poles/Joplin_interdependency_table.csv'}}
+
+# ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
+# DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'seaside',
+#                   'OUT_DIR': ROOT_DISLOC+'Dislocation_models/',
+#                   'POP_DISLOC_DATA': ROOT_DISLOC+'Dislocation_models/',
+#                   'MAPPING': {'POWER': ROOT_DISLOC+'Power/bldgs2elec_Seaside.csv',
+#                               'WATER': ROOT_DISLOC+'Water/bldgs2wter_Seaside.csv'}}
 
 STM_MODEL_DICT = None
 
@@ -247,9 +246,8 @@ method [cite], i.e. when `RES_ALLOC_TYPE` includes at least one of the options *
 '''
 
 # %%
-RC = [{'budget':120000, 'time':35}, {'budget':240000, 'time':35},
-            {'budget':120000, 'time':70}, {'budget':120000, 'time':105},
-            {'budget':240000, 'time':105}]
+RC = [{'': 3}]
+# [{'budget':120000, 'time':35}]
 # Prescribed for each layer -> RC = [{'budget':{1:60000, 3:700}, 'time':{1:2, 3:10}}] 
 
 LAYERS = [1, 2, 3, 4]
@@ -299,23 +297,19 @@ uniformed belief, *F* for false consensus bias, and *I* for inverse false consen
 print('EDM considers 10 actions')
 print('CF is 2 ')
 
-# run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
-#             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-#                     'EXTRA_COMMODITY':EXTRA_COMMODITY,
-#                     'TIME_RESOURCE':True})
-# run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
-#             misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-#                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
-# run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
-#             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE,
-#             output_dir=OUTPUT_DIR,
-#             misc = {'STM_MODEL':STM_MODEL_DICT, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
-#                     'EXTRA_COMMODITY':EXTRA_COMMODITY, 'TIME_RESOURCE':False})
-# run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
+runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
+                    misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TIME_RESOURCE': False})
+runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
+                    misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TIME_RESOURCE': False})
+runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
+                    res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
+                    misc={'STM_MODEL': STM_MODEL_DICT, 'DYNAMIC_PARAMS': DYNAMIC_PARAMS,
+                          'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TIME_RESOURCE': False})
+# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='NORMALGAME', judgment_type=JUDGE_TYPE,
 #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
 #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
 #                     'EXTRA_COMMODITY':EXTRA_COMMODITY})
-# run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
+# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='BAYESGAME', judgment_type=JUDGE_TYPE,
 #             res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
 #             misc = {'PAYOFF_DIR':PAYOFF_DIR, 'DYNAMIC_PARAMS':DYNAMIC_PARAMS,
 #                     'EXTRA_COMMODITY':EXTRA_COMMODITY,
@@ -357,7 +351,7 @@ optimal solution.
 # %%
 COST_TYPES = ['Total']  # 'Under Supply', 'Over Supply'
 REF_METHOD = 'indp'
-METHOD_NAMES = ['indp', 'ng', 'bgCCCCUUUU', 'bgNNNNUUUU', 'bgCCNCUUUU', 'bgNNCNUUUU']
+METHOD_NAMES = ['indp', 'tdindp', 'jc']
 # 'ng', 'jc', 'tdindp', 'ng', 'bgCCCCUUUU', 'dp_indp', 'dp_jc', 'bgCNUU',
 
 COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
@@ -372,8 +366,8 @@ BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
 LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS, ref_method=REF_METHOD,
                                             cost_type=COST_TYPES[0], deaggregate=True)
 RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resource_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
-                                                                  objs, root_result_dir=OUTPUT_DIR,
-                                                                  ref_method=REF_METHOD)
+                                                                 objs, root_result_dir=OUTPUT_DIR,
+                                                                 ref_method=REF_METHOD)
 RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
 ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
 REL_ACTION_DF = gameutils.relative_actions(ANALYZE_NE_DF, COMBS)
@@ -388,11 +382,9 @@ All dictionaries that are made in the postprocessing step are saved here.
 '''
 
 # %%
-
 OBJ_LIST = [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
             ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPES, ANALYZE_NE_DF, REL_ACTION_DF]
-## Saving the objects ###
-with open(OUTPUT_DIR+'postprocess_dicts.pkl', 'wb') as f:
+with open(OUTPUT_DIR + 'postprocess_dicts.pkl', 'wb') as f:
     pickle.dump(OBJ_LIST, f)
 
 # %%

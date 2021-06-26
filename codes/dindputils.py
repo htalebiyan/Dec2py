@@ -451,7 +451,7 @@ def compute_lambdas(ref_area_tc, ref_area_P, area_tc, area_p):
 
 def read_resource_allocation(result_df, combinations, optimal_combinations, objs,
                              ref_method='indp', root_result_dir='../results/'):
-    '''
+    """
     This functions reads the resource allocation vectors by INDP and JC. Also,
     it computes the allocation gap between the resource allocation by JC and
     and the optimal allocation by INDP :cite:`Talebiyan2020a`.
@@ -476,25 +476,29 @@ def read_resource_allocation(result_df, combinations, optimal_combinations, objs
     Returns
     -------
     df_res : dict
-        Dictionary that contain the resoruce allcoation vectors.
+        Dictionary that contain the resource allocation vectors.
     df_alloc_gap : dict
-        Dictionary that contain the allcoation gap values.
-    '''
-    cols = ['t', 'resource', 'decision_type', 'judgment_type', 'auction_type',
-            'valuation_type', 'sample', 'Magnitude', 'layer', 'no_resources',
-            'normalized_resource', 'poa']
+        Dictionary that contain the allocation gap values.
+    """
+    cols = ['t', 'decision_type', 'judgment_type', 'auction_type', 'valuation_type', 'sample', 'Magnitude', 'layer',
+            'no_resources', 'poa'] + ['resource_' + k for k in combinations[0][10].keys()] + \
+           ['normalized_resource_' + k for k in combinations[0][10].keys()]
     T = max(result_df.t.unique().tolist())
     df_res = pd.DataFrame(columns=cols, dtype=int)
     print('\nResource allocation')
     for idx, x in enumerate(optimal_combinations):
-        ref_dir = root_result_dir + x[4] + '_results_L' + str(x[2]) + '_m' + str(x[0]) + '_v' + str(x[3])
+        net_obj = objs[str(combinations[0])].net
+        out_dir_suffix_res = indp.get_resource_suffix({'V': x[10]})
+        ref_dir = root_result_dir + x[4] + '_results_L' + str(x[2]) + '_m' + str(x[0]) + '_v' + out_dir_suffix_res
         for t in range(T):
             for l in range(1, x[2] + 1):
-                df_res = df_res.append({'t': t + 1, 'resource': 0.0, 'normalized_resource': 0.0,
-                                        'decision_type': x[4], 'judgment_type': 'nan',
-                                        'auction_type': 'nan', 'valuation_type': 'nan',
-                                        'sample': x[1], 'Magnitude': x[0], 'layer': l,
-                                        'no_resources': x[3], 'poa': 1}, ignore_index=True)
+                temp_dict = {'t': t + 1, 'decision_type': x[4], 'judgment_type': 'nan', 'auction_type': 'nan',
+                             'valuation_type': 'nan', 'sample': x[1], 'Magnitude': x[0], 'layer': l,
+                             'no_resources': x[3], 'poa': 1}
+                for rc in x[10].keys():
+                    temp_dict['resource_' + rc] = 0
+                    temp_dict['normalized_resource_' + rc] = 0
+                df_res = df_res.append(temp_dict, ignore_index=True)
         # Read optimal resource allocation based on the actions
         action_file = ref_dir + "/actions_" + str(x[1]) + "_" + x[8] + ".csv"
         if os.path.isfile(action_file):
@@ -504,16 +508,22 @@ def read_resource_allocation(result_df, combinations, optimal_combinations, objs
                     data = line.strip().split(',')
                     t = int(data[0])
                     action = str.strip(data[1])
-                    l = int(action[-1])
-                    if '/' in action:
-                        addition = 0.5
-                    else:
-                        addition = 1.0
+                    act_split = action.split('.')
+                    l = int(act_split[-1])
                     row = (df_res['t'] == t) & (df_res['decision_type'] == x[4]) & \
                           (df_res['sample'] == x[1]) & (df_res['Magnitude'] == x[0]) & \
                           (df_res['layer'] == l) & (df_res['no_resources'] == x[3])
-                    df_res.loc[row, 'resource'] += addition
-                    df_res.loc[row, 'normalized_resource'] += addition / float(x[3])
+                    for rc in x[10].keys():
+                        if '/' in action:
+                            act_split2 = act_split[1].split('/')
+                            arc_obj = net_obj.G[(int(act_split[0]), int(act_split2[0]))][(int(act_split2[1]),
+                                                                                          int(act_split[2]))]
+                            addition = 0.5 * arc_obj['data']['inf_data'].resource_usage['h_' + rc]
+                        else:
+                            node_obj = net_obj.G.nodes[(int(act_split[0]), int(act_split[1]))]
+                            addition = 1.0 * node_obj['data']['inf_data'].resource_usage['p_' + rc]
+                        df_res.loc[row, 'resource_' + rc] += addition
+                        df_res.loc[row, 'normalized_resource_' + rc] += addition / float(x[10][rc])
         if idx % (len(combinations + optimal_combinations) / 10 + 1) == 0:
             update_progress(idx + 1, len(optimal_combinations) + len(combinations))
     # Read resource allocation based on resource allocation results
@@ -525,57 +535,61 @@ def read_resource_allocation(result_df, combinations, optimal_combinations, objs
             else:
                 poa = 'nan'
             for l, lval in tval.items():
-                df_res = df_res.append({'t': t, 'resource': lval, 'normalized_resource': lval / x[3],
-                                        'decision_type': x[4], 'judgment_type': x[5],
-                                        'auction_type': x[6], 'valuation_type': x[7],
-                                        'sample': x[1], 'Magnitude': x[0], 'layer': l,
-                                        'no_resources': x[3], 'poa': poa}, ignore_index=True)
+                temp_dict = {'t': t,  'decision_type': x[4], 'judgment_type': x[5], 'auction_type': x[6],
+                             'valuation_type': x[7], 'sample': x[1], 'Magnitude': x[0], 'layer': l,
+                             'no_resources': x[3], 'poa': poa}
+                for rc, rval in lval.items():
+                    temp_dict['resource_' + rc] = rval
+                    temp_dict['normalized_resource_' + rc] = rval / float(x[10][rc])
+                df_res = df_res.append(temp_dict, ignore_index=True)
         if idx % (len(combinations + optimal_combinations) / 10 + 1) == 0:
             update_progress(len(optimal_combinations) + idx + 1,
                             len(optimal_combinations) + len(combinations))
     update_progress(len(optimal_combinations) + idx + 1, len(optimal_combinations) + len(combinations))
     #: populate allocation gap dictionary
-    cols = ['decision_type', 'judgment_type', 'auction_type', 'valuation_type', 'sample',
-            'Magnitude', 'layer', 'no_resources', 'gap', 'norm_gap']
+    cols = ['decision_type', 'judgment_type', 'auction_type', 'valuation_type', 'sample', 'Magnitude', 'layer',
+            'no_resources'] + ['gap_' + k for k in combinations[0][10].keys()] + \
+           ['norm_gap_' + k for k in combinations[0][10].keys()]
     T = max(result_df.t.unique().tolist())
     df_alloc_gap = pd.DataFrame(columns=cols, dtype=int)
     print('\nAllocation Gap')
     for idx, x in enumerate(combinations + optimal_combinations):
         # Construct vector of resource allocation of reference method
         if x[4] != ref_method:
-            vec_ref = {l: np.zeros(T) for l in range(1, x[2] + 1)}
-            for l in range(1, x[2] + 1):
-                for t in range(T):
-                    vec_ref[l][t] = df_res.loc[(df_res['t'] == t + 1) &
-                                               (df_res['decision_type'] == ref_method) &
-                                               (df_res['sample'] == x[1]) &
-                                               (df_res['Magnitude'] == x[0]) &
-                                               (df_res['layer'] == l) &
-                                               (df_res['no_resources'] == x[3]), 'resource']
-            # Compute distance of resource allocation vectors
-            vector_res = {l: np.zeros(T) for l in range(1, x[2] + 1)}
-            for l in range(1, x[2] + 1):
-                row = (df_res['decision_type'] == x[4]) & (df_res['sample'] == x[1]) & \
-                      (df_res['Magnitude'] == x[0]) & (df_res['layer'] == l) & \
-                      (df_res['no_resources'] == x[3]) & (df_res['auction_type'] == x[6]) & \
-                      (df_res['valuation_type'] == x[7]) & (df_res['judgment_type'] == x[5])
-                for t in range(T):
-                    vector_res[l][t] = df_res.loc[(df_res['t'] == t + 1) & row, 'resource']
-                # L2 norm
-                distance = np.linalg.norm(vector_res[l] - vec_ref[l])
-                norm_distance = np.linalg.norm(vector_res[l] / float(x[3]) - \
-                                               vec_ref[l] / float(x[3]))
-                # #L1 norm
-                # distance = sum(abs(vector_res[l]-vec_ref[l]))
-                # # correlation distance
-                # distance = 1-scipy.stats.pearsonr(vector_res[l], vec_ref[l])[0]
-                df_alloc_gap = df_alloc_gap.append({'decision_type': x[4], 'judgment_type': x[5],
-                                                    'auction_type': x[6], 'valuation_type': x[7],
-                                                    'sample': x[1], 'Magnitude': x[0], 'layer': l,
-                                                    'no_resources': x[3],
-                                                    'gap': distance / float(vector_res[l].shape[0]),
-                                                    'norm_gap': norm_distance / float(vector_res[l].shape[0])},
-                                                   ignore_index=True)
+            for rc in x[10].keys():
+                vec_ref = {l: np.zeros(T) for l in range(1, x[2] + 1)}
+                for l in range(1, x[2] + 1):
+                    for t in range(T):
+                        vec_ref[l][t] = df_res.loc[(df_res['t'] == t + 1) &
+                                                   (df_res['decision_type'] == ref_method) &
+                                                   (df_res['sample'] == x[1]) &
+                                                   (df_res['Magnitude'] == x[0]) &
+                                                   (df_res['layer'] == l) &
+                                                   (df_res['no_resources'] == x[3]), 'resource_' + rc]
+                # Compute distance of resource allocation vectors
+                vector_res = {l: np.zeros(T) for l in range(1, x[2] + 1)}
+                for l in range(1, x[2] + 1):
+                    row = (df_res['decision_type'] == x[4]) & (df_res['sample'] == x[1]) & \
+                          (df_res['Magnitude'] == x[0]) & (df_res['layer'] == l) & \
+                          (df_res['no_resources'] == x[3]) & (df_res['auction_type'] == x[6]) & \
+                          (df_res['valuation_type'] == x[7]) & (df_res['judgment_type'] == x[5])
+                    for t in range(T):
+                        vector_res[l][t] = df_res.loc[(df_res['t'] == t + 1) & row, 'resource_' + rc]
+                    # L2 norm
+                    distance = np.linalg.norm(vector_res[l] - vec_ref[l])
+                    norm_distance = np.linalg.norm(vector_res[l] / float(x[3]) - \
+                                                   vec_ref[l] / float(x[3]))
+                    # #L1 norm
+                    # distance = sum(abs(vector_res[l]-vec_ref[l]))
+                    # # correlation distance
+                    # distance = 1-scipy.stats.pearsonr(vector_res[l], vec_ref[l])[0]
+                    df_alloc_gap = df_alloc_gap.append({'decision_type': x[4], 'judgment_type': x[5],
+                                                        'auction_type': x[6], 'valuation_type': x[7],
+                                                        'sample': x[1], 'Magnitude': x[0], 'layer': l,
+                                                        'no_resources': x[3],
+                                                        'gap_' + rc: distance / float(vector_res[l].shape[0]),
+                                                        'norm_gap_' + rc: norm_distance / float(vector_res[l].shape[0])},
+                                                       ignore_index=True)
             if idx % (len(combinations + optimal_combinations) / 10 + 1) == 0:
                 update_progress(idx + 1, len(combinations + optimal_combinations))
     update_progress(idx + 1, len(combinations + optimal_combinations))
@@ -583,7 +597,7 @@ def read_resource_allocation(result_df, combinations, optimal_combinations, objs
 
 
 def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../results/'):
-    '''
+    """
     This function reads the run time of computing restoration strategies by different methods.
 
     Parameters
@@ -606,7 +620,7 @@ def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../
     run_time_results : dict
         Dictionary that contain run time of for all computed strategies.
 
-    '''
+    """
     columns = ['t', 'Magnitude', 'decision_type', 'judgment_type', 'auction_type', 'valuation_type',
                'no_resources', 'sample', 'decision_time', 'auction_time', 'valuation_time']
     run_time_results = pd.DataFrame(columns=columns, dtype=int)
@@ -726,12 +740,7 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
             if list_high_dam_add is None or len(list_high_dam.loc[(list_high_dam.set == s) & \
                                                                   (list_high_dam.sce == m)].index):
                 for rc in no_resources:
-                    outDirSuffixRes = ''
-                    for res, val in rc.items():
-                        if isinstance(val, (int)):
-                            outDirSuffixRes += res[0] + str(val)
-                        else:
-                            outDirSuffixRes += res[0] + str(sum([lval for _, lval in val.items()])) + '_fixed_layer_Cap'
+                    out_dir_suffix_res = indp.get_resource_suffix({'V': rc})
                     for dt, jt, at, vt in itertools.product(decision_type, judgment_type,
                                                             res_alloc_type, valuation_type):
                         if dt == 'jc':
@@ -740,15 +749,15 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
                             sf = ''
 
                         if (dt in optimal_method) and \
-                                [m, s, L, outDirSuffixRes, dt, 'nan', 'nan', 'nan',
+                                [m, s, L, out_dir_suffix_res, dt, 'nan', 'nan', 'nan',
                                  '', layers, rc] not in optimal_combinations:
-                            optimal_combinations.append([m, s, L, outDirSuffixRes, dt, 'nan', 'nan', 'nan',
+                            optimal_combinations.append([m, s, L, out_dir_suffix_res, dt, 'nan', 'nan', 'nan',
                                                          sf, layers, rc])
                         elif (dt not in optimal_method) and (at not in ['UNIFORM', 'OPTIMAL']):
-                            combinations.append([m, s, L, outDirSuffixRes, dt, jt, at, vt, sf, layers, rc])
+                            combinations.append([m, s, L, out_dir_suffix_res, dt, jt, at, vt, sf, layers, rc])
                         elif (dt not in optimal_method) and (at in ['UNIFORM', 'OPTIMAL']):
-                            if [m, s, L, outDirSuffixRes, dt, jt, at, 'nan', sf, layers, rc] not in combinations:
-                                combinations.append([m, s, L, outDirSuffixRes, dt, jt, at,
+                            if [m, s, L, out_dir_suffix_res, dt, jt, at, 'nan', sf, layers, rc] not in combinations:
+                                combinations.append([m, s, L, out_dir_suffix_res, dt, jt, at,
                                                      'nan', sf, layers, rc])
             idx += 1
             update_progress(idx, no_total)
@@ -764,12 +773,12 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
             L = int(config_param.loc['No. Layers'])
             no_resources = int(config_param.loc['Resource Cap'])
             for rc in [no_resources]:
-                outDirSuffixRes = ''
+                out_dir_suffix_res = ''
                 for res, val in rc.items():
                     if isinstance(val, (int)):
-                        outDirSuffixRes += res[0] + str(val)
+                        out_dir_suffix_res += res[0] + str(val)
                     else:
-                        outDirSuffixRes += res[0] + str(sum([lval for _, lval in val.items()])) + '_fixed_layer_Cap'
+                        out_dir_suffix_res += res[0] + str(sum([lval for _, lval in val.items()])) + '_fixed_layer_Cap'
                 for dt, jt, at, vt in itertools.product(decision_type, judgment_type,
                                                         res_alloc_type, valuation_type):
                     if dt == 'JC':
@@ -777,16 +786,16 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
                     else:
                         sf = ''
                     if (dt in optimal_method) and \
-                            [m, s, L, outDirSuffixRes, dt, 'nan', 'nan', 'nan', '',
+                            [m, s, L, out_dir_suffix_res, dt, 'nan', 'nan', 'nan', '',
                              layers, rc] not in optimal_combinations:
-                        optimal_combinations.append([m, s, L, outDirSuffixRes, dt, 'nan',
+                        optimal_combinations.append([m, s, L, out_dir_suffix_res, dt, 'nan',
                                                      'nan', 'nan', sf, layers, rc])
                     elif (dt not in optimal_method) and (at not in ['UNIFORM', 'OPTIMAL']):
-                        combinations.append([m, s, L, outDirSuffixRes, dt, jt, at,
+                        combinations.append([m, s, L, out_dir_suffix_res, dt, jt, at,
                                              vt, sf, layers, rc])
                     elif (dt not in optimal_method) and (at in ['UNIFORM', 'OPTIMAL']):
-                        if [m, s, L, outDirSuffixRes, dt, jt, at, 'nan', sf, layers, rc] not in combinations:
-                            combinations.append([m, s, L, outDirSuffixRes, dt, jt, at,
+                        if [m, s, L, out_dir_suffix_res, dt, jt, at, 'nan', sf, layers, rc] not in combinations:
+                            combinations.append([m, s, L, out_dir_suffix_res, dt, jt, at,
                                                  'nan', sf, layers, rc])
             idx += 1
             update_progress(idx, no_total)

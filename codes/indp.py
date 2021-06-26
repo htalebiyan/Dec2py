@@ -13,9 +13,8 @@ import sys
 import dislocationutils
 
 
-def indp(N, v_r, T=1, layers=[1, 3], controlled_layers=[1, 3], functionality={},
-         forced_actions=False, fixed_nodes={}, print_cmd=True, time_limit=None,
-         co_location=True, solution_pool=None):
+def indp(N, v_r, layers, T=1, controlled_layers=None, functionality=None, forced_actions=False, fixed_nodes=None,
+         print_cmd=True, time_limit=None, co_location=True, solution_pool=None):
     """
     INDP optimization problem. It also solves td-INDP if T > 1.
 
@@ -23,24 +22,23 @@ def indp(N, v_r, T=1, layers=[1, 3], controlled_layers=[1, 3], functionality={},
     ----------
     N : :class:`~infrastructure.InfrastructureNetwork`
         An InfrastructureNetwork instance.
-    v_r : list
-        Vector of the number of resources given to each layer in each timestep.
-        If the size of the vector is 1, it shows the total number of resources for all layers.
-    T : int, optional
-        Number of time steps to optimize over. The default is 1.
+    v_r : dict
+        Dictionary of the number of resources of different types in the analysis.
+        If the value is a scale for a type, it shows the total number of resources of that type for all layers .
+        If the value is a list for a type, it shows the total number of resources of that type given to each layer.
     layers : list, optional
-        Layer IDs of N included in the optimization. The default is [1,3]
-        (1 for water and 3 for power in the Shelby County database).
+        Layer IDs in N included in the optimization.
+    T : int, optional
+        Number of time steps to optimize over. T=1 shows an iINDP analysis and T>1 shows a td-INDP. The default is 1.
     controlled_layers : list, optional
-        Layer IDs that can be recovered in this optimization. Used for decentralized
-        optimization. The default is [1,3].
+        Layer IDs that can be recovered in this optimization. Used for decentralized optimization. The default is None.
     functionality : dict, optional
         Dictionary of nodes to functionality values for non-controlled nodes.
-        Used for decentralized optimization. The default is {}.
+        Used for decentralized optimization. The default is None.
     forced_actions : bool, optional
         If true, it forces the optimizer to repair at least one element. The default is False.
     fixed_nodes : dict, optional
-        It fixes the functionality of given elements to a given value. The default is {}.
+        It fixes the functionality of given elements to a given value. The default is None.
     print_cmd : bool, optional
         If true, analysis information is written to the console. The default is True.
     time_limit : int, optional
@@ -54,14 +52,22 @@ def indp(N, v_r, T=1, layers=[1, 3], controlled_layers=[1, 3], functionality={},
     Returns
     -------
     : list
-        A list of the form ``[m, results]`` for a successful optimization where m is the
-        Gurobi optimization model and results is a :class:`~indputils.INDPResults` object
-        generated using :func:`collect_results`.
+        A list of the form ``[m, results]`` for a successful optimization where m is the Gurobi optimization model and
+        results is a :class:`~indputils.INDPResults` object generated using :func:`collect_results`.
         If :envvar:`solution_pool` is set to a number, the function returns ``[m, results, sol_pool_results]``
-        where `sol_pool_results` is dictionary of solution that should be retrieved from the
-        optimizer in addition to the optimal one collected using :func:`collect_solution_pool`.
+        where `sol_pool_results` is dictionary of solution that should be retrieved from the optimizer in addition to
+        the optimal one collected using :func:`collect_solution_pool`.
 
     """
+    if fixed_nodes is None:
+        fixed_nodes = {}
+    if functionality is None:
+        functionality = {}
+    if layers is None:
+        layers = [1, 2, 3]
+    if controlled_layers is None:
+        controlled_layers = layers
+
     start_time = time.time()
     m = Model('indp')
     m.setParam('OutputFlag', False)
@@ -495,7 +501,7 @@ def collect_solution_pool(m, T, n_hat_prime, a_hat_prime):
 
 def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S, coloc=True):
     """
-    THis function compute the results (actions and costs) of the optimal results and write them to a
+    This function computes the results (actions and costs) of the optimal results and write them to a
     :class:`~indputils.INDPResults` object.
 
     Parameters
@@ -622,8 +628,8 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
 
 def apply_recovery(N, indp_results, t):
     """
-    This function apply the restoration decisions (solution of INDP) to a gurobi model by changing the state of repaired
-    elements to functional
+    This function applies the restoration decisions (solution of INDP) to a gurobi model by changing the state of
+    repaired elements to functional
 
     Parameters
     ----------
@@ -671,12 +677,12 @@ def create_functionality_matrix(N, T, layers, actions, strategy_type="OPTIMISTIC
         INDPResults variable 'indp_result[t]['actions']'..
     strategy_type : str, optional
         If no actions are provided, assigns a default functionality. Options are:
-        "OPTIMISTIC", "PESSIMISTIC" or "INFO_SHARE". The default is "OPTIMISTIC".
+        "OPTIMISTIC", "PESSIMISTIC" or "REALISTIC". The default is "OPTIMISTIC".
 
     Returns
     -------
     functionality : dict
-        A functionality dictionary used for input into indp..
+        A functionality dictionary used for input into indp.
 
     """
     functionality = {}
@@ -738,7 +744,7 @@ def initialize_network(base_dir="../data/INDP_7-20-2015/", external_interdepende
      magnitude : int, optional
          Magnitude parameter of the initial disruption. The default is 6.
      sample : int, optional
-         Sample number paramter of the initial disruption. The default is 0.
+         Sample number parameter of the initial disruption. The default is 0.
      v : int, list, optional
          Number of available resources or resource cap. The default is 3.
      infrastructure_data : bool, optional
@@ -746,14 +752,16 @@ def initialize_network(base_dir="../data/INDP_7-20-2015/", external_interdepende
          is being analyzed. The default is True.
      topology : str, optional
          Topology of the synthetic network that is being analyzed. The default is 'Random'.
-     extra_commodity :
+     extra_commodity : dict, optional
+        Dictionary of commodities other than the default one for each layer of the network. The default is 'None',
+        which means that there is only one commodity per layer.
 
      Returns
      -------
-     InterdepNet : :class:`~infrastructure.InfrastructureNetwork`
+     interdep_net : :class:`~infrastructure.InfrastructureNetwork`
          The object containing the network data.
      v_temp : int, list
-         Number of avaialable resources or resource cap. Used for synthetic networks
+         Number of available resources or resource cap. Used for synthetic networks
          where each sample network has a different resource cap.
      layers_temp : list
          List of layers in the analysis. Used for synthetic networks where each sample
@@ -763,22 +771,19 @@ def initialize_network(base_dir="../data/INDP_7-20-2015/", external_interdepende
     layers_temp = []
     v_temp = 0
     if infrastructure_data:
-        InterdepNet = load_infrastructure_data(BASE_DIR=base_dir,
-                                               external_interdependency_dir=external_interdependency_dir,
-                                               sim_number=sim_number, cost_scale=cost_scale,
-                                               magnitude=magnitude, v=v,
-                                               data_format=infrastructure_data,
-                                               extra_commodity=extra_commodity)
+        interdep_net = load_infrastructure_data(base_dir=base_dir,
+                                                external_interdependency_dir=external_interdependency_dir,
+                                                sim_number=sim_number, cost_scale=cost_scale, magnitude=magnitude, v=v,
+                                                data_format=infrastructure_data, extra_commodity=extra_commodity)
     else:
-        InterdepNet, v_temp, layers_temp = load_synthetic_network(BASE_DIR=base_dir, topology=topology,
-                                                                  config=magnitude, sample=sample,
-                                                                  cost_scale=cost_scale)
-    return InterdepNet, v_temp, layers_temp
+        interdep_net, v_temp, layers_temp = load_synthetic_network(BASE_DIR=base_dir, topology=topology,
+                                                                   config=magnitude, sample=sample,
+                                                                   cost_scale=cost_scale)
+    return interdep_net, v_temp, layers_temp
 
 
-def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T=1, validate=False,
-             save=True, suffix="", forced_actions=False, saveModel=False, print_cmd_line=True,
-             co_location=True):
+def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=1, save=True, suffix="",
+             forced_actions=False, save_model=False, print_cmd_line=True, co_location=True):
     """
 
     Parameters
@@ -788,27 +793,25 @@ def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T
     controlled_layers :
     functionality :
     T :
-    validate :
     save :
     suffix :
     forced_actions :
-    saveModel :
+    save_model :
     print_cmd_line :
     co_location :
 
     Returns
     -------
 
-
-    Runs an INDP problem with specified parameters. Outputs to directory specified in params['OUTPUT_DIR'].
-    :param params: Global parameters.
-    :param layers: Layers to consider in the infrastructure network.
-    :param T: Number of timesteps to optimize over.
-    :param validate: Validate solution.
-
     """
 
     # Initialize failure scenario.
+    if functionality is None:
+        functionality = {}
+    if layers is None:
+        layers = [1, 2, 3]
+    if controlled_layers is None:
+        controlled_layers = layers
     interdep_net = None
     if "N" not in params:
         interdep_net = initialize_network(base_dir="../data/INDP_7-20-2015/",
@@ -821,7 +824,7 @@ def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T
     if not controlled_layers:
         controlled_layers = layers
 
-    outDirSuffixRes = get_resource_suffix(params)
+    out_dir_suffix_res = get_resource_suffix(params)
 
     indp_results = INDPResults(params["L"])
     if T == 1:
@@ -830,8 +833,8 @@ def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T
             print("Num iters=", params["NUM_ITERATIONS"])
 
         # Run INDP for 1 time step (original INDP).
-        output_dir = params["OUTPUT_DIR"] + '_L' + str(len(layers)) + \
-                     '_m' + str(params["MAGNITUDE"]) + "_v" + outDirSuffixRes
+        output_dir = params["OUTPUT_DIR"] + '_L' + str(len(layers)) + '_m' + str(params["MAGNITUDE"]) + \
+                     "_v" + out_dir_suffix_res
         # Initial calculations.
         if params['DYNAMIC_PARAMS']:
             original_N = copy.deepcopy(interdep_net)  # !!! deepcopy
@@ -851,7 +854,7 @@ def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T
             results = indp(interdep_net, params["V"], T, layers, controlled_layers=controlled_layers,
                            forced_actions=forced_actions, co_location=co_location)
             indp_results.extend(results[1], t_offset=i + 1)
-            if saveModel:
+            if save_model:
                 save_INDP_model_to_file(results[0], output_dir + "/Model", i + 1)
             # Modify network to account for recovery and calculate components.
             apply_recovery(interdep_net, indp_results, i + 1)
@@ -869,11 +872,12 @@ def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T
             time_window_length = params["WINDOW_LENGTH"]
             num_time_windows = T
         output_dir = params["OUTPUT_DIR"] + '_L' + str(len(layers)) + "_m" + str(
-            params["MAGNITUDE"]) + "_v" + outDirSuffixRes
+            params["MAGNITUDE"]) + "_v" + out_dir_suffix_res
 
         print("Running td-INDP (T=" + str(T) + ", Window size=" + str(time_window_length) + ")")
         # Initial percolation calculations.
-        results = indp(interdep_net, 0, 1, layers, controlled_layers=controlled_layers,
+        v_0 = {x: 0 for x in params["V"].keys()}
+        results = indp(interdep_net, v_0, 1, layers, controlled_layers=controlled_layers,
                        functionality=functionality, co_location=co_location)
         indp_results = results[1]
         indp_results.add_components(0, INDPComponents.calculate_components(results[0], interdep_net,
@@ -896,7 +900,7 @@ def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T
                            controlled_layers=controlled_layers,
                            functionality=functionality_t, forced_actions=forced_actions,
                            co_location=co_location)
-            if saveModel:
+            if save_model:
                 save_INDP_model_to_file(results[0], output_dir + "/Model", n + 1)
             if "WINDOW_LENGTH" in params:
                 indp_results.extend(results[1], t_offset=n + 1, t_start=1, t_end=2)
@@ -922,46 +926,6 @@ def run_indp(params, layers=[1, 2, 3], controlled_layers=[], functionality={}, T
             os.makedirs(output_dir + '/agents')
         indp_results.to_csv_layer(output_dir + '/agents', params["SIM_NUMBER"], suffix=suffix)
     return indp_results
-
-
-def run_inrg(params, layers=[1, 2, 3], validate=False, player_ordering=[3, 1], suffix=""):
-    InterdepNet = None
-    output_dir = params["OUTPUT_DIR"] + "_m" + str(params["MAGNITUDE"]) + "_v" + str(params["V"])
-    if "N" not in params:
-        InterdepNet = initialize_network(base_dir="../data/INDP_7-20-2015/",
-                                         sim_number=params['SIM_NUMBER'],
-                                         magnitude=params["MAGNITUDE"])
-        params["N"] = InterdepNet
-    else:
-        InterdepNet = params["N"]
-    v_r = params["V"]
-    # Initialize player result variables.
-    player_strategies = {}
-    for P in layers:
-        player_strategies[P] = INDPResults()
-    num_iterations = params["NUM_ITERATIONS"]
-    params_temp = {}
-    for key in params:
-        params_temp[key] = params[key]
-    params_temp["NUM_ITERATIONS"] = 1
-    for i in range(num_iterations):
-        curr_player_ordering = player_ordering
-        if player_ordering == "RANDOM":
-            curr_player_ordering = random.sample(layers, len(layers))
-        for P in curr_player_ordering:
-            print("Iteration", i, ", Player", P)
-            # functionality=create_functionality_matrix(InterdepNet,1,[x for x in layers if x != P],strategy_type="REALISTIC")
-            results = run_indp(params_temp, layers, controlled_layers=[P], T=1, save=False,
-                               suffix="P" + str(P) + "_i" + str(i), forced_actions=True)
-            # print params["N"].G.node[(5,3)]['data']['inf_data'].functionality
-            if i == 0:
-                player_strategies[P] = results
-            else:
-                player_strategies[P].extend(results, t_offset=i + 1, t_start=1, t_end=2)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    for P in layers:
-        player_strategies[P].to_csv(output_dir, params["SIM_NUMBER"], suffix="P" + str(P) + "_" + suffix)
 
 
 def save_INDP_model_to_file(model, outModelDir, t, l=0, suffix=''):
@@ -1012,7 +976,7 @@ def initialize_sample_network(layers=[1, 2]):
         nn.reconstruction_cost = abs(nn.demand)
         nn.oversupply_penalty = 50
         nn.undersupply_penalty = 50
-        nn.resource_usage = 1
+        nn.resource_usage['p_'] = 1
         if n in failed_nodes:
             nn.functionality = 0.0
             nn.repaired = 0.0
@@ -1037,8 +1001,8 @@ def plot_indp_sample(params, folderSuffix="", suffix=""):
     plt.figure(figsize=(16, 8))
     if 3 in params["L"]:
         plt.figure(figsize=(16, 10))
-    InterdepNet = initialize_sample_network(layers=params["L"])
-    pos = nx.spring_layout(InterdepNet.G)
+    interdep_net = initialize_sample_network(layers=params["L"])
+    pos = nx.spring_layout(interdep_net.G)
     pos[(1, 1)][0] = 0.5
     pos[(7, 2)][0] = 0.5
     pos[(2, 1)][0] = 0.0
@@ -1093,7 +1057,7 @@ def plot_indp_sample(params, folderSuffix="", suffix=""):
                        ((17, 3), (15, 3)), ((17, 3), (16, 3)), ((17, 3), (18, 3))]
 
     labels = {}
-    for n, d in InterdepNet.G.nodes(data=True):
+    for n, d in interdep_net.G.nodes(data=True):
         labels[n] = "%d[%d]" % (n[0], d['data']['inf_data'].demand)
     pos_moved = {}
     for key, value in pos.items():
@@ -1103,12 +1067,12 @@ def plot_indp_sample(params, folderSuffix="", suffix=""):
 
     v_r = params["V"]
     if isinstance(v_r, (int)):
-        totalResource = v_r
+        total_resource = v_r
     else:
-        totalResource = sum([val for _, val in v_r.items()])
+        total_resource = sum([val for _, val in v_r.items()])
 
     output_dir = params["OUTPUT_DIR"] + '_L' + str(len(params["L"])) + '_m' + str(params["MAGNITUDE"]) + "_v" + str(
-        totalResource) + folderSuffix
+        total_resource) + folderSuffix
     action_file = output_dir + "/actions_" + str(params["SIM_NUMBER"]) + "_" + suffix + ".csv"
     actions = {0: []}
     if os.path.isfile(action_file):
@@ -1130,37 +1094,40 @@ def plot_indp_sample(params, folderSuffix="", suffix=""):
             data = a.split(".")
             node_dict[int(data[1]) * 10 + 1].append((int(data[0]), int(data[1])))
             node_dict[int(data[1]) * 10 + 2].remove((int(data[0]), int(data[1])))
-        nx.draw(InterdepNet.G, pos, node_color='w')
-        nx.draw_networkx_labels(InterdepNet.G, labels=labels, pos=pos,
+        nx.draw(interdep_net.G, pos, node_color='w')
+        nx.draw_networkx_labels(interdep_net.G, labels=labels, pos=pos,
                                 font_color='w', font_family='CMU Serif')  # ,font_weight='bold'
-        nx.draw_networkx_nodes(InterdepNet.G, pos, nodelist=node_dict[1], node_color='#b51717', node_size=1100,
+        nx.draw_networkx_nodes(interdep_net.G, pos, nodelist=node_dict[1], node_color='#b51717', node_size=1100,
                                alpha=0.7)
-        nx.draw_networkx_nodes(InterdepNet.G, pos, nodelist=node_dict[2], node_color='#005f98', node_size=1100,
+        nx.draw_networkx_nodes(interdep_net.G, pos, nodelist=node_dict[2], node_color='#005f98', node_size=1100,
                                alpha=0.7)
-        nx.draw_networkx_nodes(InterdepNet.G, pos_moved, nodelist=node_dict[12], node_color='k', node_shape="X",
+        nx.draw_networkx_nodes(interdep_net.G, pos_moved, nodelist=node_dict[12], node_color='k', node_shape="X",
                                node_size=150)
-        nx.draw_networkx_nodes(InterdepNet.G, pos_moved, nodelist=node_dict[22], node_color='k', node_shape="X",
+        nx.draw_networkx_nodes(interdep_net.G, pos_moved, nodelist=node_dict[22], node_color='k', node_shape="X",
                                node_size=150)
-        nx.draw_networkx_edges(InterdepNet.G, pos, edgelist=arc_dict[1], width=1, alpha=0.9, edge_color='r')
-        nx.draw_networkx_edges(InterdepNet.G, pos, edgelist=arc_dict[2], width=1, alpha=0.9, edge_color='b')
+        nx.draw_networkx_edges(interdep_net.G, pos, edgelist=arc_dict[1], width=1, alpha=0.9, edge_color='r')
+        nx.draw_networkx_edges(interdep_net.G, pos, edgelist=arc_dict[2], width=1, alpha=0.9, edge_color='b')
         if 3 in params["L"]:
-            nx.draw_networkx_nodes(InterdepNet.G, pos, nodelist=node_dict[3], node_color='#009181', node_size=1100,
+            nx.draw_networkx_nodes(interdep_net.G, pos, nodelist=node_dict[3], node_color='#009181', node_size=1100,
                                    alpha=0.7)
-            nx.draw_networkx_nodes(InterdepNet.G, pos_moved, nodelist=node_dict[32], node_color='k', node_shape="X",
+            nx.draw_networkx_nodes(interdep_net.G, pos_moved, nodelist=node_dict[32], node_color='k', node_shape="X",
                                    node_size=150)
-            nx.draw_networkx_edges(InterdepNet.G, pos, edgelist=arc_dict[3], width=1, alpha=0.9, edge_color='g')
+            nx.draw_networkx_edges(interdep_net.G, pos, edgelist=arc_dict[3], width=1, alpha=0.9, edge_color='g')
     plt.tight_layout()
     plt.savefig(output_dir + '/plot_net' + suffix + '.png', dpi=300)
 
 
 def get_resource_suffix(params):
-    outDirSuffixRes = ''
+    out_dir_suffix_res = ''
     for rc, val in params["V"].items():
-        if isinstance(val, (int)):
-            outDirSuffixRes += rc[0] + str(val)
+        if isinstance(val, int):
+            if rc != '':
+                out_dir_suffix_res += rc[0] + str(val)
+            else:
+                out_dir_suffix_res += str(val)
         else:
-            outDirSuffixRes += rc[0] + str(sum([lval for _, lval in val.items()])) + '_fixed_layer_Cap'
-    return outDirSuffixRes
+            out_dir_suffix_res += rc[0] + str(sum([lval for _, lval in val.items()])) + '_fixed_layer_Cap'
+    return out_dir_suffix_res
 
 
 def time_resource_usage_curves(base_dir, damage_dir, magnitude, sample_num):

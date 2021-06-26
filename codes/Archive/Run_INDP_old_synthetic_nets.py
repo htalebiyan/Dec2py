@@ -61,7 +61,8 @@ def batch_run(params,failSce_param,layers,player_ordering=[3,1]):
                     add_synthetic_failure_scenario(InterdepNet,BASE_DIR=base_dir,topology=topology,config=m,sample=i)                
                     
                 if params["ALGORITHM"]=="INDP":
-                    run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers,saveModel=False,print_cmd_line=False)
+                    run_indp(params, layers=layers, controlled_layers=layers, T=params["T"], saveModel=False,
+                             print_cmd_line=False)
                 elif params["ALGORITHM"]=="INFO_SHARE":
                     run_info_share(params,layers=layers,T=params["T"])
                 elif params["ALGORITHM"]=="INRG":
@@ -93,7 +94,7 @@ def single_scenario_run(params,layers,player_ordering=[3,1],num_samples=1):
         params["N"]=InterdepNet
         suffix=str(i)
         if params["ALGORITHM"]=="INDP":
-            run_indp(params,validate=False,T=params["T"],layers=layers,controlled_layers=layers,suffix=suffix)
+            run_indp(params, layers=layers, controlled_layers=layers, T=params["T"], suffix=suffix)
         elif params["ALGORITHM"]=="INFO_SHARE":
             run_info_share(params,layers=layers,T=params["T"],suffix=suffix)
         elif params["ALGORITHM"]=="INRG":

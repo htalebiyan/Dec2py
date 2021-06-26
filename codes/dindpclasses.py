@@ -42,7 +42,7 @@ class JcModel:
         self.results_real = indputils.INDPResults(self.layers)
 
     def set_out_dir(self, root, mag):
-        '''
+        """
         Parameters
         ----------
         root : TYPE
@@ -55,16 +55,10 @@ class JcModel:
         output_dir : TYPE
             DESCRIPTION.
 
-        '''
-        outDirSuffixRes = ''
-        for rc, val in self.resource.sum_resource.items():
-            if isinstance(val, (int)):
-                outDirSuffixRes += rc[0] + str(val)
-            else:
-                outDirSuffixRes += rc[0] + str(sum([lval for _, lval in val.items()])) + '_fixed_layer_Cap'
-
+        """
+        out_dir_suffix_res = indp.get_resource_suffix({'V': self.resource.sum_resource})
         output_dir = root + '_L' + str(len(self.layers)) + '_m' + str(mag) + "_v" + \
-                     outDirSuffixRes + '_' + self.judge_type + '_' + self.res_alloc_type
+                     out_dir_suffix_res + '_' + self.judge_type + '_' + self.res_alloc_type
         if self.res_alloc_type == 'AUCTION':
             a_model = next(iter(self.resource.auction_model.values()))
             output_dir += '_' + a_model.auction_type + '_' + a_model.valuation_type
@@ -444,7 +438,7 @@ class ResourceModel:
             sys.exit('Unsupported resource allocation type: ' + str(params['RES_ALLOC_TYPE']))
 
     def set_optimal_res(self, params):
-        '''
+        """
         Parameters
         ----------
         params : TYPE
@@ -454,10 +448,11 @@ class ResourceModel:
         -------
         None.
 
-        '''
+        """
         results_folder = params['OUTPUT_DIR'].replace(params['OUTPUT_DIR'].split('/')[-1], "")
+        out_dir_suffix_res = indp.get_resource_suffix(params)
         action_file = results_folder + 'indp_results' + '_L' + str(len(params["L"])) + '_m' + \
-                      str(params["MAGNITUDE"]) + "_v" + str(params["V"]) + '/actions_' + str(
+                      str(params["MAGNITUDE"]) + "_v" + out_dir_suffix_res + '/actions_' + str(
             params["SIM_NUMBER"]) + '_.csv'
         if os.path.isfile(action_file):
             with open(action_file) as f:
@@ -466,22 +461,34 @@ class ResourceModel:
                     data = line.strip().split(',')
                     t = int(data[0])
                     action = str.strip(data[1])
-                    l = int(action[-1])
-                    if '/' in action:
-                        addition = 0.5
-                    else:
-                        addition = 1.0
-                    self.v_r[t][l] += addition
-            for t, val in self.v_r.items():
+                    act_split = action.split('.')
+                    l = int(act_split[-1])
+                    for rc in params['V'].keys():
+                        if rc not in self.v_r[t][l].keys():
+                            self.v_r[t][l][rc] = 0
+                        if '/' in action:
+                            act_split2 = act_split[1].split('/')
+                            arc_obj = params['N'].G[(int(act_split[0]), int(act_split2[0]))][(int(act_split2[1]),
+                                                                                              int(act_split[2]))]
+                            addition = 0.5 * arc_obj['data']['inf_data'].resource_usage['h_' + rc]
+                        else:
+                            node_obj = params['N'].G.nodes[(int(act_split[0]), int(act_split[1]))]
+                            addition = 1.0 * node_obj['data']['inf_data'].resource_usage['p_' + rc]
+                        self.v_r[t][l][rc] += addition
+            for t, val in self.v_r.items():  # Make sure that resource values are integer
                 for l, val_l in val.items():
-                    self.v_r[t][l] = int(val_l)
+                    for rc in params['V'].keys():
+                        try:
+                            self.v_r[t][l][rc] = int(val_l[rc])
+                        except KeyError:
+                            self.v_r[t][l][rc] = 0
         else:
             sys.exit('No optimal action file for the resource allocation type OPTIMAL.' + \
                      ' Mag ' + str(params["MAGNITUDE"]) + ' Sample ' + str(params["SIM_NUMBER"]) + \
                      ' Rc ' + str(params["V"]))
 
     def set_uniform_res(self, params):
-        '''
+        """
 
         Parameters
         ----------
@@ -492,7 +499,7 @@ class ResourceModel:
         -------
         None.
 
-        '''
+        """
         self.sum_resource = params['V']
         for key, val in params['V'].items():
             assert isinstance(val, (int)), 'Number of resources should be an integer\
@@ -696,7 +703,7 @@ class AuctionModel():
                 each_bidder_alloc = gurobipy.LinExpr()
                 for v in range(num_units):
                     num_alloc_res += m.getVarByName('y_' + str((v + 1) * self.resource_unit) + ", " + str(l)) * (
-                                v + 1) * self.resource_unit
+                            v + 1) * self.resource_unit
                     each_bidder_alloc += m.getVarByName('y_' + str((v + 1) * self.resource_unit) + ", " + str(l))
                 m.addConstr(each_bidder_alloc, gurobipy.GRB.LESS_EQUAL, 1.0,
                             "Bidder " + str(l) + " allocation")

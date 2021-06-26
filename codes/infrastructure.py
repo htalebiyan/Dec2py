@@ -241,17 +241,17 @@ def load_percolation_model(supply_net):
     return G
 
 
-def load_infrastructure_data(BASE_DIR="../data/INDP_7-20-2015/", external_interdependency_dir=None,
+def load_infrastructure_data(base_dir="../data/INDP_7-20-2015/", external_interdependency_dir=None,
                              magnitude=6, v=3, sim_number=1, cost_scale=1.0, data_format='shelby_extended',
                              extra_commodity=None):
     if data_format == 'shelby_old':
-        G = load_infrastructure_array_format(BASE_DIR=BASE_DIR,
+        G = load_infrastructure_array_format(BASE_DIR=base_dir,
                                              external_interdependency_dir=external_interdependency_dir,
                                              magnitude=magnitude, v=v, sim_number=sim_number,
                                              cost_scale=cost_scale)
         return G
     elif data_format == 'shelby_extended':
-        G = load_infrastructure_array_format_extended(BASE_DIR=BASE_DIR, cost_scale=cost_scale,
+        G = load_infrastructure_array_format_extended(BASE_DIR=base_dir, cost_scale=cost_scale,
                                                       extra_commodity=extra_commodity)
         return G
     else:
@@ -424,7 +424,7 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
                     node_main_data.demand = float(v[1]['Demand'])
                     if 'guid' in v[1].index.values:
                         node_main_data.guid = v[1]['guid']
-                    resource_names = [x for x in list(v[1].index.values) if x[:1] == 'p']
+                    resource_names = [x for x in list(v[1].index.values) if x[:2] == 'p_']
                     if len(resource_names) > 0:
                         n.set_resource_usage(resource_names)
                         for rc in resource_names:
@@ -457,13 +457,13 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
                         arc_main_data.capacity = float(v[1]['u'])
                         if 'guid' in v[1].index.values:
                             arc_main_data.guid = v[1]['guid']
-                        resource_names = [x for x in list(v[1].index.values) if x[:1] == 'h']
+                        resource_names = [x for x in list(v[1].index.values) if x[:2] == 'h_']
                         if len(resource_names) > 0:
                             a.set_resource_usage(resource_names)
                             for rc in resource_names:
                                 a.resource_usage[rc] = v[1][rc]
                         else:
-                            n.resource_usage['h_'] = 1
+                            a.resource_usage['h_'] = 1
                         if extra_commodity:
                             a.set_extra_commodity(extra_commodity[net])
                             for l in extra_commodity[net]:
@@ -797,7 +797,7 @@ def count_nodes(N, layer_id=1):
 
 def debug():
     # N=load_infrastructure_data(BASE_DIR="../../../iINDP",sim_number=250,magnitude=6)
-    N = load_infrastructure_data(BASE_DIR="../data/INDP_7-20-2015/", sim_number=250, magnitude=8,
+    N = load_infrastructure_data(base_dir="../data/INDP_7-20-2015/", sim_number=250, magnitude=8,
                                  external_interdependency_dir="../data/INDP_4-12-2016")
     N.to_csv()
     # N=load_infrastructure_data(BASE_DIR="../../../iINDP",sim_number=250,magnitude=9)

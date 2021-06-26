@@ -95,8 +95,8 @@ def batch_run(params, fail_sce_param, player_ordering=[3, 1]):
                                                     topology=topology, config=m, sample=i)
 
             if params["ALGORITHM"] == "INDP":
-                indp.run_indp(params, validate=False, T=params["T"], layers=layers,
-                              controlled_layers=layers, saveModel=False, print_cmd_line=True)
+                indp.run_indp(params, layers=layers, controlled_layers=layers, T=params["T"], saveModel=False,
+                              print_cmd_line=True)
             elif params["ALGORITHM"] == "INFO_SHARE":
                 indp.run_info_share(params, layers=layers, T=params["T"])
             elif params["ALGORITHM"] == "INRG":
