@@ -16,9 +16,10 @@ import itertools
 import gameutils
 import dislocationutils
 
+
 # %%
 def batch_run(params, fail_sce_param):
-    '''
+    """
     Batch run different methods for a given list of damage scenarios,
     given global parameters.
 
@@ -33,7 +34,7 @@ def batch_run(params, fail_sce_param):
     -------
     None. Writes to file
 
-    '''
+    """
     # Set root directories
     base_dir = fail_sce_param['BASE_DIR']
     damage_dir = fail_sce_param['DAMAGE_DIR']
@@ -97,7 +98,7 @@ def batch_run(params, fail_sce_param):
                 dyn_dmnd = dislocationutils.create_dynamic_param(params, N=params["N"], T=params["NUM_ITERATIONS"])
                 params['DYNAMIC_PARAMS']['DEMAND_DATA'] = dyn_dmnd
             if fail_sce_param['TYPE'] == 'WU':
-                indp.add_Wu_failure_scenario(params["N"], DAM_DIR=damage_dir,
+                indp.add_wu_failure_scenario(params["N"], DAM_DIR=damage_dir,
                                              noSet=i, noSce=m)
             elif fail_sce_param['TYPE'] == 'ANDRES':
                 indp.add_failure_scenario(params["N"], DAM_DIR=damage_dir,
@@ -110,7 +111,8 @@ def batch_run(params, fail_sce_param):
                                                     topology=topology, config=m, sample=i)
 
             if params["ALGORITHM"] == "INDP":
-                indp.run_indp(params, layers=params['L'], controlled_layers=params['L'], T=params["T"], save_model=False,
+                indp.run_indp(params, layers=params['L'], controlled_layers=params['L'], T=params["T"],
+                              save_model=False,
                               print_cmd_line=False, co_location=False)
             if params["ALGORITHM"] == "MH":
                 mh.run_mh(params, validate=False, T=params["T"], layers=params['L'],
@@ -212,7 +214,7 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
     Parameters
     ----------
     fail_sce_param : dict
-        informaton of damage scenrios.
+        information about damage scenarios.
     v_r : float, list of float, or list of lists of floats
         number of resources,
         if this is a list of floats, each float is interpreted as a different total
@@ -239,7 +241,7 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
     """
     for v in v_r:
         if method == 'INDP':
-            params = {"NUM_ITERATIONS": 10, "OUTPUT_DIR": output_dir + 'indp_results', "V": v,
+            params = {"NUM_ITERATIONS": 20, "OUTPUT_DIR": output_dir + 'indp_results', "V": v,
                       "T": 1, 'L': layers, "ALGORITHM": "INDP"}
         elif method == 'TDINDP':
             params = {"OUTPUT_DIR": output_dir + '/tdindp_results', "V": v, "T": 10, 'L': layers,

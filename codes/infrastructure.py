@@ -468,7 +468,7 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
                             a.set_extra_commodity(extra_commodity[net])
                             for l in extra_commodity[net]:
                                 ext_com_data = \
-                                G.G[(a.source, a.layer)][(a.dest, a.layer)]['data']['inf_data'].extra_com[l]
+                                    G.G[(a.source, a.layer)][(a.dest, a.layer)]['data']['inf_data'].extra_com[l]
                                 ext_com_data['flow_cost'] = float(v[1]['c_' + l]) * cost_scale
     for file in files:
         fname = file[0:-4]
@@ -600,23 +600,23 @@ def add_from_csv_failure_scenario(G, magnitude, sample, DAM_DIR=""):
                 G.G[v][u]['data']['inf_data'].repaired = state
 
 
-def add_Wu_failure_scenario(G, DAM_DIR="../data/Wu_Scenarios/", noSet=1, noSce=1):
+def add_wu_failure_scenario(G, DAM_DIR="../data/Wu_Scenarios/", noSet=1, noSce=1):
     print("Initiallize Wu failure scenarios...")
     dam_nodes = {}
     dam_arcs = {}
-    folderDir = DAM_DIR + 'Set%d/Sce%d/' % (noSet, noSce)
-    netNames = {1: 'Water', 2: 'Gas', 3: 'Power', 4: 'Telecommunication'}
+    folder_dir = DAM_DIR + 'Set%d/Sce%d/' % (noSet, noSce)
+    net_names = {1: 'Water', 2: 'Gas', 3: 'Power', 4: 'Telecommunication'}
     ofst = 0  # set to 1 if node IDs start from 1
     # Load failure scenarios.
-    if os.path.exists(folderDir):
-        for k in range(1, len(netNames.keys()) + 1):
+    if os.path.exists(folder_dir):
+        for k in range(1, len(net_names.keys()) + 1):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                dam_nodes[k] = np.loadtxt(folderDir + 'Net_%s_Damaged_Nodes.txt' \
-                                          % netNames[k]).astype('int')
-                dam_arcs[k] = np.loadtxt(folderDir + 'Net_%s_Damaged_Arcs.txt' \
-                                         % netNames[k]).astype('int')
-        for k in range(1, len(netNames.keys()) + 1):
+                dam_nodes[k] = np.loadtxt(folder_dir + 'Net_%s_Damaged_Nodes.txt' \
+                                          % net_names[k]).astype('int')
+                dam_arcs[k] = np.loadtxt(folder_dir + 'Net_%s_Damaged_Arcs.txt' \
+                                         % net_names[k]).astype('int')
+        for k in range(1, len(net_names.keys()) + 1):
             if dam_nodes[k].size != 0:
                 if dam_nodes[k].size == 1:
                     dam_nodes[k] = [dam_nodes[k]]
@@ -867,18 +867,18 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3", topo
         config_data = pd.read_csv(f, delimiter='\t')
         config_data = config_data.rename(columns=lambda x: x.strip())
     config_param = config_data.iloc[config]
-    noLayers = int(config_param.loc['No. Layers'])
-    noResource = int(config_param.loc['Resource Cap'])
+    no_layers = int(config_param.loc['No. Layers'])
+    no_resource = int(config_param.loc['Resource Cap'])
 
     file_dir = net_dir + topo_initial[topology] + 'Config_' + str(config) + '/Sample_' + str(sample) + '/'
     G = InfrastructureNetwork("Test")
     global_index = 0
     files = [f for f in os.listdir(file_dir) if os.path.isfile(os.path.join(file_dir, f))]
-    for k in range(1, noLayers + 1):
+    for k in range(1, no_layers + 1):
         for file in files:
             if file == 'N' + str(k) + '_Nodes.txt':
                 with open(file_dir + file) as f:
-                    #                print "Opened",file,"."
+                    # print "Opened",file,"."
                     data = pd.read_csv(f, delimiter='\t', header=None)
                     for v in data.iterrows():
                         n = InfrastructureNode(global_index, k, int(v[1][0]))
@@ -891,13 +891,13 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3", topo
                             v[1][5]) * cost_scale
                         G.G.nodes[(n.local_id, n.net_id)]['data']['inf_data'].undersupply_penalty = float(
                             v[1][6]) * cost_scale
-                        # Assume only one kind of resource for now and one resource for each repaired element.
-                        G.G.nodes[(n.local_id, n.net_id)]['data']['inf_data'].resource_usage = 1
+                        # !!! Assume only one kind of resource for now and one resource for each repaired element.
+                        G.G.nodes[(n.local_id, n.net_id)]['data']['inf_data'].resource_usage['p_'] = 1
                         G.G.nodes[(n.local_id, n.net_id)]['data']['inf_data'].demand = float(v[1][4])
         for file in files:
             if file == 'N' + str(k) + '_Arcs.txt':
                 with open(file_dir + file) as f:
-                    #                print "Opened",file,"."
+                    # print "Opened",file,"."
                     data = pd.read_csv(f, delimiter='\t', header=None)
                     for v in data.iterrows():
                         for duplicate in range(2):
@@ -911,10 +911,10 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3", topo
                             G.G[(a.source, a.layer)][(a.dest, a.layer)]['data']['inf_data'].reconstruction_cost = float(
                                 v[1][4]) * cost_scale
                             G.G[(a.source, a.layer)][(a.dest, a.layer)]['data']['inf_data'].capacity = float(v[1][2])
-                            # Assume only one kind of resource for now and one resource for each repaired element.
-                            G.G[(a.source, a.layer)][(a.dest, a.layer)]['data']['inf_data'].resource_usage = 1
-    for k in range(1, noLayers + 1):
-        for kt in range(1, noLayers + 1):
+                            # !!! Assume only one kind of resource for now and one resource for each repaired element.
+                            G.G[(a.source, a.layer)][(a.dest, a.layer)]['data']['inf_data'].resource_usage['h_'] = 1
+    for k in range(1, no_layers + 1):
+        for kt in range(1, no_layers + 1):
             if k != kt:
                 for file in files:
                     if file == 'Interdependent_Arcs_' + str(k) + '_' + str(kt) + '.txt':
@@ -951,7 +951,7 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3", topo
     #    if fname=='g':
     #        G.S.append(InfrastructureSpace(int(v[1]['Subspace_ID']),float(v[1]['g'])))
 
-    return G, noResource, range(1, noLayers + 1)
+    return G, no_resource, range(1, no_layers + 1)
 
 
 def add_synthetic_failure_scenario(G, DAM_DIR="../data/Generated_Network_Dataset_v3", topology='Random', config=0,
@@ -987,10 +987,10 @@ def add_synthetic_failure_scenario(G, DAM_DIR="../data/Generated_Network_Dataset
                         for a in data.iterrows():
                             G.G[(a[1][0], k)][(a[1][1], k)]['data']['inf_data'].functionality = 0.0
                             G.G[(a[1][0], k)][(a[1][1], k)]['data']['inf_data'].repaired = 0.0
-                            #                            print "Arc ((",`int(a[1][0])`+","+`k`+"),("+`int(a[1][1])`+","+`k`+")) broken."
+                            # print "Arc ((",`int(a[1][0])`+","+`k`+"),("+`int(a[1][1])`+","+`k`+")) broken."
 
                             G.G[(a[1][1], k)][(a[1][0], k)]['data']['inf_data'].functionality = 0.0
                             G.G[(a[1][1], k)][(a[1][0], k)]['data']['inf_data'].repaired = 0.0
-                    #                            print "Arc ((",`int(a[1][1])`+","+`k`+"),("+`int(a[1][0])`+","+`k`+")) broken."
+                            # print "Arc ((",`int(a[1][1])`+","+`k`+"),("+`int(a[1][0])`+","+`k`+")) broken."
                     except:
                         print('Empty file: ' + file)

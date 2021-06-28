@@ -13,7 +13,7 @@ import sys
 import dislocationutils
 
 
-def indp(N, v_r, layers, T=1, controlled_layers=None, functionality=None, forced_actions=False, fixed_nodes=None,
+def indp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, forced_actions=False, fixed_nodes=None,
          print_cmd=True, time_limit=None, co_location=True, solution_pool=None):
     """
     INDP optimization problem. It also solves td-INDP if T > 1.
@@ -26,10 +26,10 @@ def indp(N, v_r, layers, T=1, controlled_layers=None, functionality=None, forced
         Dictionary of the number of resources of different types in the analysis.
         If the value is a scale for a type, it shows the total number of resources of that type for all layers .
         If the value is a list for a type, it shows the total number of resources of that type given to each layer.
-    layers : list, optional
-        Layer IDs in N included in the optimization.
     T : int, optional
         Number of time steps to optimize over. T=1 shows an iINDP analysis and T>1 shows a td-INDP. The default is 1.
+    layers : list, optional
+        Layer IDs in N included in the optimization.
     controlled_layers : list, optional
         Layer IDs that can be recovered in this optimization. Used for decentralized optimization. The default is None.
     functionality : dict, optional
@@ -406,20 +406,20 @@ def indp(N, v_r, layers, T=1, controlled_layers=None, functionality=None, forced
                                 'inf_data'].in_space(s.id), GRB.LESS_EQUAL,
                                         m.getVarByName('z_' + str(s.id) + "," + str(t)),
                                         "Geographical space constraint for arc (" + str(u) + "," + str(v) + ")")
-        # !!! Demand completion constraints for dependee nodes.
-        all_dependees = [y[0] for x in interdep_nodes.values() for y in x]
-        for n, d in n_hat.nodes(data=True):
-            if n in all_dependees:
-                if T == 1:  # !!! add this constraint for td-INDP
-                    dc_lhs = abs(d['data']['inf_data'].demand) * m.getVarByName('w_' + str(n) + "," + str(t))
-                    dc_rhs = abs(d['data']['inf_data'].demand) - m.getVarByName('delta-_' + str(n) + "," + str(t))
-                    m.addConstr(dc_lhs, GRB.LESS_EQUAL, dc_rhs,
-                                "Demand completion constraints for node " + str(n) + "," + str(t))
-                    for l, val in d['data']['inf_data'].extra_com.items():
-                        dc_lhs = abs(val['demand']) * m.getVarByName('w_' + str(n) + "," + str(t))
-                        dc_rhs = abs(val['demand']) - m.getVarByName('delta-_' + str(n) + "," + str(t) + "," + str(l))
-                        m.addConstr(dc_lhs, GRB.LESS_EQUAL, dc_rhs,
-                                    "Demand completion constraints for node " + str(n) + "," + str(t) + "," + str(l))
+        # # !!! Demand completion constraints for dependee nodes.
+        # all_dependees = [y[0] for x in interdep_nodes.values() for y in x]
+        # for n, d in n_hat.nodes(data=True):
+        #     if n in all_dependees:
+        #         if T == 1:  # !!! add this constraint for td-INDP
+        #             dc_lhs = abs(d['data']['inf_data'].demand) * m.getVarByName('w_' + str(n) + "," + str(t))
+        #             dc_rhs = abs(d['data']['inf_data'].demand) - m.getVarByName('delta-_' + str(n) + "," + str(t))
+        #             m.addConstr(dc_lhs, GRB.LESS_EQUAL, dc_rhs,
+        #                         "Demand completion constraints for node " + str(n) + "," + str(t))
+        #             for l, val in d['data']['inf_data'].extra_com.items():
+        #                 dc_lhs = abs(val['demand']) * m.getVarByName('w_' + str(n) + "," + str(t))
+        #                 dc_rhs = abs(val['demand']) - m.getVarByName('delta-_' + str(n) + "," + str(t) + "," + str(l))
+        #                 m.addConstr(dc_lhs, GRB.LESS_EQUAL, dc_rhs,
+        #                             "Demand completion constraints for node " + str(n) + "," + str(t) + "," + str(l))
     #    print "Solving..."
     m.update()
     if solution_pool:
@@ -779,7 +779,7 @@ def initialize_network(base_dir="../data/INDP_7-20-2015/", external_interdepende
         interdep_net, v_temp, layers_temp = load_synthetic_network(BASE_DIR=base_dir, topology=topology,
                                                                    config=magnitude, sample=sample,
                                                                    cost_scale=cost_scale)
-    return interdep_net, v_temp, layers_temp
+    return interdep_net, {'': v_temp}, layers_temp
 
 
 def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=1, save=True, suffix="",
@@ -814,18 +814,14 @@ def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=
         controlled_layers = layers
     interdep_net = None
     if "N" not in params:
-        interdep_net = initialize_network(base_dir="../data/INDP_7-20-2015/",
-                                          sim_number=params['SIM_NUMBER'],
+        interdep_net = initialize_network(base_dir="../data/INDP_7-20-2015/", sim_number=params['SIM_NUMBER'],
                                           magnitude=params["MAGNITUDE"])
     else:
         interdep_net = params["N"]
     if "NUM_ITERATIONS" not in params:
         params["NUM_ITERATIONS"] = 1
-    if not controlled_layers:
-        controlled_layers = layers
 
     out_dir_suffix_res = get_resource_suffix(params)
-
     indp_results = INDPResults(params["L"])
     if T == 1:
         print("--Running INDP (T=1) or iterative INDP.")
@@ -1138,7 +1134,7 @@ def time_resource_usage_curves(base_dir, damage_dir, magnitude, sample_num):
 
     .. todo::
         The calculated repair time and costs are written to node and arc info input
-        files. It makes it impossible to run the analyses parallelly because there
+        files. It makes it impossible to run the analyses in parallel because there
         might be a conflict between two processes. Consider correcting this.
 
     Parameters
