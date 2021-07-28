@@ -4,17 +4,19 @@
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <meta property="article:modified_time" content="2021-04-16T15:58:36-05:00" />
+    <meta property="article:modified_time" content="2021-07-28T17:54:29-05:00" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>INRSG and INRBG Classes &mdash; Dec2py 32663ab documentation</title>
+  <title>N-INRG and B-INRG Classes &mdash; Dec2py a23feed documentation</title>
   
 
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
 
   
@@ -32,11 +34,12 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
         <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
@@ -44,7 +47,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="INRSG and INRBG functions" href="gameutils.html" /> 
+    <link rel="prev" title="N-INRG and B-INRG functions" href="gameutils.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -68,7 +71,7 @@
             
             
               <div class="version">
-                0.4.1
+                0.4.2
               </div>
             
           
@@ -93,7 +96,7 @@
               
             
             
-              <p><span class="caption-text">Topics</span></p>
+              <p class="caption"><span class="caption-text">Topics</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="run_samples.html">Interdepndent Network Restoration Decision-making (toy example)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="run_main.html">Interdepndent Network Restoration Decision-making (Complete Analysis Dashboard)</a></li>
@@ -104,8 +107,8 @@
 <li class="toctree-l2"><a class="reference internal" href="infrastructure.html">Infrastructure classes and functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dindputils.html">Judgment Call functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dindpclasses.html">Judgment Call Classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gameutils.html">INRSG and INRBG functions</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">INRSG and INRBG Classes</a><ul class="simple">
+<li class="toctree-l2"><a class="reference internal" href="gameutils.html">N-INRG and B-INRG functions</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">N-INRG and B-INRG Classes</a><ul class="simple">
 </ul>
 </li>
 </ul>
@@ -160,7 +163,7 @@
         
           <li><a href="backend.html">Backend Classes and Modules</a> &raquo;</li>
         
-      <li>INRSG and INRBG Classes</li>
+      <li>N-INRG and B-INRG Classes</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -204,17 +207,17 @@
 }
 </style>
 <section id="module-gameclasses">
-<span id="inrsg-and-inrbg-classes"></span><h1>INRSG and INRBG Classes<a class="headerlink" href="#module-gameclasses" title="Permalink to this headline">¶</a></h1>
-<p>This module contain the classes used for game theoritical analysis of interdpendent
+<span id="n-inrg-and-b-inrg-classes"></span><h1>N-INRG and B-INRG Classes<a class="headerlink" href="#module-gameclasses" title="Permalink to this headline">¶</a></h1>
+<p>This module contain the classes used for game-theoretical analysis of interdependent
 network restoration</p>
 <dl class="py class">
-<dt id="gameclasses.BayesianGame">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">gameclasses.</span></code><code class="sig-name descname"><span class="pre">BayesianGame</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">L</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">net</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">act_rduc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.BayesianGame">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gameclasses.</span></span><span class="sig-name descname"><span class="pre">BayesianGame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">L</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">net</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">act_rduc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame" title="Permalink to this definition">¶</a></dt>
 <dd><p>This class models a Bayesian restoration game for a given time step
 and finds bayes nash equilibria. This class inherits from <a class="reference internal" href="#gameclasses.NormalGame" title="gameclasses.NormalGame"><code class="xref py py-class docutils literal notranslate"><span class="pre">NormalGame</span></code></a>.</p>
 <dl class="py attribute">
-<dt id="gameclasses.BayesianGame.fundamental_types">
-<code class="sig-name descname"><span class="pre">fundamental_types</span></code><a class="headerlink" href="#gameclasses.BayesianGame.fundamental_types" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.BayesianGame.fundamental_types">
+<span class="sig-name descname"><span class="pre">fundamental_types</span></span><a class="headerlink" href="#gameclasses.BayesianGame.fundamental_types" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of fundamental types of players. Currently, it consists of two types:</p>
 <ul class="simple">
 <li><p>Cooperative(C) player, which prefers cooperative and partially cooperative actions.</p></li>
@@ -228,8 +231,8 @@ and finds bayes nash equilibria. This class inherits from <a class="reference in
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.BayesianGame.states">
-<code class="sig-name descname"><span class="pre">states</span></code><a class="headerlink" href="#gameclasses.BayesianGame.states" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.BayesianGame.states">
+<span class="sig-name descname"><span class="pre">states</span></span><a class="headerlink" href="#gameclasses.BayesianGame.states" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of state(s) of the game.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -239,8 +242,8 @@ and finds bayes nash equilibria. This class inherits from <a class="reference in
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.BayesianGame.states_payoffs">
-<code class="sig-name descname"><span class="pre">states_payoffs</span></code><a class="headerlink" href="#gameclasses.BayesianGame.states_payoffs" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.BayesianGame.states_payoffs">
+<span class="sig-name descname"><span class="pre">states_payoffs</span></span><a class="headerlink" href="#gameclasses.BayesianGame.states_payoffs" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of payoff matrices of state(s) of the game.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -250,8 +253,8 @@ and finds bayes nash equilibria. This class inherits from <a class="reference in
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.BayesianGame.types">
-<code class="sig-name descname"><span class="pre">types</span></code><a class="headerlink" href="#gameclasses.BayesianGame.types" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.BayesianGame.types">
+<span class="sig-name descname"><span class="pre">types</span></span><a class="headerlink" href="#gameclasses.BayesianGame.types" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of players’ type(s).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -261,8 +264,8 @@ and finds bayes nash equilibria. This class inherits from <a class="reference in
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.BayesianGame.bayesian_players">
-<code class="sig-name descname"><span class="pre">bayesian_players</span></code><a class="headerlink" href="#gameclasses.BayesianGame.bayesian_players" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.BayesianGame.bayesian_players">
+<span class="sig-name descname"><span class="pre">bayesian_players</span></span><a class="headerlink" href="#gameclasses.BayesianGame.bayesian_players" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of bayesian players of the game comprising combiantion of players
 and their types.</p>
 <dl class="field-list simple">
@@ -273,9 +276,9 @@ and their types.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.BayesianGame.build_bayesian_game">
-<code class="sig-name descname"><span class="pre">build_bayesian_game</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame.build_bayesian_game" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function constructs the bayesian restoratuion game</p>
+<dt class="sig sig-object py" id="gameclasses.BayesianGame.build_bayesian_game">
+<span class="sig-name descname"><span class="pre">build_bayesian_game</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame.build_bayesian_game" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function constructs the bayesian restoration game</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -291,8 +294,8 @@ is None, which prevents writing to file.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.BayesianGame.create_bayesian_players">
-<code class="sig-name descname"><span class="pre">create_bayesian_players</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame.create_bayesian_players" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.BayesianGame.create_bayesian_players">
+<span class="sig-name descname"><span class="pre">create_bayesian_players</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame.create_bayesian_players" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function create one player for each combination of player and its types.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -305,8 +308,8 @@ is None, which prevents writing to file.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.BayesianGame.label_actions">
-<code class="sig-name descname"><span class="pre">label_actions</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame.label_actions" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.BayesianGame.label_actions">
+<span class="sig-name descname"><span class="pre">label_actions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame.label_actions" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function return the type of an input action in accordance with
 <a class="reference internal" href="#gameclasses.BayesianGame.fundamental_types" title="gameclasses.BayesianGame.fundamental_types"><code class="xref py py-attr docutils literal notranslate"><span class="pre">fundamental_types</span></code></a>:</p>
 <blockquote>
@@ -332,14 +335,15 @@ but it cannot be only one ‘OA’ action.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.BayesianGame.set_states">
-<code class="sig-name descname"><span class="pre">set_states</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame.set_states" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.BayesianGame.set_states">
+<span class="sig-name descname"><span class="pre">set_states</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame.set_states" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function set the states based on <a class="reference internal" href="#gameclasses.BayesianGame.fundamental_types" title="gameclasses.BayesianGame.fundamental_types"><code class="xref py py-attr docutils literal notranslate"><span class="pre">fundamental_types</span></code></a> and for
 each state compute the payoff matrix of all players by doubling the payoff
-of actions that are not consistant with the player’s type.</p>
+of actions that are not consistent with the player’s type.</p>
 <div class="admonition-todo admonition" id="id1">
 <p class="admonition-title">Todo</p>
-<p>Games: refine how to reduce importance of other types</p>
+<p>Games: refine how to reduce importance of action not consistent with
+the player’s type.</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -352,14 +356,16 @@ of actions that are not consistant with the player’s type.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.BayesianGame.set_types">
-<code class="sig-name descname"><span class="pre">set_types</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beliefs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame.set_types" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.BayesianGame.set_types">
+<span class="sig-name descname"><span class="pre">set_types</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beliefs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.BayesianGame.set_types" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function set players type based on the beliefs it receives. Currently,
-it can interpret the follwoing signnals:</p>
+it can interpret the following signals:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p>Uninformed (‘U’): Players  do not have any information about other players,
 and assign equal probability to other players’ types.</p></li>
+<li><p>False consensus (‘F’): false consensus effect or consensus bias.</p></li>
+<li><p>Inverse false consensus  (‘I’): Inverse false consensus effect.</p></li>
 </ul>
 </div></blockquote>
 <dl class="field-list simple">
@@ -378,12 +384,12 @@ and assign equal probability to other players’ types.</p></li>
 </dd></dl>
 
 <dl class="py class">
-<dt id="gameclasses.GameSolution">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">gameclasses.</span></code><code class="sig-name descname"><span class="pre">GameSolution</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">L</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.GameSolution" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.GameSolution">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gameclasses.</span></span><span class="sig-name descname"><span class="pre">GameSolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">L</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.GameSolution" title="Permalink to this definition">¶</a></dt>
 <dd><p>This class extracts (from the gambit solution) and saves the solution of the normal game</p>
 <dl class="py attribute">
-<dt id="gameclasses.GameSolution.players">
-<code class="sig-name descname"><span class="pre">players</span></code><a class="headerlink" href="#gameclasses.GameSolution.players" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.GameSolution.players">
+<span class="sig-name descname"><span class="pre">players</span></span><a class="headerlink" href="#gameclasses.GameSolution.players" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of players, set based on ‘L’ from input variables of <a class="reference internal" href="#gameclasses.GameSolution" title="gameclasses.GameSolution"><code class="xref py py-class docutils literal notranslate"><span class="pre">GameSolution</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -393,8 +399,8 @@ and assign equal probability to other players’ types.</p></li>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.GameSolution.gambit_sol">
-<code class="sig-name descname"><span class="pre">gambit_sol</span></code><a class="headerlink" href="#gameclasses.GameSolution.gambit_sol" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.GameSolution.gambit_sol">
+<span class="sig-name descname"><span class="pre">gambit_sol</span></span><a class="headerlink" href="#gameclasses.GameSolution.gambit_sol" title="Permalink to this definition">¶</a></dt>
 <dd><p>Solutions to the game computed by gambit, set based on ‘sol’ from input variables
 of <a class="reference internal" href="#gameclasses.GameSolution" title="gameclasses.GameSolution"><code class="xref py py-class docutils literal notranslate"><span class="pre">GameSolution</span></code></a></p>
 <dl class="field-list simple">
@@ -405,8 +411,8 @@ of <a class="reference internal" href="#gameclasses.GameSolution" title="gamecla
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.GameSolution.sol">
-<code class="sig-name descname"><span class="pre">sol</span></code><a class="headerlink" href="#gameclasses.GameSolution.sol" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.GameSolution.sol">
+<span class="sig-name descname"><span class="pre">sol</span></span><a class="headerlink" href="#gameclasses.GameSolution.sol" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dictionary of solutions of the normal game, including actions, their probabilities,
 payoffs, and the total cost,  set by <a class="reference internal" href="#gameclasses.GameSolution.extract_solution" title="gameclasses.GameSolution.extract_solution"><code class="xref py py-meth docutils literal notranslate"><span class="pre">extract_solution()</span></code></a>.</p>
 <dl class="field-list simple">
@@ -417,13 +423,13 @@ payoffs, and the total cost,  set by <a class="reference internal" href="#gamecl
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.GameSolution.extract_solution">
-<code class="sig-name descname"><span class="pre">extract_solution</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.GameSolution.extract_solution" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.GameSolution.extract_solution">
+<span class="sig-name descname"><span class="pre">extract_solution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.GameSolution.extract_solution" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function extracts the solution of the normal game from the solution
 structure from gambit</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>actions</strong> (<em>dict</em>) – Possible actions for each palyer.</p>
+<dd class="field-odd"><p><strong>actions</strong> (<em>dict</em>) – Possible actions for each player.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><strong>sol</strong> – Dictionary of solutions of the normal game, including actions, their probabilities,
@@ -438,13 +444,13 @@ payoffs, and the total cost.</p>
 </dd></dl>
 
 <dl class="py class">
-<dt id="gameclasses.InfrastructureGame">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">gameclasses.</span></code><code class="sig-name descname"><span class="pre">InfrastructureGame</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame" title="Permalink to this definition">¶</a></dt>
-<dd><p>This class is employed to find the restoration strategy for an interdepndent network
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gameclasses.</span></span><span class="sig-name descname"><span class="pre">InfrastructureGame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class is employed to find the restoration strategy for an interdependent network
 using game theoretic methods over a given time horizon</p>
 <dl class="py attribute">
-<dt id="gameclasses.InfrastructureGame.layers">
-<code class="sig-name descname"><span class="pre">layers</span></code><a class="headerlink" href="#gameclasses.InfrastructureGame.layers" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.layers">
+<span class="sig-name descname"><span class="pre">layers</span></span><a class="headerlink" href="#gameclasses.InfrastructureGame.layers" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of layers (= players), set based on [‘L’] in <a class="reference internal" href="#gameclasses.InfrastructureGame" title="gameclasses.InfrastructureGame"><code class="xref py py-class docutils literal notranslate"><span class="pre">params</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -454,8 +460,8 @@ using game theoretic methods over a given time horizon</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.InfrastructureGame.game_type">
-<code class="sig-name descname"><span class="pre">game_type</span></code><a class="headerlink" href="#gameclasses.InfrastructureGame.game_type" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.game_type">
+<span class="sig-name descname"><span class="pre">game_type</span></span><a class="headerlink" href="#gameclasses.InfrastructureGame.game_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>Type of the game, set based on [‘ALGORITHM’] in <a class="reference internal" href="#gameclasses.InfrastructureGame" title="gameclasses.InfrastructureGame"><code class="xref py py-class docutils literal notranslate"><span class="pre">params</span></code></a></p>
 <blockquote>
 <div><p>Options: NORMALGAME</p>
@@ -468,8 +474,8 @@ using game theoretic methods over a given time horizon</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.InfrastructureGame.equib_alg">
-<code class="sig-name descname"><span class="pre">equib_alg</span></code><a class="headerlink" href="#gameclasses.InfrastructureGame.equib_alg" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.equib_alg">
+<span class="sig-name descname"><span class="pre">equib_alg</span></span><a class="headerlink" href="#gameclasses.InfrastructureGame.equib_alg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Algorithm to solve the game, set based on [‘EQUIBALG’] in <a class="reference internal" href="#gameclasses.InfrastructureGame" title="gameclasses.InfrastructureGame"><code class="xref py py-class docutils literal notranslate"><span class="pre">params</span></code></a></p>
 <blockquote>
 <div><p>Options: enumpure_solve, enummixed_solve, lcp_solve, lp_solve, simpdiv_solve,
@@ -483,8 +489,8 @@ ipa_solve, gnm_solve</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.InfrastructureGame.magnitude">
-<code class="sig-name descname"><span class="pre">magnitude</span></code><a class="headerlink" href="#gameclasses.InfrastructureGame.magnitude" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.magnitude">
+<span class="sig-name descname"><span class="pre">magnitude</span></span><a class="headerlink" href="#gameclasses.InfrastructureGame.magnitude" title="Permalink to this definition">¶</a></dt>
 <dd><p>Magnitude parameter of the current simulation, set based on [‘MAGNITUDE’] in
 <a class="reference internal" href="#gameclasses.InfrastructureGame" title="gameclasses.InfrastructureGame"><code class="xref py py-class docutils literal notranslate"><span class="pre">params</span></code></a></p>
 <dl class="field-list simple">
@@ -495,8 +501,8 @@ ipa_solve, gnm_solve</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.InfrastructureGame.sample">
-<code class="sig-name descname"><span class="pre">sample</span></code><a class="headerlink" href="#gameclasses.InfrastructureGame.sample" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><a class="headerlink" href="#gameclasses.InfrastructureGame.sample" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sample parameter of the current simulation, set based on [‘SIM_NUMBER’] in
 <a class="reference internal" href="#gameclasses.InfrastructureGame" title="gameclasses.InfrastructureGame"><code class="xref py py-class docutils literal notranslate"><span class="pre">params</span></code></a></p>
 <dl class="field-list simple">
@@ -507,8 +513,8 @@ ipa_solve, gnm_solve</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.InfrastructureGame.net">
-<code class="sig-name descname"><span class="pre">net</span></code><a class="headerlink" href="#gameclasses.InfrastructureGame.net" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.net">
+<span class="sig-name descname"><span class="pre">net</span></span><a class="headerlink" href="#gameclasses.InfrastructureGame.net" title="Permalink to this definition">¶</a></dt>
 <dd><p>Object that stores network information, set based on <a class="reference internal" href="#gameclasses.InfrastructureGame" title="gameclasses.InfrastructureGame"><code class="xref py py-class docutils literal notranslate"><span class="pre">params</span></code></a>
 using <a class="reference internal" href="#gameclasses.InfrastructureGame.set_network" title="gameclasses.InfrastructureGame.set_network"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_network()</span></code></a></p>
 <dl class="field-list simple">
@@ -519,8 +525,8 @@ using <a class="reference internal" href="#gameclasses.InfrastructureGame.set_ne
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.InfrastructureGame.time_steps">
-<code class="sig-name descname"><span class="pre">time_steps</span></code><a class="headerlink" href="#gameclasses.InfrastructureGame.time_steps" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.time_steps">
+<span class="sig-name descname"><span class="pre">time_steps</span></span><a class="headerlink" href="#gameclasses.InfrastructureGame.time_steps" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of time steps pf the restoration process, set based on
 <a class="reference internal" href="#gameclasses.InfrastructureGame" title="gameclasses.InfrastructureGame"><code class="xref py py-class docutils literal notranslate"><span class="pre">params</span></code></a> using <a class="reference internal" href="#gameclasses.InfrastructureGame.set_time_steps" title="gameclasses.InfrastructureGame.set_time_steps"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_time_steps()</span></code></a></p>
 <dl class="field-list simple">
@@ -531,8 +537,8 @@ using <a class="reference internal" href="#gameclasses.InfrastructureGame.set_ne
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.InfrastructureGame.objs">
-<code class="sig-name descname"><span class="pre">objs</span></code><a class="headerlink" href="#gameclasses.InfrastructureGame.objs" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.objs">
+<span class="sig-name descname"><span class="pre">objs</span></span><a class="headerlink" href="#gameclasses.InfrastructureGame.objs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dictionary of game objects (<a class="reference internal" href="#gameclasses.NormalGame" title="gameclasses.NormalGame"><code class="xref py py-class docutils literal notranslate"><span class="pre">NormalGame</span></code></a>) for all time steps of the restoration</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -542,8 +548,8 @@ using <a class="reference internal" href="#gameclasses.InfrastructureGame.set_ne
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.InfrastructureGame.judgments">
-<code class="sig-name descname"><span class="pre">judgments</span></code><a class="headerlink" href="#gameclasses.InfrastructureGame.judgments" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.judgments">
+<span class="sig-name descname"><span class="pre">judgments</span></span><a class="headerlink" href="#gameclasses.InfrastructureGame.judgments" title="Permalink to this definition">¶</a></dt>
 <dd><p>Object that stores the judgment attitude of agents, which is only needed
 for computing the resource allocation when using auction. So, it is not
 used in building or solving the games</p>
@@ -555,8 +561,8 @@ used in building or solving the games</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.InfrastructureGame.results">
-<code class="sig-name descname"><span class="pre">results</span></code><a class="headerlink" href="#gameclasses.InfrastructureGame.results" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.results">
+<span class="sig-name descname"><span class="pre">results</span></span><a class="headerlink" href="#gameclasses.InfrastructureGame.results" title="Permalink to this definition">¶</a></dt>
 <dd><p>Object that stores the restoration strategies for all time steps of the
 restoration process</p>
 <dl class="field-list simple">
@@ -567,8 +573,8 @@ restoration process</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.InfrastructureGame.resource">
-<code class="sig-name descname"><span class="pre">resource</span></code><a class="headerlink" href="#gameclasses.InfrastructureGame.resource" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.resource">
+<span class="sig-name descname"><span class="pre">resource</span></span><a class="headerlink" href="#gameclasses.InfrastructureGame.resource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Model that allocates resources and stores the resource allocation data for
 all time steps of the restoration process</p>
 <dl class="field-list simple">
@@ -579,8 +585,8 @@ all time steps of the restoration process</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.InfrastructureGame.res_alloc_type">
-<code class="sig-name descname"><span class="pre">res_alloc_type</span></code><a class="headerlink" href="#gameclasses.InfrastructureGame.res_alloc_type" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.res_alloc_type">
+<span class="sig-name descname"><span class="pre">res_alloc_type</span></span><a class="headerlink" href="#gameclasses.InfrastructureGame.res_alloc_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>Resource allocation method</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -590,8 +596,8 @@ all time steps of the restoration process</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.InfrastructureGame.v_r">
-<code class="sig-name descname"><span class="pre">v_r</span></code><a class="headerlink" href="#gameclasses.InfrastructureGame.v_r" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.v_r">
+<span class="sig-name descname"><span class="pre">v_r</span></span><a class="headerlink" href="#gameclasses.InfrastructureGame.v_r" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dictionary that stores the number of available resources, <span class="math notranslate nohighlight">\(R_c\)</span>, for
 all time steps of the restoration process</p>
 <dl class="field-list simple">
@@ -602,8 +608,8 @@ all time steps of the restoration process</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.InfrastructureGame.output_dir">
-<code class="sig-name descname"><span class="pre">output_dir</span></code><a class="headerlink" href="#gameclasses.InfrastructureGame.output_dir" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.output_dir">
+<span class="sig-name descname"><span class="pre">output_dir</span></span><a class="headerlink" href="#gameclasses.InfrastructureGame.output_dir" title="Permalink to this definition">¶</a></dt>
 <dd><p>Directory to which the results are written, set by <a class="reference internal" href="#gameclasses.InfrastructureGame.set_out_dir" title="gameclasses.InfrastructureGame.set_out_dir"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_out_dir()</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -613,14 +619,14 @@ all time steps of the restoration process</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.InfrastructureGame.run_game">
-<code class="sig-name descname"><span class="pre">run_game</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">print_cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_optimal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_results</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.run_game" title="Permalink to this definition">¶</a></dt>
-<dd><p>Runs the infrastructure restoarion game for a given number of <a class="reference internal" href="#gameclasses.InfrastructureGame.time_steps" title="gameclasses.InfrastructureGame.time_steps"><code class="xref py py-attr docutils literal notranslate"><span class="pre">time_steps</span></code></a></p>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.run_game">
+<span class="sig-name descname"><span class="pre">run_game</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">print_cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_optimal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_results</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.run_game" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the infrastructure restoration game for a given number of <a class="reference internal" href="#gameclasses.InfrastructureGame.time_steps" title="gameclasses.InfrastructureGame.time_steps"><code class="xref py py-attr docutils literal notranslate"><span class="pre">time_steps</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>print_cmd</strong> (<em>bool</em><em>, </em><em>optional</em>) – Should the game solution be printed to the command line. The default is True.</p></li>
-<li><p><strong>compute_optimal</strong> (<em>bool</em><em>, </em><em>optional</em>) – Should the optimal restoarion action be found in each time step. The default is False.</p></li>
+<li><p><strong>compute_optimal</strong> (<em>bool</em><em>, </em><em>optional</em>) – Should the optimal restoration action be found in each time step. The default is False.</p></li>
 <li><p><strong>save_results</strong> (<em>bool</em><em>, </em><em>optional</em>) – Should the results and game be written to file. The default is True.</p></li>
 <li><p><strong>plot</strong> (<em>bool</em><em>, </em><em>optional</em>) – Should the payoff matrix be plotted (only for 2-players games). The default is False.</p></li>
 <li><p><strong>save_model</strong> (<em>bool</em><em>, </em><em>optional</em>) – Should the games and indp models to compute payoffs be written to file. The default is False.</p></li>
@@ -633,42 +639,36 @@ all time steps of the restoration process</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.InfrastructureGame.save_object_to_file">
-<code class="sig-name descname"><span class="pre">save_object_to_file</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.save_object_to_file" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.save_object_to_file">
+<span class="sig-name descname"><span class="pre">save_object_to_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.save_object_to_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Writes the object to file using pickle</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>sample</strong> (<em>int</em>) – Sample paramter of the current simulation</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>None.</p>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.InfrastructureGame.save_results_to_file">
-<code class="sig-name descname"><span class="pre">save_results_to_file</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.save_results_to_file" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.save_results_to_file">
+<span class="sig-name descname"><span class="pre">save_results_to_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.save_results_to_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Writes results to file</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>sample</strong> (<em>int</em>) – Sample paramter of the current simulation</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>None.</p>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.InfrastructureGame.set_network">
-<code class="sig-name descname"><span class="pre">set_network</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.set_network" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.set_network">
+<span class="sig-name descname"><span class="pre">set_network</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.set_network" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks if the network object exists, and if so, make a deepcopy of it to
-preserve the initial netowrk object as the initial netowrk object is used for
+preserve the initial network object as the initial network object is used for
 all simulations , and must not be altered</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>params</strong> (<em>dict</em>) – Dictionary of input paramters</p>
+<dd class="field-odd"><p><strong>params</strong> (<em>dict</em>) – Dictionary of input parameters</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>Network Object</p>
@@ -680,8 +680,8 @@ all simulations , and must not be altered</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.InfrastructureGame.set_out_dir">
-<code class="sig-name descname"><span class="pre">set_out_dir</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.set_out_dir" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.set_out_dir">
+<span class="sig-name descname"><span class="pre">set_out_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.set_out_dir" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function generates and sets the directory to which the results are written</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -697,8 +697,8 @@ all simulations , and must not be altered</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.InfrastructureGame.set_payoff_dir">
-<code class="sig-name descname"><span class="pre">set_payoff_dir</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.set_payoff_dir" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.set_payoff_dir">
+<span class="sig-name descname"><span class="pre">set_payoff_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.set_payoff_dir" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function generates and sets the directory to which the past results
 were written, from which the payoffs for the first time step are read</p>
 <dl class="field-list simple">
@@ -715,18 +715,18 @@ were written, from which the payoffs for the first time step are read</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.InfrastructureGame.set_time_steps">
-<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">set_time_steps</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_iter</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.set_time_steps" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.InfrastructureGame.set_time_steps">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">set_time_steps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_iter</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.InfrastructureGame.set_time_steps" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks if the window length is equal to one as the current version of
-games is devised based on itrative INDP</p>
+games is devised based on iterative INDP</p>
 <div class="admonition-todo admonition" id="id2">
 <p class="admonition-title">Todo</p>
-<p>Games: Exapnd the code to imitate td-INDP</p>
+<p>Games: Expand the code to imitate td-INDP</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>T</strong> (<em>int</em>) – Window lenght</p></li>
+<li><p><strong>T</strong> (<em>int</em>) – Window length</p></li>
 <li><p><strong>num_iter</strong> (<em>TYPE</em>) – Number of time steps</p></li>
 </ul>
 </dd>
@@ -742,13 +742,13 @@ games is devised based on itrative INDP</p>
 </dd></dl>
 
 <dl class="py class">
-<dt id="gameclasses.NormalGame">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">gameclasses.</span></code><code class="sig-name descname"><span class="pre">NormalGame</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">L</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">net</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">act_rduc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">gameclasses.</span></span><span class="sig-name descname"><span class="pre">NormalGame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">L</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">net</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">act_rduc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame" title="Permalink to this definition">¶</a></dt>
 <dd><p>This class models a normal (strategic) restoration game for a given time step
 and finds pure and mixed strategy nash equilibria.</p>
 <dl class="py attribute">
-<dt id="gameclasses.NormalGame.players">
-<code class="sig-name descname"><span class="pre">players</span></code><a class="headerlink" href="#gameclasses.NormalGame.players" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.players">
+<span class="sig-name descname"><span class="pre">players</span></span><a class="headerlink" href="#gameclasses.NormalGame.players" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of players, set based on ‘L’ from input variables of <a class="reference internal" href="#gameclasses.NormalGame" title="gameclasses.NormalGame"><code class="xref py py-class docutils literal notranslate"><span class="pre">NormalGame</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -758,8 +758,8 @@ and finds pure and mixed strategy nash equilibria.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.NormalGame.net">
-<code class="sig-name descname"><span class="pre">net</span></code><a class="headerlink" href="#gameclasses.NormalGame.net" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.net">
+<span class="sig-name descname"><span class="pre">net</span></span><a class="headerlink" href="#gameclasses.NormalGame.net" title="Permalink to this definition">¶</a></dt>
 <dd><p>Object that stores network information, set based on ‘net’ from input variables
 of <a class="reference internal" href="#gameclasses.NormalGame" title="gameclasses.NormalGame"><code class="xref py py-class docutils literal notranslate"><span class="pre">NormalGame</span></code></a></p>
 <dl class="field-list simple">
@@ -770,8 +770,8 @@ of <a class="reference internal" href="#gameclasses.NormalGame" title="gameclass
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.NormalGame.v_r">
-<code class="sig-name descname"><span class="pre">v_r</span></code><a class="headerlink" href="#gameclasses.NormalGame.v_r" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.v_r">
+<span class="sig-name descname"><span class="pre">v_r</span></span><a class="headerlink" href="#gameclasses.NormalGame.v_r" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dictionary that stores the number of available resources, <span class="math notranslate nohighlight">\(R_c\)</span>, for
 the current time step, set based on ‘v_r’ from input variables of <a class="reference internal" href="#gameclasses.NormalGame" title="gameclasses.NormalGame"><code class="xref py py-class docutils literal notranslate"><span class="pre">NormalGame</span></code></a></p>
 <dl class="field-list simple">
@@ -782,8 +782,8 @@ the current time step, set based on ‘v_r’ from input variables of <a class="
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.NormalGame.dependee_nodes">
-<code class="sig-name descname"><span class="pre">dependee_nodes</span></code><a class="headerlink" href="#gameclasses.NormalGame.dependee_nodes" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.dependee_nodes">
+<span class="sig-name descname"><span class="pre">dependee_nodes</span></span><a class="headerlink" href="#gameclasses.NormalGame.dependee_nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dictionary of all dependee nodes in the network</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -793,9 +793,9 @@ the current time step, set based on ‘v_r’ from input variables of <a class="
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.NormalGame.actions">
-<code class="sig-name descname"><span class="pre">actions</span></code><a class="headerlink" href="#gameclasses.NormalGame.actions" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dictionary of all relavant restoration actions (including ‘No Action (NA)’ and
+<dt class="sig sig-object py" id="gameclasses.NormalGame.actions">
+<span class="sig-name descname"><span class="pre">actions</span></span><a class="headerlink" href="#gameclasses.NormalGame.actions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary of all relevant restoration actions (including ‘No Action (NA)’ and
 possibly ‘Other Action (OA)’), which are used as the possible moves by players,
 set by <a class="reference internal" href="#gameclasses.NormalGame.find_actions" title="gameclasses.NormalGame.find_actions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_actions()</span></code></a></p>
 <dl class="field-list simple">
@@ -806,8 +806,8 @@ set by <a class="reference internal" href="#gameclasses.NormalGame.find_actions"
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.NormalGame.first_actions">
-<code class="sig-name descname"><span class="pre">first_actions</span></code><a class="headerlink" href="#gameclasses.NormalGame.first_actions" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.first_actions">
+<span class="sig-name descname"><span class="pre">first_actions</span></span><a class="headerlink" href="#gameclasses.NormalGame.first_actions" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of first action of each player in <a class="reference internal" href="#gameclasses.NormalGame.actions" title="gameclasses.NormalGame.actions"><code class="xref py py-attr docutils literal notranslate"><span class="pre">actions</span></code></a>, which is sed to check if
 any action is left for any one the players.</p>
 <dl class="field-list simple">
@@ -818,8 +818,8 @@ any action is left for any one the players.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.NormalGame.actions_reduced">
-<code class="sig-name descname"><span class="pre">actions_reduced</span></code><a class="headerlink" href="#gameclasses.NormalGame.actions_reduced" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.actions_reduced">
+<span class="sig-name descname"><span class="pre">actions_reduced</span></span><a class="headerlink" href="#gameclasses.NormalGame.actions_reduced" title="Permalink to this definition">¶</a></dt>
 <dd><p>Provisional: If true, actions for at least one agent are more than 1000 and hence are reduced</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -829,10 +829,10 @@ any action is left for any one the players.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.NormalGame.payoffs">
-<code class="sig-name descname"><span class="pre">payoffs</span></code><a class="headerlink" href="#gameclasses.NormalGame.payoffs" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.payoffs">
+<span class="sig-name descname"><span class="pre">payoffs</span></span><a class="headerlink" href="#gameclasses.NormalGame.payoffs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dictionary of payoffs for all possible action profiles, calculated by solving
-INDP or the corresponfing flow problem. It is populated by <a class="reference internal" href="#gameclasses.NormalGame.compute_payoffs" title="gameclasses.NormalGame.compute_payoffs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_payoffs()</span></code></a>.</p>
+INDP or the corresponding flow problem. It is populated by <a class="reference internal" href="#gameclasses.NormalGame.compute_payoffs" title="gameclasses.NormalGame.compute_payoffs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_payoffs()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>dict</p>
@@ -841,8 +841,8 @@ INDP or the corresponfing flow problem. It is populated by <a class="reference i
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.NormalGame.payoff_time">
-<code class="sig-name descname"><span class="pre">payoff_time</span></code><a class="headerlink" href="#gameclasses.NormalGame.payoff_time" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.payoff_time">
+<span class="sig-name descname"><span class="pre">payoff_time</span></span><a class="headerlink" href="#gameclasses.NormalGame.payoff_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Time to compute each entry in <a class="reference internal" href="#gameclasses.NormalGame.payoffs" title="gameclasses.NormalGame.payoffs"><code class="xref py py-attr docutils literal notranslate"><span class="pre">payoffs</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -852,8 +852,8 @@ INDP or the corresponfing flow problem. It is populated by <a class="reference i
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.NormalGame.solving_time">
-<code class="sig-name descname"><span class="pre">solving_time</span></code><a class="headerlink" href="#gameclasses.NormalGame.solving_time" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.solving_time">
+<span class="sig-name descname"><span class="pre">solving_time</span></span><a class="headerlink" href="#gameclasses.NormalGame.solving_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Time to solve the game using <a class="reference internal" href="#gameclasses.NormalGame.solve_game" title="gameclasses.NormalGame.solve_game"><code class="xref py py-meth docutils literal notranslate"><span class="pre">solve_game()</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -863,8 +863,8 @@ INDP or the corresponfing flow problem. It is populated by <a class="reference i
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.NormalGame.normgame">
-<code class="sig-name descname"><span class="pre">normgame</span></code><a class="headerlink" href="#gameclasses.NormalGame.normgame" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.normgame">
+<span class="sig-name descname"><span class="pre">normgame</span></span><a class="headerlink" href="#gameclasses.NormalGame.normgame" title="Permalink to this definition">¶</a></dt>
 <dd><p>Normal game object defined by gambit. It is populated by <a class="reference internal" href="#gameclasses.NormalGame.build_game" title="gameclasses.NormalGame.build_game"><code class="xref py py-meth docutils literal notranslate"><span class="pre">build_game()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -874,8 +874,8 @@ INDP or the corresponfing flow problem. It is populated by <a class="reference i
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.NormalGame.solution">
-<code class="sig-name descname"><span class="pre">solution</span></code><a class="headerlink" href="#gameclasses.NormalGame.solution" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.solution">
+<span class="sig-name descname"><span class="pre">solution</span></span><a class="headerlink" href="#gameclasses.NormalGame.solution" title="Permalink to this definition">¶</a></dt>
 <dd><p>Solution of the normal game. It is populated by <a class="reference internal" href="#gameclasses.NormalGame.solve_game" title="gameclasses.NormalGame.solve_game"><code class="xref py py-meth docutils literal notranslate"><span class="pre">solve_game()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -885,8 +885,8 @@ INDP or the corresponfing flow problem. It is populated by <a class="reference i
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.NormalGame.chosen_equilibrium">
-<code class="sig-name descname"><span class="pre">chosen_equilibrium</span></code><a class="headerlink" href="#gameclasses.NormalGame.chosen_equilibrium" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.chosen_equilibrium">
+<span class="sig-name descname"><span class="pre">chosen_equilibrium</span></span><a class="headerlink" href="#gameclasses.NormalGame.chosen_equilibrium" title="Permalink to this definition">¶</a></dt>
 <dd><p>Action chosen from Nash equilibria (if there are more than one) as
 the action of the current time step to proceed to the next step. It is
 populated by <a class="reference internal" href="#gameclasses.NormalGame.choose_equilibrium" title="gameclasses.NormalGame.choose_equilibrium"><code class="xref py py-meth docutils literal notranslate"><span class="pre">choose_equilibrium()</span></code></a>.</p>
@@ -909,8 +909,8 @@ then one of them is chosen randomly</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="gameclasses.NormalGame.optimal_solution">
-<code class="sig-name descname"><span class="pre">optimal_solution</span></code><a class="headerlink" href="#gameclasses.NormalGame.optimal_solution" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.optimal_solution">
+<span class="sig-name descname"><span class="pre">optimal_solution</span></span><a class="headerlink" href="#gameclasses.NormalGame.optimal_solution" title="Permalink to this definition">¶</a></dt>
 <dd><p>Optimal Solution from INDP. It is populated by <a class="reference internal" href="#gameclasses.NormalGame.find_optimal_solution" title="gameclasses.NormalGame.find_optimal_solution"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_optimal_solution()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -920,8 +920,8 @@ then one of them is chosen randomly</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.NormalGame.build_game">
-<code class="sig-name descname"><span class="pre">build_game</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.build_game" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.build_game">
+<span class="sig-name descname"><span class="pre">build_game</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.build_game" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function constructs the normal restoratuion game</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -938,8 +938,8 @@ is None, which prevents writing to file.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.NormalGame.choose_equilibrium">
-<code class="sig-name descname"><span class="pre">choose_equilibrium</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">preferred_players</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.choose_equilibrium" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.choose_equilibrium">
+<span class="sig-name descname"><span class="pre">choose_equilibrium</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">preferred_players</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.choose_equilibrium" title="Permalink to this definition">¶</a></dt>
 <dd><p>Choose one action frm pure or mixed strtegies</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -957,8 +957,8 @@ players are considered in choosing payoffs.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.NormalGame.compute_payoffs">
-<code class="sig-name descname"><span class="pre">compute_payoffs</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payoff_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.compute_payoffs" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.compute_payoffs">
+<span class="sig-name descname"><span class="pre">compute_payoffs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payoff_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.compute_payoffs" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function finds all possible combinations of actions and their corresponding
 payoffs considering resource limitations</p>
 <dl class="field-list simple">
@@ -980,8 +980,8 @@ is None.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.NormalGame.find_actions">
-<code class="sig-name descname"><span class="pre">find_actions</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.find_actions" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.find_actions">
+<span class="sig-name descname"><span class="pre">find_actions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.find_actions" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function finds all relevant restoration actions for each player</p>
 <div class="admonition-todo admonition" id="id4">
 <p class="admonition-title">Todo</p>
@@ -991,7 +991,7 @@ them in the ‘OA’ action.</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><strong>actions</strong> – Dictionary of all relavant restoration actions.</p>
+<dd class="field-odd"><p><strong>actions</strong> – Dictionary of all relevant restoration actions.</p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>dict</p>
@@ -1000,8 +1000,8 @@ them in the ‘OA’ action.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.NormalGame.find_optimal_solution">
-<code class="sig-name descname"><span class="pre">find_optimal_solution</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.find_optimal_solution" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.find_optimal_solution">
+<span class="sig-name descname"><span class="pre">find_optimal_solution</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.find_optimal_solution" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes the centralized, optimal solution corresponding to
 the normal restoration game using INDP</p>
 <dl class="field-list simple">
@@ -1012,8 +1012,8 @@ the normal restoration game using INDP</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.NormalGame.flow_problem">
-<code class="sig-name descname"><span class="pre">flow_problem</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.flow_problem" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.flow_problem">
+<span class="sig-name descname"><span class="pre">flow_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.flow_problem" title="Permalink to this definition">¶</a></dt>
 <dd><p>Solves a flow problem for a given combination of actions</p>
 <p>Damaged arc repairs and damage, non-dependee node repairs are removed
 from actions, and collected under “Other Action (OA)” since they do not
@@ -1051,8 +1051,8 @@ interdependency among layers.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="gameclasses.NormalGame.solve_game">
-<code class="sig-name descname"><span class="pre">solve_game</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'enumerate_pure'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_to_cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">game_info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.solve_game" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="gameclasses.NormalGame.solve_game">
+<span class="sig-name descname"><span class="pre">solve_game</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'enumerate_pure'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_to_cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">game_info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gameclasses.NormalGame.solve_game" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function solves the normal restoration game given a solving method</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1089,7 +1089,7 @@ equivalent of passing [self.normgame, self.players, self.actions].</p></li>
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="gameutils.html" class="btn btn-neutral float-left" title="INRSG and INRBG functions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gameutils.html" class="btn btn-neutral float-left" title="N-INRG and B-INRG functions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>
@@ -1098,7 +1098,7 @@ equivalent of passing [self.normgame, self.players, self.actions].</p></li>
     <p>
         &#169; Copyright 2021, SISRRA.
       <span class="lastupdated">
-        Last updated on Apr 16, 2021.
+        Last updated on Jul 28, 2021.
       </span>
 
     </p>

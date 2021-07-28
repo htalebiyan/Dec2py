@@ -13,7 +13,7 @@ Reading results/Computing comparison measures
 *********************************************
 .. autofunction:: read_results
 .. autofunction:: relative_performance
-.. autofunction:: read_resourcec_allocation
+.. autofunction:: read_resource_allocation
 .. autofunction:: read_run_time
 
 ***************

@@ -48,11 +48,11 @@ def indp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, f
     Returns
     -------
     : list
-        A list of the form ``[m, results]`` for a successful optimization where m is the Gurobi optimization model and
-        results is a :class:`~indputils.INDPResults` object generated using :func:`collect_results`.
-        If :envvar:`solution_pool` is set to a number, the function returns ``[m, results, sol_pool_results]``
-        where `sol_pool_results` is dictionary of solution that should be retrieved from the optimizer in addition to
-        the optimal one collected using :func:`collect_solution_pool`.
+    A list of the form ``[m, results]`` for a successful optimization where m is the Gurobi  optimization model and
+        results is a :class:`~indputils.INDPResults` object generated using  :func:`collect_results`.
+        If :envvar:`solution_pool` is set to a number, the function returns ``[m, results,  sol_pool_results]`` where
+        `sol_pool_results` is dictionary of solution that should be retrieved from the optimizer in addition to the
+        optimal one collected using :func:`collect_solution_pool`.
 
     """
     if fixed_nodes is None:
@@ -473,7 +473,7 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
     Returns
     -------
     indp_results : INDPResults
-        A :class:`~indputils.INDPResults` object containing the optimal restoration decisions.
+    A :class:`~indputils.INDPResults` object containing the optimal restoration decisions.
 
     """
     layers = controlled_layers
@@ -591,7 +591,7 @@ def collect_solution_pool(m, T, n_hat_prime, a_hat_prime):
     Returns
     -------
     sol_pool_results : dict
-        A dictionary containing one dictionary per solution that contain list of repaired node and arcs in the solution.
+    A dictionary containing one dictionary per solution that contain list of repaired node and arcs in the solution.
 
     """
     sol_pool_results = {}
@@ -678,7 +678,7 @@ def create_functionality_matrix(N, T, layers, actions, strategy_type="OPTIMISTIC
     Returns
     -------
     functionality : dict
-        A functionality dictionary used for input into indp.
+    A functionality dictionary used for input into indp.
 
     """
     functionality = {}
@@ -782,6 +782,7 @@ def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=
              forced_actions=False, save_model=False, print_cmd_line=True, co_location=True):
     """
     This function runs iINDP (T=1) or td-INDP for a given number of time steps and input parameters
+
     Parameters
     ----------
     params : dict
@@ -789,8 +790,7 @@ def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=
     layers : list
         List of layers in the interdependent network. The default is 'None', which sets the list to [1, 2, 3].
     controlled_layers : list
-        List of layers that should be included in the analysis. The default is 'None', which sets the list equal to
-        layers.
+        List of layers that are included in the analysis. The default is 'None', which sets the list equal to layers.
     functionality : dict
         This dictionary is used to assign functionality values elements in the network before the analysis starts. The
         default is 'None'.
@@ -812,11 +812,12 @@ def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=
     Returns
     -------
     indp_results : INDPResults
-        A :class:`~indputils.INDPResults` object containing the optimal restoration decisions.
+    A :class:`~indputils.INDPResults` object containing the optimal restoration decisions.
 
     """
 
     # Initialize failure scenario.
+    global original_N
     if functionality is None:
         functionality = {}
     if layers is None:
@@ -986,7 +987,7 @@ def initialize_sample_network(layers=None):
     Returns
     -------
     interdependent_net : InfrastructureNetwork
-        A :class:`~Infrastructure.InfrastructureNetwork` object containing the interdependent network and all the
+    A :class:`~Infrastructure.InfrastructureNetwork` object containing the interdependent network and all the
         attributes of its nodes and arcs.
     """
     if layers is None:
@@ -1183,7 +1184,7 @@ def plot_indp_sample(params, folder_suffix="", suffix=""):
 
 def get_resource_suffix(params):
     """
-    This function generate the part of suffix of result folders that pertains to resource cap(s).
+    This function generates the part of suffix of result folders that pertains to resource cap(s).
 
     Parameters
     ----------
@@ -1193,7 +1194,7 @@ def get_resource_suffix(params):
     Returns
     -------
      out_dir_suffix_res : str
-        The part of suffix of result folders that pertains to resource cap(s).
+     The part of suffix of result folders that pertains to resource cap(s).
 
     """
     out_dir_suffix_res = ''
@@ -1261,12 +1262,12 @@ def time_resource_usage_curves(base_dir, damage_dir, sample_num):
                         node_name = '(' + str(node_id) + ',' + str(net_names[fname[:5]]) + ')'
                         ds = dmg_sce_data[dmg_sce_data[0] == node_name].iloc[0][sample_num + 1]
                         rep_time = reptime_func_node.iloc[0]['ds_' + ds + '_mean']
-                        # ..todo Add repair time uncertainity here
+                        # ..todo Add repair time uncertainty here
                         # rep_time = np.random.normal(reptime_func_node['ds_'+ds+'_mean'],
                         #                             reptime_func_node['ds_'+ds+'_sd'], 1)[0]
 
                         dr = dr_data.iloc[0]['dr_' + ds + '_be']
-                        # ..todo Add damage ratio uncertainity here
+                        # ..todo Add damage ratio uncertainty here
                         # dr = np.random.uniform(dr_data.iloc[0]['dr_'+ds+'_min'],
                         #                       dr_data.iloc[0]['dr_'+ds+'_max'], 1)[0]
                         repair_cost = v[1]['q (complete DS)'] * dr
@@ -1304,7 +1305,7 @@ def time_resource_usage_curves(base_dir, damage_dir, sample_num):
                                     rep_rate['leak'] * reptime_func_arc['# Fixed Leaks/Day/Worker']) * \
                                    pipe_length / 4  # assuming a 4-person crew per HAZUS
                         dr = {'break': dr_data.iloc[0]['break_be'], 'leak': dr_data.iloc[0]['leak_be']}
-                        # ..todo Add repair cost uncertainity here
+                        # ..todo Add repair cost uncertainty here
                         # dr = {'break': np.random.uniform(dr_data.iloc[0]['break_min'],
                         #                                  dr_data.iloc[0]['break_max'], 1)[0],
                         #       'leak': np.random.uniform(dr_data.iloc[0]['leak_min'],

@@ -14,4 +14,7 @@
     <option name="format" value="NUMPY" />
     <option name="myDocStringFormat" value="NumPy" />
   </component>
+  <component name="ReSTService">
+    <option name="DOC_DIR" value="C:\Users\ht20\Documents\GitHub\Dec2py\docs" />
+  </component>
 </module>

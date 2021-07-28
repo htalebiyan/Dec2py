@@ -634,8 +634,8 @@ class NormalGame:
 
 
 class BayesianGame(NormalGame):
-    '''
-    This class models a Bayesian restoration game for a given time step 
+    """
+    This class models a Bayesian restoration game for a given time step
     and finds bayes nash equilibria. This class inherits from :class:`NormalGame`.
 
     Attributes
@@ -652,9 +652,9 @@ class BayesianGame(NormalGame):
     types : dict
         List of players' type(s).
     bayesian_players : list
-        List of bayesian players of the game comprising combiantion of players 
+        List of bayesian players of the game comprising combiantion of players
         and their types.
-    '''
+    """
 
     def __init__(self, L, net, v_r, act_rduc=None):
         super().__init__(L, net, v_r, act_rduc)

@@ -4,17 +4,19 @@
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <meta property="article:modified_time" content="2021-04-16T15:58:36-05:00" />
+    <meta property="article:modified_time" content="2021-04-21T17:27:17-05:00" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Dec2py: Decentralized Decision-making tools &mdash; Dec2py 32663ab documentation</title>
+  <title>Dec2py: Decentralized Decision-making tools &mdash; Dec2py a23feed documentation</title>
   
 
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
 
   
@@ -32,6 +34,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -66,7 +69,7 @@
             
             
               <div class="version">
-                0.4.1
+                0.4.2
               </div>
             
           
@@ -91,7 +94,7 @@
               
             
             
-              <p><span class="caption-text">Topics</span></p>
+              <p class="caption"><span class="caption-text">Topics</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="run_samples.html">Interdepndent Network Restoration Decision-making (toy example)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="run_main.html">Interdepndent Network Restoration Decision-making (Complete Analysis Dashboard)</a></li>
@@ -202,12 +205,12 @@
 of such models setting is that the decision-maker is one entity who has the complete information and authority to restore all layers of the interdependent network. This kind of methods includes Interdependent Network Design Problem (INDP) <a class="bibtex reference internal" href="#gonzalez2016" id="id1">[GDOSSM16]</a> and time-dependent INDP (td-INDP) <a class="bibtex reference internal" href="#gonzalez2016c" id="id2">[GDOMSS16]</a>.</p>
 </li>
 <li><p><strong>Decentralized methods</strong></p>
-<p>These methods model a multi-agent decision-making environment where each agent has the authority to restore a single layer and has complete information about her respective layer and minimal or no information about other layers. It is assumed that agents communicate poorly and not on time. The centralized methods include Judgment Call (JC) method  <a class="bibtex reference internal" href="#talebiyan2019c" id="id3">[TDO20]</a><a class="bibtex reference internal" href="#talebiyan2019" id="id4">[TDO19]</a> with and without Auction-based resource allocations <a class="bibtex reference internal" href="#talebiyan2020a" id="id5">[TDO21b]</a> and Interdependent Network Restoration Simultaneous Games (INRSG) and Bayesian Games (INRBG) <a class="bibtex reference internal" href="#talebiyan2021c" id="id6">[TDO21a]</a>.</p>
+<p>These methods model a multi-agent decision-making environment where each agent has the authority to restore a single layer, has complete information about her respective layer, and minimal or no information about other layers. It is assumed that agents communicate poorly and not on time. The decentralized methods include Judgment Call (JC) method  <a class="bibtex reference internal" href="#talebiyan2019c" id="id3">[TDO20]</a><a class="bibtex reference internal" href="#talebiyan2019" id="id4">[TDO19]</a> with and without auction-based resource allocations <a class="bibtex reference internal" href="#talebiyan2020a" id="id5">[TDO21b]</a> and Interdependent Network Restoration Simultaneous Games (INRSG) and Bayesian Games (INRBG) <a class="bibtex reference internal" href="#talebiyan2021c" id="id6">[TDO21a]</a>.</p>
 </li>
 </ul>
 <p>Below, you can find different parts of the website (topics), starting with demonstrating tools for an interdependent toy network followed by a notebook containing the complete analysis dashboard. The third section presents functions and classes under the hood:</p>
 <div class="toctree-wrapper compound">
-<p><span class="caption-text">Topics</span></p>
+<p class="caption"><span class="caption-text">Topics</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="run_samples.html">Interdepndent Network Restoration Decision-making (toy example)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="run_main.html">Interdepndent Network Restoration Decision-making (Complete Analysis Dashboard)</a><ul>
@@ -222,8 +225,8 @@ of such models setting is that the decision-maker is one entity who has the comp
 <li class="toctree-l2"><a class="reference internal" href="infrastructure.html">Infrastructure classes and functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dindputils.html">Judgment Call functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dindpclasses.html">Judgment Call Classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gameutils.html">INRSG and INRBG functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gameclasses.html">INRSG and INRBG Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gameutils.html">N-INRG and B-INRG functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gameclasses.html">N-INRG and B-INRG Classes</a></li>
 </ul>
 </li>
 </ul>
@@ -242,31 +245,39 @@ of such models setting is that the decision-maker is one entity who has the comp
 <h1>To-do works<a class="headerlink" href="#to-do-works" title="Permalink to this headline">¶</a></h1>
 <div class="admonition-todo admonition">
 <p class="admonition-title">Todo</p>
-<p>Games: refine how to reduce importance of other types</p>
+<p>Games: refine how to reduce importance of action not consistent with
+the player’s type.</p>
 </div>
-<p class="todo-source">(The <a class="reference internal" href="gameclasses.html#id1"><em>original entry</em></a> is located in C:\Users\ht20\Documents\GitHub\td-DINDP\pyindp\gameclasses.py:docstring of gameclasses.BayesianGame.set_states, line 5.)</p>
+<p class="todo-source">(The <a class="reference internal" href="gameclasses.html#id1"><em>original entry</em></a> is located in C:\Users\ht20\Documents\GitHub\Dec2py\codes\gameclasses.py:docstring of gameclasses.BayesianGame.set_states, line 5.)</p>
 <div class="admonition-todo admonition">
 <p class="admonition-title">Todo</p>
-<p>Games: Exapnd the code to imitate td-INDP</p>
+<p>Games: Expand the code to imitate td-INDP</p>
 </div>
-<p class="todo-source">(The <a class="reference internal" href="gameclasses.html#id2"><em>original entry</em></a> is located in C:\Users\ht20\Documents\GitHub\td-DINDP\pyindp\gameclasses.py:docstring of gameclasses.InfrastructureGame.set_time_steps, line 4.)</p>
+<p class="todo-source">(The <a class="reference internal" href="gameclasses.html#id2"><em>original entry</em></a> is located in C:\Users\ht20\Documents\GitHub\Dec2py\codes\gameclasses.py:docstring of gameclasses.InfrastructureGame.set_time_steps, line 4.)</p>
 <div class="admonition-todo admonition">
 <p class="admonition-title">Todo</p>
 <p>Games: refine the way the game solution is chosen in each time step</p>
 </div>
-<p class="todo-source">(The <a class="reference internal" href="gameclasses.html#id3"><em>original entry</em></a> is located in C:\Users\ht20\Documents\GitHub\td-DINDP\pyindp\gameclasses.py:docstring of gameclasses.NormalGame, line 97.)</p>
+<p class="todo-source">(The <a class="reference internal" href="gameclasses.html#id3"><em>original entry</em></a> is located in C:\Users\ht20\Documents\GitHub\Dec2py\codes\gameclasses.py:docstring of gameclasses.NormalGame, line 97.)</p>
 <div class="admonition-todo admonition">
 <p class="admonition-title">Todo</p>
 <p>Games: Add the geographical interdependency to find actions, which means
 to consider the arc repaires as indepndent actions rather than aggregate
 them in the ‘OA’ action.</p>
 </div>
-<p class="todo-source">(The <a class="reference internal" href="gameclasses.html#id4"><em>original entry</em></a> is located in C:\Users\ht20\Documents\GitHub\td-DINDP\pyindp\gameclasses.py:docstring of gameclasses.NormalGame.find_actions, line 3.)</p>
+<p class="todo-source">(The <a class="reference internal" href="gameclasses.html#id4"><em>original entry</em></a> is located in C:\Users\ht20\Documents\GitHub\Dec2py\codes\gameclasses.py:docstring of gameclasses.NormalGame.find_actions, line 3.)</p>
 <div class="admonition-todo admonition">
 <p class="admonition-title">Todo</p>
 <p>Games: Add the geographical interdependency to computation of payoff values</p>
 </div>
-<p class="todo-source">(The <a class="reference internal" href="gameclasses.html#id5"><em>original entry</em></a> is located in C:\Users\ht20\Documents\GitHub\td-DINDP\pyindp\gameclasses.py:docstring of gameclasses.NormalGame.flow_problem, line 29.)</p>
+<p class="todo-source">(The <a class="reference internal" href="gameclasses.html#id5"><em>original entry</em></a> is located in C:\Users\ht20\Documents\GitHub\Dec2py\codes\gameclasses.py:docstring of gameclasses.NormalGame.flow_problem, line 29.)</p>
+<div class="admonition-todo admonition">
+<p class="admonition-title">Todo</p>
+<p>The calculated repair time and costs are written to node and arc info input
+files. It makes it impossible to run the analyses in parallel because there
+might be a conflict between two processes. Consider correcting this.</p>
+</div>
+<p class="todo-source">(The <a class="reference internal" href="indp.html#id1"><em>original entry</em></a> is located in C:\Users\ht20\Documents\GitHub\Dec2py\codes\indp.py:docstring of indp.time_resource_usage_curves, line 4.)</p>
 </section>
 <section id="bibliography">
 <h1>Bibliography<a class="headerlink" href="#bibliography" title="Permalink to this headline">¶</a></h1>
@@ -308,7 +319,7 @@ them in the ‘OA’ action.</p>
     <p>
         &#169; Copyright 2021, SISRRA.
       <span class="lastupdated">
-        Last updated on Apr 16, 2021.
+        Last updated on Apr 21, 2021.
       </span>
 
     </p>

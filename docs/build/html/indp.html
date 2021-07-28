@@ -4,17 +4,19 @@
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <meta property="article:modified_time" content="2021-04-13T22:02:38-05:00" />
+    <meta property="article:modified_time" content="2021-07-28T17:54:29-05:00" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>INDP optimization functions &mdash; Dec2py 32663ab documentation</title>
+  <title>INDP optimization functions &mdash; Dec2py a23feed documentation</title>
   
 
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
 
   
@@ -32,6 +34,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -67,7 +70,7 @@
             
             
               <div class="version">
-                0.4.1
+                0.4.2
               </div>
             
           
@@ -92,7 +95,7 @@
               
             
             
-              <p><span class="caption-text">Topics</span></p>
+              <p class="caption"><span class="caption-text">Topics</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="run_samples.html">Interdepndent Network Restoration Decision-making (toy example)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="run_main.html">Interdepndent Network Restoration Decision-making (Complete Analysis Dashboard)</a></li>
@@ -105,8 +108,8 @@
 <li class="toctree-l2"><a class="reference internal" href="infrastructure.html">Infrastructure classes and functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dindputils.html">Judgment Call functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dindpclasses.html">Judgment Call Classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gameutils.html">INRSG and INRBG functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gameclasses.html">INRSG and INRBG Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gameutils.html">N-INRG and B-INRG functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gameclasses.html">N-INRG and B-INRG Classes</a></li>
 </ul>
 </li>
 </ul>
@@ -205,14 +208,16 @@
 <section id="module-indp">
 <span id="indp-optimization-functions"></span><h1>INDP optimization functions<a class="headerlink" href="#module-indp" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
-<dt id="indp.apply_recovery">
-<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">apply_recovery</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indp_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.apply_recovery" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dt class="sig sig-object py" id="indp.apply_recovery">
+<span class="sig-prename descclassname"><span class="pre">indp.</span></span><span class="sig-name descname"><span class="pre">apply_recovery</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indp_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.apply_recovery" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function applies the restoration decisions (solution of INDP) to a gurobi model by changing the state of
+repaired elements to functional</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>N</strong> (<a class="reference internal" href="infrastructure.html#infrastructure.InfrastructureNetwork" title="infrastructure.InfrastructureNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfrastructureNetwork</span></code></a>) – DESCRIPTION.</p></li>
-<li><p><strong>indp_results</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
-<li><p><strong>t</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
+<li><p><strong>N</strong> (<a class="reference internal" href="infrastructure.html#infrastructure.InfrastructureNetwork" title="infrastructure.InfrastructureNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfrastructureNetwork</span></code></a>) – The model of the interdependent network.</p></li>
+<li><p><strong>indp_results</strong> (<a class="reference internal" href="indputils.html#indputils.INDPResults" title="indputils.INDPResults"><em>INDPResults</em></a>) – A <a class="reference internal" href="indputils.html#indputils.INDPResults" title="indputils.INDPResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">INDPResults</span></code></a> object containing the optimal restoration decisions..</p></li>
+<li><p><strong>t</strong> (<em>int</em>) – The time step to which the results should apply.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -225,95 +230,118 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="indp.collect_results">
-<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">collect_results</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controlled_layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_hat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_hat_prime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A_hat_prime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coloc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.collect_results" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dt class="sig sig-object py" id="indp.collect_results">
+<span class="sig-prename descclassname"><span class="pre">indp.</span></span><span class="sig-name descname"><span class="pre">collect_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controlled_layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_hat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_hat_prime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_hat_prime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coloc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.collect_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function computes the results (actions and costs) of the optimal results and write them to a
+<a class="reference internal" href="indputils.html#indputils.INDPResults" title="indputils.INDPResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">INDPResults</span></code></a> object.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>m</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
-<li><p><strong>controlled_layers</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
-<li><p><strong>T</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
-<li><p><strong>N_hat</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
-<li><p><strong>N_hat_prime</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
-<li><p><strong>A_hat_prime</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
-<li><p><strong>S</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
-<li><p><strong>coloc</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – DESCRIPTION. The default is True.</p></li>
+<li><p><strong>m</strong> (<em>gurobi.Model</em>) – The object containing the solved optimization problem.</p></li>
+<li><p><strong>controlled_layers</strong> (<em>list</em>) – Layer IDs that can be recovered in this optimization.</p></li>
+<li><p><strong>T</strong> (<em>int</em>) – Number of time steps in the optimization (T=1 for iINDP, and T&gt;=1 for td-INDP).</p></li>
+<li><p><strong>n_hat</strong> (<em>list</em>) – List of Damaged nodes in whole network.</p></li>
+<li><p><strong>n_hat_prime</strong> (<em>list</em>) – List of damaged nodes in controlled network.</p></li>
+<li><p><strong>a_hat_prime</strong> (<em>list</em>) – List of damaged arcs in controlled network.</p></li>
+<li><p><strong>S</strong> (<em>list</em>) – List of geographical sites.</p></li>
+<li><p><strong>coloc</strong> (<em>bool</em><em>, </em><em>optional</em>) – If false, exclude geographical interdependency from the results. . The default is True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>indp_results</strong> – DESCRIPTION.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>TYPE</p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>indp_results</strong> (<em>INDPResults</em>)</p></li>
+<li><p>A <a class="reference internal" href="indputils.html#indputils.INDPResults" title="indputils.INDPResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">INDPResults</span></code></a> object containing the optimal restoration decisions.</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="indp.collect_solutoon_pool">
-<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">collect_solutoon_pool</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_hat_prime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A_hat_prime</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.collect_solutoon_pool" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dt class="sig sig-object py" id="indp.collect_solution_pool">
+<span class="sig-prename descclassname"><span class="pre">indp.</span></span><span class="sig-name descname"><span class="pre">collect_solution_pool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_hat_prime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_hat_prime</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.collect_solution_pool" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function collect the result (list of repaired nodes and arcs) for all feasible solutions in the solution pool</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>m</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
-<li><p><strong>T</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
-<li><p><strong>N_hat_prime</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
-<li><p><strong>A_hat_prime</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
+<li><p><strong>m</strong> (<em>gurobi.Model</em>) – The object containing the solved optimization problem.</p></li>
+<li><p><strong>T</strong> (<em>int</em>) – Number of time steps in the optimization (T=1 for iINDP, and T&gt;=1 for td-INDP).</p></li>
+<li><p><strong>n_hat_prime</strong> (<em>list</em>) – List of damaged nodes in controlled network.</p></li>
+<li><p><strong>a_hat_prime</strong> (<em>list</em>) – List of damaged arcs in controlled network.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>sol_pool_results</strong> – DESCRIPTION.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>TYPE</p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>sol_pool_results</strong> (<em>dict</em>)</p></li>
+<li><p><em>A dictionary containing one dictionary per solution that contain list of repaired node and arcs in the solution.</em></p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="indp.create_functionality_matrix">
-<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">create_functionality_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strategy_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'OPTIMISTIC'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.create_functionality_matrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="indp.create_functionality_matrix">
+<span class="sig-prename descclassname"><span class="pre">indp.</span></span><span class="sig-name descname"><span class="pre">create_functionality_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strategy_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'OPTIMISTIC'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.create_functionality_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a functionality map for input into the functionality parameter in the indp function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>N</strong> (<a class="reference internal" href="infrastructure.html#infrastructure.InfrastructureNetwork" title="infrastructure.InfrastructureNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfrastructureNetwork</span></code></a>) – An InfrastructureNetwork instance .</p></li>
-<li><p><strong>T</strong> (<em>int</em>) – Number of timesteps to optimize over..</p></li>
+<li><p><strong>T</strong> (<em>int</em>) – Number of time steps to optimize over.</p></li>
 <li><p><strong>layers</strong> (<em>list</em>) – Layer IDs of N included in the optimization..</p></li>
 <li><p><strong>actions</strong> (<em>list</em>) – An array of actions from a previous optimization. Likely taken from an
 INDPResults variable ‘indp_result[t][‘actions’]’..</p></li>
 <li><p><strong>strategy_type</strong> (<em>str</em><em>, </em><em>optional</em>) – If no actions are provided, assigns a default functionality. Options are:
-“OPTIMISTIC”, “PESSIMISTIC” or “INFO_SHARE”. The default is “OPTIMISTIC”.</p></li>
+“OPTIMISTIC”, “PESSIMISTIC” or “REALISTIC”. The default is “OPTIMISTIC”.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>functionality</strong> – A functionality dictionary used for input into indp..</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>dict</p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>functionality</strong> (<em>dict</em>)</p></li>
+<li><p><em>A functionality dictionary used for input into indp.</em></p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="indp.indp">
-<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">indp</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">3]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controlled_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">3]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">functionality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forced_actions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">co_location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solution_pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.indp" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="indp.get_resource_suffix">
+<span class="sig-prename descclassname"><span class="pre">indp.</span></span><span class="sig-name descname"><span class="pre">get_resource_suffix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.get_resource_suffix" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function generates the part of suffix of result folders that pertains to resource cap(s).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>dict</em>) – Parameters that are needed to run the indp optimization.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>out_dir_suffix_res</strong> (<em>str</em>)</p></li>
+<li><p><em>The part of suffix of result folders that pertains to resource cap(s).</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="indp.indp">
+<span class="sig-prename descclassname"><span class="pre">indp.</span></span><span class="sig-name descname"><span class="pre">indp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controlled_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">functionality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forced_actions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">co_location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solution_pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.indp" title="Permalink to this definition">¶</a></dt>
 <dd><p>INDP optimization problem. It also solves td-INDP if T &gt; 1.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>N</strong> (<a class="reference internal" href="infrastructure.html#infrastructure.InfrastructureNetwork" title="infrastructure.InfrastructureNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfrastructureNetwork</span></code></a>) – An InfrastructureNetwork instance.</p></li>
-<li><p><strong>v_r</strong> (<em>list</em>) – Vector of the number of resources given to each layer in each timestep.
-If the size of the vector is 1, it shows the total number of resources for all layers.</p></li>
-<li><p><strong>T</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of timesteps to optimize over. The default is 1.</p></li>
-<li><p><strong>layers</strong> (<em>list</em><em>, </em><em>optional</em>) – Layer IDs of N included in the optimization. The default is [1,3]
-(1 for water and 3 for power in the Shelby County database).</p></li>
-<li><p><strong>controlled_layers</strong> (<em>list</em><em>, </em><em>optional</em>) – Layer IDs that can be recovered in this optimization. Used for decentralized
-optimization. The default is [1,3].</p></li>
+<li><p><strong>v_r</strong> (<em>dict</em>) – Dictionary of the number of resources of different types in the analysis.
+If the value is a scale for a type, it shows the total number of resources of that type for all layers .
+If the value is a list for a type, it shows the total number of resources of that type given to each layer.</p></li>
+<li><p><strong>T</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of time steps to optimize over. T=1 shows an iINDP analysis and T&gt;1 shows a td-INDP. The default is 1.</p></li>
+<li><p><strong>layers</strong> (<em>list</em><em>, </em><em>optional</em>) – Layer IDs in N included in the optimization.</p></li>
+<li><p><strong>controlled_layers</strong> (<em>list</em><em>, </em><em>optional</em>) – Layer IDs that can be recovered in this optimization. Used for decentralized optimization. The default is None.</p></li>
 <li><p><strong>functionality</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of nodes to functionality values for non-controlled nodes.
-Used for decentralized optimization. The default is {}.</p></li>
+Used for decentralized optimization. The default is None.</p></li>
 <li><p><strong>forced_actions</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true, it forces the optimizer to repair at least one element. The default is False.</p></li>
-<li><p><strong>fixed_nodes</strong> (<em>dict</em><em>, </em><em>optional</em>) – It fixes the functionality of given elements to a given value. The default is {}.</p></li>
+<li><p><strong>fixed_nodes</strong> (<em>dict</em><em>, </em><em>optional</em>) – It fixes the functionality of given elements to a given value. The default is None.</p></li>
 <li><p><strong>print_cmd</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true, analysis information is written to the console. The default is True.</p></li>
 <li><p><strong>time_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Time limit for the optimizer to stop. The default is None.</p></li>
 <li><p><strong>co_location</strong> (<em>bool</em><em>, </em><em>optional</em>) – If false, exclude geographical interdependency from the optimization. The default is True.</p></li>
@@ -322,44 +350,45 @@ the optimal one. The default is None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A list of the form <code class="docutils literal notranslate"><span class="pre">[m,</span> <span class="pre">results]</span></code> for a successful optimization where m is the
-Gurobi optimization model and results is a <a class="reference internal" href="indputils.html#indputils.INDPResults" title="indputils.INDPResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">INDPResults</span></code></a> object
-generated using <a class="reference internal" href="#indp.collect_results" title="indp.collect_results"><code class="xref py py-func docutils literal notranslate"><span class="pre">collect_results()</span></code></a>.
-If <span class="target" id="index-0"></span><code class="xref std std-envvar docutils literal notranslate"><span class="pre">solution_pool</span></code> is set to a number, the function returns <code class="docutils literal notranslate"><span class="pre">[m,</span> <span class="pre">results,</span> <span class="pre">sol_pool_results]</span></code>
-where <cite>sol_pool_results</cite> is dictionary of solution that should be retrieved from the
-optimizer in addition to the optimal one collected using <a class="reference internal" href="#indp.collect_solutoon_pool" title="indp.collect_solutoon_pool"><code class="xref py py-func docutils literal notranslate"><span class="pre">collect_solutoon_pool()</span></code></a>.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list</p>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>list</em></p></li>
+<li><p>A list of the form <code class="docutils literal notranslate"><span class="pre">[m,</span> <span class="pre">results]</span></code> for a successful optimization where m is the Gurobi  optimization model and – results is a <a class="reference internal" href="indputils.html#indputils.INDPResults" title="indputils.INDPResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">INDPResults</span></code></a> object generated using  <a class="reference internal" href="#indp.collect_results" title="indp.collect_results"><code class="xref py py-func docutils literal notranslate"><span class="pre">collect_results()</span></code></a>.
+If <span class="target" id="index-0"></span><code class="xref std std-envvar docutils literal notranslate"><span class="pre">solution_pool</span></code> is set to a number, the function returns <code class="docutils literal notranslate"><span class="pre">[m,</span> <span class="pre">results,</span>&#160; <span class="pre">sol_pool_results]</span></code> where
+<cite>sol_pool_results</cite> is dictionary of solution that should be retrieved from the optimizer in addition to the
+optimal one collected using <a class="reference internal" href="#indp.collect_solution_pool" title="indp.collect_solution_pool"><code class="xref py py-func docutils literal notranslate"><span class="pre">collect_solution_pool()</span></code></a>.</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="indp.initialize_network">
-<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">initialize_network</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">BASE_DIR</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'../data/INDP_7-20-2015/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">external_interdependency_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">magnitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">infrastructure_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topology</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Random'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.initialize_network" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="indp.initialize_network">
+<span class="sig-prename descclassname"><span class="pre">indp.</span></span><span class="sig-name descname"><span class="pre">initialize_network</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'../data/INDP_7-20-2015/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">external_interdependency_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">magnitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">infrastructure_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topology</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Random'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_commodity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.initialize_network" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializes an <a class="reference internal" href="infrastructure.html#infrastructure.InfrastructureNetwork" title="infrastructure.InfrastructureNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfrastructureNetwork</span></code></a> object from
 Shelby County data or synthetic networks.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>BASE_DIR</strong> (<em>str</em><em>, </em><em>optional</em>) – Base directory of Shelby County data or synthetic networks. The default is
+<li><p><strong>base_dir</strong> (<em>str</em><em>, </em><em>optional</em>) – Base directory of Shelby County data or synthetic networks. The default is
 “../data/INDP_7-20-2015/”.</p></li>
 <li><p><strong>external_interdependency_dir</strong> (<em>str</em><em>, </em><em>optional</em>) – Directory of external interdependencies for Shelby County data. The default is None.</p></li>
 <li><p><strong>sim_number</strong> (<em>int</em><em>, </em><em>optional</em>) – Which simulation number to use as input. The default is 1.</p></li>
 <li><p><strong>cost_scale</strong> (<em>float</em><em>, </em><em>optional</em>) – Scales the cost to improve efficiency. The default is 1.</p></li>
 <li><p><strong>magnitude</strong> (<em>int</em><em>, </em><em>optional</em>) – Magnitude parameter of the initial disruption. The default is 6.</p></li>
-<li><p><strong>sample</strong> (<em>int</em><em>, </em><em>optional</em>) – Sample number paramter of the initial disruption. The default is 0.</p></li>
-<li><p><strong>v</strong> (<em>int</em><em>, </em><em>list</em><em>, </em><em>optional</em>) – Number of avaialable resources or resource cap. The default is 3.</p></li>
+<li><p><strong>sample</strong> (<em>int</em><em>, </em><em>optional</em>) – Sample number parameter of the initial disruption. The default is 0.</p></li>
+<li><p><strong>v</strong> (<em>int</em><em>, </em><em>list</em><em>, </em><em>optional</em>) – Number of available resources or resource cap. The default is 3.</p></li>
 <li><p><strong>infrastructure_data</strong> (<em>bool</em><em>, </em><em>optional</em>) – If the data are for infrastructure. It should be set to False if a synthetic network
 is being analyzed. The default is True.</p></li>
 <li><p><strong>topology</strong> (<em>str</em><em>, </em><em>optional</em>) – Topology of the synthetic network that is being analyzed. The default is ‘Random’.</p></li>
+<li><p><strong>extra_commodity</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of commodities other than the default one for each layer of the network. The default is ‘None’,
+which means that there is only one commodity per layer.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><ul class="simple">
-<li><p><strong>InterdepNet</strong> (<a class="reference internal" href="infrastructure.html#infrastructure.InfrastructureNetwork" title="infrastructure.InfrastructureNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfrastructureNetwork</span></code></a>) – The object containing the network data.</p></li>
-<li><p><strong>v_temp</strong> (<em>int, list</em>) – Number of avaialable resources or resource cap. Used for synthetic networks
+<li><p><strong>interdep_net</strong> (<a class="reference internal" href="infrastructure.html#infrastructure.InfrastructureNetwork" title="infrastructure.InfrastructureNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfrastructureNetwork</span></code></a>) – The object containing the network data.</p></li>
+<li><p><strong>v_temp</strong> (<em>int, list</em>) – Number of available resources or resource cap. Used for synthetic networks
 where each sample network has a different resource cap.</p></li>
 <li><p><strong>layers_temp</strong> (<em>list</em>) – List of layers in the analysis. Used for synthetic networks where each sample
 network has different layers.</p></li>
@@ -370,33 +399,126 @@ network has different layers.</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt id="indp.initialize_sample_network">
-<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">initialize_sample_network</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">2]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.initialize_sample_network" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initializes sample network
-:param layers: (Currently not used).
-:returns: An interdependent InfrastructureNetwork.</p>
+<dt class="sig sig-object py" id="indp.initialize_sample_network">
+<span class="sig-prename descclassname"><span class="pre">indp.</span></span><span class="sig-name descname"><span class="pre">initialize_sample_network</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.initialize_sample_network" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function generate the sample toy example with either 2 or 3 layers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>layers</strong> (<em>list</em>) – List of layers in the toy example that can be [1, 2] or [1, 2, 3]. The default is None, which sets layers
+to [1, 2].</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>interdependent_net</strong> (<em>InfrastructureNetwork</em>)</p></li>
+<li><p>A <code class="xref py py-class docutils literal notranslate"><span class="pre">InfrastructureNetwork</span></code> object containing the interdependent network and all the – attributes of its nodes and arcs.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="indp.run_indp">
-<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">run_indp</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controlled_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">functionality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forced_actions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saveModel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_cmd_line</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">co_location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.run_indp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Runs an INDP problem with specified parameters. Outputs to directory specified in params[‘OUTPUT_DIR’].
-:param params: Global parameters.
-:param layers: Layers to consider in the infrastructure network.
-:param T: Number of timesteps to optimize over.
-:param validate: Validate solution.</p>
+<dt class="sig sig-object py" id="indp.plot_indp_sample">
+<span class="sig-prename descclassname"><span class="pre">indp.</span></span><span class="sig-name descname"><span class="pre">plot_indp_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.plot_indp_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function plots the toy example in all time steps of the restoration, and saves plots to file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<em>dict</em>) – Parameters that are needed to run the indp optimization.</p></li>
+<li><p><strong>folder_suffix</strong> (<em>str</em>) – The suffix that should be added to the target folder. The default is ‘’.</p></li>
+<li><p><strong>suffix</strong> (<em>str</em>) – The suffix that should be added to plots when saved. The default is ‘’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="indp.run_info_share">
-<code class="sig-prename descclassname"><span class="pre">indp.</span></code><code class="sig-name descname"><span class="pre">run_info_share</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.run_info_share" title="Permalink to this definition">¶</a></dt>
-<dd><p>Applies rounds of information sharing between INDP runs. Assumes each layer is controlled by a separate player.
-params[“NUM_ITERATIONS”] determines how many rounds of sharing to perform.
-NOTE: This is still not fully functional.
-:param params: Global parameters.
-:param layers: Specifies which layers to optimize over.
-:param T: Number of timesteps to optimize over.
-:param validate: (Currently not used.)</p>
+<dt class="sig sig-object py" id="indp.run_indp">
+<span class="sig-prename descclassname"><span class="pre">indp.</span></span><span class="sig-name descname"><span class="pre">run_indp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controlled_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">functionality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forced_actions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_cmd_line</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">co_location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.run_indp" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function runs iINDP (T=1) or td-INDP for a given number of time steps and input parameters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<em>dict</em>) – Parameters that are needed to run the indp optimization.</p></li>
+<li><p><strong>layers</strong> (<em>list</em>) – List of layers in the interdependent network. The default is ‘None’, which sets the list to [1, 2, 3].</p></li>
+<li><p><strong>controlled_layers</strong> (<em>list</em>) – List of layers that are included in the analysis. The default is ‘None’, which sets the list equal to layers.</p></li>
+<li><p><strong>functionality</strong> (<em>dict</em>) – This dictionary is used to assign functionality values elements in the network before the analysis starts. The
+default is ‘None’.</p></li>
+<li><p><strong>T</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of time steps to optimize over. T=1 shows an iINDP analysis and T&gt;1 shows a td-INDP. The default is 1.</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – If the results should be saved to file. The default is True.</p></li>
+<li><p><strong>suffix</strong> (<em>str</em>) – The suffix that should be added to the output files when saved. The default is ‘’.</p></li>
+<li><p><strong>forced_actions</strong> (<em>bool</em>) – If True, the optimizer is forced to repair at least one element in each time step. The default is False.</p></li>
+<li><p><strong>save_model</strong> (<em>bool</em>) – If the gurobi optimization model should be saved to file. The default is False.</p></li>
+<li><p><strong>print_cmd_line</strong> (<em>bool</em>) – If full information about the analysis should be written to the console. The default is True.</p></li>
+<li><p><strong>co_location</strong> (<em>bool</em>) – If co-location and geographical interdependency should be considered in the analysis. The default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>indp_results</strong> (<em>INDPResults</em>)</p></li>
+<li><p>A <a class="reference internal" href="indputils.html#indputils.INDPResults" title="indputils.INDPResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">INDPResults</span></code></a> object containing the optimal restoration decisions.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="indp.save_indp_model_to_file">
+<span class="sig-prename descclassname"><span class="pre">indp.</span></span><span class="sig-name descname"><span class="pre">save_indp_model_to_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_model_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.save_indp_model_to_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function saves gurobi optimization model to file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>gurobipy.Model</em>) – Gurobi optimization model</p></li>
+<li><p><strong>out_model_dir</strong> (<em>str</em>) – Directory to which the models should be written</p></li>
+<li><p><strong>t</strong> (<em>int</em>) – The time step corresponding to the model</p></li>
+<li><p><strong>l</strong> (<em>int</em>) – The layer number corresponding to the model. The default is 0, which means the model include all layers in the
+analysis</p></li>
+<li><p><strong>suffix</strong> (<em>str</em>) – The suffix that should be added to files when saved. The default is ‘’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="indp.time_resource_usage_curves">
+<span class="sig-prename descclassname"><span class="pre">indp.</span></span><span class="sig-name descname"><span class="pre">time_resource_usage_curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damage_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_num</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#indp.time_resource_usage_curves" title="Permalink to this definition">¶</a></dt>
+<dd><p>This module calculates the repair time for nodes and arcs for the current scenario based on their damage state, and
+writes them to the input files of INDP. Currently, it is only compatible with NIST testbeds.</p>
+<div class="admonition-todo admonition" id="id1">
+<p class="admonition-title">Todo</p>
+<p>The calculated repair time and costs are written to node and arc info input
+files. It makes it impossible to run the analyses in parallel because there
+might be a conflict between two processes. Consider correcting this.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_dir</strong> (<em>dir</em>) – The address of the folder where the basic network information (topology, parameters, etc.) are stored.</p></li>
+<li><p><strong>damage_dir</strong> (<em>dir</em>) – the address of the folder where the damage information are stored.</p></li>
+<li><p><strong>sample_num</strong> (<em>int</em>) – The sample number of the damage scenarios for which the repair data are calculated.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <div class="toctree-wrapper compound">
@@ -419,7 +541,7 @@ NOTE: This is still not fully functional.
     <p>
         &#169; Copyright 2021, SISRRA.
       <span class="lastupdated">
-        Last updated on Apr 13, 2021.
+        Last updated on Jul 28, 2021.
       </span>
 
     </p>

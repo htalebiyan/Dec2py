@@ -7,12 +7,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Index &mdash; Dec2py 32663ab documentation</title>
+  <title>Index &mdash; Dec2py a23feed documentation</title>
   
 
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
 
   
@@ -30,6 +32,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -63,7 +66,7 @@
             
             
               <div class="version">
-                0.4.1
+                0.4.2
               </div>
             
           
@@ -88,7 +91,7 @@
               
             
             
-              <p><span class="caption-text">Topics</span></p>
+              <p class="caption"><span class="caption-text">Topics</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="run_samples.html">Interdepndent Network Restoration Decision-making (toy example)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="run_main.html">Interdepndent Network Restoration Decision-making (Complete Analysis Dashboard)</a></li>
@@ -232,7 +235,7 @@
 </li>
       <li><a href="indp.html#indp.collect_results">collect_results() (in module indp)</a>
 </li>
-      <li><a href="indp.html#indp.collect_solutoon_pool">collect_solutoon_pool() (in module indp)</a>
+      <li><a href="indp.html#indp.collect_solution_pool">collect_solution_pool() (in module indp)</a>
 </li>
       <li><a href="gameclasses.html#gameclasses.NormalGame.compute_payoffs">compute_payoffs() (gameclasses.NormalGame method)</a>
 </li>
@@ -341,6 +344,8 @@
       </ul></li>
       <li><a href="dindputils.html#dindputils.generate_combinations">generate_combinations() (in module dindputils)</a>
 </li>
+      <li><a href="indp.html#indp.get_resource_suffix">get_resource_suffix() (in module indp)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -357,6 +362,8 @@
 </li>
       </ul></li>
       <li><a href="indp.html#indp.indp">indp() (in module indp)</a>
+</li>
+      <li><a href="indputils.html#indputils.INDPComponents">INDPComponents (class in indputils)</a>
 </li>
       <li><a href="indputils.html#indputils.INDPResults">INDPResults (class in indputils)</a>
 </li>
@@ -493,13 +500,15 @@
         <li><a href="gameclasses.html#gameclasses.NormalGame.players">(gameclasses.NormalGame attribute)</a>
 </li>
       </ul></li>
+      <li><a href="indp.html#indp.plot_indp_sample">plot_indp_sample() (in module indp)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="dindputils.html#dindputils.read_resourcec_allocation">read_resourcec_allocation() (in module dindputils)</a>
+      <li><a href="dindputils.html#dindputils.read_resource_allocation">read_resource_allocation() (in module dindputils)</a>
 </li>
       <li><a href="dindputils.html#dindputils.read_results">read_results() (in module dindputils)</a>
 </li>
@@ -537,8 +546,6 @@
 </li>
       <li><a href="runutils.html#runutils.run_indp_sample">run_indp_sample() (in module runutils)</a>
 </li>
-      <li><a href="indp.html#indp.run_info_share">run_info_share() (in module indp)</a>
-</li>
       <li><a href="runutils.html#runutils.run_jc_sample">run_jc_sample() (in module runutils)</a>
 </li>
       <li><a href="dindputils.html#dindputils.run_judgment_call">run_judgment_call() (in module dindputils)</a>
@@ -565,6 +572,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gameclasses.html#gameclasses.InfrastructureGame.sample">sample (gameclasses.InfrastructureGame attribute)</a>
+</li>
+      <li><a href="indp.html#indp.save_indp_model_to_file">save_indp_model_to_file() (in module indp)</a>
 </li>
       <li><a href="dindpclasses.html#dindpclasses.JudgmentModel.save_judgments">save_judgments() (dindpclasses.JudgmentModel method)</a>
 </li>
@@ -602,6 +611,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gameclasses.html#gameclasses.InfrastructureGame.set_payoff_dir">set_payoff_dir() (gameclasses.InfrastructureGame method)</a>
 </li>
+      <li><a href="dindpclasses.html#dindpclasses.AuctionModel.set_resource_unit">set_resource_unit() (dindpclasses.AuctionModel method)</a>
+</li>
       <li><a href="gameclasses.html#gameclasses.BayesianGame.set_states">set_states() (gameclasses.BayesianGame method)</a>
 </li>
       <li><a href="dindpclasses.html#dindpclasses.JcModel.set_time_steps">set_time_steps() (dindpclasses.JcModel static method)</a>
@@ -634,12 +645,14 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="gameclasses.html#gameclasses.InfrastructureGame.time_steps">time_steps (gameclasses.InfrastructureGame attribute)</a>
+      <li><a href="indp.html#indp.time_resource_usage_curves">time_resource_usage_curves() (in module indp)</a>
 </li>
-      <li><a href="infrastructure.html#infrastructure.InfrastructureNetwork.to_gamefile">to_gamefile() (infrastructure.InfrastructureNetwork method)</a>
+      <li><a href="gameclasses.html#gameclasses.InfrastructureGame.time_steps">time_steps (gameclasses.InfrastructureGame attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureNetwork.to_gamefile">to_gamefile() (infrastructure.InfrastructureNetwork method)</a>
+</li>
       <li><a href="dindputils.html#dindputils.trapz_int">trapz_int() (in module dindputils)</a>
 </li>
       <li><a href="gameclasses.html#gameclasses.BayesianGame.types">types (gameclasses.BayesianGame attribute)</a>

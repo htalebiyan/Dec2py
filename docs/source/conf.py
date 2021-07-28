@@ -13,7 +13,7 @@
 import os
 import sys
 import sphinx_rtd_theme
-sys.path.insert(0, os.path.abspath('../../pyindp/'))
+sys.path.insert(0, os.path.abspath('../../codes/'))
 # -----------------------------------------
 # Required
 version: 2
@@ -24,7 +24,7 @@ copyright = '2021, SISRRA'
 author = 'Hesam Talebiyan'
 
 # The full version, including alpha/beta/rc tags
-version = '0.4.1'
+version = '0.4.2'
 release = version
 
 
