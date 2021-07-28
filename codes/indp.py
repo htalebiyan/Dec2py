@@ -5,11 +5,7 @@ import string
 import networkx as nx
 import matplotlib.pyplot as plt
 import copy
-import random
 import time
-import math
-import pickle
-import sys
 import dislocationutils
 
 
@@ -243,9 +239,9 @@ def indp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, f
 
         # Flow functionality constraints.
         if not functionality:
-            interdep_nodes_list = interdep_nodes.keys()  # Interdepndent nodes with a damaged dependee node
+            interdep_nodes_list = interdep_nodes.keys()  # Interdependent nodes with a damaged dependee node
         else:
-            interdep_nodes_list = interdep_nodes[t].keys()  # Interdepndent nodes with a damaged dependee node
+            interdep_nodes_list = interdep_nodes[t].keys()  # Interdependent nodes with a damaged dependee node
         for u, v, a in n_hat.edges(data=True):
             lhs = m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t)) + \
                   sum([m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t) + "," + str(l)) \
@@ -406,7 +402,7 @@ def indp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, f
                                 'inf_data'].in_space(s.id), GRB.LESS_EQUAL,
                                         m.getVarByName('z_' + str(s.id) + "," + str(t)),
                                         "Geographical space constraint for arc (" + str(u) + "," + str(v) + ")")
-        # # !!! Demand completion constraints for dependee nodes.
+        # # Demand completion constraints for dependee nodes.
         # all_dependees = [y[0] for x in interdep_nodes.values() for y in x]
         # for n, d in n_hat.nodes(data=True):
         #     if n in all_dependees:
@@ -448,55 +444,6 @@ def indp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, f
                 if c.IISConstr:
                     print('%s' % c.constrName)
         return None
-
-
-def collect_solution_pool(m, T, n_hat_prime, a_hat_prime):
-    """
-    This function collect the result (list of repaired nodes and arcs) for all feasible solutions in the solution pool
-
-    Parameters
-    ----------
-    m : gurobi.Model
-        The object containing the solved optimization problem.
-    T : int
-        Number of time steps in the optimization (T=1 for iINDP, and T>=1 for td-INDP).
-    n_hat_prime : list
-        List of damaged nodes in controlled network.
-    a_hat_prime : list
-        List of damaged arcs in controlled network.
-
-    Returns
-    -------
-    sol_pool_results : dict
-        A dictionary containing one dictionary per solution that contain list of repaired node and arcs in the solution.
-
-    """
-    sol_pool_results = {}
-    current_sol_count = 0
-    for sol in range(m.SolCount):
-        m.setParam('SolutionNumber', sol)
-        # print(m.PoolObjVal)
-        sol_pool_results[sol] = {'nodes': [], 'arcs': []}
-        for t in range(T):
-            # Record node recovery actions.
-            for n, d in n_hat_prime:
-                node_var = 'w_tilde_' + str(n) + "," + str(t)
-                if T == 1:
-                    node_var = 'w_' + str(n) + "," + str(t)
-                if round(m.getVarByName(node_var).xn) == 1:
-                    sol_pool_results[sol]['nodes'].append(n)
-            # Record edge recovery actions.
-            for u, v, a in a_hat_prime:
-                arc_var = 'y_tilde_' + str(u) + "," + str(v) + "," + str(t)
-                if T == 1:
-                    arc_var = 'y_' + str(u) + "," + str(v) + "," + str(t)
-                if round(m.getVarByName(arc_var).x) == 1:
-                    sol_pool_results[sol]['arcs'].append((u, v))
-        if sol > 0 and sol_pool_results[sol] == sol_pool_results[current_sol_count]:
-            del sol_pool_results[sol]
-        elif sol > 0:
-            current_sol_count = sol
-    return sol_pool_results
 
 
 def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S, coloc=True):
@@ -626,6 +573,55 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
     return indp_results
 
 
+def collect_solution_pool(m, T, n_hat_prime, a_hat_prime):
+    """
+    This function collect the result (list of repaired nodes and arcs) for all feasible solutions in the solution pool
+
+    Parameters
+    ----------
+    m : gurobi.Model
+        The object containing the solved optimization problem.
+    T : int
+        Number of time steps in the optimization (T=1 for iINDP, and T>=1 for td-INDP).
+    n_hat_prime : list
+        List of damaged nodes in controlled network.
+    a_hat_prime : list
+        List of damaged arcs in controlled network.
+
+    Returns
+    -------
+    sol_pool_results : dict
+        A dictionary containing one dictionary per solution that contain list of repaired node and arcs in the solution.
+
+    """
+    sol_pool_results = {}
+    current_sol_count = 0
+    for sol in range(m.SolCount):
+        m.setParam('SolutionNumber', sol)
+        # print(m.PoolObjVal)
+        sol_pool_results[sol] = {'nodes': [], 'arcs': []}
+        for t in range(T):
+            # Record node recovery actions.
+            for n, d in n_hat_prime:
+                node_var = 'w_tilde_' + str(n) + "," + str(t)
+                if T == 1:
+                    node_var = 'w_' + str(n) + "," + str(t)
+                if round(m.getVarByName(node_var).xn) == 1:
+                    sol_pool_results[sol]['nodes'].append(n)
+            # Record edge recovery actions.
+            for u, v, a in a_hat_prime:
+                arc_var = 'y_tilde_' + str(u) + "," + str(v) + "," + str(t)
+                if T == 1:
+                    arc_var = 'y_' + str(u) + "," + str(v) + "," + str(t)
+                if round(m.getVarByName(arc_var).x) == 1:
+                    sol_pool_results[sol]['arcs'].append((u, v))
+        if sol > 0 and sol_pool_results[sol] == sol_pool_results[current_sol_count]:
+            del sol_pool_results[sol]
+        elif sol > 0:
+            current_sol_count = sol
+    return sol_pool_results
+
+
 def apply_recovery(N, indp_results, t):
     """
     This function applies the restoration decisions (solution of INDP) to a gurobi model by changing the state of
@@ -638,7 +634,7 @@ def apply_recovery(N, indp_results, t):
     indp_results : INDPResults
         A :class:`~indputils.INDPResults` object containing the optimal restoration decisions..
     t : int
-        The time step to which the resukts should apply.
+        The time step to which the results should apply.
 
     Returns
     -------
@@ -785,23 +781,38 @@ def initialize_network(base_dir="../data/INDP_7-20-2015/", external_interdepende
 def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=1, save=True, suffix="",
              forced_actions=False, save_model=False, print_cmd_line=True, co_location=True):
     """
-
+    This function runs iINDP (T=1) or td-INDP for a given number of time steps and input parameters
     Parameters
     ----------
-    params :
-    layers :
-    controlled_layers :
-    functionality :
-    T :
-    save :
-    suffix :
-    forced_actions :
-    save_model :
-    print_cmd_line :
-    co_location :
+    params : dict
+        Parameters that are needed to run the indp optimization.
+    layers : list
+        List of layers in the interdependent network. The default is 'None', which sets the list to [1, 2, 3].
+    controlled_layers : list
+        List of layers that should be included in the analysis. The default is 'None', which sets the list equal to
+        layers.
+    functionality : dict
+        This dictionary is used to assign functionality values elements in the network before the analysis starts. The
+        default is 'None'.
+    T : int, optional
+        Number of time steps to optimize over. T=1 shows an iINDP analysis and T>1 shows a td-INDP. The default is 1.
+    save : bool
+        If the results should be saved to file. The default is True.
+    suffix : str
+        The suffix that should be added to the output files when saved. The default is ''.
+    forced_actions : bool
+        If True, the optimizer is forced to repair at least one element in each time step. The default is False.
+    save_model : bool
+        If the gurobi optimization model should be saved to file. The default is False.
+    print_cmd_line : bool
+        If full information about the analysis should be written to the console. The default is True.
+    co_location : bool
+        If co-location and geographical interdependency should be considered in the analysis. The default is True.
 
     Returns
     -------
+    indp_results : INDPResults
+        A :class:`~indputils.INDPResults` object containing the optimal restoration decisions.
 
     """
 
@@ -812,12 +823,12 @@ def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=
         layers = [1, 2, 3]
     if controlled_layers is None:
         controlled_layers = layers
-    interdep_net = None
+
     if "N" not in params:
-        interdep_net = initialize_network(base_dir="../data/INDP_7-20-2015/", sim_number=params['SIM_NUMBER'],
-                                          magnitude=params["MAGNITUDE"])
+        interdependent_net = initialize_network(base_dir="../data/INDP_7-20-2015/", sim_number=params['SIM_NUMBER'],
+                                                magnitude=params["MAGNITUDE"])
     else:
-        interdep_net = params["N"]
+        interdependent_net = params["N"]
     if "NUM_ITERATIONS" not in params:
         params["NUM_ITERATIONS"] = 1
 
@@ -833,28 +844,28 @@ def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=
                      "_v" + out_dir_suffix_res
         # Initial calculations.
         if params['DYNAMIC_PARAMS']:
-            original_N = copy.deepcopy(interdep_net)  # !!! deepcopy
-            dislocationutils.dynamic_parameters(interdep_net, original_N, 0,
+            original_N = copy.deepcopy(interdependent_net)  # !!! deepcopy
+            dislocationutils.dynamic_parameters(interdependent_net, original_N, 0,
                                                 params['DYNAMIC_PARAMS']['DEMAND_DATA'])
         v_0 = {x: 0 for x in params["V"].keys()}
-        results = indp(interdep_net, v_0, 1, layers, controlled_layers=controlled_layers,
+        results = indp(interdependent_net, v_0, 1, layers, controlled_layers=controlled_layers,
                        functionality=functionality, co_location=co_location)
         indp_results = results[1]
-        indp_results.add_components(0, INDPComponents.calculate_components(results[0], interdep_net,
+        indp_results.add_components(0, INDPComponents.calculate_components(results[0], interdependent_net,
                                                                            layers=controlled_layers))
         for i in range(params["NUM_ITERATIONS"]):
             print("-Time Step (iINDP)", i + 1, "/", params["NUM_ITERATIONS"])
             if params['DYNAMIC_PARAMS']:
-                dislocationutils.dynamic_parameters(interdep_net, original_N, i + 1,
+                dislocationutils.dynamic_parameters(interdependent_net, original_N, i + 1,
                                                     params['DYNAMIC_PARAMS']['DEMAND_DATA'])
-            results = indp(interdep_net, params["V"], T, layers, controlled_layers=controlled_layers,
+            results = indp(interdependent_net, params["V"], T, layers, controlled_layers=controlled_layers,
                            forced_actions=forced_actions, co_location=co_location)
             indp_results.extend(results[1], t_offset=i + 1)
             if save_model:
-                save_INDP_model_to_file(results[0], output_dir + "/Model", i + 1)
+                save_indp_model_to_file(results[0], output_dir + "/Model", i + 1)
             # Modify network to account for recovery and calculate components.
-            apply_recovery(interdep_net, indp_results, i + 1)
-            indp_results.add_components(i + 1, INDPComponents.calculate_components(results[0], interdep_net,
+            apply_recovery(interdependent_net, indp_results, i + 1)
+            indp_results.add_components(i + 1, INDPComponents.calculate_components(results[0], interdependent_net,
                                                                                    layers=controlled_layers))
     #            print "Num_iters=",params["NUM_ITERATIONS"]
     else:
@@ -873,10 +884,10 @@ def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=
         print("Running td-INDP (T=" + str(T) + ", Window size=" + str(time_window_length) + ")")
         # Initial percolation calculations.
         v_0 = {x: 0 for x in params["V"].keys()}
-        results = indp(interdep_net, v_0, 1, layers, controlled_layers=controlled_layers,
+        results = indp(interdependent_net, v_0, 1, layers, controlled_layers=controlled_layers,
                        functionality=functionality, co_location=co_location)
         indp_results = results[1]
-        indp_results.add_components(0, INDPComponents.calculate_components(results[0], interdep_net,
+        indp_results.add_components(0, INDPComponents.calculate_components(results[0], interdependent_net,
                                                                            layers=controlled_layers))
         for n in range(num_time_windows):
             print("-Time window (td-INDP)", n + 1, "/", num_time_windows)
@@ -892,27 +903,28 @@ def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=
                     for d in range(diff):
                         functionality_t[max_t + d + 1] = functionality_t[max_t]
             # Run td-INDP.
-            results = indp(interdep_net, params["V"], time_window_length + 1, layers,
+            results = indp(interdependent_net, params["V"], time_window_length + 1, layers,
                            controlled_layers=controlled_layers,
                            functionality=functionality_t, forced_actions=forced_actions,
                            co_location=co_location)
             if save_model:
-                save_INDP_model_to_file(results[0], output_dir + "/Model", n + 1)
+                save_indp_model_to_file(results[0], output_dir + "/Model", n + 1)
             if "WINDOW_LENGTH" in params:
                 indp_results.extend(results[1], t_offset=n + 1, t_start=1, t_end=2)
                 # Modify network for recovery actions and calculate components.
-                apply_recovery(interdep_net, results[1], 1)
+                apply_recovery(interdependent_net, results[1], 1)
                 indp_results.add_components(n + 1,
                                             INDPComponents.calculate_components(results[0],
-                                                                                interdep_net, 1,
+                                                                                interdependent_net, 1,
                                                                                 layers=controlled_layers))
             else:
                 indp_results.extend(results[1], t_offset=0)
                 for t in range(1, T):
                     # Modify network to account for recovery actions.
-                    apply_recovery(interdep_net, indp_results, t)
-                    indp_results.add_components(1, INDPComponents.calculate_components(results[0], interdep_net, t,
-                                                                                       layers=controlled_layers))
+                    apply_recovery(interdependent_net, indp_results, t)
+                    indp_results.add_components(1,
+                                                INDPComponents.calculate_components(results[0], interdependent_net, t,
+                                                                                    layers=controlled_layers))
     # Save results of current simulation.
     if save:
         if not os.path.exists(output_dir):
@@ -924,28 +936,63 @@ def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=
     return indp_results
 
 
-def save_INDP_model_to_file(model, outModelDir, t, l=0, suffix=''):
-    if not os.path.exists(outModelDir):
-        os.makedirs(outModelDir)
+def save_indp_model_to_file(model, out_model_dir, t, l=0, suffix=''):
+    """
+    This function saves gurobi optimization model to file.
+
+    Parameters
+    ----------
+    model : gurobipy.Model
+        Gurobi optimization model
+    out_model_dir : str
+        Directory to which the models should be written
+    t : int
+        The time step corresponding to the model
+    l : int
+        The layer number corresponding to the model. The default is 0, which means the model include all layers in the
+        analysis
+    suffix : str
+        The suffix that should be added to files when saved. The default is ''.
+    Returns
+    -------
+    None.
+
+    """
+    if not os.path.exists(out_model_dir):
+        os.makedirs(out_model_dir)
     # Write models to file
-    lname = "/Model_t%d_l%d_%s.lp" % (t, l, suffix)
-    model.write(outModelDir + lname)
+    l_name = "/Model_t%d_l%d_%s.lp" % (t, l, suffix)
+    model.write(out_model_dir + l_name)
     model.update()
     # Write solution to file
-    sname = "/Solution_t%d_l%d_%s.txt" % (t, l, suffix)
-    fileID = open(outModelDir + sname, 'w')
+    s_name = "/Solution_t%d_l%d_%s.txt" % (t, l, suffix)
+    file_id = open(out_model_dir + s_name, 'w')
     for vv in model.getVars():
-        fileID.write('%s %g\n' % (vv.varName, vv.x))
-    fileID.write('Obj: %g' % model.objVal)
-    fileID.close()
+        file_id.write('%s %g\n' % (vv.varName, vv.x))
+    file_id.write('Obj: %g' % model.objVal)
+    file_id.close()
 
 
-def initialize_sample_network(layers=[1, 2]):
-    """ Initializes sample network
-    :param layers: (Currently not used).
-    :returns: An interdependent InfrastructureNetwork.
+def initialize_sample_network(layers=None):
     """
-    InterdepNet = InfrastructureNetwork("sample_network")
+    This function generate the sample toy example with either 2 or 3 layers.
+
+    Parameters
+    ----------
+    layers : list
+        List of layers in the toy example that can be [1, 2] or [1, 2, 3]. The default is None, which sets layers
+        to [1, 2].
+
+    Returns
+    -------
+    interdependent_net : InfrastructureNetwork
+        A :class:`~Infrastructure.InfrastructureNetwork` object containing the interdependent network and all the
+        attributes of its nodes and arcs.
+    """
+    if layers is None:
+        layers = [1, 2]
+
+    interdependent_net = InfrastructureNetwork("sample_network")
     node_to_demand_dict = {(1, 1): 5, (2, 1): -1, (3, 1): -2, (4, 1): -2, (5, 1): -4, (6, 1): 4,
                            (7, 2): -2, (8, 2): 6, (9, 2): 1, (10, 2): -5, (11, 2): 4, (12, 2): -4}
     space_to_nodes_dict = {1: [(1, 1), (7, 2)], 2: [(2, 1), (8, 2)],
@@ -976,24 +1023,41 @@ def initialize_sample_network(layers=[1, 2]):
         if n in failed_nodes:
             nn.functionality = 0.0
             nn.repaired = 0.0
-        InterdepNet.G.add_node((nn.local_id, nn.net_id), data={'inf_data': nn})
+        interdependent_net.G.add_node((nn.local_id, nn.net_id), data={'inf_data': nn})
         global_index += 1
     for s in space_to_nodes_dict:
-        InterdepNet.S.append(InfrastructureSpace(s, 0))
+        interdependent_net.S.append(InfrastructureSpace(s, 0))
         for n in space_to_nodes_dict[s]:
-            InterdepNet.G.nodes[n]['data']['inf_data'].space = s
+            interdependent_net.G.nodes[n]['data']['inf_data'].space = s
     for a in arc_list:
         aa = InfrastructureArc(a[0][0], a[1][0], a[0][1])
         aa.flow_cost = 1
         aa.capacity = 50
-        InterdepNet.G.add_edge((aa.source, aa.layer), (aa.dest, aa.layer), data={'inf_data': aa})
+        interdependent_net.G.add_edge((aa.source, aa.layer), (aa.dest, aa.layer), data={'inf_data': aa})
     for g in interdep_list:
         aa = InfrastructureInterdepArc(g[0][0], g[1][0], g[0][1], g[1][1], 1.0)
-        InterdepNet.G.add_edge((aa.source, aa.source_layer), (aa.dest, aa.dest_layer), data={'inf_data': aa})
-    return InterdepNet
+        interdependent_net.G.add_edge((aa.source, aa.source_layer), (aa.dest, aa.dest_layer), data={'inf_data': aa})
+    return interdependent_net
 
 
-def plot_indp_sample(params, folderSuffix="", suffix=""):
+def plot_indp_sample(params, folder_suffix="", suffix=""):
+    """
+    This function plots the toy example in all time steps of the restoration, and saves plots to file.
+
+    Parameters
+    ----------
+    params : dict
+        Parameters that are needed to run the indp optimization.
+    folder_suffix : str
+        The suffix that should be added to the target folder. The default is ''.
+    suffix : str
+        The suffix that should be added to plots when saved. The default is ''.
+
+    Returns
+    -------
+    None.
+
+    """
     plt.figure(figsize=(16, 8))
     if 3 in params["L"]:
         plt.figure(figsize=(16, 10))
@@ -1011,18 +1075,18 @@ def plot_indp_sample(params, folderSuffix="", suffix=""):
     pos[(11, 2)][0] = 3.0
     pos[(6, 1)][0] = 2.5
     pos[(12, 2)][0] = 2.5
-    pos[(2, 1)][1] = 0.0
-    pos[(4, 1)][1] = 0.0
-    pos[(6, 1)][1] = 0.0
-    pos[(1, 1)][1] = 1.0
-    pos[(3, 1)][1] = 1.0
-    pos[(5, 1)][1] = 1.0
-    pos[(8, 2)][1] = 2.0
-    pos[(10, 2)][1] = 2.0
-    pos[(12, 2)][1] = 2.0
-    pos[(7, 2)][1] = 3.0
-    pos[(9, 2)][1] = 3.0
-    pos[(11, 2)][1] = 3.0
+    pos[(2, 1)][1] = 2.0
+    pos[(4, 1)][1] = 2.0
+    pos[(6, 1)][1] = 2.0
+    pos[(1, 1)][1] = 3.0
+    pos[(3, 1)][1] = 3.0
+    pos[(5, 1)][1] = 3.0
+    pos[(8, 2)][1] = 0.0
+    pos[(10, 2)][1] = 0.0
+    pos[(12, 2)][1] = 0.0
+    pos[(7, 2)][1] = 1.0
+    pos[(9, 2)][1] = 1.0
+    pos[(11, 2)][1] = 1.0
     node_dict = {1: [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1)],
                  11: [(4, 1)],  # Undamaged
                  12: [(1, 1), (2, 1), (3, 1), (5, 1), (6, 1)],  # Damaged
@@ -1040,12 +1104,12 @@ def plot_indp_sample(params, folderSuffix="", suffix=""):
         pos[(16, 3)][0] = 1.5
         pos[(17, 3)][0] = 3.0
         pos[(18, 3)][0] = 2.5
-        pos[(13, 3)][1] = 5.0
-        pos[(14, 3)][1] = 4.0
-        pos[(15, 3)][1] = 5.0
-        pos[(16, 3)][1] = 4.0
-        pos[(17, 3)][1] = 5.0
-        pos[(18, 3)][1] = 4.0
+        pos[(13, 3)][1] = -2.0
+        pos[(14, 3)][1] = -1.0
+        pos[(15, 3)][1] = -2.0
+        pos[(16, 3)][1] = -1.0
+        pos[(17, 3)][1] = -2.0
+        pos[(18, 3)][1] = -1.0
         node_dict[3] = [(13, 3), (14, 3), (15, 3), (16, 3), (17, 3), (18, 3)]
         node_dict[31] = [(13, 3)]
         node_dict[32] = [(14, 3), (15, 3), (16, 3), (17, 3), (18, 3)]
@@ -1055,11 +1119,12 @@ def plot_indp_sample(params, folderSuffix="", suffix=""):
     labels = {}
     for n, d in interdep_net.G.nodes(data=True):
         labels[n] = "%d[%d]" % (n[0], d['data']['inf_data'].demand)
+        labels[n] = "%d" % (n[0])
     pos_moved = {}
     for key, value in pos.items():
         pos_moved[key] = [0, 0]
-        pos_moved[key][0] = pos[key][0] - 0.2
-        pos_moved[key][1] = pos[key][1] + 0.2
+        pos_moved[key][0] = pos[key][0] - 0.17
+        pos_moved[key][1] = pos[key][1] + 0.17
 
     v_r = params["V"]
     if isinstance(v_r, (int)):
@@ -1068,7 +1133,7 @@ def plot_indp_sample(params, folderSuffix="", suffix=""):
         total_resource = sum([val for _, val in v_r.items()])
 
     output_dir = params["OUTPUT_DIR"] + '_L' + str(len(params["L"])) + '_m' + str(params["MAGNITUDE"]) + "_v" + str(
-        total_resource) + folderSuffix
+        total_resource) + folder_suffix
     action_file = output_dir + "/actions_" + str(params["SIM_NUMBER"]) + "_" + suffix + ".csv"
     actions = {0: []}
     if os.path.isfile(action_file):
@@ -1090,9 +1155,9 @@ def plot_indp_sample(params, folderSuffix="", suffix=""):
             data = a.split(".")
             node_dict[int(data[1]) * 10 + 1].append((int(data[0]), int(data[1])))
             node_dict[int(data[1]) * 10 + 2].remove((int(data[0]), int(data[1])))
-        nx.draw(interdep_net.G, pos, node_color='w')
-        nx.draw_networkx_labels(interdep_net.G, labels=labels, pos=pos,
-                                font_color='w', font_family='CMU Serif')  # ,font_weight='bold'
+        nx.draw(interdep_net.G, pos, node_color='w', arrowsize=25, arrowstyle='-|>')
+        nx.draw_networkx_labels(interdep_net.G, labels=labels, pos=pos, font_weight='bold',
+                                font_color='w', font_family='CMU Serif', font_size=18)
         nx.draw_networkx_nodes(interdep_net.G, pos, nodelist=node_dict[1], node_color='#b51717', node_size=1100,
                                alpha=0.7)
         nx.draw_networkx_nodes(interdep_net.G, pos, nodelist=node_dict[2], node_color='#005f98', node_size=1100,
@@ -1101,19 +1166,36 @@ def plot_indp_sample(params, folderSuffix="", suffix=""):
                                node_size=150)
         nx.draw_networkx_nodes(interdep_net.G, pos_moved, nodelist=node_dict[22], node_color='k', node_shape="X",
                                node_size=150)
-        nx.draw_networkx_edges(interdep_net.G, pos, edgelist=arc_dict[1], width=1, alpha=0.9, edge_color='r')
-        nx.draw_networkx_edges(interdep_net.G, pos, edgelist=arc_dict[2], width=1, alpha=0.9, edge_color='b')
+        nx.draw_networkx_edges(interdep_net.G, pos, edgelist=arc_dict[1], width=1.5, alpha=0.9, edge_color='r',
+                               arrowsize=25, arrowstyle='-|>')
+        nx.draw_networkx_edges(interdep_net.G, pos, edgelist=arc_dict[2], width=1.5, alpha=0.9, edge_color='b',
+                               arrowsize=25, arrowstyle='-|>')
         if 3 in params["L"]:
             nx.draw_networkx_nodes(interdep_net.G, pos, nodelist=node_dict[3], node_color='#009181', node_size=1100,
                                    alpha=0.7)
             nx.draw_networkx_nodes(interdep_net.G, pos_moved, nodelist=node_dict[32], node_color='k', node_shape="X",
                                    node_size=150)
-            nx.draw_networkx_edges(interdep_net.G, pos, edgelist=arc_dict[3], width=1, alpha=0.9, edge_color='g')
+            nx.draw_networkx_edges(interdep_net.G, pos, edgelist=arc_dict[3], width=1.5, alpha=0.9, edge_color='g',
+                                   arrowsize=25, arrowstyle='-|>')
     plt.tight_layout()
     plt.savefig(output_dir + '/plot_net' + suffix + '.png', dpi=300)
 
 
 def get_resource_suffix(params):
+    """
+    This function generate the part of suffix of result folders that pertains to resource cap(s).
+
+    Parameters
+    ----------
+    params : dict
+        Parameters that are needed to run the indp optimization.
+
+    Returns
+    -------
+     out_dir_suffix_res : str
+        The part of suffix of result folders that pertains to resource cap(s).
+
+    """
     out_dir_suffix_res = ''
     for rc, val in params["V"].items():
         if isinstance(val, int):
@@ -1126,11 +1208,10 @@ def get_resource_suffix(params):
     return out_dir_suffix_res
 
 
-def time_resource_usage_curves(base_dir, damage_dir, magnitude, sample_num):
+def time_resource_usage_curves(base_dir, damage_dir, sample_num):
     """
-    This module calculate the repair time for nodes and arcs for the current
-    scenario based on their damage state and write them to the input files of
-    INDP. Currently , it is only compatible with NIST testbeds.
+    This module calculates the repair time for nodes and arcs for the current scenario based on their damage state, and
+    writes them to the input files of INDP. Currently, it is only compatible with NIST testbeds.
 
     .. todo::
         The calculated repair time and costs are written to node and arc info input
@@ -1139,12 +1220,12 @@ def time_resource_usage_curves(base_dir, damage_dir, magnitude, sample_num):
 
     Parameters
     ----------
-    base_dir : TYPE
-        DESCRIPTION.
-    damage_dir : TYPE
-        DESCRIPTION.
-    sample_num : TYPE
-        DESCRIPTION.
+    base_dir : dir
+        The address of the folder where the basic network information (topology, parameters, etc.) are stored.
+    damage_dir : dir
+        the address of the folder where the damage information are stored.
+    sample_num : int
+        The sample number of the damage scenarios for which the repair data are calculated.
 
     Returns
     -------
@@ -1156,8 +1237,7 @@ def time_resource_usage_curves(base_dir, damage_dir, magnitude, sample_num):
     nodes_damge_ratio = pd.read_csv(base_dir + 'damage_ratio_nodes.csv')
     arcs_reptime_func = pd.read_csv(base_dir + 'repair_time_curves_arcs.csv')
     arcs_damge_ratio = pd.read_csv(base_dir + 'damage_ratio_arcs.csv')
-    dmg_sce_data = pd.read_csv(damage_dir + '/' + str(magnitude) + '/Initial_node_ds.csv',
-                               delimiter=',', header=None)
+    dmg_sce_data = pd.read_csv(damage_dir + 'Initial_node_ds.csv', delimiter=',', header=None)
     net_names = {'Water': 1, 'Power': 3}
 
     for file in files:
@@ -1166,20 +1246,27 @@ def time_resource_usage_curves(base_dir, damage_dir, magnitude, sample_num):
             with open(base_dir + file) as f:
                 node_data = pd.read_csv(f, delimiter=',')
                 for v in node_data.iterrows():
-                    reptime_func_node = nodes_reptime_func[nodes_reptime_func['Type'] == v[1]['Node Type']]
-                    dr_data = nodes_damge_ratio[nodes_damge_ratio['Type'] == v[1]['Node Type']]
+                    try:
+                        node_type = v[1]['Node Type']
+                        node_id = v[1]['ID']
+                    except KeyError:
+                        node_type = v[1]['utilfcltyc']
+                        node_id = v[1]['nodenwid']
+
+                    reptime_func_node = nodes_reptime_func[nodes_reptime_func['Type'] == node_type]
+                    dr_data = nodes_damge_ratio[nodes_damge_ratio['Type'] == node_type]
                     rep_time = 0
                     repair_cost = 0
                     if not reptime_func_node.empty:
-                        node_name = '(' + str(v[1]['ID']) + ',' + str(net_names[fname[:5]]) + ')'
+                        node_name = '(' + str(node_id) + ',' + str(net_names[fname[:5]]) + ')'
                         ds = dmg_sce_data[dmg_sce_data[0] == node_name].iloc[0][sample_num + 1]
                         rep_time = reptime_func_node.iloc[0]['ds_' + ds + '_mean']
-                        # !!! Add repair time uncertainity here
+                        # ..todo Add repair time uncertainity here
                         # rep_time = np.random.normal(reptime_func_node['ds_'+ds+'_mean'],
                         #                             reptime_func_node['ds_'+ds+'_sd'], 1)[0]
 
                         dr = dr_data.iloc[0]['dr_' + ds + '_be']
-                        # !!! Add damage ratio uncertainity here
+                        # ..todo Add damage ratio uncertainity here
                         # dr = np.random.uniform(dr_data.iloc[0]['dr_'+ds+'_min'],
                         #                       dr_data.iloc[0]['dr_'+ds+'_max'], 1)[0]
                         repair_cost = v[1]['q (complete DS)'] * dr
@@ -1193,8 +1280,7 @@ def time_resource_usage_curves(base_dir, damage_dir, magnitude, sample_num):
         if fname[-4:] == 'Arcs':
             with open(base_dir + file) as f:
                 data = pd.read_csv(f, delimiter=',')
-                dmg_data_all = pd.read_csv(damage_dir + '/' + str(magnitude) + '/pipe_dmg.csv',
-                                           delimiter=',')
+                dmg_data_all = pd.read_csv(damage_dir + 'pipe_dmg.csv', delimiter=',')
                 for v in data.iterrows():
                     dmg_data_arc = dmg_data_all[dmg_data_all['guid'] == v[1]['guid']]
                     rep_time = 0
@@ -1206,25 +1292,31 @@ def time_resource_usage_curves(base_dir, damage_dir, magnitude, sample_num):
                         else:
                             reptime_func_arc = arcs_reptime_func[arcs_reptime_func['Type'] == '<20 in']
                             dr_data = arcs_damge_ratio[arcs_damge_ratio['Type'] == '<20 in']
+                        try:
+                            pipe_length = v[1]['Length (km)']
+                            pipe_length_ft = v[1]['Length (ft)']
+                        except KeyError:
+                            pipe_length = v[1]['length_km']
+                            pipe_length_ft = v[1]['Length']
                         rep_rate = {'break': dmg_data_arc.iloc[0]['breakrate'],
                                     'leak': dmg_data_arc.iloc[0]['leakrate']}
                         rep_time = (rep_rate['break'] * reptime_func_arc['# Fixed Breaks/Day/Worker'] + \
                                     rep_rate['leak'] * reptime_func_arc['# Fixed Leaks/Day/Worker']) * \
-                                   v[1]['Length (km)'] / 4  # assuming a 4-person crew per HAZUS
+                                   pipe_length / 4  # assuming a 4-person crew per HAZUS
                         dr = {'break': dr_data.iloc[0]['break_be'], 'leak': dr_data.iloc[0]['leak_be']}
-                        # !!! Add repair cost uncertainity here
+                        # ..todo Add repair cost uncertainity here
                         # dr = {'break': np.random.uniform(dr_data.iloc[0]['break_min'],
                         #                                  dr_data.iloc[0]['break_max'], 1)[0],
                         #       'leak': np.random.uniform(dr_data.iloc[0]['leak_min'],
                         #                                  dr_data.iloc[0]['leak_max'], 1)[0]}
 
-                        num_20_ft_seg = v[1]['Length (ft)'] / 20
-                        num_breaks = rep_rate['break'] * v[1]['Length (km)']
+                        num_20_ft_seg = pipe_length_ft / 20
+                        num_breaks = rep_rate['break'] * pipe_length
                         if num_breaks > num_20_ft_seg:
                             repair_cost += v[1]['f (complete)'] * dr['break']
                         else:
                             repair_cost += v[1]['f (complete)'] / num_20_ft_seg * num_breaks * dr['break']
-                        num_leaks = rep_rate['leak'] * v[1]['Length (km)']
+                        num_leaks = rep_rate['leak'] * pipe_length
                         if num_leaks > num_20_ft_seg:
                             repair_cost += v[1]['f (complete)'] * dr['leak']
                         else:

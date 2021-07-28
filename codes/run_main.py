@@ -28,14 +28,6 @@ import gameutils
 import plots
 import pickle
 
-try:
-    # Change the current working Directory
-    DIR_MAIN = 'C:/Users/ht20/Documents/GitHub/td-DINDP/pyindp'
-    os.chdir(DIR_MAIN)
-    print("Directory changed to " + DIR_MAIN)
-except OSError:
-    print("Can't change the Current Working Directory")
-
 # %%
 """
 ## Run a toy example using different methods 
@@ -49,33 +41,31 @@ except OSError:
 """
 ## Run different methods for different networks, post-process the outputs, and plot the result
 ### Input/Output file addresses
-1. `BASE_DIR`: the address of the folder where the basic network information
-(topology, parameters, etc.) is stored
-2. `DAMAGE_DIR`: the address of the folder where the damage information is stored
+1. `BASE_DIR`: the address of the folder where the basic network information (topology, parameters, etc.) are stored
+2. `DAMAGE_DIR`: the address of the folder where the damage information are stored
 3. `OUTPUT_DIR`: the address of the folder where the output files should be written
-4. `FILTER_SCE`(optional): The address of the list of scenarios that should be 
-included in the analyses. It is used to remove less damaging scenarios from
-the list of damage scenarios. Set it to *None* if you don't want to use this option.
-5. `PAYOFF_DIR`(optional, only for Games): The address of the folder that contains the objects
-that store the payoff values for the game so that they are read from file and
-not calculated again. Set it to *None* if you don't want to use this option.
+4. `FILTER_SCE`(optional): The address of the list of scenarios that should be included in the analyses. It is used to 
+remove less damaging scenarios from the list of damage scenarios. Set it to *None* if you don't want to use this option.
+5. `PAYOFF_DIR`(optional, only for Games): The address of the folder that contains the objects that store the payoff 
+values for the game so that they are read from file and not calculated again. Set it to *None* if you don't want to use 
+this option.
 """
 
 # %%
-BASE_DIR = "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
+BASE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info/"
 # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # "../data/Extended_Shelby_County/"
 # 'C:/Users/ht20/Box Sync/Shelby County Database/Node_arc_info'
 # "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
 # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info/"
 
-DAMAGE_DIR = "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
+DAMAGE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/eq_1000yr_initial_damage/"
 # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # ../data/random_disruption_shelby/"
 # "../data/Wu_Damage_scenarios/"
 # "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
 # 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios'
-# "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/eq_dmg/"
+# "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/"
 
 OUTPUT_DIR = '../results/'
 # '/home/hesam/Desktop/Files/Game_synthetic/v4.1/results_temp/'
@@ -187,13 +177,13 @@ the following items:
 '''
 
 # %%
-FAIL_SCE_PARAM = {'TYPE': "synthetic", 'SAMPLE_RANGE': range(5), 'MAGS': range(100),
-                  'FILTER_SCE': FILTER_SCE, 'TOPO': 'General', 'BASE_DIR': BASE_DIR,
-                  'DAMAGE_DIR': DAMAGE_DIR}
+# FAIL_SCE_PARAM = {'TYPE': "synthetic", 'SAMPLE_RANGE': range(5), 'MAGS': range(100),
+#                   'FILTER_SCE': FILTER_SCE, 'TOPO': 'General', 'BASE_DIR': BASE_DIR,
+#                   'DAMAGE_DIR': DAMAGE_DIR}
 # FAIL_SCE_PARAM = {'TYPE': "WU", 'SAMPLE_RANGE': range(50), 'MAGS': range(3),
 #                   'FILTER_SCE': FILTER_SCE, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
-# FAIL_SCE_PARAM = {'TYPE': "from_csv", 'SAMPLE_RANGE': range(0, 1), 'MAGS': [1000],
-#                   'FILTER_SCE': None, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
+FAIL_SCE_PARAM = {'TYPE': "from_csv", 'SAMPLE_RANGE': range(0, 1), 'MAGS': [1000],
+                  'FILTER_SCE': None, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
 
 DYNAMIC_PARAMS = None
 # DYNAMIC_PARAMS = {'TYPE': 'shelby_adopted', 'RETURN': 'step_function',
@@ -206,12 +196,12 @@ DYNAMIC_PARAMS = None
 #                   'MAPPING': {'POWER': ROOT_DISLOC+'/Power/Joplin interdependency table - buildings,\
 #                               substations, and poles/Joplin_interdependency_table.csv'}}
 
-# ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
-# DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED': 'seaside',
-#                   'OUT_DIR': ROOT_DISLOC + 'Dislocation_models/',
-#                   'POP_DISLOC_DATA': ROOT_DISLOC + 'Dislocation_models/',
-#                   'MAPPING': {'POWER': ROOT_DISLOC + 'Power/bldgs2elec_Seaside.csv',
-#                               'WATER': ROOT_DISLOC + 'Water/bldgs2wter_Seaside.csv'}}
+ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
+DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED': 'seaside',
+                  'OUT_DIR': ROOT_DISLOC + 'Dislocation_models/',
+                  'POP_DISLOC_DATA': ROOT_DISLOC + 'Dislocation_models/',
+                  'MAPPING': {'POWER': ROOT_DISLOC + 'Power/bldgs2elec_Seaside.csv',
+                              'WATER': ROOT_DISLOC + 'Water/bldgs2wter_Seaside.csv'}}
 
 STM_MODEL_DICT = None
 
@@ -302,8 +292,8 @@ uniformed belief, *F* for false consensus bias, and *I* for inverse false consen
 print('EDM considers 10 actions')
 print('CF is 2 ')
 
-# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
-#                     misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TIME_RESOURCE': False})
+runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
+                    misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TIME_RESOURCE': True})
 # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
 #                     misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TIME_RESOURCE': True})
 # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,

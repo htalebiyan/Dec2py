@@ -79,7 +79,7 @@ def batch_run(params, fail_sce_param):
             print('---Running Magnitude ' + str(m) + ' sample ' + str(i) + '...')
             if params['TIME_RESOURCE']:
                 print('Computing repair times...')
-                indp.time_resource_usage_curves(base_dir, damage_dir, m, i)
+                indp.time_resource_usage_curves(base_dir, damage_dir, i)
             print("Initializing network...")
             if infrastructure_data:
                 params["N"], _, _ = indp.initialize_network(base_dir=base_dir,
@@ -132,7 +132,7 @@ def batch_run(params, fail_sce_param):
 
 def run_indp_sample(layers):
     interdep_net = indp.initialize_sample_network(layers=layers)
-    params = {"NUM_ITERATIONS": 7, "OUTPUT_DIR": '../results/indp_sample_12Node_results',
+    params = {"NUM_ITERATIONS": 0, "OUTPUT_DIR": '../results/indp_sample_12Node_results',
               "V": {'': len(layers)}, "T": 1, "L": layers, "WINDOW_LENGTH": 1, "ALGORITHM": "INDP",
               "N": interdep_net, "MAGNITUDE": 0, "SIM_NUMBER": 0, 'DYNAMIC_PARAMS': None}
     indp.run_indp(params, layers=layers, T=params["T"], suffix="", save_model=True, print_cmd_line=True)
@@ -162,9 +162,9 @@ def run_jc_sample(layers, judge_types, auction_type, valuation_type):
     for jt, rst, vt in itertools.product(judge_types, auction_type, valuation_type):
         print('\n\nPlot restoration plan by JC', jt, rst, vt)
         if rst == 'UNIFORM':
-            indp.plot_indp_sample(params, folderSuffix='_' + jt + '_' + rst, suffix="real")
+            indp.plot_indp_sample(params, folder_suffix='_' + jt + '_' + rst, suffix="real")
         else:
-            indp.plot_indp_sample(params, folderSuffix='_' + jt + '_AUCTION_' + rst + '_' + vt, suffix="real")
+            indp.plot_indp_sample(params, folder_suffix='_' + jt + '_AUCTION_' + rst + '_' + vt, suffix="real")
         plt.show()
 
 
@@ -185,9 +185,9 @@ def run_game_sample(layers, judge_types, auction_type, valuation_type,
     for jt, rst, vt in itertools.product(judge_types, auction_type, valuation_type):
         print('\n\nPlot restoration plan by Game', jt, rst, vt)
         if rst == 'UNIFORM' or 'FIXED_LAYER':
-            indp.plot_indp_sample(params, folderSuffix='_' + jt + '_' + rst, suffix="")
+            indp.plot_indp_sample(params, folder_suffix='_' + jt + '_' + rst, suffix="")
         else:
-            indp.plot_indp_sample(params, folderSuffix='_' + jt + '_AUCTION_' + rst + '_' + vt, suffix="")
+            indp.plot_indp_sample(params, folder_suffix='_' + jt + '_AUCTION_' + rst + '_' + vt, suffix="")
         plt.show()
 
 
@@ -227,7 +227,7 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
     method : TYPE
         DESCRIPTION.
     judgment_type : str, optional
-        Type of Judgments in Judfment Call Method. The default is None.
+        Type of Judgments in Judgment Call Method. The default is None.
     res_alloc_type : str, optional
         Type of resource allocation method for resource allocation. The default is None.
     valuation_type : str, optional
@@ -290,9 +290,9 @@ def run_sample_problems():
     auction_type = ['UNIFORM']  # "MCA", "MAA", "MDA", "LAYER_FIXED"
     valuation_type = ["DTC"]
     judge_types = ["OPTIMISTIC"]  # "PESSIMISTIC",
-    # run_indp_sample(layers)
+    run_indp_sample(layers)
     # run_tdindp_sample(layers)
-    run_jc_sample(layers, judge_types, auction_type, valuation_type)
+    # run_jc_sample(layers, judge_types, auction_type, valuation_type)
     # run_game_sample(layers, judge_types, auction_type, valuation_type,
     #                 game_type="NORMALGAME", reduced_act='EDM')
     # run_game_sample(layers, judge_types, auction_type, valuation_type, game_type="BAYESGAME",

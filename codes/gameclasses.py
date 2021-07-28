@@ -266,7 +266,7 @@ class NormalGame:
                 flow_results = self.flow_problem(ac)
                 if flow_results:
                     if save_model:
-                        indp.save_INDP_model_to_file(flow_results[0], save_model[0],
+                        indp.save_indp_model_to_file(flow_results[0], save_model[0],
                                                      save_model[1], suffix=str(ac))
                     for idxl, l in enumerate(self.players):
                         # Minus sign because we want to minimize the cost

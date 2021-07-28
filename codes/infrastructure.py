@@ -414,7 +414,11 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
                 data = pd.read_csv(f, delimiter=',')
                 net = netNames[fname[:-5]]
                 for v in data.iterrows():
-                    n = InfrastructureNode(global_index, net, int(v[1]['ID']))
+                    try:
+                        node_id = v[1]['ID']
+                    except KeyError:
+                        node_id = v[1]['nodenwid']
+                    n = InfrastructureNode(global_index, net, int(node_id))
                     G.G.add_node((n.local_id, n.net_id), data={'inf_data': n})
                     global_index += 1
                     node_main_data = G.G.nodes[(n.local_id, n.net_id)]['data']['inf_data']
@@ -445,11 +449,17 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
                 data = pd.read_csv(f, delimiter=',')
                 net = netNames[fname[:-4]]
                 for v in data.iterrows():
+                    try:
+                        start_id = v[1]['Start Node']
+                        end_id = v[1]['End Node']
+                    except KeyError:
+                        start_id = v[1]['fromnode']
+                        end_id = v[1]['tonode']
                     for duplicate in range(2):
                         if duplicate == 0:
-                            a = InfrastructureArc(int(v[1]['Start Node']), int(v[1]['End Node']), net)
+                            a = InfrastructureArc(int(start_id), int(end_id), net)
                         elif duplicate == 1:
-                            a = InfrastructureArc(int(v[1]['End Node']), int(v[1]['Start Node']), net)
+                            a = InfrastructureArc(int(end_id), int(start_id), net)
                         G.G.add_edge((a.source, a.layer), (a.dest, a.layer), data={'inf_data': a})
                         arc_main_data = G.G[(a.source, a.layer)][(a.dest, a.layer)]['data']['inf_data']
                         arc_main_data.flow_cost = float(v[1]['c']) * cost_scale
@@ -573,8 +583,8 @@ def add_failure_scenario(G, DAM_DIR="../data/INDP_7-20-2015/", magnitude=6, v=3,
 
 def add_from_csv_failure_scenario(G, magnitude, sample, DAM_DIR=""):
     import csv
-    # print("Initiallize Random Damage...")
-    with open(DAM_DIR + '/' + str(magnitude) + '/Initial_node.csv') as csvfile:
+    # print("Initialize Random Damage...")
+    with open(DAM_DIR + 'Initial_node.csv') as csvfile:
         data = csv.reader(csvfile, delimiter=',')
         for row in data:
             rawN = row[0]
@@ -584,7 +594,7 @@ def add_from_csv_failure_scenario(G, magnitude, sample, DAM_DIR=""):
             G.G.nodes[n]['data']['inf_data'].functionality = state
             G.G.nodes[n]['data']['inf_data'].repaired = state
 
-    with open(DAM_DIR + '/' + str(magnitude) + '/Initial_link.csv') as csvfile:
+    with open(DAM_DIR + 'Initial_link.csv') as csvfile:
         data = csv.reader(csvfile, delimiter=',')
         for row in data:
             rawUV = row[0]

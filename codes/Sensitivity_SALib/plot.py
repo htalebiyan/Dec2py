@@ -18,7 +18,7 @@ def plot_radar(raw_data, row_titles, col_titles, suffix):
     # Initialise the spider plot
     ax = plt.subplot(1, 1, 1, polar=True)
     # Create a color palette:
-    my_palette = ['darkorange', 'forestgreen', 'crimson', 'midnightblue', 'c', 'k']
+    my_palette = ['darkorange', 'crimson', 'forestgreen', 'midnightblue', 'c', 'k']
     # correct labels
     labels = [x for x in row_titles]
     labels = [r'$R_c$' if x == 'Rc' else x for x in labels]

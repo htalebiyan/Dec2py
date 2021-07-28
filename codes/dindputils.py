@@ -122,7 +122,7 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
                     'Space Prep']
                 # Save models to file
                 if save_jc_model:
-                    indp.save_INDP_model_to_file(indp_results[0], obj.output_dir + "/Model",
+                    indp.save_indp_model_to_file(indp_results[0], obj.output_dir + "/Model",
                                                  i + 1, l)
                 # Modify network to account for recovery and calculate components.
                 indp.apply_recovery(obj.net, obj.results_judge, i + 1)
@@ -140,7 +140,7 @@ def run_judgment_call(params, save_jc=True, print_cmd=True, save_jc_model=False)
                 obj.results_real.extend(indp_results_real[1], t_offset=i + 1)
                 obj.correct_results_real(l, i + 1)
                 if save_jc_model:
-                    indp.save_INDP_model_to_file(indp_results_real[0], obj.output_dir + "/Model",
+                    indp.save_indp_model_to_file(indp_results_real[0], obj.output_dir + "/Model",
                                                  i + 1, l, suffix='real')
             # Calculate sum of costs
             obj.recal_result_sum(i + 1)
