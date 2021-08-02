@@ -9,7 +9,7 @@
     <meta property="article:modified_time" content="2021-07-28T17:54:29-05:00" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Infrastructure classes and functions &mdash; Dec2py a23feed documentation</title>
+  <title>Infrastructure classes and functions &mdash; Dec2py b1f3ae4 documentation</title>
   
 
   
@@ -70,7 +70,7 @@
             
             
               <div class="version">
-                0.4.2
+                0.4.3
               </div>
             
           
@@ -103,7 +103,12 @@
 <li class="toctree-l2"><a class="reference internal" href="runutils.html">High-level analysis modules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="indp.html">INDP optimization functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="indputils.html">INDP classes and functions</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Infrastructure classes and functions</a><ul class="simple">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Infrastructure classes and functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#functions-to-load-a-network-from-file">Functions to load a network from file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#functions-to-load-a-initial-damage-data-from-file">Functions to load a initial damage data from file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#classes-to-define-a-network-and-its-elements">Classes to define a network and its elements</a><ul class="simple">
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="dindputils.html">Judgment Call functions</a></li>
@@ -207,20 +212,637 @@
 </style>
 <section id="module-infrastructure">
 <span id="infrastructure-classes-and-functions"></span><h1>Infrastructure classes and functions<a class="headerlink" href="#module-infrastructure" title="Permalink to this headline">¶</a></h1>
+<section id="functions-to-load-a-network-from-file">
+<h2>Functions to load a network from file<a class="headerlink" href="#functions-to-load-a-network-from-file" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="infrastructure.load_infrastructure_data">
+<span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">load_infrastructure_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext_interdependency_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">magnitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'shelby_extended'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_commodity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.load_infrastructure_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function reads the infrastructure network from file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_dir</strong> (<em>str</em>) – The address of the folder where the basic network information (topology, parameters, etc.) are stored</p></li>
+<li><p><strong>ext_interdependency_dir</strong> (<em>str</em>) – (only for old format of input data) The address of the file where the interdependency data are stored. The
+default in None.</p></li>
+<li><p><strong>magnitude</strong> (<em>int</em>) – (only for old format of input data) Magnitude of the initial damage scenario. The default is 6.</p></li>
+<li><p><strong>sim_number</strong> (<em>int</em>) – (only for old format of input data) The simulation number. The default is 1.</p></li>
+<li><p><strong>cost_scale</strong> (<em>float</em>) – The factor by which all cost values has to multiplied. The default is 1.0.</p></li>
+<li><p><strong>data_format</strong> (<em>str</em>) – The format of input data, which is either “shelby_old” (consistent with the output format of Xpress optimizing
+software employed by Andres Gonzalez) or “shelby_extended” (which is devised by Hesam Talebiyan). The default
+is “shelby_extended”.</p></li>
+<li><p><strong>extra_commodity</strong> – (only for extended format of input data) List of extra-commodities in the analysis. The default is None, which
+only considers a main commodity.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>G</strong> – The networkx graph object that stores node, arc, and interdependency information</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>networkx.DiGraph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="infrastructure.load_infrastructure_array_format_extended">
+<span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">load_infrastructure_array_format_extended</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_commodity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.load_infrastructure_array_format_extended" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function reads the infrastructure network from file in the extended format</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_dir</strong> (<em>str</em>) – The address of the folder where the basic network information (topology, parameters, etc.) are stored</p></li>
+<li><p><strong>cost_scale</strong> (<em>float</em>) – The factor by which all cost values has to multiplied. The default is 1.0.</p></li>
+<li><p><strong>extra_commodity</strong> – (only for extended format of input data) List of extra-commodities in the analysis. The default is None, which
+only considers a main commodity.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>G</strong> – The networkx graph object that stores node, arc, and interdependency information</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>networkx.DiGraph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="infrastructure.load_synthetic_network">
+<span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">load_synthetic_network</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topology</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Random'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.load_synthetic_network" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function reads a synthetic network from file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_dir</strong> (<em>str</em>) – The address of the folder where the basic network information (topology, parameters, etc.) are stored</p></li>
+<li><p><strong>topology</strong> (<em>str</em>) – Topology of the layers of the synthetic network. The default in ‘Random’.</p></li>
+<li><p><strong>config</strong> (<em>int</em>) – Configuration number of the initial damage scenario. The default is 6.</p></li>
+<li><p><strong>sample</strong> (<em>int</em>) – Sample number of the initial damage scenario. The default is 0.</p></li>
+<li><p><strong>cost_scale</strong> (<em>float</em>) – The factor by which all cost values has to multiplied. The default is 1.0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>G</strong> (<em>networkx.DiGraph</em>) – The networkx graph object that stores node, arc, and interdependency information</p></li>
+<li><p><strong>no_resource</strong> (<em>int</em>) – Number of resources available for restoration</p></li>
+<li><p><em>list</em> – List of layers of the synthetic network</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="infrastructure.load_infrastructure_array_format">
+<span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">load_infrastructure_array_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext_interdependency_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">magnitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.load_infrastructure_array_format" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function reads the infrastructure network from file in the old format</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_dir</strong> (<em>str</em>) – The address of the folder where the basic network information (topology, parameters, etc.) are stored</p></li>
+<li><p><strong>ext_interdependency_dir</strong> (<em>str</em>) – The address of the file where the interdependency data are stored. The default in None.</p></li>
+<li><p><strong>magnitude</strong> (<em>int</em>) – Magnitude of the initial damage scenario. The default is 6.</p></li>
+<li><p><strong>sim_number</strong> (<em>int</em>) – The simulation number. The default is 1.</p></li>
+<li><p><strong>cost_scale</strong> (<em>float</em>) – The factor by which all cost values has to multiplied. The default is 1.0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>G</strong> – The networkx graph object that stores node, arc, and interdependency information</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>networkx.DiGraph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="infrastructure.load_interdependencies">
+<span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">load_interdependencies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">net_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_net_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'../data/INDP_4-12-2016'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.load_interdependencies" title="Permalink to this definition">¶</a></dt>
+<dd><p>(only for old format of input data) This function reads interdependency data from file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>net_number</strong> (<em>int</em>) – ID of the depender layer.</p></li>
+<li><p><strong>src_net_number</strong> (<em>int</em>) – ID of the dependee layer.</p></li>
+<li><p><strong>base_dir</strong> (<em>src</em>) – The address of the folder where the basic network information (topology, parameters, etc.) are stored</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>arcs</strong> – List of interdependencies as in arc format</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="functions-to-load-a-initial-damage-data-from-file">
+<h2>Functions to load a initial damage data from file<a class="headerlink" href="#functions-to-load-a-initial-damage-data-from-file" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="infrastructure.add_wu_failure_scenario">
+<span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">add_wu_failure_scenario</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">G</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dam_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_sce</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.add_wu_failure_scenario" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function reads initial damage data from file in the WU format, and apply it to the infrastructure network. The
+damage data for this dataset comes in a format similar to the hazard maps from Jason Wu <a class="bibtex reference internal" href="index.html#wu2017" id="id1">[Wu17]</a>, which
+consist of N sets (= samples) of M damage scenarios (= magnitudes). For shelby county, for example, N=50 and M=96.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>G</strong> (<em>networkx.DiGraph</em>) – The networkx graph object that stores node, arc, and interdependency information</p></li>
+<li><p><strong>dam_dir</strong> (<em>str</em>) – The address of the folder where the initial damage data are stored</p></li>
+<li><p><strong>no_set</strong> (<em>int</em>) – The number of the set of the initial damage scenario. The default is 0.</p></li>
+<li><p><strong>no_sce</strong> (<em>int</em>) – The number of the scenario of the initial damage scenario The default is 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="infrastructure.add_from_csv_failure_scenario">
+<span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">add_from_csv_failure_scenario</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">G</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dam_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.add_from_csv_failure_scenario" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function reads initial damage data from file in the from_csv format, and apply it to the infrastructure
+network. This format only consider one magnitude value (0), and there can be as many as samples form that magnitude.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>G</strong> (<em>networkx.DiGraph</em>) – The networkx graph object that stores node, arc, and interdependency information</p></li>
+<li><p><strong>sample</strong> (<em>int</em>) – Sample number of the initial damage scenario,</p></li>
+<li><p><strong>dam_dir</strong> (<em>str</em>) – The address of the folder where the initial damage data are stored</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="infrastructure.add_synthetic_failure_scenario">
+<span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">add_synthetic_failure_scenario</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">G</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dam_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topology</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Random'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.add_synthetic_failure_scenario" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function reads initial damage data from file for a synthetic network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>G</strong> (<em>networkx.DiGraph</em>) – The networkx graph object that stores node, arc, and interdependency information.</p></li>
+<li><p><strong>dam_dir</strong> (<em>str</em>) – The address of the folder where the initial damage data are stored.</p></li>
+<li><p><strong>topology</strong> (<em>str</em>) – Topology of the layers of the synthetic network. The default in ‘Random’.</p></li>
+<li><p><strong>config</strong> (<em>int</em>) – Configuration number of the initial damage scenario. The default is 6.</p></li>
+<li><p><strong>sample</strong> (<em>int</em>) – Sample number of the initial damage scenario. The default is 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="infrastructure.add_failure_scenario">
+<span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">add_failure_scenario</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">G</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dam_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">magnitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.add_failure_scenario" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function reads initial damage data from file in the ANDRES format, and apply it to the infrastructure network</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>G</strong> (<em>networkx.DiGraph</em>) – The networkx graph object that stores node, arc, and interdependency information</p></li>
+<li><p><strong>dam_dir</strong> (<em>str</em>) – The address of the folder where the initial damage data are stored</p></li>
+<li><p><strong>magnitude</strong> (<em>int</em>) – Magnitude of the initial damage scenario. The default is 6.</p></li>
+<li><p><strong>v</strong> (<em>int</em>) – Number of the resources in the analysis. The default is 3.</p></li>
+<li><p><strong>sim_number</strong> (<em>int</em>) – The simulation number. The default is 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="classes-to-define-a-network-and-its-elements">
+<h2>Classes to define a network and its elements<a class="headerlink" href="#classes-to-define-a-network-and-its-elements" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="infrastructure.InfrastructureNetwork">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">InfrastructureNetwork</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.InfrastructureNetwork" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stores information of the infrastructure network</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="infrastructure.InfrastructureNetwork.to_gamefile">
-<span class="sig-name descname"><span class="pre">to_gamefile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">3]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.InfrastructureNetwork.to_gamefile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Used for multidefender security games.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNetwork.G">
+<span class="sig-name descname"><span class="pre">G</span></span><a class="headerlink" href="#infrastructure.InfrastructureNetwork.G" title="Permalink to this definition">¶</a></dt>
+<dd><p>The networkx graph object that stores node, arc, and interdependency information</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>networkx.DiGraph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNetwork.S">
+<span class="sig-name descname"><span class="pre">S</span></span><a class="headerlink" href="#infrastructure.InfrastructureNetwork.S" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of geographical spaces on which the network lays</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNetwork.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#infrastructure.InfrastructureNetwork.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Id of the network</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNode">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">InfrastructureNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">net_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.InfrastructureNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class models a node in an infrastructure network</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNode.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#infrastructure.InfrastructureNode.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Node id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNode.net_id">
+<span class="sig-name descname"><span class="pre">net_id</span></span><a class="headerlink" href="#infrastructure.InfrastructureNode.net_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>The id of the layer of the network to which the node belong</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNode.local_id">
+<span class="sig-name descname"><span class="pre">local_id</span></span><a class="headerlink" href="#infrastructure.InfrastructureNode.local_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Local node id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNode.failure_probability">
+<span class="sig-name descname"><span class="pre">failure_probability</span></span><a class="headerlink" href="#infrastructure.InfrastructureNode.failure_probability" title="Permalink to this definition">¶</a></dt>
+<dd><p>Failure probability of the node</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNode.functionality">
+<span class="sig-name descname"><span class="pre">functionality</span></span><a class="headerlink" href="#infrastructure.InfrastructureNode.functionality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Functionality state of the node</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNode.repaired">
+<span class="sig-name descname"><span class="pre">repaired</span></span><a class="headerlink" href="#infrastructure.InfrastructureNode.repaired" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the node is repaired or not</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNode.reconstruction_cost">
+<span class="sig-name descname"><span class="pre">reconstruction_cost</span></span><a class="headerlink" href="#infrastructure.InfrastructureNode.reconstruction_cost" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reconstruction cost of the node</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNode.oversupply_penalty">
+<span class="sig-name descname"><span class="pre">oversupply_penalty</span></span><a class="headerlink" href="#infrastructure.InfrastructureNode.oversupply_penalty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Penalty per supply unit  of the main commodity that is not used for the the node</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNode.undersupply_penalty">
+<span class="sig-name descname"><span class="pre">undersupply_penalty</span></span><a class="headerlink" href="#infrastructure.InfrastructureNode.undersupply_penalty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Penalty per demand unit  of the main commodity that is not satisfied for the the node</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNode.demand">
+<span class="sig-name descname"><span class="pre">demand</span></span><a class="headerlink" href="#infrastructure.InfrastructureNode.demand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Demand or supply value of the main commodity assigned to the node</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNode.space">
+<span class="sig-name descname"><span class="pre">space</span></span><a class="headerlink" href="#infrastructure.InfrastructureNode.space" title="Permalink to this definition">¶</a></dt>
+<dd><p>The id of the geographical space where the node is</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNode.resource_usage">
+<span class="sig-name descname"><span class="pre">resource_usage</span></span><a class="headerlink" href="#infrastructure.InfrastructureNode.resource_usage" title="Permalink to this definition">¶</a></dt>
+<dd><p>The dictionary that shows how many resource (of each resource type) is employed to repair the node</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureNode.extra_com">
+<span class="sig-name descname"><span class="pre">extra_com</span></span><a class="headerlink" href="#infrastructure.InfrastructureNode.extra_com" title="Permalink to this definition">¶</a></dt>
+<dd><p>The dictionary that shows demand, oversupply_penalty, and undersupply_penalty corresponding to commodities
+other than the main commodity</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureArc">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">InfrastructureArc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_interdep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.InfrastructureArc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class models an arc in an infrastructure network</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureArc.source">
+<span class="sig-name descname"><span class="pre">source</span></span><a class="headerlink" href="#infrastructure.InfrastructureArc.source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start (or head) node id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureArc.dest">
+<span class="sig-name descname"><span class="pre">dest</span></span><a class="headerlink" href="#infrastructure.InfrastructureArc.dest" title="Permalink to this definition">¶</a></dt>
+<dd><p>End (or tail) node id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureArc.layer">
+<span class="sig-name descname"><span class="pre">layer</span></span><a class="headerlink" href="#infrastructure.InfrastructureArc.layer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The id of the layer of the network to which the arc belong</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureArc.failure_probability">
+<span class="sig-name descname"><span class="pre">failure_probability</span></span><a class="headerlink" href="#infrastructure.InfrastructureArc.failure_probability" title="Permalink to this definition">¶</a></dt>
+<dd><p>Failure probability of the arc</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureArc.functionality">
+<span class="sig-name descname"><span class="pre">functionality</span></span><a class="headerlink" href="#infrastructure.InfrastructureArc.functionality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Functionality state of the node</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureArc.repaired">
+<span class="sig-name descname"><span class="pre">repaired</span></span><a class="headerlink" href="#infrastructure.InfrastructureArc.repaired" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the arc is repaired or not</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureArc.flow_cost">
+<span class="sig-name descname"><span class="pre">flow_cost</span></span><a class="headerlink" href="#infrastructure.InfrastructureArc.flow_cost" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unit cost of sending the main commodity through the arc</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureArc.reconstruction_cost">
+<span class="sig-name descname"><span class="pre">reconstruction_cost</span></span><a class="headerlink" href="#infrastructure.InfrastructureArc.reconstruction_cost" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reconstruction cost of the arc</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureArc.capacity">
+<span class="sig-name descname"><span class="pre">capacity</span></span><a class="headerlink" href="#infrastructure.InfrastructureArc.capacity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum volume of the commodities that the arc can carry</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureArc.space">
+<span class="sig-name descname"><span class="pre">space</span></span><a class="headerlink" href="#infrastructure.InfrastructureArc.space" title="Permalink to this definition">¶</a></dt>
+<dd><p>The id of the geographical space where the arc is</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureArc.resource_usage">
+<span class="sig-name descname"><span class="pre">resource_usage</span></span><a class="headerlink" href="#infrastructure.InfrastructureArc.resource_usage" title="Permalink to this definition">¶</a></dt>
+<dd><p>The dictionary that shows how many resource (of each resource type) is employed to repair the arc</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureArc.extra_com">
+<span class="sig-name descname"><span class="pre">extra_com</span></span><a class="headerlink" href="#infrastructure.InfrastructureArc.extra_com" title="Permalink to this definition">¶</a></dt>
+<dd><p>The dictionary that shows flow_cost corresponding to commodities other than the main commodity</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureArc.is_interdep">
+<span class="sig-name descname"><span class="pre">is_interdep</span></span><a class="headerlink" href="#infrastructure.InfrastructureArc.is_interdep" title="Permalink to this definition">¶</a></dt>
+<dd><p>If arc represent a normal arc (that carry commodity within a single layer) or physical interdependency between
+nodes from different layers</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureInterdepArc">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">InfrastructureInterdepArc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.InfrastructureInterdepArc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class models a physical interdependency between nodes from two different layers. This class inherits from
+<a class="reference internal" href="#infrastructure.InfrastructureArc" title="infrastructure.InfrastructureArc"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfrastructureArc</span></code></a>, where <cite>source</cite> attributes corresponds to the dependee node, and <cite>dest</cite> corresponds to
+the depender node. The depender node is non-functional if the corresponding dependee node is non-functional.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureInterdepArc.source_layer">
+<span class="sig-name descname"><span class="pre">source_layer</span></span><a class="headerlink" href="#infrastructure.InfrastructureInterdepArc.source_layer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The id of the layer where the dependee node is</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureInterdepArc.dest_layer">
+<span class="sig-name descname"><span class="pre">dest_layer</span></span><a class="headerlink" href="#infrastructure.InfrastructureInterdepArc.dest_layer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The id of the layer where the depender node is</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureInterdepArc.gamma">
+<span class="sig-name descname"><span class="pre">gamma</span></span><a class="headerlink" href="#infrastructure.InfrastructureInterdepArc.gamma" title="Permalink to this definition">¶</a></dt>
+<dd><p>The strength of the dependency, which is a number between 0 and 1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureSpace">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">InfrastructureSpace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.InfrastructureSpace" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class models a geographical space.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureSpace.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#infrastructure.InfrastructureSpace.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>The id of the space</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="infrastructure.InfrastructureSpace.cost">
+<span class="sig-name descname"><span class="pre">cost</span></span><a class="headerlink" href="#infrastructure.InfrastructureSpace.cost" title="Permalink to this definition">¶</a></dt>
+<dd><p>The cost of preparing the space for a repair action</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
 
 <div class="toctree-wrapper compound">
 </div>
+</section>
 </section>
 
 
@@ -237,7 +859,7 @@
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, SISRRA.
+        &#169; Copyright 2021, SISRRA, Hesam Talebiyan.
       <span class="lastupdated">
         Last updated on Jul 28, 2021.
       </span>

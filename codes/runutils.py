@@ -98,16 +98,15 @@ def batch_run(params, fail_sce_param):
                 dyn_dmnd = dislocationutils.create_dynamic_param(params, N=params["N"], T=params["NUM_ITERATIONS"])
                 params['DYNAMIC_PARAMS']['DEMAND_DATA'] = dyn_dmnd
             if fail_sce_param['TYPE'] == 'WU':
-                indp.add_wu_failure_scenario(params["N"], DAM_DIR=damage_dir,
-                                             noSet=i, noSce=m)
+                indp.add_wu_failure_scenario(params["N"], dam_dir=damage_dir,
+                                             no_set=i, no_sce=m)
             elif fail_sce_param['TYPE'] == 'ANDRES':
-                indp.add_failure_scenario(params["N"], DAM_DIR=damage_dir,
+                indp.add_failure_scenario(params["N"], dam_dir=damage_dir,
                                           magnitude=m, v=params["V"], sim_number=i)
             elif fail_sce_param['TYPE'] == 'from_csv':
-                indp.add_from_csv_failure_scenario(params["N"], DAM_DIR=damage_dir,
-                                                   magnitude=m, sample=i)
+                indp.add_from_csv_failure_scenario(params["N"], sample=i, dam_dir=damage_dir)
             elif fail_sce_param['TYPE'] == 'synthetic':
-                indp.add_synthetic_failure_scenario(params["N"], DAM_DIR=base_dir,
+                indp.add_synthetic_failure_scenario(params["N"], dam_dir=base_dir,
                                                     topology=topology, config=m, sample=i)
 
             if params["ALGORITHM"] == "INDP":

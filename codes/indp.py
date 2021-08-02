@@ -772,7 +772,7 @@ def initialize_network(base_dir="../data/INDP_7-20-2015/", external_interdepende
                                                 sim_number=sim_number, cost_scale=cost_scale, magnitude=magnitude, v=v,
                                                 data_format=infrastructure_data, extra_commodity=extra_commodity)
     else:
-        interdep_net, v_temp, layers_temp = load_synthetic_network(BASE_DIR=base_dir, topology=topology,
+        interdep_net, v_temp, layers_temp = load_synthetic_network(base_dir=base_dir, topology=topology,
                                                                    config=magnitude, sample=sample,
                                                                    cost_scale=cost_scale)
     return interdep_net, {'': v_temp}, layers_temp
@@ -1274,7 +1274,7 @@ def time_resource_usage_curves(base_dir, damage_dir, sample_num):
                     node_data.loc[v[0], 'p_time'] = rep_time if rep_time > 0 else 0
                     node_data.loc[v[0], 'p_budget'] = repair_cost
                     node_data.loc[v[0], 'q'] = repair_cost
-                node_data.to_csv(base_dir + file, sep=',', index=False)
+                node_data.to_csv(base_dir + file)
 
     for file in files:
         fname = file[0:-4]
@@ -1326,4 +1326,4 @@ def time_resource_usage_curves(base_dir, damage_dir, sample_num):
                     data.loc[v[0], 'h_time'] = float(rep_time)
                     data.loc[v[0], 'h_budget'] = repair_cost
                     data.loc[v[0], 'f'] = repair_cost
-                data.to_csv(base_dir + file, sep=',', index=False)
+                data.to_csv(base_dir + file)

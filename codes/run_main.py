@@ -116,8 +116,8 @@ dataset. This dictionary should have the following items:
     Here, the range of magnitudes in the analysis is set by `MAGS`, and for each magnitude,
     the range of analyzed samples is set by `SAMPLE_RANGE`.
     * **WU**: this is the new format that is designed by Hesam Talebiyan and
-    used in the Shelby County data paper [cite]. The damage data for this dataset comes
-    in a format similar to the hazard maps from Jason Wu [cite], which consist of N
+    used in the Shelby County data paper :cite:`Talebiyan2021`. The damage data for this dataset comes
+    in a format similar to the hazard maps from Jason Wu :cite:`Wu2017`, which consist of N
     sets (`SAMPLE_RANGE`) of M damage scenarios (`MAGS`). For shelby county, for example,
     N=50 and M=96. To use this format, set the dictionary to:<br>
     `{'TYPE':"WU", 'SAMPLE_RANGE':range(50), 'MAGS':range(96),'FILTER_SCE':FILTER_SCE,

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Index &mdash; Dec2py a23feed documentation</title>
+  <title>Index &mdash; Dec2py b1f3ae4 documentation</title>
   
 
   
@@ -66,7 +66,7 @@
             
             
               <div class="version">
-                0.4.2
+                0.4.3
               </div>
             
           
@@ -193,10 +193,18 @@
 </li>
       <li><a href="gameclasses.html#gameclasses.NormalGame.actions_reduced">actions_reduced (gameclasses.NormalGame attribute)</a>
 </li>
-      <li><a href="gameutils.html#gameutils.analyze_NE">analyze_NE() (in module gameutils)</a>
+      <li><a href="infrastructure.html#infrastructure.add_failure_scenario">add_failure_scenario() (in module infrastructure)</a>
+</li>
+      <li><a href="infrastructure.html#infrastructure.add_from_csv_failure_scenario">add_from_csv_failure_scenario() (in module infrastructure)</a>
+</li>
+      <li><a href="infrastructure.html#infrastructure.add_synthetic_failure_scenario">add_synthetic_failure_scenario() (in module infrastructure)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="infrastructure.html#infrastructure.add_wu_failure_scenario">add_wu_failure_scenario() (in module infrastructure)</a>
+</li>
+      <li><a href="gameutils.html#gameutils.analyze_NE">analyze_NE() (in module gameutils)</a>
+</li>
       <li><a href="indp.html#indp.apply_recovery">apply_recovery() (in module indp)</a>
 </li>
       <li><a href="dindpclasses.html#dindpclasses.AuctionModel.auction_resources">auction_resources() (dindpclasses.AuctionModel method)</a>
@@ -229,6 +237,8 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureArc.capacity">capacity (infrastructure.InfrastructureArc attribute)</a>
+</li>
       <li><a href="gameclasses.html#gameclasses.NormalGame.choose_equilibrium">choose_equilibrium() (gameclasses.NormalGame method)</a>
 </li>
       <li><a href="gameclasses.html#gameclasses.NormalGame.chosen_equilibrium">chosen_equilibrium (gameclasses.NormalGame attribute)</a>
@@ -245,6 +255,8 @@
 </li>
       <li><a href="dindpclasses.html#dindpclasses.JcModel.correct_results_real">correct_results_real() (dindpclasses.JcModel method)</a>
 </li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureSpace.cost">cost (infrastructure.InfrastructureSpace attribute)</a>
+</li>
       <li><a href="gameclasses.html#gameclasses.BayesianGame.create_bayesian_players">create_bayesian_players() (gameclasses.BayesianGame method)</a>
 </li>
       <li><a href="indp.html#indp.create_functionality_matrix">create_functionality_matrix() (in module indp)</a>
@@ -257,9 +269,17 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureNode.demand">demand (infrastructure.InfrastructureNode attribute)</a>
+</li>
       <li><a href="dindpclasses.html#dindpclasses.JudgmentModel.demand_based_priority_list">demand_based_priority_list() (dindpclasses.JudgmentModel static method)</a>
 </li>
       <li><a href="gameclasses.html#gameclasses.NormalGame.dependee_nodes">dependee_nodes (gameclasses.NormalGame attribute)</a>
+</li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureArc.dest">dest (infrastructure.InfrastructureArc attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureInterdepArc.dest_layer">dest_layer (infrastructure.InfrastructureInterdepArc attribute)</a>
 </li>
       <li>
     dindpclasses
@@ -268,8 +288,6 @@
         <li><a href="dindpclasses.html#module-dindpclasses">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     dindputils
 
@@ -290,10 +308,16 @@
         <li><a href="indp.html#index-0">solution_pool</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gameclasses.html#gameclasses.InfrastructureGame.equib_alg">equib_alg (gameclasses.InfrastructureGame attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureArc.extra_com">extra_com (infrastructure.InfrastructureArc attribute)</a>
+
+      <ul>
+        <li><a href="infrastructure.html#infrastructure.InfrastructureNode.extra_com">(infrastructure.InfrastructureNode attribute)</a>
+</li>
+      </ul></li>
       <li><a href="gameclasses.html#gameclasses.GameSolution.extract_solution">extract_solution() (gameclasses.GameSolution method)</a>
 </li>
   </ul></td>
@@ -302,16 +326,30 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureArc.failure_probability">failure_probability (infrastructure.InfrastructureArc attribute)</a>
+
+      <ul>
+        <li><a href="infrastructure.html#infrastructure.InfrastructureNode.failure_probability">(infrastructure.InfrastructureNode attribute)</a>
+</li>
+      </ul></li>
       <li><a href="gameclasses.html#gameclasses.NormalGame.find_actions">find_actions() (gameclasses.NormalGame method)</a>
 </li>
       <li><a href="gameclasses.html#gameclasses.NormalGame.find_optimal_solution">find_optimal_solution() (gameclasses.NormalGame method)</a>
 </li>
+      <li><a href="gameclasses.html#gameclasses.NormalGame.first_actions">first_actions (gameclasses.NormalGame attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="gameclasses.html#gameclasses.NormalGame.first_actions">first_actions (gameclasses.NormalGame attribute)</a>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureArc.flow_cost">flow_cost (infrastructure.InfrastructureArc attribute)</a>
 </li>
       <li><a href="gameclasses.html#gameclasses.NormalGame.flow_problem">flow_problem() (gameclasses.NormalGame method)</a>
 </li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureArc.functionality">functionality (infrastructure.InfrastructureArc attribute)</a>
+
+      <ul>
+        <li><a href="infrastructure.html#infrastructure.InfrastructureNode.functionality">(infrastructure.InfrastructureNode attribute)</a>
+</li>
+      </ul></li>
       <li><a href="gameclasses.html#gameclasses.BayesianGame.fundamental_types">fundamental_types (gameclasses.BayesianGame attribute)</a>
 </li>
   </ul></td>
@@ -320,6 +358,8 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureNetwork.G">G (infrastructure.InfrastructureNetwork attribute)</a>
+</li>
       <li><a href="gameclasses.html#gameclasses.GameSolution.gambit_sol">gambit_sol (gameclasses.GameSolution attribute)</a>
 </li>
       <li><a href="gameclasses.html#gameclasses.InfrastructureGame.game_type">game_type (gameclasses.InfrastructureGame attribute)</a>
@@ -342,6 +382,8 @@
         <li><a href="gameutils.html#module-gameutils">module</a>
 </li>
       </ul></li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureInterdepArc.gamma">gamma (infrastructure.InfrastructureInterdepArc attribute)</a>
+</li>
       <li><a href="dindputils.html#dindputils.generate_combinations">generate_combinations() (in module dindputils)</a>
 </li>
       <li><a href="indp.html#indp.get_resource_suffix">get_resource_suffix() (in module indp)</a>
@@ -353,7 +395,15 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="dindpclasses.html#dindpclasses.JcModel.id">id (dindpclasses.JcModel attribute)</a>
+
+      <ul>
+        <li><a href="infrastructure.html#infrastructure.InfrastructureNetwork.id">(infrastructure.InfrastructureNetwork attribute)</a>
 </li>
+        <li><a href="infrastructure.html#infrastructure.InfrastructureNode.id">(infrastructure.InfrastructureNode attribute)</a>
+</li>
+        <li><a href="infrastructure.html#infrastructure.InfrastructureSpace.id">(infrastructure.InfrastructureSpace attribute)</a>
+</li>
+      </ul></li>
       <li>
     indp
 
@@ -383,13 +433,23 @@
         <li><a href="infrastructure.html#module-infrastructure">module</a>
 </li>
       </ul></li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureArc">InfrastructureArc (class in infrastructure)</a>
+</li>
       <li><a href="gameclasses.html#gameclasses.InfrastructureGame">InfrastructureGame (class in gameclasses)</a>
 </li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureInterdepArc">InfrastructureInterdepArc (class in infrastructure)</a>
+</li>
       <li><a href="infrastructure.html#infrastructure.InfrastructureNetwork">InfrastructureNetwork (class in infrastructure)</a>
+</li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureNode">InfrastructureNode (class in infrastructure)</a>
+</li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureSpace">InfrastructureSpace (class in infrastructure)</a>
 </li>
       <li><a href="indp.html#indp.initialize_network">initialize_network() (in module indp)</a>
 </li>
       <li><a href="indp.html#indp.initialize_sample_network">initialize_sample_network() (in module indp)</a>
+</li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureArc.is_interdep">is_interdep (infrastructure.InfrastructureArc attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -413,9 +473,23 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gameclasses.html#gameclasses.BayesianGame.label_actions">label_actions() (gameclasses.BayesianGame method)</a>
 </li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureArc.layer">layer (infrastructure.InfrastructureArc attribute)</a>
+</li>
+      <li><a href="gameclasses.html#gameclasses.InfrastructureGame.layers">layers (gameclasses.InfrastructureGame attribute)</a>
+</li>
+      <li><a href="infrastructure.html#infrastructure.load_infrastructure_array_format">load_infrastructure_array_format() (in module infrastructure)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="gameclasses.html#gameclasses.InfrastructureGame.layers">layers (gameclasses.InfrastructureGame attribute)</a>
+      <li><a href="infrastructure.html#infrastructure.load_infrastructure_array_format_extended">load_infrastructure_array_format_extended() (in module infrastructure)</a>
+</li>
+      <li><a href="infrastructure.html#infrastructure.load_infrastructure_data">load_infrastructure_data() (in module infrastructure)</a>
+</li>
+      <li><a href="infrastructure.html#infrastructure.load_interdependencies">load_interdependencies() (in module infrastructure)</a>
+</li>
+      <li><a href="infrastructure.html#infrastructure.load_synthetic_network">load_synthetic_network() (in module infrastructure)</a>
+</li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureNode.local_id">local_id (infrastructure.InfrastructureNode attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -460,6 +534,8 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureNode.net_id">net_id (infrastructure.InfrastructureNode attribute)</a>
+</li>
       <li><a href="gameclasses.html#gameclasses.NormalGame">NormalGame (class in gameclasses)</a>
 </li>
       <li><a href="gameclasses.html#gameclasses.NormalGame.normgame">normgame (gameclasses.NormalGame attribute)</a>
@@ -482,6 +558,8 @@
         <li><a href="gameclasses.html#gameclasses.InfrastructureGame.output_dir">(gameclasses.InfrastructureGame attribute)</a>
 </li>
       </ul></li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureNode.oversupply_penalty">oversupply_penalty (infrastructure.InfrastructureNode attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -518,8 +596,20 @@
 </li>
       <li><a href="dindpclasses.html#dindpclasses.JcModel.recal_result_sum">recal_result_sum() (dindpclasses.JcModel method)</a>
 </li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureArc.reconstruction_cost">reconstruction_cost (infrastructure.InfrastructureArc attribute)</a>
+
+      <ul>
+        <li><a href="infrastructure.html#infrastructure.InfrastructureNode.reconstruction_cost">(infrastructure.InfrastructureNode attribute)</a>
+</li>
+      </ul></li>
       <li><a href="dindputils.html#dindputils.relative_performance">relative_performance() (in module dindputils)</a>
 </li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureArc.repaired">repaired (infrastructure.InfrastructureArc attribute)</a>
+
+      <ul>
+        <li><a href="infrastructure.html#infrastructure.InfrastructureNode.repaired">(infrastructure.InfrastructureNode attribute)</a>
+</li>
+      </ul></li>
       <li><a href="gameclasses.html#gameclasses.InfrastructureGame.res_alloc_type">res_alloc_type (gameclasses.InfrastructureGame attribute)</a>
 </li>
       <li><a href="dindpclasses.html#dindpclasses.JcModel.resource">resource (dindpclasses.JcModel attribute)</a>
@@ -528,6 +618,14 @@
         <li><a href="gameclasses.html#gameclasses.InfrastructureGame.resource">(gameclasses.InfrastructureGame attribute)</a>
 </li>
       </ul></li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureArc.resource_usage">resource_usage (infrastructure.InfrastructureArc attribute)</a>
+
+      <ul>
+        <li><a href="infrastructure.html#infrastructure.InfrastructureNode.resource_usage">(infrastructure.InfrastructureNode attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="dindpclasses.html#dindpclasses.ResourceModel">ResourceModel (class in dindpclasses)</a>
 </li>
       <li><a href="gameclasses.html#gameclasses.InfrastructureGame.results">results (gameclasses.InfrastructureGame attribute)</a>
@@ -538,8 +636,6 @@
         <li><a href="gameutils.html#gameutils.run_game">(in module gameutils)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="runutils.html#runutils.run_game_sample">run_game_sample() (in module runutils)</a>
 </li>
       <li><a href="indp.html#indp.run_indp">run_indp() (in module indp)</a>
@@ -571,6 +667,8 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureNetwork.S">S (infrastructure.InfrastructureNetwork attribute)</a>
+</li>
       <li><a href="gameclasses.html#gameclasses.InfrastructureGame.sample">sample (gameclasses.InfrastructureGame attribute)</a>
 </li>
       <li><a href="indp.html#indp.save_indp_model_to_file">save_indp_model_to_file() (in module indp)</a>
@@ -607,10 +705,10 @@
         <li><a href="gameclasses.html#gameclasses.InfrastructureGame.set_out_dir">(gameclasses.InfrastructureGame method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gameclasses.html#gameclasses.InfrastructureGame.set_payoff_dir">set_payoff_dir() (gameclasses.InfrastructureGame method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="dindpclasses.html#dindpclasses.AuctionModel.set_resource_unit">set_resource_unit() (dindpclasses.AuctionModel method)</a>
 </li>
       <li><a href="gameclasses.html#gameclasses.BayesianGame.set_states">set_states() (gameclasses.BayesianGame method)</a>
@@ -635,6 +733,16 @@
 </li>
       <li><a href="gameclasses.html#gameclasses.NormalGame.solving_time">solving_time (gameclasses.NormalGame attribute)</a>
 </li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureArc.source">source (infrastructure.InfrastructureArc attribute)</a>
+</li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureInterdepArc.source_layer">source_layer (infrastructure.InfrastructureInterdepArc attribute)</a>
+</li>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureArc.space">space (infrastructure.InfrastructureArc attribute)</a>
+
+      <ul>
+        <li><a href="infrastructure.html#infrastructure.InfrastructureNode.space">(infrastructure.InfrastructureNode attribute)</a>
+</li>
+      </ul></li>
       <li><a href="gameclasses.html#gameclasses.BayesianGame.states">states (gameclasses.BayesianGame attribute)</a>
 </li>
       <li><a href="gameclasses.html#gameclasses.BayesianGame.states_payoffs">states_payoffs (gameclasses.BayesianGame attribute)</a>
@@ -651,8 +759,6 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="infrastructure.html#infrastructure.InfrastructureNetwork.to_gamefile">to_gamefile() (infrastructure.InfrastructureNetwork method)</a>
-</li>
       <li><a href="dindputils.html#dindputils.trapz_int">trapz_int() (in module dindputils)</a>
 </li>
       <li><a href="gameclasses.html#gameclasses.BayesianGame.types">types (gameclasses.BayesianGame attribute)</a>
@@ -662,6 +768,10 @@
 
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="infrastructure.html#infrastructure.InfrastructureNode.undersupply_penalty">undersupply_penalty (infrastructure.InfrastructureNode attribute)</a>
+</li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="dindputils.html#dindputils.update_progress">update_progress() (in module dindputils)</a>
 </li>
@@ -691,7 +801,7 @@
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, SISRRA.
+        &#169; Copyright 2021, SISRRA, Hesam Talebiyan.
 
     </p>
   </div>

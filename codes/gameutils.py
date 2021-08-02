@@ -247,4 +247,4 @@ def run_inrg(params, layers=[1, 2, 3], validate=False, player_ordering=[3, 1], s
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     for P in layers:
-        player_strategies[P].to_csv(output_dir, params["SIM_NUMBER"], suffix="P" + str(P) + "_" + suffix)
+        player_strategies[P].to_csv(params["SIM_NUMBER"])

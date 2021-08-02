@@ -20,11 +20,11 @@ version: 2
 # -- Project information -----------------------------------------------------
 
 project = 'Dec2py'
-copyright = '2021, SISRRA'
+copyright = '2021, SISRRA, Hesam Talebiyan'
 author = 'Hesam Talebiyan'
 
 # The full version, including alpha/beta/rc tags
-version = '0.4.2'
+version = '0.4.3'
 release = version
 
 

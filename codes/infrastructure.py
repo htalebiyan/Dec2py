@@ -1,5 +1,5 @@
 import networkx as nx
-import indputils
+import csv
 import re
 import string
 import numpy as np
@@ -10,6 +10,39 @@ import warnings
 
 
 class InfrastructureNode(object):
+    """
+    This class models a node in an infrastructure network
+
+    Attributes
+    ----------
+    id : int
+        Node id
+    net_id : int
+        The id of the layer of the network to which the node belong
+    local_id : int
+        Local node id
+    failure_probability : float
+        Failure probability of the node
+    functionality : bool
+        Functionality state of the node
+    repaired : bool
+        If the node is repaired or not
+    reconstruction_cost : float
+        Reconstruction cost of the node
+    oversupply_penalty : float
+        Penalty per supply unit  of the main commodity that is not used for the the node
+    undersupply_penalty : float
+        Penalty per demand unit  of the main commodity that is not satisfied for the the node
+    demand : float
+        Demand or supply value of the main commodity assigned to the node
+    space : int
+        The id of the geographical space where the node is
+    resource_usage : dict
+        The dictionary that shows how many resource (of each resource type) is employed to repair the node
+    extra_com : dict
+        The dictionary that shows demand, oversupply_penalty, and undersupply_penalty corresponding to commodities
+        other than the main commodity
+    """
     def __init__(self, id, net_id, local_id=""):
         self.id = id
         self.net_id = net_id
@@ -28,17 +61,69 @@ class InfrastructureNode(object):
         self.extra_com = {}
 
     def set_failure_probability(self, failure_probability):
+        """
+        This function sets the failure probability of the node
+
+        Parameters
+        ----------
+        failure_probability : float
+            Assigned failure probability of node
+
+        Returns
+        -------
+        None.
+
+        """
         self.failure_probability = failure_probability
 
     def set_extra_commodity(self, extra_commodity):
+        """
+        This function initialize the dictionary for the extra commodities
+
+        Parameters
+        ----------
+        extra_commodity : list
+            List of extra commodities
+
+        Returns
+        -------
+        None.
+
+        """
         for l in extra_commodity:
             self.extra_com[l] = {'demand': 0, 'oversupply_penalty': 0, 'undersupply_penalty': 0}
 
     def set_resource_usage(self, resource_names):
+        """
+        This function initialize the dictionary for resource usage per all resource types in the analysis
+
+        Parameters
+        ----------
+        resource_names : list
+            List of resource types
+
+        Returns
+        -------
+        None.
+
+        """
         for rc in resource_names:
             self.resource_usage[rc] = 0
 
     def in_space(self, space_id):
+        """
+        This function checks if the node is in a given space or not
+
+        Parameters
+        ----------
+        space_id :
+            The id of the space that is checked
+
+        Returns
+        -------
+            : bool
+            Returns 1 if the node is in the space, and 0 otherwise.
+        """
         if self.space == space_id:
             return 1
         else:
@@ -46,6 +131,39 @@ class InfrastructureNode(object):
 
 
 class InfrastructureArc(object):
+    """
+    This class models an arc in an infrastructure network
+
+    Attributes
+    ----------
+    source : int
+        Start (or head) node id
+    dest : int
+        End (or tail) node id
+    layer : int
+        The id of the layer of the network to which the arc belong
+    failure_probability : float
+        Failure probability of the arc
+    functionality : bool
+        Functionality state of the node
+    repaired : bool
+        If the arc is repaired or not
+    flow_cost : float
+        Unit cost of sending the main commodity through the arc
+    reconstruction_cost : float
+        Reconstruction cost of the arc
+    capacity : float
+        Maximum volume of the commodities that the arc can carry
+    space : int
+        The id of the geographical space where the arc is
+    resource_usage : dict
+        The dictionary that shows how many resource (of each resource type) is employed to repair the arc
+    extra_com : dict
+        The dictionary that shows flow_cost corresponding to commodities other than the main commodity
+    is_interdep : bool
+        If arc represent a normal arc (that carry commodity within a single layer) or physical interdependency between
+        nodes from different layers
+    """
     def __init__(self, source, dest, layer, is_interdep=False):
         self.source = source
         self.dest = dest
@@ -62,14 +180,53 @@ class InfrastructureArc(object):
         self.is_interdep = is_interdep
 
     def set_extra_commodity(self, extra_commodity):
+        """
+        This function initialize the dictionary for the extra commodities
+
+        Parameters
+        ----------
+        extra_commodity : list
+            List of extra commodities
+
+        Returns
+        -------
+        None.
+
+        """
         for l in extra_commodity:
             self.extra_com[l] = {'flow_cost': 0}
 
     def set_resource_usage(self, resource_names):
+        """
+        This function initialize the dictionary for resource usage per all resource types in the analysis
+
+        Parameters
+        ----------
+        resource_names : list
+            List of resource types
+
+        Returns
+        -------
+        None.
+
+        """
         for rc in resource_names:
             self.resource_usage[rc] = 0
 
     def in_space(self, space_id):
+        """
+        This function checks if the arc is in a given space or not
+
+        Parameters
+        ----------
+        space_id :
+            The id of the space that is checked
+
+        Returns
+        -------
+            : bool
+            Returns 1 if the arc is in the space, and 0 otherwise.
+        """
         if self.space == space_id:
             return 1
         else:
@@ -77,6 +234,20 @@ class InfrastructureArc(object):
 
 
 class InfrastructureInterdepArc(InfrastructureArc):
+    """
+    This class models a physical interdependency between nodes from two different layers. This class inherits from
+    :class:`InfrastructureArc`, where `source` attributes corresponds to the dependee node, and `dest` corresponds to
+    the depender node. The depender node is non-functional if the corresponding dependee node is non-functional.
+
+    Attributes
+    ----------
+    source_layer : int
+        The id of the layer where the dependee node is
+    dest_layer : int
+        The id of the layer where the depender node is
+    gamma : float
+        The strength of the dependency, which is a number between 0 and 1.
+    """
     def __init__(self, source, dest, source_layer, dest_layer, gamma):
         super(InfrastructureInterdepArc, self).__init__(source, dest, source_layer, True)
         self.source_layer = source_layer
@@ -85,28 +256,67 @@ class InfrastructureInterdepArc(InfrastructureArc):
 
 
 class InfrastructureSpace(object):
+    """
+    This class models a geographical space.
+
+    Attributes
+    ----------
+    id : int
+        The id of the space
+    cost : float
+        The cost of preparing the space for a repair action
+    """
     def __init__(self, id, cost):
         self.id = id
         self.cost = cost
 
 
 class InfrastructureNetwork(object):
-    '''
+    """
     Stores information of the infrastructure network
-    '''
 
+    Attributes
+    ----------
+    G : networkx.DiGraph
+        The networkx graph object that stores node, arc, and interdependency information
+    S : list
+        List of geographical spaces on which the network lays
+    id : int
+        Id of the network
+    """
     def __init__(self, id):
         self.G = nx.DiGraph()
         self.S = []
         self.id = id
 
     def copy(self):
-        newNet = InfrastructureNetwork(self.id)
-        newNet.G = self.G.copy()
-        newNet.S = [s for s in self.S]
-        return newNet
+        """
+        This function copies the current :class:`InfrastructureNetwork` object
+
+        Returns
+        -------
+        new_net: :class:`InfrastructureNetwork`
+            Copy of the current infrastructure network object
+        """
+        new_net = InfrastructureNetwork(self.id)
+        new_net.G = self.G.copy()
+        new_net.S = [s for s in self.S]
+        return new_net
 
     def update_with_strategy(self, player_strategy):
+        """
+        This function modify the functionality of node and arc per a given strategy
+
+        Parameters
+        ----------
+        player_strategy : list
+            Given strategy, where the first list item shows the functionality of nodes, and the second one is for arcs
+
+        Returns
+        -------
+        None.
+
+        """
         for q in player_strategy[0]:
             node = q
             strat = player_strategy[0][q]
@@ -120,21 +330,48 @@ class InfrastructureNetwork(object):
             self.G[src][dst]['data']['inf_data'].functionality = round(strat['y'])
 
     def get_clusters(self, layer):
-        G_prime_nodes = [n[0] for n in self.G.nodes(data=True) if
+        """
+        This function find the clusters in a layer of the network
+
+        Parameters
+        ----------
+        layer : int
+            The id of the desired layer
+
+        Returns
+        -------
+            : list
+            List of layer components
+
+        """
+        g_prime_nodes = [n[0] for n in self.G.nodes(data=True) if
                          n[1]['data']['inf_data'].net_id == layer and n[1]['data']['inf_data'].functionality == 1.0]
-        G_prime = nx.DiGraph(self.G.subgraph(G_prime_nodes).copy())
-        G_prime.remove_edges_from(
-            [(u, v) for u, v, a in G_prime.edges(data=True) if a['data']['inf_data'].functionality == 0.0])
-        # print nx.connected_components(G_prime.to_undirected())
-        return list(nx.connected_components(G_prime.to_undirected()))
+        g_prime = nx.DiGraph(self.G.subgraph(g_prime_nodes).copy())
+        g_prime.remove_edges_from(
+            [(u, v) for u, v, a in g_prime.edges(data=True) if a['data']['inf_data'].functionality == 0.0])
+        # print nx.connected_components(g_prime.to_undirected())
+        return list(nx.connected_components(g_prime.to_undirected()))
 
     def gc_size(self, layer):
-        G_prime_nodes = [n[0] for n in self.G.nodes(data=True) if
+        """
+        This function finds the size of the largest component in a layer of the network
+
+        Parameters
+        ----------
+        layer : int
+            The id of the desired layer
+
+        Returns
+        -------
+            : int
+            Size of the largest component in the layer
+        """
+        g_prime_nodes = [n[0] for n in self.G.nodes(data=True) if
                          n[1]['data']['inf_data'].net_id == layer and n[1]['data']['inf_data'].functionality == 1.0]
-        G_prime = nx.Graph(self.G.subgraph(G_prime_nodes))
-        G_prime.remove_edges_from(
-            [(u, v) for u, v, a in G_prime.edges(data=True) if a['data']['inf_data'].functionality == 0.0])
-        cc = nx.connected_components(G_prime.to_undirected())
+        g_prime = nx.Graph(self.G.subgraph(g_prime_nodes))
+        g_prime.remove_edges_from(
+            [(u, v) for u, v, a in g_prime.edges(data=True) if a['data']['inf_data'].functionality == 0.0])
+        cc = nx.connected_components(g_prime.to_undirected())
         if cc:
             # if len(list(cc)) == 1:
             #    print "I'm here"
@@ -147,8 +384,22 @@ class InfrastructureNetwork(object):
         else:
             return 0
 
-    def to_gamefile(self, layers=[1, 3]):
-        """ Used for multidefender security games."""
+    def to_game_file(self, layers=None):
+        """
+        This function writes the multi-defender security games.
+
+        Parameters
+        ----------
+        layers : list
+            List of layers in the game.
+
+        Returns
+        -------
+        None.
+
+        """
+        if layers is None:
+            layers = [1, 3]
         with open("../results/indp_gamefile.game") as f:
             num_players = len(layers)
             num_targets = len([n for n in self.G.nodes(data=True) if n[1]['data']['inf_data'].net_id in layers])
@@ -165,139 +416,148 @@ class InfrastructureNetwork(object):
                         f.write(str(v) + "\n")
                     f.write(str(atk_values) + "\n")
 
-    def to_csv(self, layers=[1, 3], filename="infrastructure_adj.csv"):
+    def to_csv(self, filename="infrastructure_adj.csv"):
+        """
+        This function writes the object to a csv file
+
+        Parameters
+        ----------
+        filename : str
+            Name of the file to which the network should be written
+
+        Returns
+        -------
+        None.
+
+        """
         with open(filename, 'w') as f:
             for u, v, a in self.G.edges(data=True):
                 f.write(str(u[0]) + "." + str(u[1]) + "," + str(v[0]) + "." + str(v[1]) + "\n")
 
 
-def load_sample():
-    G = InfrastructureNetwork("Sample")
-    node_dict = {1: {1: [3, 0.0], 2: [-1, 0.0], 3: [4, 1.0], 4: [-6, 0.0]},
-                 2: {5: [4, 1.0], 6: [-6, 0.0], 7: [3, 0.0], 8: [-1, 0.0]}}
-    arc_dict = {1: [(1, 2), (1, 4), (3, 4)], 2: [(5, 6), (7, 6), (7, 8)]}
-    for key, nodes in node_dict.iteritems():
-        for node, vals in nodes.iteritems():
-            n = InfrastructureNode(node, key, node)
-            n.functionality = vals[1]
-            n.repaired = vals[1]
-            n.reconstruction_cost = abs(vals[0])
-            n.oversupply_penalty = 100
-            n.undersupply_penalty = 100
-            n.demand = vals[0]
-            n.space = ((node - 1) % 4) + 1
-            n.resource_usage = 1
-            G.G.add_node((node, key), data={'inf_data': n})
-    for key, arcs in arc_dict.iteritems():
-        for arc in arcs:
-            a = InfrastructureArc(arc[0], arc[1], key)
-            a.flow_cost = 1.0
-            a.capacity = 20.0
-            a.space = 1
-            G.G.add_edge((arc[0], key), (arc[1], key), data={'inf_data': a})
-    a1 = InfrastructureInterdepArc(5, 1, 2, 1, 1.0)
-    G.G.add_edge((5, 2), (1, 1), data={'inf_data': a1})
-    # a2=InfrastructureInterdepArc(8,4,2,1,1.0)
-    # G.G.add_edge((8,2),(4,1),data={'inf_data':a2})
-    # a3=InfrastructureInterdepArc(2,6,1,2,1.0)
-    # G.G.add_edge((2,1),(6,2),data={'inf_data':a3})
-    a2 = InfrastructureInterdepArc(4, 8, 1, 2, 1.0)
-    G.G.add_edge((4, 1), (8, 2), data={'inf_data': a2})
-    a3 = InfrastructureInterdepArc(6, 2, 2, 1, 1.0)
-    G.G.add_edge((6, 2), (2, 1), data={'inf_data': a3})
-    a4 = InfrastructureInterdepArc(3, 7, 1, 2, 1.0)
-    G.G.add_edge((3, 1), (7, 2), data={'inf_data': a4})
-    G.S.append(InfrastructureSpace(1, 0.0))
-    G.S.append(InfrastructureSpace(2, 0.0))
-    G.S.append(InfrastructureSpace(3, 0.0))
-    G.S.append(InfrastructureSpace(4, 0.0))
-    return G
+def load_infrastructure_data(base_dir, ext_interdependency_dir=None,  magnitude=6, sim_number=1, cost_scale=1.0,
+                             data_format='shelby_extended', extra_commodity=None):
+    """
+    This function reads the infrastructure network from file
 
+    Parameters
+    ----------
+    base_dir : str
+        The address of the folder where the basic network information (topology, parameters, etc.) are stored
+    ext_interdependency_dir : str
+        (only for old format of input data) The address of the file where the interdependency data are stored. The
+        default in None.
+    magnitude : int
+        (only for old format of input data) Magnitude of the initial damage scenario. The default is 6.
+    sim_number : int
+        (only for old format of input data) The simulation number. The default is 1.
+    cost_scale : float
+        The factor by which all cost values has to multiplied. The default is 1.0.
+    data_format : str
+        The format of input data, which is either "shelby_old" (consistent with the output format of Xpress optimizing
+        software employed by Andres Gonzalez) or "shelby_extended" (which is devised by Hesam Talebiyan). The default
+        is "shelby_extended".
+    extra_commodity :
+        (only for extended format of input data) List of extra-commodities in the analysis. The default is None, which
+        only considers a main commodity.
 
-def load_percolation_model(supply_net):
-    G = InfrastructureNetwork("PercolationModel")
-    for x, d in supply_net.N.nodes(data=True):
-        n = InfrastructureNode(x, 0, x)
-        n.functionality = 1.0
-        n.repaired = 1.0
-        n.reconstruction_cost = abs(d['data'].supply)
-        n.oversupply_penalty = 100
-        n.undersupply_penalty = 100
-        n.demand = d['data'].supply
-        n.space = 1
-        n.resource_usage = 1
-        G.G.add_node((x, 0), data={'inf_data': n})
-    for u, v, x in supply_net.N_c.edges(data=True):
-        a = InfrastructureArc(u, v, 0)
-        a.flow_cost = 0.0
-        a.capacity = 100000.0
-        a.space = 1
-        a.functionality = 0.0
-        a.repaired = 0.0
-        a.resource_usage = 1.0
-        a.reconstruction_cost = 0.0
-        G.G.add_edge((u, 0), (v, 0), data={'inf_data': a})
-        G.G.add_edge((v, 0), (u, 0), data={'inf_data': a})
-    return G
+    Returns
+    -------
+    G : networkx.DiGraph
+        The networkx graph object that stores node, arc, and interdependency information
 
-
-def load_infrastructure_data(base_dir="../data/INDP_7-20-2015/", external_interdependency_dir=None,
-                             magnitude=6, v=3, sim_number=1, cost_scale=1.0, data_format='shelby_extended',
-                             extra_commodity=None):
+    """
     if data_format == 'shelby_old':
-        G = load_infrastructure_array_format(BASE_DIR=base_dir,
-                                             external_interdependency_dir=external_interdependency_dir,
-                                             magnitude=magnitude, v=v, sim_number=sim_number,
-                                             cost_scale=cost_scale)
+        G = load_infrastructure_array_format(base_dir=base_dir, ext_interdependency_dir=ext_interdependency_dir,
+                                             magnitude=magnitude, sim_number=sim_number, cost_scale=cost_scale)
         return G
     elif data_format == 'shelby_extended':
-        G = load_infrastructure_array_format_extended(BASE_DIR=base_dir, cost_scale=cost_scale,
+        G = load_infrastructure_array_format_extended(base_dir=base_dir, cost_scale=cost_scale,
                                                       extra_commodity=extra_commodity)
         return G
     else:
-        sys.exit('Error: no interdepndent network is found')
+        sys.exit('Error: no interdependent network is found')
 
 
-def load_interdependencies(netnumber, src_netnumber, BASE_DIR="../data/INDP_4-12-2016"):
+def load_interdependencies(net_number, src_net_number, base_dir="../data/INDP_4-12-2016"):
+    """
+    (only for old format of input data) This function reads interdependency data from file.
+
+    Parameters
+    ----------
+    net_number : int
+        ID of the depender layer.
+    src_net_number : int
+        ID of the dependee layer.
+    base_dir : src
+        The address of the folder where the basic network information (topology, parameters, etc.) are stored
+
+    Returns
+    -------
+    arcs: list
+        List of interdependencies as in arc format
+    """
     # Variables in CSV format is broken into files:
-    # S<netnumber>_adj : Adjacency matrix for <netnumber>
-    # S<netnumber>_bal : demand/supply of node.
-    # S<netnumber>_cst : flow cost ?
-    # S<netnumber>_dset : Set of distributors (but this can be calculated with *_bal)
-    # S<netnumber>_gset : Set of generators (but this can be calculated with *_bal)
-    # S<netnumber>_ub  : Upper bound on arc capacity.
-    # S<netnumber>_lb  : Lower bound on arc capacity (typically 0).
-    # S<netnumber>_imt : Interdependency matrix for network <netnumber>. <=== This method will only load interdependencies.
+    #     S<net_number>_adj : Adjacency matrix for <net_number>
+    #     S<net_number>_bal : demand/supply of node.
+    #     S<net_number>_cst : flow cost ?
+    #     S<net_number>_dset : Set of distributors (but this can be calculated with *_bal)
+    #     S<net_number>_gset : Set of generators (but this can be calculated with *_bal)
+    #     S<net_number>_ub  : Upper bound on arc capacity.
+    #     S<net_number>_lb  : Lower bound on arc capacity (typically 0).
+    #     S<net_number>_imt : Interdependency matrix for network <net_number>. <=== This method will only load
+    #     interdependencies.
     arcs = []
-    with open(BASE_DIR + "/csv/S" + str(netnumber) + "_imt.csv") as f:
+    with open(base_dir + "/csv/S" + str(net_number) + "_imt.csv") as f:
         rows = [[int(y) for y in string.split(x, ",")] for x in f.readlines()]
         for i in range(len(rows)):
             for j in range(len(rows[i])):
                 if rows[i][j] > 0:
-                    arc = InfrastructureInterdepArc(i + 1, j + 1, src_netnumber, netnumber, rows[i][j])
+                    arc = InfrastructureInterdepArc(i + 1, j + 1, src_net_number, net_number, rows[i][j])
                     arcs.append(arc)
     return arcs
 
 
-def load_infrastructure_array_format(BASE_DIR="../data/INDP_7-20-2015/", external_interdependency_dir=None, magnitude=6,
-                                     v=3, sim_number=1, cost_scale=1.0):
+def load_infrastructure_array_format(base_dir, ext_interdependency_dir=None, magnitude=6, sim_number=1, cost_scale=1.0):
+    """
+    This function reads the infrastructure network from file in the old format
+
+    Parameters
+    ----------
+    base_dir : str
+        The address of the folder where the basic network information (topology, parameters, etc.) are stored
+    ext_interdependency_dir : str
+        The address of the file where the interdependency data are stored. The default in None.
+    magnitude : int
+        Magnitude of the initial damage scenario. The default is 6.
+    sim_number : int
+        The simulation number. The default is 1.
+    cost_scale : float
+        The factor by which all cost values has to multiplied. The default is 1.0.
+
+    Returns
+    -------
+    G : networkx.DiGraph
+        The networkx graph object that stores node, arc, and interdependency information
+
+    """
     variables = ['v', 'c', 'f', 'q', 'Mp', 'Mm', 'g', 'b', 'u', 'h', 'p', 'gamma', 'alpha', 'beta', 'a', 'n']
     entry_regex = r"\(\s*(?P<tuple>(\d+\s*,\s*)*\d+)\s*\)\s*(?P<val>-?\d+)"
     recovery_entry_regex = r"\(\s*(?P<tuple>(\d+\s+)*\d+)\s*\)\s*(?P<val>\d+)"
     var_regex = r"(?P<varname>\D+):\s*\[(?P<entries>[^\]]*)\]"
     pattern = re.compile(var_regex, flags=re.DOTALL)
-    files = [BASE_DIR + "/INDP_InputData/MURI_INDP_data.txt"]
+    files = [base_dir + "/INDP_InputData/MURI_INDP_data.txt"]
     if sim_number > 0:
-        files.append(BASE_DIR + "/Failure and recovery scenarios/recoveryM" + str(magnitude) + "v3.txt")
+        files.append(base_dir + "/Failure and recovery scenarios/recoveryM" + str(magnitude) + "v3.txt")
     vars = {}
     for file in files:
         with open(file) as f:
-            #            print "Opened",file,"."
+            # print "Opened",file,"."
             lines = f.read()
             vars_strings = {}
             for match in pattern.finditer(lines):
                 vars_strings[string.strip(match.group('varname'))] = string.strip(match.group('entries'))
-            #            print "Varstrings=",vars_strings.keys()
+                # print "Varstrings=",vars_strings.keys()
             for v in vars_strings:
                 entry_string = vars_strings[v]
                 entry_pattern = re.compile(entry_regex, flags=re.DOTALL)
@@ -336,12 +596,12 @@ def load_infrastructure_array_format(BASE_DIR="../data/INDP_7-20-2015/", externa
     for arc in vars['a']:
         a = InfrastructureArc(arc[0][0], arc[0][1], arc[0][2])
         G.G.add_edge((a.source, a.layer), (a.dest, a.layer), data={'inf_data': a})
-    if external_interdependency_dir:
+    if ext_interdependency_dir:
         print("Loading external interdependencies...")
-        interdep_arcs = load_interdependencies(1, 3, BASE_DIR=external_interdependency_dir)
+        interdep_arcs = load_interdependencies(1, 3, base_dir=ext_interdependency_dir)
         for a in interdep_arcs:
             G.G.add_edge((a.source, a.source_layer), (a.dest, a.dest_layer), data={'inf_data': a})
-        interdep_arcs = load_interdependencies(3, 1, BASE_DIR=external_interdependency_dir)
+        interdep_arcs = load_interdependencies(3, 1, base_dir=ext_interdependency_dir)
         for a in interdep_arcs:
             G.G.add_edge((a.source, a.source_layer), (a.dest, a.dest_layer), data={'inf_data': a})
     else:
@@ -401,18 +661,36 @@ def load_infrastructure_array_format(BASE_DIR="../data/INDP_7-20-2015/", externa
     return G
 
 
-def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_County/",
-                                              cost_scale=1.0, extra_commodity=None):
-    files = [f for f in os.listdir(BASE_DIR) if os.path.isfile(os.path.join(BASE_DIR, f))]
-    netNames = {'Water': 1, 'Gas': 2, 'Power': 3, 'Telecommunication': 4}  # !!!
+def load_infrastructure_array_format_extended(base_dir, cost_scale=1.0, extra_commodity=None):
+    """
+    This function reads the infrastructure network from file in the extended format
+
+    Parameters
+    ----------
+    base_dir : str
+        The address of the folder where the basic network information (topology, parameters, etc.) are stored
+    cost_scale : float
+        The factor by which all cost values has to multiplied. The default is 1.0.
+    extra_commodity :
+        (only for extended format of input data) List of extra-commodities in the analysis. The default is None, which
+        only considers a main commodity.
+
+    Returns
+    -------
+    G : networkx.DiGraph
+        The networkx graph object that stores node, arc, and interdependency information
+
+    """
+    files = [f for f in os.listdir(base_dir) if os.path.isfile(os.path.join(base_dir, f))]
+    net_names = {'Water': 1, 'Gas': 2, 'Power': 3, 'Telecommunication': 4}  # !!!
     G = InfrastructureNetwork("Test")
     global_index = 0
     for file in files:
         fname = file[0:-4]
         if fname[-5:] == 'Nodes':
-            with open(BASE_DIR + file) as f:
+            with open(base_dir + file) as f:
                 data = pd.read_csv(f, delimiter=',')
-                net = netNames[fname[:-5]]
+                net = net_names[fname[:-5]]
                 for v in data.iterrows():
                     try:
                         node_id = v[1]['ID']
@@ -445,9 +723,9 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
     for file in files:
         fname = file[0:-4]
         if fname[-4:] == 'Arcs':
-            with open(BASE_DIR + file) as f:
+            with open(base_dir + file) as f:
                 data = pd.read_csv(f, delimiter=',')
-                net = netNames[fname[:-4]]
+                net = net_names[fname[:-4]]
                 for v in data.iterrows():
                     try:
                         start_id = v[1]['Start Node']
@@ -483,25 +761,25 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
     for file in files:
         fname = file[0:-4]
         if fname in ['beta', 'alpha', 'g', 'Interdep']:
-            with open(BASE_DIR + file) as f:
+            with open(base_dir + file) as f:
                 data = pd.read_csv(f, delimiter=',')
                 for v in data.iterrows():
                     if fname == 'beta':
-                        net = netNames[v[1]['Network']]
+                        net = net_names[v[1]['Network']]
                         G.G[(int(v[1]['Start Node']), net)][(int(v[1]['End Node']), net)]['data'][
                             'inf_data'].space = int(int(v[1]['Subspace']))
                         G.G[(int(v[1]['End Node']), net)][(int(v[1]['Start Node']), net)]['data'][
                             'inf_data'].space = int(int(v[1]['Subspace']))
                     if fname == 'alpha':
-                        net = netNames[v[1]['Network']]
+                        net = net_names[v[1]['Network']]
                         G.G.node[(int(v[1]['ID']), net)]['data']['inf_data'].space = int(int(v[1]['Subspace']))
                     if fname == 'g':
                         G.S.append(InfrastructureSpace(int(v[1]['Subspace_ID']), float(v[1]['g'])))
                     if fname == 'Interdep' and v[1]['Type'] == 'Physical':
                         i = int(v[1]['Dependee Node'])
-                        net_i = netNames[v[1]['Dependee Network']]
+                        net_i = net_names[v[1]['Dependee Network']]
                         j = int(v[1]['Depender Node'])
-                        net_j = netNames[v[1]['Depender Network']]
+                        net_j = net_names[v[1]['Depender Network']]
                         a = InfrastructureInterdepArc(i, j, net_i, net_j, gamma=1.0)
                         G.G.add_edge((a.source, a.source_layer), (a.dest, a.dest_layer), data={'inf_data': a})
                         if extra_commodity:
@@ -510,10 +788,31 @@ def load_infrastructure_array_format_extended(BASE_DIR="../data/Extended_Shelby_
     return G
 
 
-def add_failure_scenario(G, DAM_DIR="../data/INDP_7-20-2015/", magnitude=6, v=3, sim_number=1):
-    print("Initiallize Damage...")
+def add_failure_scenario(G, dam_dir, magnitude=6, v=3, sim_number=1):
+    """
+    This function reads initial damage data from file in the ANDRES format, and apply it to the infrastructure network
+
+    Parameters
+    ----------
+    G : networkx.DiGraph
+        The networkx graph object that stores node, arc, and interdependency information
+    dam_dir : str
+        The address of the folder where the initial damage data are stored
+    magnitude : int
+        Magnitude of the initial damage scenario. The default is 6.
+    v : int
+        Number of the resources in the analysis. The default is 3.
+    sim_number : int
+        The simulation number. The default is 1.
+
+    Returns
+    -------
+    None.
+
+    """
+    print("Initialize Damage...")
     if sim_number == "INF":
-        # Destory all nodes!!!!
+        # Destroy all nodes!!!!
         for n, d in G.G.nodes(data=True):
             G.G.node[n]['data']['inf_data'].functionality = 0.0
             G.G.node[n]['data']['inf_data'].repaired = 0.0
@@ -527,7 +826,7 @@ def add_failure_scenario(G, DAM_DIR="../data/INDP_7-20-2015/", magnitude=6, v=3,
         recovery_entry_regex = r"\(\s*(?P<tuple>(\d+\s+)*\d)\s*\)\s*(?P<val>\d+)"
         var_regex = r"(?P<varname>\D+):\s*\[(?P<entries>[^\]]*)\]"
         pattern = re.compile(var_regex, flags=re.DOTALL)
-        file = DAM_DIR + "/Failure and recovery scenarios/recoveryM" + str(magnitude) + "v3.txt"
+        file = dam_dir + "/Failure and recovery scenarios/recoveryM" + str(magnitude) + "v3.txt"
         vars = {}
         with open(file) as f:
             # print "Opened",file,"."
@@ -578,29 +877,45 @@ def add_failure_scenario(G, DAM_DIR="../data/INDP_7-20-2015/", magnitude=6, v=3,
                 G.G[(func[0][1], func[0][3])][(func[0][2], func[0][3])]['data']['inf_data'].repaired = float(func[1])
                 # if float(func[1]) == 0.0:
                 #    print "Arc ((",`func[0][1]`+","+`func[0][3]`+"),("+`func[0][2]`+","+`func[0][3]`+")) broken."
-    pass
 
 
-def add_from_csv_failure_scenario(G, magnitude, sample, DAM_DIR=""):
-    import csv
+def add_from_csv_failure_scenario(G, sample, dam_dir=""):
+    """
+    This function reads initial damage data from file in the from_csv format, and apply it to the infrastructure
+    network. This format only consider one magnitude value (0), and there can be as many as samples form that magnitude.
+
+    Parameters
+    ----------
+    G : networkx.DiGraph
+        The networkx graph object that stores node, arc, and interdependency information
+    sample : int
+        Sample number of the initial damage scenario,
+    dam_dir : str
+        The address of the folder where the initial damage data are stored
+
+    Returns
+    -------
+    None.
+
+    """
     # print("Initialize Random Damage...")
-    with open(DAM_DIR + 'Initial_node.csv') as csvfile:
-        data = csv.reader(csvfile, delimiter=',')
+    with open(dam_dir + 'Initial_node.csv') as csv_file:
+        data = csv.reader(csv_file, delimiter=',')
         for row in data:
-            rawN = row[0]
-            rawN = rawN.split(',')
-            n = (int(rawN[0].strip(' )(')), int(rawN[1].strip(' )(')))
+            raw_n = row[0]
+            raw_n = raw_n.split(',')
+            n = (int(raw_n[0].strip(' )(')), int(raw_n[1].strip(' )(')))
             state = float(row[sample + 1])
             G.G.nodes[n]['data']['inf_data'].functionality = state
             G.G.nodes[n]['data']['inf_data'].repaired = state
 
-    with open(DAM_DIR + 'Initial_link.csv') as csvfile:
-        data = csv.reader(csvfile, delimiter=',')
+    with open(dam_dir + 'Initial_link.csv') as csv_file:
+        data = csv.reader(csv_file, delimiter=',')
         for row in data:
-            rawUV = row[0]
-            rawUV = rawUV.split(',')
-            u = (int(rawUV[0].strip(' )(')), int(rawUV[1].strip(' )(')))
-            v = (int(rawUV[2].strip(' )(')), int(rawUV[3].strip(' )(')))
+            raw_uv = row[0]
+            raw_uv = raw_uv.split(',')
+            u = (int(raw_uv[0].strip(' )(')), int(raw_uv[1].strip(' )(')))
+            v = (int(raw_uv[2].strip(' )(')), int(raw_uv[3].strip(' )(')))
             state = float(row[sample + 1])
             if state == 0.0:
                 G.G[u][v]['data']['inf_data'].functionality = state
@@ -610,13 +925,34 @@ def add_from_csv_failure_scenario(G, magnitude, sample, DAM_DIR=""):
                 G.G[v][u]['data']['inf_data'].repaired = state
 
 
-def add_wu_failure_scenario(G, DAM_DIR="../data/Wu_Scenarios/", noSet=1, noSce=1):
-    print("Initiallize Wu failure scenarios...")
+def add_wu_failure_scenario(G, dam_dir, no_set=0, no_sce=0):
+    """
+    This function reads initial damage data from file in the WU format, and apply it to the infrastructure network. The
+    damage data for this dataset comes in a format similar to the hazard maps from Jason Wu :cite:`Wu2017`, which
+    consist of N sets (= samples) of M damage scenarios (= magnitudes). For shelby county, for example, N=50 and M=96.
+
+    Parameters
+    ----------
+    G : networkx.DiGraph
+        The networkx graph object that stores node, arc, and interdependency information
+    dam_dir : str
+        The address of the folder where the initial damage data are stored
+    no_set : int
+        The number of the set of the initial damage scenario. The default is 0.
+    no_sce : int
+        The number of the scenario of the initial damage scenario The default is 0.
+
+    Returns
+    -------
+    None.
+
+    """
+    print("Initialize Wu failure scenarios...")
     dam_nodes = {}
     dam_arcs = {}
-    folder_dir = DAM_DIR + 'Set%d/Sce%d/' % (noSet, noSce)
+    folder_dir = dam_dir + 'Set%d/Sce%d/' % (no_set, no_sce)
     net_names = {1: 'Water', 2: 'Gas', 3: 'Power', 4: 'Telecommunication'}
-    ofst = 0  # set to 1 if node IDs start from 1
+    offset = 0  # set to 1 if node IDs start from 1
     # Load failure scenarios.
     if os.path.exists(folder_dir):
         for k in range(1, len(net_names.keys()) + 1):
@@ -631,247 +967,52 @@ def add_wu_failure_scenario(G, DAM_DIR="../data/Wu_Scenarios/", noSet=1, noSce=1
                 if dam_nodes[k].size == 1:
                     dam_nodes[k] = [dam_nodes[k]]
                 for v in dam_nodes[k]:
-                    G.G.nodes[(v + ofst, k)]['data']['inf_data'].functionality = 0.0
-                    G.G.nodes[(v + ofst, k)]['data']['inf_data'].repaired = 0.0
-            #                    print "Node (",`v+ofst`+","+`k`+") broken."
+                    G.G.nodes[(v + offset, k)]['data']['inf_data'].functionality = 0.0
+                    G.G.nodes[(v + offset, k)]['data']['inf_data'].repaired = 0.0
+                    # print("Node (",`v+offset`+","+`k`+") broken.")
             if dam_arcs[k].size != 0:
                 if dam_arcs[k].size == 2:
                     dam_arcs[k] = [dam_arcs[k]]
                 for a in dam_arcs[k]:
-                    G.G[(a[0] + ofst, k)][(a[1] + ofst, k)]['data']['inf_data'].functionality = 0.0
-                    G.G[(a[0] + ofst, k)][(a[1] + ofst, k)]['data']['inf_data'].repaired = 0.0
-                    #                    print "Arc ((",`a[0]+ofst`+","+`k`+"),("+`a[1]+ofst`+","+`k`+")) broken."
+                    G.G[(a[0] + offset, k)][(a[1] + offset, k)]['data']['inf_data'].functionality = 0.0
+                    G.G[(a[0] + offset, k)][(a[1] + offset, k)]['data']['inf_data'].repaired = 0.0
+                    # print("Arc ((",`a[0]+offset`+","+`k`+"),("+`a[1]+offset`+","+`k`+")) broken.")
 
-                    G.G[(a[1] + ofst, k)][(a[0] + ofst, k)]['data']['inf_data'].functionality = 0.0
-                    G.G[(a[1] + ofst, k)][(a[0] + ofst, k)]['data']['inf_data'].repaired = 0.0
-    #                    print "Arc ((",`a[1]+ofst`+","+`k`+"),("+`a[0]+ofst`+","+`k`+")) broken."
+                    G.G[(a[1] + offset, k)][(a[0] + offset, k)]['data']['inf_data'].functionality = 0.0
+                    G.G[(a[1] + offset, k)][(a[0] + offset, k)]['data']['inf_data'].repaired = 0.0
+                    # print("Arc ((",`a[1]+offset`+","+`k`+"),("+`a[0]+offset`+","+`k`+")) broken.")
     else:
         pass  # Un-damaging scenarios are not presented with any file or folder in the datasets
 
 
-def load_recovery_scenario(N, T, action_file):
-    with open(action_file) as f:
-        lines = f.readlines()[1:]
-        for line in lines:
-            data = string.split(line, ",")
-            time = int(data[0])
-            if time <= T:
-                action = data[1]
-                if "/" in action:
-                    # Edge.
-                    edge = string.split(action, "/")
-                    u = (int(string.split(edge[0], ".")[0]), int(string.split(edge[0], ".")[1]))
-                    v = (int(string.split(edge[1], ".")[0]), int(string.split(edge[1], ".")[1]))
-                    N.G[u][v]['data']['inf_data'].functionality = 1.0
-                    N.G[u][v]['data']['inf_data'].repaired = 1.0
-                else:
-                    # Node.    
-                    node = string.split(action, ".")
-                    n = (int(node[0]), int(node[1]))
-                    N.G.node[n]['data']['inf_data'].functionality = 1.0
-                    N.G.node[n]['data']['inf_data'].repaired = 1.0
-            else:
-                return N
+def load_synthetic_network(base_dir, topology='Random', config=6, sample=0, cost_scale=1.0):
+    """
+    This function reads a synthetic network from file
 
+    Parameters
+    ----------
+    base_dir : str
+        The address of the folder where the basic network information (topology, parameters, etc.) are stored
+    topology : str
+        Topology of the layers of the synthetic network. The default in 'Random'.
+    config : int
+        Configuration number of the initial damage scenario. The default is 6.
+    sample : int
+        Sample number of the initial damage scenario. The default is 0.
+    cost_scale : float
+        The factor by which all cost values has to multiplied. The default is 1.0.
 
-def compare_results(strategy_list_string, BASE_DIR="../data/INDP_7-20-2015/", magnitude=6, v=3, sim_number=1):
-    if sim_number > 0:
-        variables = ['v', 'c', 'f', 'q', 'Mp', 'Mm', 'g', 'b', 'u', 'h', 'p', 'gamma', 'alpha', 'beta', 'a', 'n']
-        entry_regex = r"\(\s*(?P<tuple>(\d+\s*,\s*)*\d)\s*\)\s*(?P<val>-?\d+)"
-        recovery_entry_regex = r"\(\s*(?P<tuple>(\d+\s+)*\d)\s*\)\s*(?P<val>\d+)"
-        var_regex = r"(?P<varname>\D+):\s*\[(?P<entries>[^\]]*)\]"
-        pattern = re.compile(var_regex, flags=re.DOTALL)
-        file = BASE_DIR + "/Failure and recovery scenarios/recoveryM" + str(magnitude) + "v3.txt"
-        vars = {}
-        with open(file) as f:
-            # print "Opened",file,"."
-            lines = f.read()
-            vars_strings = {}
-            for match in pattern.finditer(lines):
-                vars_strings[string.strip(match.group('varname'))] = string.strip(match.group('entries'))
-            # print "Varstrings=",vars_strings.keys()
-            for v in vars_strings:
-                entry_string = vars_strings[v]
-                entry_pattern = re.compile(entry_regex, flags=re.DOTALL)
-                is_match = False
-                for match in entry_pattern.finditer(entry_string):
-                    is_match = True
-                    tuple_string = match.group('tuple')
-                    val_string = match.group('val')
-                    tuple_string = string.split(tuple_string, ",")
-                    tuple_string = [int(string.strip(x)) for x in tuple_string]
-                    val_string = float(string.strip(val_string))
-                    # print v,":",tuple_string,"=>",val_string
-                    if v not in vars:
-                        vars[v] = []
-                    vars[v].append((tuple_string, val_string))
-                if not is_match:
-                    recovery_pattern = re.compile(recovery_entry_regex, flags=re.DOTALL)
-                    for match in recovery_pattern.finditer(entry_string):
-                        is_match = True
-                        tuple_string = match.group('tuple')
-                        val_string = match.group('val')
-                        tuple_string = string.split(tuple_string, " ")
-                        tuple_string = [int(string.strip(x)) for x in tuple_string]
-                        val_string = float(string.strip(val_string))
-                        # print v,":",tuple_string,"=>",val_string
-                        if v not in vars:
-                            vars[v] = []
-                        vars[v].append((tuple_string, val_string))
-        repair_dict = {}
-        # Strategy list string ex: [(13.1)/(21.3,56.3)]-[(34.3)/(45.3)]-[(41)]-[]-[]-[]-[]-[]-[]-[]-[]-[]-[]-[]-[]-[]-[]-[]-[]-[]
-        for func in vars['resultsw']:
-            if func[0][0] == sim_number:
-                node_num = int(func[0][1])
-                net_num = int(func[0][2])
-                iteration_repaired = int(func[1])
-                if iteration_repaired not in repair_dict:
-                    repair_dict[iteration_repaired] = []
-                # print "Adding repair:",node_num,".",net_num,"on iteration",iteration_repaired
-                repair_dict[iteration_repaired].append("(" + str(node_num) + "." + str(net_num) + ")")
-        for func in vars['resultsy']:
-            if func[0][0] == sim_number:
-                src_node = int(func[0][1])
-                dst_node = int(func[0][2])
-                net_num = int(func[0][3])
-                iteration_repaired = int(func[1])
-                if iteration_repaired not in repair_dict:
-                    repair_dict[iteration_repaired] = []
-                # print "Adding repair",src_node,".",net_num,"=>",dst_node,".",net_num,"on iteration",iteration_repaired
-                repair_dict[iteration_repaired].append(
-                    "(" + str(src_nodeum) + "." + str(net_num) + "," + str(dst_node) + "." + str(net_num) + ")")
-        it_array = repair_dict.keys()
-        it_array.sort()
-        strat_list_array = string.split(strategy_list_string, "-")
-        strat_list_array = [x[1:-1] for x in strat_list_array]
-        print(repair_dict)
-        print(strat_list_array)
-        for s in it_array:
-            if len(strat_list_array) >= s:
-                real_strats = repair_dict[s]
-                comp_strats = string.split(strat_list_array[s - 1], "/")
-                for r in real_strats:
-                    if r not in comp_strats:
-                        return False
-                for r in comp_strats:
-                    if r not in real_strats:
-                        return False
-    return True
-
-
-def count_interdependencies(N):
-    interdep_dict = {1: {2: 0, 3: 0}, 2: {1: 0, 3: 0}, 3: {1: 0, 2: 0}}
-    total_interdeps = 0
-    for u, v, a in N.G.edges(data=True):
-        if a['data']['inf_data'].is_interdep:
-            total_interdeps += 1
-            src_layer = u[1]
-            dst_layer = v[1]
-            print(str(u[0]) + "." + str(u[1]), "=>", str(v[0]) + "." + str(v[1]))
-            interdep_dict[dst_layer][src_layer] = interdep_dict[dst_layer][src_layer] + 1
-            # if N.G.node[u]['data']['inf_data'].demand >= 0:
-            #    print "...is supply node"
-            # else:
-            #    print "I'm demanding",N.G.node[u]['data']['inf_data'].demand
-    print("Total Interdependencies =", total_interdeps)
-    print("Layer 1 (Water) dependencies on Layer 2 (Gas) =  ", interdep_dict[1][2])
-    print("Layer 1 (Water) dependencies on Layer 3 (Power) =", interdep_dict[1][3])
-    print("Layer 2 (Gas) dependencies on Layer 1 (Water)   =", interdep_dict[2][1])
-    print("Layer 2 (Gas) dependencies on Layer 3 (Power)   =", interdep_dict[2][3])
-    print("Layer 3 (Power) dependencies on Layer 1 (Water) =", interdep_dict[3][1])
-    print("Layer 3 (Power) dependencies on Layer 2 (Gas)   =", interdep_dict[3][2])
-
-
-def count_supply(N, layer_id=1):
-    total_supply = 0.0
-    total_demand = 0.0
-    for n, d in N.G.nodes(data=True):
-        if n[1] == layer_id:
-            demand = d['data']['inf_data'].demand
-            print("Demand for node", n, "=", demand)
-            if demand < 0:
-                total_demand += -demand
-            else:
-                total_supply += demand
-    print("Total supply for Layer", layer_id, "=", total_supply)
-    print("Total demand for Layer", layer_id, "=", total_demand)
-
-
-def count_nodes(N, layer_id=1):
-    num_nodes = len([x for x, d in N.G.nodes(data=True) if x[1] == layer_id])
-    num_arcs = len(
-        [u for u, v, a in N.G.edges(data=True) if u[1] == layer_id and not a['data']['inf_data'].is_interdep])
-    print("Nodes in Layer", layer_id, "=", num_nodes)
-    print("Arcs in Layer", layer_id, "=", num_arcs)
-
-
-def debug():
-    # N=load_infrastructure_data(BASE_DIR="../../../iINDP",sim_number=250,magnitude=6)
-    N = load_infrastructure_data(base_dir="../data/INDP_7-20-2015/", sim_number=250, magnitude=8,
-                                 external_interdependency_dir="../data/INDP_4-12-2016")
-    N.to_csv()
-    # N=load_infrastructure_data(BASE_DIR="../../../iINDP",sim_number=250,magnitude=9)
-    count_interdependencies(N)
-    count_nodes(N, 1)
-    count_nodes(N, 3)
-    count_supply(N, 1)
-    count_supply(N, 2)
-    count_supply(N, 3)
-
-
-def read_failure_scenario(BASE_DIR="../data/INDP_7-20-2015/", magnitude=6, v=3, sim_number=1):
-    if sim_number == "INF":
-        return None
-    elif sim_number > 0:
-        variables = ['v', 'c', 'f', 'q', 'Mp', 'Mm', 'g', 'b', 'u', 'h', 'p', 'gamma', 'alpha', 'beta', 'a', 'n']
-        entry_regex = r"\(\s*(?P<tuple>(\d+\s*,\s*)*\d)\s*\)\s*(?P<val>-?\d+)"
-        recovery_entry_regex = r"\(\s*(?P<tuple>(\d+\s+)*\d)\s*\)\s*(?P<val>\d+)"
-        var_regex = r"(?P<varname>\D+):\s*\[(?P<entries>[^\]]*)\]"
-        pattern = re.compile(var_regex, flags=re.DOTALL)
-        file = BASE_DIR + "/Failure and recovery scenarios/recoveryM" + str(magnitude) + "v3.txt"
-        vars = {}
-        with open(file) as f:
-            # print "Opened",file,"."
-            lines = f.read()
-            vars_strings = {}
-            for match in pattern.finditer(lines):
-                vars_strings[string.strip(match.group('varname'))] = string.strip(match.group('entries'))
-            # print "Varstrings=",vars_strings.keys()
-            for v in vars_strings:
-                entry_string = vars_strings[v]
-                entry_pattern = re.compile(entry_regex, flags=re.DOTALL)
-                is_match = False
-                for match in entry_pattern.finditer(entry_string):
-                    is_match = True
-                    tuple_string = match.group('tuple')
-                    val_string = match.group('val')
-                    tuple_string = string.split(tuple_string, ",")
-                    tuple_string = [int(string.strip(x)) for x in tuple_string]
-                    val_string = float(string.strip(val_string))
-                    # print v,":",tuple_string,"=>",val_string
-                    if v not in vars:
-                        vars[v] = []
-                    vars[v].append((tuple_string, val_string))
-                if not is_match:
-                    recovery_pattern = re.compile(recovery_entry_regex, flags=re.DOTALL)
-                    for match in recovery_pattern.finditer(entry_string):
-                        is_match = True
-                        tuple_string = match.group('tuple')
-                        val_string = match.group('val')
-                        tuple_string = string.split(tuple_string, " ")
-                        tuple_string = [int(string.strip(x)) for x in tuple_string]
-                        val_string = float(string.strip(val_string))
-                        # print v,":",tuple_string,"=>",val_string
-                        if v not in vars:
-                            vars[v] = []
-                        vars[v].append((tuple_string, val_string))
-        return vars
-
-
-def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3", topology='Random', config=6, sample=0,
-                           cost_scale=1.0):
-    print("Initiallize Damage...")
-    net_dir = BASE_DIR + '/' + topology + 'Networks/'
+    Returns
+    -------
+    G : networkx.DiGraph
+        The networkx graph object that stores node, arc, and interdependency information
+    no_resource : int
+        Number of resources available for restoration
+    : list
+        List of layers of the synthetic network
+    """
+    print("Initialize Damage...")
+    net_dir = base_dir + '/' + topology + 'Networks/'
     topo_initial = {'Random': 'RN', 'ScaleFree': 'SFN', 'Grid': 'GN', 'General': 'GEN'}
     with open(net_dir + 'List_of_Configurations.txt') as f:
         config_data = pd.read_csv(f, delimiter='\t')
@@ -949,7 +1090,7 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3", topo
                                     #                  data={'inf_data': a})
                             except:
                                 print('Empty file: ' + file)
-    # add subspace data #!!!
+    # add subspace data #.. todo: Add geographical spaces to synthetic networks
     # for v in data.iterrows():
     #    if fname=='beta':
     #        net = netNames[v[1]['Network']]
@@ -964,19 +1105,39 @@ def load_synthetic_network(BASE_DIR="../data/Generated_Network_Dataset_v3", topo
     return G, no_resource, range(1, no_layers + 1)
 
 
-def add_synthetic_failure_scenario(G, DAM_DIR="../data/Generated_Network_Dataset_v3", topology='Random', config=0,
-                                   sample=0):
-    net_dir = DAM_DIR + '/' + topology + 'Networks/'
+def add_synthetic_failure_scenario(G, dam_dir, topology='Random', config=0, sample=0):
+    """
+    This function reads initial damage data from file for a synthetic network.
+
+    Parameters
+    ----------
+    G : networkx.DiGraph
+        The networkx graph object that stores node, arc, and interdependency information.
+    dam_dir : str
+        The address of the folder where the initial damage data are stored.
+    topology : str
+        Topology of the layers of the synthetic network. The default in 'Random'.
+    config : int
+        Configuration number of the initial damage scenario. The default is 6.
+    sample : int
+        Sample number of the initial damage scenario. The default is 0.
+
+    Returns
+    -------
+    None.
+
+    """
+    net_dir = dam_dir + '/' + topology + 'Networks/'
     topo_initial = {'Random': 'RN', 'ScaleFree': 'SFN', 'Grid': 'GN', 'General': 'GEN'}
     with open(net_dir + 'List_of_Configurations.txt') as f:
         config_data = pd.read_csv(f, delimiter='\t')
         config_data = config_data.rename(columns=lambda x: x.strip())
     config_param = config_data.iloc[config]
-    noLayers = int(config_param.loc['No. Layers'])
-    noResource = int(config_param.loc['Resource Cap'])
+    no_layers = int(config_param.loc['No. Layers'])
+    # noResource = int(config_param.loc['Resource Cap'])
     file_dir = net_dir + topo_initial[topology] + 'Config_' + str(config) + '/Sample_' + str(sample) + '/'
     files = [f for f in os.listdir(file_dir) if os.path.isfile(os.path.join(file_dir, f))]
-    for k in range(1, noLayers + 1):
+    for k in range(1, no_layers + 1):
         for file in files:
             if file == 'N' + str(k) + '_Damaged_Nodes.txt':
                 with open(file_dir + file) as f:
@@ -985,7 +1146,7 @@ def add_synthetic_failure_scenario(G, DAM_DIR="../data/Generated_Network_Dataset
                         for v in data.iterrows():
                             G.G.nodes[(v[1][0], k)]['data']['inf_data'].functionality = 0.0
                             G.G.nodes[(v[1][0], k)]['data']['inf_data'].repaired = 0.0
-                    #                            print "Node (",`int(v[1][0])`+","+`k`+") broken."
+                            # print("Node (",`int(v[1][0])`+","+`k`+") broken.")
                     except:
                         print('Empty file: ' + file)
 
