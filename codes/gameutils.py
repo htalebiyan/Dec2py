@@ -46,9 +46,10 @@ def run_game(params, save_results=True, print_cmd=True, save_model=False, plot2D
         params_copy['JUDGMENT_TYPE'] = jc
         for rst in params["RES_ALLOC_TYPE"]:
             params_copy['RES_ALLOC_TYPE'] = rst
+            out_dir_suffix_res = indp.get_resource_suffix(params_copy)
             if rst not in ["MDA", "MAA", "MCA"]:
                 output_dir_full = params["OUTPUT_DIR"] + '_L' + str(len(params["L"])) + '_m' + \
-                                  str(params["MAGNITUDE"]) + "_v" + str(params["V"]) + '_' + jc + \
+                                  str(params["MAGNITUDE"]) + "_v" + out_dir_suffix_res + '_' + jc + \
                                   '_' + rst + '/actions_' + str(params["SIM_NUMBER"]) + '_.csv'
                 if os.path.exists(output_dir_full):
                     print('Game:', rst, 'results are already there\n')
@@ -59,7 +60,7 @@ def run_game(params, save_results=True, print_cmd=True, save_model=False, plot2D
                 for vt in params["VALUATION_TYPE"]:
                     params_copy['VALUATION_TYPE'] = vt
                     output_dir_full = params["OUTPUT_DIR"] + '_L' + str(len(params["L"])) + '_m' + \
-                                      str(params["MAGNITUDE"]) + "_v" + str(params["V"]) + '_' + jc + \
+                                      str(params["MAGNITUDE"]) + "_v" + out_dir_suffix_res + '_' + jc + \
                                       '_AUCTION_' + rst + '_' + vt + '/actions_' + \
                                       str(params["SIM_NUMBER"]) + '_.csv'
                     if os.path.exists(output_dir_full):
@@ -71,7 +72,8 @@ def run_game(params, save_results=True, print_cmd=True, save_model=False, plot2D
     if not objs:
         return 0
     # t=0 costs and performance.
-    indp_results_initial = indp.indp(objs[0].net, 0, 1, objs[0].layers,
+    v_0 = {x: 0 for x in params["V"].keys()}
+    indp_results_initial = indp.indp(objs[0].net, v_0, 1, objs[0].layers,
                                      controlled_layers=objs[0].layers)
     for _, obj in objs.items():
         print('--Running Game: ' + obj.game_type + ', resource allocation: ' + obj.res_alloc_type)

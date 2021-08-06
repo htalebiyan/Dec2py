@@ -231,6 +231,8 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
     objs : dict
         Dictionary that contains the objects corresponding to the read results.
 
+    .. todo::
+        Games: modify the NE analysis to accommodate the case of random signal
     '''
     columns = ['t', 'Magnitude', 'cost_type', 'decision_type', 'judgment_type',
                'auction_type', 'valuation_type', 'no_resources', 'sample',
@@ -242,7 +244,8 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
     joinedlist = combinations + optimal_combinations
     for idx, x in enumerate(joinedlist):
         #: Make the directory
-        full_suffix = '_L' + str(x[2]) + '_m' + str(x[0]) + '_v' + str(x[3])
+        out_dir_suffix_res = indp.get_resource_suffix({'V': x[10]})
+        full_suffix = '_L' + str(x[2]) + '_m' + str(x[0]) + '_v' + out_dir_suffix_res
         if x[4][:2] in ['jc', 'ng', 'bg'] or x[4][:5] in ['dp_jc']:
             full_suffix += '_' + x[5]
             if x[6] in ["MDA", "MAA", "MCA"]:
@@ -250,53 +253,54 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
             else:
                 full_suffix += '_' + x[6]
         result_dir = root_result_dir + x[4] + '_results' + full_suffix
-        if os.path.exists(result_dir + '/actions_' + str(x[1]) + '_.csv'):
-            # Save all results to Pandas dataframe
-            sample_result = indputils.INDPResults()
-            sam_rslt_lyr = {l: indputils.INDPResults() for l in x[9]}
-            sample_result = sample_result.from_csv(result_dir, x[1], suffix=x[8])
-            if deaggregate:
-                for l in x[9]:
-                    sam_rslt_lyr[l] = sam_rslt_lyr[l].from_csv(result_dir + rslt_dir_lyr, x[1],
-                                                               suffix='L' + str(l) + '_' + x[8])
-            initial_cost = {}
+        assert os.path.exists(result_dir + '/actions_' + str(x[1]) + '_.csv'), 'Error:' + \
+            ' The combination or folder does not exist' + str(x)
+
+        # Save all results to Pandas dataframe
+        sample_result = indputils.INDPResults()
+        sam_rslt_lyr = {l: indputils.INDPResults() for l in x[9]}
+        sample_result = sample_result.from_csv(result_dir, x[1], suffix=x[8])
+        if deaggregate:
+            for l in x[9]:
+                sam_rslt_lyr[l] = sam_rslt_lyr[l].from_csv(result_dir + rslt_dir_lyr, x[1],
+                                                           suffix='L' + str(l) + '_' + x[8])
+        initial_cost = {}
+        for c in cost_types:
+            initial_cost[c] = sample_result[0]['costs'][c]
+        norm_cost = 0
+        for t in sample_result.results:
             for c in cost_types:
-                initial_cost[c] = sample_result[0]['costs'][c]
-            norm_cost = 0
-            for t in sample_result.results:
+                if initial_cost[c] != 0.0:
+                    norm_cost = sample_result[t]['costs'][c] / initial_cost[c]
+                else:
+                    norm_cost = -1.0
+                values = [t, x[0], c, x[4], x[5], x[6], x[7], x[3], x[1],
+                          float(sample_result[t]['costs'][c]), norm_cost, 'nan']
+                cmplt_results = cmplt_results.append(dict(zip(columns, values)),
+                                                     ignore_index=True)
+        if deaggregate:
+            for l in x[9]:
+                initial_cost = {}
                 for c in cost_types:
-                    if initial_cost[c] != 0.0:
-                        norm_cost = sample_result[t]['costs'][c] / initial_cost[c]
-                    else:
-                        norm_cost = -1.0
-                    values = [t, x[0], c, x[4], x[5], x[6], x[7], x[3], x[1],
-                              float(sample_result[t]['costs'][c]), norm_cost, 'nan']
-                    cmplt_results = cmplt_results.append(dict(zip(columns, values)),
-                                                         ignore_index=True)
-            if deaggregate:
-                for l in x[9]:
-                    initial_cost = {}
+                    initial_cost[c] = sam_rslt_lyr[l][0]['costs'][c]
+                norm_cost = 0
+                for t in sam_rslt_lyr[l].results:
                     for c in cost_types:
-                        initial_cost[c] = sam_rslt_lyr[l][0]['costs'][c]
-                    norm_cost = 0
-                    for t in sam_rslt_lyr[l].results:
-                        for c in cost_types:
-                            if initial_cost[c] != 0.0:
-                                norm_cost = sam_rslt_lyr[l][t]['costs'][c] / initial_cost[c]
-                            else:
-                                norm_cost = -1.0
-                            values = [t, x[0], c, x[4], x[5], x[6], x[7], x[3], x[1],
-                                      float(sam_rslt_lyr[l][t]['costs'][c]), norm_cost, l]
-                            cmplt_results = cmplt_results.append(dict(zip(columns, values)),
-                                                                 ignore_index=True)
-            #: Getting back the JuCModel objects:
-            if x[4][:2] in ['jc', 'ng', 'bg'] or x[4][:5] in ['dp_jc']:
-                with open(result_dir + '/objs_' + str(x[1]) + '.pkl', 'rb') as f:
-                    objs[str(x)] = pickle.load(f)
-            if idx % (len(joinedlist) // 100 + 1) == 0:
-                update_progress(idx + 1, len(joinedlist))
-        else:
-            sys.exit('Error: The combination or folder does not exist' + str(x))
+                        if initial_cost[c] != 0.0:
+                            norm_cost = sam_rslt_lyr[l][t]['costs'][c] / initial_cost[c]
+                        else:
+                            norm_cost = -1.0
+                        values = [t, x[0], c, x[4], x[5], x[6], x[7], x[3], x[1],
+                                  float(sam_rslt_lyr[l][t]['costs'][c]), norm_cost, l]
+                        cmplt_results = cmplt_results.append(dict(zip(columns, values)),
+                                                             ignore_index=True)
+        #: Getting back the JuCModel objects:
+        if x[4][:2] in ['jc', 'ng', 'bg'] or x[4][:5] in ['dp_jc']:
+            with open(result_dir + '/objs_' + str(x[1]) + '.pkl', 'rb') as f:
+                objs[str(x)] = pickle.load(f)
+        if idx % (len(joinedlist) // 100 + 1) == 0:
+            update_progress(idx + 1, len(joinedlist))
+
     update_progress(len(joinedlist), len(joinedlist))
     return cmplt_results, objs
 

@@ -768,8 +768,8 @@ def initialize_network(base_dir="../data/INDP_7-20-2015/", external_interdepende
     v_temp = 0
     if infrastructure_data:
         interdep_net = load_infrastructure_data(base_dir=base_dir,
-                                                external_interdependency_dir=external_interdependency_dir,
-                                                sim_number=sim_number, cost_scale=cost_scale, magnitude=magnitude, v=v,
+                                                ext_interdependency_dir=external_interdependency_dir,
+                                                sim_number=sim_number, cost_scale=cost_scale, magnitude=magnitude,
                                                 data_format=infrastructure_data, extra_commodity=extra_commodity)
     else:
         interdep_net, v_temp, layers_temp = load_synthetic_network(base_dir=base_dir, topology=topology,

@@ -242,7 +242,7 @@ def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', lay
     for idx, ax in enumerate(axs_c):
         corrected_label = correct_legend_labels([col_plot[0][idx]])[0]
         ax.set_title(r'Res. Alloc.: %s' % (corrected_label))
-    plt.savefig('Relative_perforamnce.png', dpi=dpi, bbox_inches='tight')
+    plt.savefig('Relative_performance.png', dpi=dpi, bbox_inches='tight')
 
 
 def plot_auction_allocation(df_res, ci=None):
@@ -1108,6 +1108,7 @@ def correct_legend_labels(labels):
     labels = ['B-INRG-All cu exc. Power' if x == 'bgCCNCUUUU' else x for x in labels]
     labels = ['B-INRG-All nu exc. Power' if x == 'bgNNCNUUUU' else x for x in labels]
     labels = ['B-INRG-All nu' if x == 'bgNNNNUUUU' else x for x in labels]
+    labels = ['B-INRG-All ru' if x == 'bgRRRRUUUU' else x for x in labels]
     labels = ['B-INRG-nn' if x == 'bgNNUU' else x for x in labels]
     labels = ['B-INRG-cn' if x == 'bgCNUU' else x for x in labels]
     labels = ['B-INRG-nc' if x == 'bgNCUU' else x for x in labels]

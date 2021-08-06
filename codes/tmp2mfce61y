@@ -168,7 +168,7 @@ class NormalGame:
     def apply_bounded_rationality(self):
         if self.actions_reduced == 'EDM':
             v_r = {'' : 0}
-            v_r[''] = sum([x[''] for _, x in self.v_r.items()]) # ..todo: modify it for the case of multiple resource type
+            v_r[''] = sum([x[''] for _, x in self.v_r.items()])  # ..todo: modify it for the case of multiple resource type
             indp_res = indp.indp(self.net, v_r=v_r, T=1, layers=self.players,
                                  controlled_layers=self.players, functionality={},
                                  print_cmd=False, solution_pool=.5)[2]
@@ -333,7 +333,7 @@ class NormalGame:
             None.
 
         '''
-        adjusted_v_r = copy.deepcopy(self.v_r)#{key: val for key, val in self.v_r.items()}
+        adjusted_v_r = {key: val for key, val in self.v_r.items()}
         fixed_nodes = {}
         for u in self.dependee_nodes.keys():
             if self.net.G.nodes[u]['data']['inf_data'].functionality != 1.0:
@@ -344,11 +344,10 @@ class NormalGame:
                     if act != ('OA', l):
                         fixed_nodes[act] = 1.0
                 if ('OA', l) not in action[idxl]:
-                    adjusted_v_r[l][''] = len(action[idxl]) # ..todo: modify it for the case of multiple resource type
+                    adjusted_v_r[l] = len(action[idxl])
             else:
-                adjusted_v_r[l][''] = 0 # ..todo: modify it for the case of multiple resource type
-        v_r_new = {'': {key: val[''] for key, val in adjusted_v_r.items()}} # ..todo: modify it for the case of multiple resource type
-        flow_results = indp.indp(self.net, v_r=v_r_new, layers=self.players,
+                adjusted_v_r[l] = 0
+        flow_results = indp.indp(self.net, v_r=adjusted_v_r, layers=self.players,
                                  controlled_layers=self.players, print_cmd=True,
                                  time_limit=None, fixed_nodes=fixed_nodes,
                                  co_location=False)
@@ -611,7 +610,7 @@ class NormalGame:
             None.
 
         '''
-        v_r = {'': sum([x[''] for _, x in self.v_r.items()])} # ..todo: modify it for the case of multiple resource type
+        v_r = sum([x for key, x in self.v_r.items()])
         indp_res = indp.indp(self.net, v_r=v_r, T=1, layers=self.players,
                              controlled_layers=self.players, functionality={},
                              print_cmd=False, time_limit=None)[1]
@@ -1150,11 +1149,7 @@ class InfrastructureGame:
                                             game_info=game_info)
                     game_time = time.time() - game_start
                     ''' Use signals to find interim NE as the chosen solution '''
-                    actual_type = copy.deepcopy(self.signals)
-                    for key, val in actual_type.items():
-                        if val == 'R':
-                            actual_type[key] = random.choice(['C', 'N'])
-                    preferred_players = {'included': [(x, i) for i, x in actual_type.items()]}
+                    preferred_players = {'included': [(x, i) for i, x in self.signals.items()]}
                     preferred_players['excluded'] = [x for x in self.objs[t].bayesian_players \
                                                      if x not in preferred_players['included']]
                     self.objs[t].choose_equilibrium(preferred_players=preferred_players)
@@ -1206,13 +1201,12 @@ class InfrastructureGame:
             Directory to which the results are written
 
         """
-        out_dir_suffix_res = indp.get_resource_suffix({'V': self.resource.sum_resource})
         output_dir = root + '_L' + str(len(self.layers)) + '_m' + str(self.magnitude) + "_v" + \
-                     out_dir_suffix_res + '_' + self.judgments.judgment_type + \
+                     str(self.resource.sum_resource) + '_' + self.judgments.judgment_type + \
                      '_' + self.res_alloc_type
         if self.res_alloc_type == 'AUCTION':
-            a_model = next(iter(self.resource.auction_model.values()))
-            output_dir += '_' + a_model.auction_type + '_' + a_model.valuation_type
+            output_dir += '_' + self.resource.auction_model.auction_type + \
+                          '_' + self.resource.auction_model.valuation_type
         return output_dir
 
     def set_payoff_dir(self, root):
