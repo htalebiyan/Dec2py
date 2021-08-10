@@ -6,15 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="0a694b6c-4cc5-4c83-a52a-b97ce175596f" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Archive/Aggregate_bayesian - Copy.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/dindpclasses.py" beforeDir="false" afterPath="$PROJECT_DIR$/dindpclasses.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dindputils.py" beforeDir="false" afterPath="$PROJECT_DIR$/dindputils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/generate_jupyter_notebook.txt" beforeDir="false" afterPath="$PROJECT_DIR$/generate_jupyter_notebook.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/indputils.py" beforeDir="false" afterPath="$PROJECT_DIR$/indputils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model.ilp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/plots.py" beforeDir="false" afterPath="$PROJECT_DIR$/plots.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tmp2mfce61y" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/run_main_indp_simplified.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/run_main_indp_simplified.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/temp_plot_codes.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -211,7 +205,7 @@
       <workItem from="1627503375516" duration="3000" />
       <workItem from="1627503422493" duration="9927000" />
       <workItem from="1627861612997" duration="9239000" />
-      <workItem from="1628008420752" duration="16337000" />
+      <workItem from="1628008420752" duration="17117000" />
     </task>
     <servers />
   </component>
