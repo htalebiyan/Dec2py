@@ -6,10 +6,10 @@
   <meta charset="utf-8" />
   <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <meta property="article:modified_time" content="2021-04-21T17:27:17-05:00" />
+    <meta property="article:modified_time" content="2021-08-01T21:05:46-05:00" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Dec2py: Decentralized Decision-making tools &mdash; Dec2py b1f3ae4 documentation</title>
+  <title>Dec2py: Decentralized Decision-making tools &mdash; Dec2py a0ccde0 documentation</title>
   
 
   
@@ -69,7 +69,7 @@
             
             
               <div class="version">
-                0.4.3
+                0.4.4
               </div>
             
           
@@ -202,10 +202,10 @@
 <ul>
 <li><p><strong>Centralized methods</strong></p>
 <p>These methods solve one optimization problem for the whole interdependent network, which leads to optimal restoration plans. The implication
-of such models setting is that the decision-maker is one entity who has the complete information and authority to restore all layers of the interdependent network. This kind of methods includes Interdependent Network Design Problem (INDP) <a class="bibtex reference internal" href="#gonzalez2016" id="id1">[GDOSSM16]</a> and time-dependent INDP (td-INDP) <a class="bibtex reference internal" href="#gonzalez2016c" id="id2">[GDOMSS16]</a>.</p>
+of such models is that the decision-maker is one entity who has complete information and authority to restore all layers of the interdependent network. This kind of methods includes Interdependent Network Design Problem (INDP) <a class="bibtex reference internal" href="#gonzalez2016" id="id1">[GDOSSM16]</a> and time-dependent INDP (td-INDP) <a class="bibtex reference internal" href="#gonzalez2016c" id="id2">[GDOMSS16]</a>.</p>
 </li>
 <li><p><strong>Decentralized methods</strong></p>
-<p>These methods model a multi-agent decision-making environment where each agent has the authority to restore a single layer, has complete information about her respective layer, and minimal or no information about other layers. It is assumed that agents communicate poorly and not on time. The decentralized methods include Judgment Call (JC) method  <a class="bibtex reference internal" href="#talebiyan2019c" id="id3">[TDO20]</a><a class="bibtex reference internal" href="#talebiyan2019" id="id4">[TDO19]</a> with and without auction-based resource allocations <a class="bibtex reference internal" href="#talebiyan2020a" id="id5">[TDO21b]</a> and Interdependent Network Restoration Simultaneous Games (INRSG) and Bayesian Games (INRBG) <a class="bibtex reference internal" href="#talebiyan2021c" id="id6">[TDO21a]</a>.</p>
+<p>These methods model a multi-agent decision-making environment where each agent has the authority to restore a single layer, has complete information about her respective layer, and minimal or no information about other layers. It is assumed that agents communicate poorly and not on time. The decentralized methods include Judgment Call (JC) method  <a class="bibtex reference internal" href="#talebiyan2019c" id="id3">[TDO20]</a><a class="bibtex reference internal" href="#talebiyan2019" id="id4">[TDO19]</a> with and without auction-based resource allocations <a class="bibtex reference internal" href="#talebiyan2020a" id="id5">[TDO21b]</a> and Normal-form Interdependent Network Restoration Games (N-INRG) and Bayesian Games (B-INRG) <a class="bibtex reference internal" href="#talebiyan2021c" id="id6">[TDO21a]</a>.</p>
 </li>
 </ul>
 <p>Below, you can find different parts of the website (topics), starting with demonstrating tools for an interdependent toy network followed by a notebook containing the complete analysis dashboard. The third section presents functions and classes under the hood:</p>
@@ -220,13 +220,10 @@ of such models setting is that the decision-maker is one entity who has the comp
 </li>
 <li class="toctree-l1"><a class="reference internal" href="backend.html">Backend Classes and Modules</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="runutils.html">High-level analysis modules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="indp.html">INDP optimization functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="indputils.html">INDP classes and functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="infrastructure.html">Infrastructure classes and functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dindputils.html">Judgment Call functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dindpclasses.html">Judgment Call Classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gameutils.html">N-INRG and B-INRG functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gameclasses.html">N-INRG and B-INRG Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="infrastructure.html">Infrastructure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="indp_all.html">INDP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jc_all.html">Judgment Call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="games_all.html">N-INRG and B-INRG</a></li>
 </ul>
 </li>
 </ul>
@@ -322,7 +319,7 @@ might be a conflict between two processes. Consider correcting this.</p>
     <p>
         &#169; Copyright 2021, SISRRA, Hesam Talebiyan.
       <span class="lastupdated">
-        Last updated on Apr 21, 2021.
+        Last updated on Aug 01, 2021.
       </span>
 
     </p>

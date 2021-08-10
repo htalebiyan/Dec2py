@@ -41,14 +41,14 @@ def plot_performance_curves(df, cost_type='Total', ci=None, normalize=False, dea
     # topology = df.topology.unique().tolist()
     decision_type = df.decision_type.unique().tolist()
     judgment_type = df.judgment_type.unique().tolist()
-    if 'nan' in judgment_type:
-        judgment_type.remove('nan')
+    # if 'nan' in judgment_type:
+    #     judgment_type.remove('nan')
     auction_type = df.auction_type.unique().tolist()
-    if 'nan' in auction_type:
-        auction_type.remove('nan')
+    # if 'nan' in auction_type:
+    #     auction_type.remove('nan')
     valuation_type = df.valuation_type.unique().tolist()
-    if 'nan' in valuation_type:
-        valuation_type.remove('nan')
+    # if 'nan' in valuation_type:
+    #     valuation_type.remove('nan')
     time = len(df['t'].unique().tolist())
 
     row_plot = [judgment_type, 'judgment_type']  # valuation_type, topology
@@ -481,9 +481,9 @@ def plot_run_time(df, ci=None):
     plt.savefig('run_time.png', dpi=dpi)
 
 
-def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
+def plot_separated_perform_curves(df, x='t', y='cost', cost_type='Total',
                                   ci=None, normalize=False):
-    '''
+    """
     Parameters
     ----------
     df : TYPE
@@ -503,7 +503,7 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
     -------
     None.
 
-    '''
+    """
     res_caps = df.no_resources.unique().tolist()
     valuation_type = df.valuation_type.unique().tolist()
     auction_type = df.auction_type.unique().tolist()
@@ -515,7 +515,7 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
     # pal = sns.color_palette(colors[:len(auction_type)-1]+['k'])
     pal = sns.color_palette(['r', 'b'])
     dpi = 300
-    fig, axs = plt.subplots(3, 2, sharex=True, sharey=True, tight_layout=False,
+    fig, axs = plt.subplots(2, 2, sharex=True, sharey=True, tight_layout=False,
                             figsize=(4000 / dpi, 3000 / dpi))
     cost_data = df[df.cost_type == cost_type]
     for idx, lyr in enumerate(layers):
@@ -526,9 +526,9 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
             ax.set(xlabel=r'time step $t$', ylabel=cost_type + ' Cost')
             ax.set_title(r'Layer: %s' % (layer_names[lyr]))
             ax.get_legend().set_visible(False)
-            ax.xaxis.set_ticks(np.arange(0, 11, 1.0))  # ax.get_xlim()
+            ax.xaxis.set_ticks(np.arange(0, ax.get_xlim()[1], 1.0))  # ax.get_xlim()
 
-    ax = fig.add_subplot(3, 2, 6)
+    ax = fig.add_subplot(2, 2, 4)
     with pal:
         sns.lineplot(x=x, y=y, hue="decision_type", style='auction_type',
                      markers=True, ci=ci, ax=ax,
@@ -536,7 +536,7 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
         ax.set(xlabel=r'time step $t$', ylabel=cost_type + ' Cost')
         ax.set_title(r'Overall')
         ax.get_legend().set_visible(False)
-        ax.xaxis.set_ticks(np.arange(0, 10, 1.0))  # ax.get_xlim()
+        ax.xaxis.set_ticks(np.arange(0, ax.get_xlim()[1], 1.0))  # ax.get_xlim()
     if 'nan' in valuation_type:
         valuation_type.remove('nan')
     head = 'Resource Cap: ' + str(res_caps).strip('[]') + ', Valuation: ' + \
@@ -549,7 +549,7 @@ def plot_seperated_perform_curves(df, x='t', y='cost', cost_type='Total',
 
 
 def plot_ne_sol_2player(game, suffix='', plot_dir=''):
-    '''
+    """
     This function plot the payoff functions of a normal game for one time step
     with nash equilibria and optimal solution marked on it (currently for 2-player games)
 
@@ -561,12 +561,12 @@ def plot_ne_sol_2player(game, suffix='', plot_dir=''):
         The directory where the plott should be saved. The default is ''.
     suffix: str
         Suffix that should be added to the plot file name. The default is ''.
-        
+
     Returns
     -------
     None.
 
-    '''
+    """
     payoff_dict_cols = ['P' + str(l) + ' actions' for l in game.players]
     payoff_dict_cols += ['P' + str(l) + ' payoff' for l in game.players]
     payoff_dict = pd.DataFrame(columns=payoff_dict_cols)
@@ -721,7 +721,7 @@ def plot_ne_analysis(df, x='t', ci=None):
 
 
 def plot_ne_cooperation(df, x='t', ci=None):
-    '''
+    """
 
     Parameters
     ----------
@@ -734,7 +734,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
     -------
     None.
 
-    '''
+    """
     #: Make lists
     # rationality = df.rationality.unique().tolist()
     # topology = df.topology.unique().tolist()
@@ -790,7 +790,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
                 with pal:
                     sns.lineplot(x=x, y='value', hue='Cooperation Status', style='Decision Type',
                                  markers=True, ci=ci, ax=ax, data=ne_data,
-                                 **{'markersize': 5}) #style_order=['Optimal', 'ng']
+                                 **{'markersize': 5})  # style_order=['Optimal', 'ng']
                 ax.set(xlabel=r'time step $t$', ylabel='\% of Players, ' + row_plot[0][idx_r])
                 ax.get_legend().set_visible(False)
                 ax.xaxis.set_ticks(np.arange(1, T + 1, 1.0))  # ax.get_xlim()
@@ -809,7 +809,7 @@ def plot_ne_cooperation(df, x='t', ci=None):
 
 
 def plot_relative_actions(df, act_types=None):
-    '''
+    """
     Parameters
     ----------
     df : TYPE
@@ -821,7 +821,7 @@ def plot_relative_actions(df, act_types=None):
     -------
     None.
 
-    '''
+    """
     #: Make lists
     if act_types is None:
         act_types = ['cooperative', 'partially_cooperative',

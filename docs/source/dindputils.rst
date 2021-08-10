@@ -1,4 +1,4 @@
-Judgment Call functions
+Judgment Call modules
 =======================================================
 .. automodule:: dindputils
 

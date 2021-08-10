@@ -1,8 +1,7 @@
 # %%
-''' 
-Classes for modeling Judgment Call method and Auction-based resource 
-:cite:`Talebiyan2019c,Talebiyan2019`.
-'''
+"""
+Classes for modeling Judgment Call method and Auction-based resource :cite:`Talebiyan2019c,Talebiyan2019`.
+"""
 import os.path
 import operator
 import copy
@@ -19,9 +18,9 @@ import indpalt
 
 # %%
 class JcModel:
-    '''
+    """
     Description
-    '''
+    """
 
     def __init__(self, ide, params):
         #: Basic attributes
@@ -66,7 +65,7 @@ class JcModel:
 
     @staticmethod
     def set_algo(algorithm):
-        '''
+        """
 
         Parameters
         ----------
@@ -78,7 +77,7 @@ class JcModel:
         str
             DESCRIPTION.
 
-        '''
+        """
         if algorithm != 'JC':
             sys.exit('Wrong Algorithm. It should be JC.')
         else:

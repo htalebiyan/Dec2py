@@ -1,4 +1,4 @@
-Infrastructure classes and functions
+Infrastructure
 =======================================================
 .. automodule:: infrastructure
 
@@ -12,7 +12,7 @@ Functions to load a network from file
 .. autofunction:: load_interdependencies
 
 **************************************************
-Functions to load a initial damage data from file
+Functions to load initial damage data from file
 **************************************************
 .. autofunction:: add_wu_failure_scenario
 .. autofunction:: add_from_csv_failure_scenario

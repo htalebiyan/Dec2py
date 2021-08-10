@@ -10,11 +10,11 @@ This website offers code documentation and sample jupyter notebooks for a set of
 *	**Centralized methods**
 
 	These methods solve one optimization problem for the whole interdependent network, which leads to optimal restoration plans. The implication 
-	of such models setting is that the decision-maker is one entity who has the complete information and authority to restore all layers of the interdependent network. This kind of methods includes Interdependent Network Design Problem (INDP) :cite:`Gonzalez2016` and time-dependent INDP (td-INDP) :cite:`Gonzalez2016c`.
+	of such models is that the decision-maker is one entity who has complete information and authority to restore all layers of the interdependent network. This kind of methods includes Interdependent Network Design Problem (INDP) :cite:`Gonzalez2016` and time-dependent INDP (td-INDP) :cite:`Gonzalez2016c`.
 
 *	**Decentralized methods**
 
-	These methods model a multi-agent decision-making environment where each agent has the authority to restore a single layer, has complete information about her respective layer, and minimal or no information about other layers. It is assumed that agents communicate poorly and not on time. The decentralized methods include Judgment Call (JC) method  :cite:`Talebiyan2019c,Talebiyan2019` with and without auction-based resource allocations :cite:`Talebiyan2020a` and Interdependent Network Restoration Simultaneous Games (INRSG) and Bayesian Games (INRBG) :cite:`Talebiyan2021c`.
+	These methods model a multi-agent decision-making environment where each agent has the authority to restore a single layer, has complete information about her respective layer, and minimal or no information about other layers. It is assumed that agents communicate poorly and not on time. The decentralized methods include Judgment Call (JC) method  :cite:`Talebiyan2019c,Talebiyan2019` with and without auction-based resource allocations :cite:`Talebiyan2020a` and Normal-form Interdependent Network Restoration Games (N-INRG) and Bayesian Games (B-INRG) :cite:`Talebiyan2021c`.
 
 
 Below, you can find different parts of the website (topics), starting with demonstrating tools for an interdependent toy network followed by a notebook containing the complete analysis dashboard. The third section presents functions and classes under the hood:

@@ -6,10 +6,10 @@
   <meta charset="utf-8" />
   <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <meta property="article:modified_time" content="2021-07-28T17:54:29-05:00" />
+    <meta property="article:modified_time" content="2021-08-01T21:05:46-05:00" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Infrastructure classes and functions &mdash; Dec2py b1f3ae4 documentation</title>
+  <title>Infrastructure &mdash; Dec2py a0ccde0 documentation</title>
   
 
   
@@ -45,8 +45,8 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Judgment Call functions" href="dindputils.html" />
-    <link rel="prev" title="INDP classes and functions" href="indputils.html" /> 
+    <link rel="next" title="INDP" href="indp_all.html" />
+    <link rel="prev" title="High-level analysis modules" href="runutils.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -70,7 +70,7 @@
             
             
               <div class="version">
-                0.4.3
+                0.4.4
               </div>
             
           
@@ -101,20 +101,17 @@
 <li class="toctree-l1"><a class="reference internal" href="run_main.html">Interdepndent Network Restoration Decision-making (Complete Analysis Dashboard)</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="backend.html">Backend Classes and Modules</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="runutils.html">High-level analysis modules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="indp.html">INDP optimization functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="indputils.html">INDP classes and functions</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Infrastructure classes and functions</a><ul>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Infrastructure</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#functions-to-load-a-network-from-file">Functions to load a network from file</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#functions-to-load-a-initial-damage-data-from-file">Functions to load a initial damage data from file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#functions-to-load-initial-damage-data-from-file">Functions to load initial damage data from file</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#classes-to-define-a-network-and-its-elements">Classes to define a network and its elements</a><ul class="simple">
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="dindputils.html">Judgment Call functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dindpclasses.html">Judgment Call Classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gameutils.html">N-INRG and B-INRG functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gameclasses.html">N-INRG and B-INRG Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="indp_all.html">INDP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jc_all.html">Judgment Call</a></li>
+<li class="toctree-l2"><a class="reference internal" href="games_all.html">N-INRG and B-INRG</a></li>
 </ul>
 </li>
 </ul>
@@ -167,7 +164,7 @@
         
           <li><a href="backend.html">Backend Classes and Modules</a> &raquo;</li>
         
-      <li>Infrastructure classes and functions</li>
+      <li>Infrastructure</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -211,7 +208,7 @@
 }
 </style>
 <section id="module-infrastructure">
-<span id="infrastructure-classes-and-functions"></span><h1>Infrastructure classes and functions<a class="headerlink" href="#module-infrastructure" title="Permalink to this headline">¶</a></h1>
+<span id="infrastructure"></span><h1>Infrastructure<a class="headerlink" href="#module-infrastructure" title="Permalink to this headline">¶</a></h1>
 <section id="functions-to-load-a-network-from-file">
 <h2>Functions to load a network from file<a class="headerlink" href="#functions-to-load-a-network-from-file" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
@@ -335,8 +332,8 @@ only considers a main commodity.</p></li>
 </dd></dl>
 
 </section>
-<section id="functions-to-load-a-initial-damage-data-from-file">
-<h2>Functions to load a initial damage data from file<a class="headerlink" href="#functions-to-load-a-initial-damage-data-from-file" title="Permalink to this headline">¶</a></h2>
+<section id="functions-to-load-initial-damage-data-from-file">
+<h2>Functions to load initial damage data from file<a class="headerlink" href="#functions-to-load-initial-damage-data-from-file" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="infrastructure.add_wu_failure_scenario">
 <span class="sig-prename descclassname"><span class="pre">infrastructure.</span></span><span class="sig-name descname"><span class="pre">add_wu_failure_scenario</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">G</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dam_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_sce</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#infrastructure.add_wu_failure_scenario" title="Permalink to this definition">¶</a></dt>
@@ -851,8 +848,8 @@ the depender node. The depender node is non-functional if the corresponding depe
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="dindputils.html" class="btn btn-neutral float-right" title="Judgment Call functions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="indputils.html" class="btn btn-neutral float-left" title="INDP classes and functions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="indp_all.html" class="btn btn-neutral float-right" title="INDP" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="runutils.html" class="btn btn-neutral float-left" title="High-level analysis modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>
@@ -861,7 +858,7 @@ the depender node. The depender node is non-functional if the corresponding depe
     <p>
         &#169; Copyright 2021, SISRRA, Hesam Talebiyan.
       <span class="lastupdated">
-        Last updated on Jul 28, 2021.
+        Last updated on Aug 01, 2021.
       </span>
 
     </p>

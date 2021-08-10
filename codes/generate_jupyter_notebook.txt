@@ -1,1 +1,3 @@
 ipynb-py-convert run_main.py run_main.ipynb
+
+ipynb-py-convert run_main_indp_simplified.py run_main_indp_simplified.ipynb

@@ -201,7 +201,7 @@ def realized_performance(obj, t_step, functionality, judger_layer, print_cmd=Fal
 
 def read_results(combinations, optimal_combinations, cost_types, root_result_dir='../results/',
                  deaggregate=False, rslt_dir_lyr='/agents'):
-    '''
+    """
     This function reads the results of analyses (INDP, JC, etc.) and the corresponding
     objects from file and aggregates the results in a dictionary.
 
@@ -219,10 +219,10 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
     root_result_dir : 'str', optional
         Root directory where the results are stored. The default is '../results/'.
     deaggregate : bool, optional
-        Should the deaggregated results (for seperate layers) be read. The default is False.
+        Should the de-aggregated results (for separate layers) be read. The default is False.
     rslt_dir_lyr : str, optional
-        Directory insdie the :func:`root result directory <read_results>` where
-        the deaggregated results (for seperate layers)  are. The default is '/agents'.
+        Directory inside the :func:`root result directory <read_results>` where
+        the de-aggregated results (for separate layers)  are. The default is '/agents'.
 
     Returns
     -------
@@ -233,7 +233,7 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
 
     .. todo::
         Games: modify the NE analysis to accommodate the case of random signal
-    '''
+    """
     columns = ['t', 'Magnitude', 'cost_type', 'decision_type', 'judgment_type',
                'auction_type', 'valuation_type', 'no_resources', 'sample',
                'cost', 'normalized_cost', 'layer']
@@ -253,8 +253,8 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
             else:
                 full_suffix += '_' + x[6]
         result_dir = root_result_dir + x[4] + '_results' + full_suffix
-        assert os.path.exists(result_dir + '/actions_' + str(x[1]) + '_.csv'), 'Error:' + \
-            ' The combination or folder does not exist' + str(x)
+        assert os.path.exists(result_dir + '/actions_' + str(x[1]) + '_.csv'), 'Error:' + 'The combination or folder ' \
+                                                                                          'does not exist' + str(x)
 
         # Save all results to Pandas dataframe
         sample_result = indputils.INDPResults()
@@ -308,7 +308,7 @@ def read_results(combinations, optimal_combinations, cost_types, root_result_dir
 def relative_performance(r_df, combinations, optimal_combinations, ref_method='indp',
                          ref_jt='nan', ref_at='nan', ref_vt='nan', cost_type='Total',
                          deaggregate=False):
-    '''
+    """
     This functions computes the relative performance, relative cost, and univeral
     relative measure :cite:`Talebiyan2019c` based on results from JC and INDP.
 
@@ -346,7 +346,7 @@ def relative_performance(r_df, combinations, optimal_combinations, ref_method='i
     lambda_df : dict
         Dictionary that contains the relative measures.
 
-    '''
+    """
     columns = ['Magnitude', 'cost_type', 'decision_type', 'judgment_type', 'auction_type',
                'valuation_type', 'no_resources', 'sample',
                'Area_TC', 'Area_P', 'lambda_tc', 'lambda_p', 'lambda_U', 'layer']
@@ -539,7 +539,7 @@ def read_resource_allocation(result_df, combinations, optimal_combinations, objs
             else:
                 poa = 'nan'
             for l, lval in tval.items():
-                temp_dict = {'t': t,  'decision_type': x[4], 'judgment_type': x[5], 'auction_type': x[6],
+                temp_dict = {'t': t, 'decision_type': x[4], 'judgment_type': x[5], 'auction_type': x[6],
                              'valuation_type': x[7], 'sample': x[1], 'Magnitude': x[0], 'layer': l,
                              'no_resources': x[3], 'poa': poa}
                 for rc, rval in lval.items():
@@ -592,7 +592,8 @@ def read_resource_allocation(result_df, combinations, optimal_combinations, objs
                                                         'sample': x[1], 'Magnitude': x[0], 'layer': l,
                                                         'no_resources': x[3],
                                                         'gap_' + rc: distance / float(vector_res[l].shape[0]),
-                                                        'norm_gap_' + rc: norm_distance / float(vector_res[l].shape[0])},
+                                                        'norm_gap_' + rc: norm_distance / float(
+                                                            vector_res[l].shape[0])},
                                                        ignore_index=True)
             if idx % (len(combinations + optimal_combinations) / 10 + 1) == 0:
                 update_progress(idx + 1, len(combinations + optimal_combinations))
@@ -685,12 +686,12 @@ def read_run_time(combinations, optimal_combinations, objs, root_result_dir='../
 
 
 def generate_combinations(database, mags, sample, layers, no_resources, decision_type,
-                          judgment_type, res_alloc_type, valuation_type,
+                          judgment_type=[''], res_alloc_type=[''], valuation_type=[''],
                           list_high_dam_add=None, synthetic_dir=None):
-    '''
-    This fucntion returns all combinations of magnitude, sample, judgment type,
+    """
+    This function returns all combinations of magnitude, sample, judgment type,
     resource allocation type, and valuation type (if applicable) involved in
-    decentralized and centralized analyses. The returend dictionary are used by
+    decentralized and centralized analyses. The returned dictionary are used by
     other functions to read results and calculate comparison measures.
 
     Parameters
@@ -710,6 +711,8 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
         List of number of available resources, :math:`R_c`.
     decision_type : list
         List of methods.
+    judgment_type : list
+        List of judgment types.
     res_alloc_type : list
         List of resource allocation methods.
     valuation_type : list
@@ -729,7 +732,7 @@ def generate_combinations(database, mags, sample, layers, no_resources, decision
         All combinations of magnitude, sample, judgment type, resource allocation type
         involved in the INDP (or any other optimal results).
 
-    '''
+    """
     combinations = []
     optimal_combinations = []
     optimal_method = ['tdindp', 'indp', 'sample_indp_12Node', 'dp_indp']

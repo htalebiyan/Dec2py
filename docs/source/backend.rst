@@ -5,13 +5,10 @@ Backend Classes and Modules
    :caption: Topics:
 
    runutils.rst
-   indp.rst
-   indputils.rst
    infrastructure.rst
-   dindputils.rst
-   dindpclasses.rst   
-   gameutils.rst
-   gameclasses.rst
+   indp_all.rst
+   jc_all.rst
+   games_all.rst
    
 
 

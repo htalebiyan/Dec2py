@@ -7,7 +7,7 @@ decision-making models are considered here:
 
 * Centralized methods: These methods solve one optimization problem for the whole
 interdependent network, which leads to the optimal restoration plan. Such models
-imply that the decision-maker is one entity that has the complete information and
+assume that the decision-maker is one entity that has complete information and
 authority to restore all layers of the interdependent network. These methods include
 Interdependent Network Design Problem (INDP) [cite] and time-dependent INDP (td-INDP) [cite].
 
@@ -216,17 +216,20 @@ EXTRA_COMMODITY = None
 # %%
 ''' 
 ### Set analysis parameters 
-1. [to be revised] `RC`: list of resource caps or the number of available resources in each step of the
-analysis. 
+1. `RC`: list of resource caps or the number of available resources in each step of the
+analysis. Each item of the list is a dictionary whose items show the type of resource and the available number of that
+type of resource. For example:
     * If `FAIL_SCE_PARAM[TYPE']`=*synthetic*, this item is not necessary since `R_c` is
     adjusted for each configuration. Set it to to `R_c`=[0]
-    * If `FAIL_SCE_PARAM[TYPE']`=*shelby*, you have to options.
-    * if, for example, `R_c`= [3, 6, 8, 12], then the analysis is done for the cases
-    when there are 3, 6, 8, and 12 resources available (total resource assignment).
-    * if, for example, `R_c`= [[1, 1], [1, 2], [3, 3]] and given there are 2 layers,
-    then the analysis is done for the case where each layer gets 1 resource, AND
-    the case where layer 1 gets 1 and layer 2 gets 2 resources, AND 
-    the case where each layer gets 3 resource (Prescribed resource for each layer).
+    * If `FAIL_SCE_PARAM[TYPE']`=*WU* or *ANDRES* or *from_csv*, you have two options:
+    * if, for example, `R_c`= [{'budget': 3}, {'budget': 6}], then the analysis is done for the cases
+    when there are 3 and 6 resources available of type 'budget'  (total resource assignment). If the name of resource is 
+    set to '', the results will be consistent with older version of the code, where only one type of resource was 
+    considered.
+    * if, for example, `R_c`= [{'budget': {1:1, 2:1}}, {'budget': {1:1, 2:2}}, {'budget': {1:3, 2:3}}] and given there 
+    are 2 layers, then the analysis is done for the case where each layer gets 1 resource of type 'budget', AND
+    the case where layer 1 gets 1 and layer 2 gets 2 resources of type 'budget', AND 
+    the case where each layer gets 3 resource of type 'budget' (Prescribed resource for each layer).
 2. `LAYERS`: list of layers in the analysis. 
     * If `FAIL_SCE_PARAM[TYPE']`=*synthetic*, this item is not necessary. `LAYERS` is
     adjusted for each configuration. Set it to to `LAYERS`=[0]
