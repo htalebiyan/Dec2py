@@ -148,8 +148,7 @@ def plot_performance_curves(df, cost_type='Total', ci=None, normalize=False, dea
     labels = correct_legend_labels(labels)
     lgd = fig.legend(handles, labels, loc='lower right', ncol=1, framealpha=0.35,
                      bbox_to_anchor=(.85, 0.12), fontsize='xx-small')
-    plt.savefig('Performance_curves.png', dpi=dpi, bbox_inches='tight',
-                bbox_extra_artists=(lgd,))
+    plt.savefig('Performance_curves.png', dpi=dpi, bbox_inches='tight', bbox_extra_artists=(lgd,))
 
 
 def plot_relative_performance(lambda_df, cost_type='Total', lambda_type='U', layer='nan'):
