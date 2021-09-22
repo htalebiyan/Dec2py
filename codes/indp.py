@@ -1018,6 +1018,7 @@ def initialize_sample_network(layers=None):
         nn = InfrastructureNode(global_index, n[1], n[0])
         nn.demand = node_to_demand_dict[n]
         nn.reconstruction_cost = abs(nn.demand)
+        nn.protection_cost = abs(nn.demand)*2
         nn.oversupply_penalty = 50
         nn.undersupply_penalty = 50
         nn.resource_usage['p_'] = 1

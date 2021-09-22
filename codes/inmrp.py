@@ -1,4 +1,7 @@
+import sys
+
 from infrastructure import *
+import indp
 from indputils import *
 from gurobipy import GRB, Model, LinExpr
 import string
@@ -9,8 +12,8 @@ import time
 import dislocationutils
 
 
-def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, forced_actions=False, fixed_nodes=None,
-         print_cmd=True, time_limit=None, co_location=True, solution_pool=None):
+def inmrp(N, v_r, v_r_hat, T=1, layers=None, controlled_layers=None, functionality=None, forced_actions=False,
+          fixed_nodes=None, print_cmd=True, time_limit=None, co_location=True, solution_pool=None):
     """
     INMRP optimization problem.
 
@@ -19,7 +22,11 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
     N : :class:`~infrastructure.InfrastructureNetwork`
         An InfrastructureNetwork instance.
     v_r : dict
-        Dictionary of the number of resources of different types in the analysis.
+        Dictionary of the number of restoration resources of different types in the analysis.
+        If the value is a scale for a type, it shows the total number of resources of that type for all layers .
+        If the value is a list for a type, it shows the total number of resources of that type given to each layer.
+    v_r_hat : dict
+        Dictionary of the number of protection resources of different types in the analysis.
         If the value is a scale for a type, it shows the total number of resources of that type for all layers .
         If the value is a list for a type, it shows the total number of resources of that type given to each layer.
     T : int, optional
@@ -60,7 +67,7 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
     if functionality is None:
         functionality = {}
     if layers is None:
-        layers = [1, 2, 3]
+        sys.exit('No list of layers')
     if controlled_layers is None:
         controlled_layers = layers
 
@@ -79,7 +86,7 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
     # Damaged nodes in controlled network.
     n_hat_prime = [n for n in n_hat.nodes(data=True) if n[1]['data']['inf_data'].repaired == 0.0]
     # Damaged arcs in whole network
-    a_prime = [(u, v, a) for u, v, a in g_prime.edges(data=True) if a['data']['inf_data'].functionality == 0.0]
+    a_prime = [(u, v, a) for u, v, a in g_prime.edges(data=True) if a['data']['inf_data'].repaired == 0.0]
     # Damaged arcs in controlled network.
     a_hat_prime = [(u, v, a) for u, v, a in a_prime if n_hat.has_node(u) and n_hat.has_node(v)]
     S = N.S
@@ -119,9 +126,7 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
         # Add functionality binary variables for each node in N'.
         for n, d in n_hat.nodes(data=True):
             m.addVar(name='w_' + str(n) + "," + str(t), vtype=GRB.BINARY)
-            if T > 1:
-                m.addVar(name='w_tilde_' + str(n) + "," + str(t), vtype=GRB.BINARY)
-                # Fix node values (only for iINDP)
+            m.addVar(name='w_tilde_' + str(n) + "," + str(t), vtype=GRB.BINARY)
         m.update()
         for key, val in fixed_nodes.items():
             m.getVarByName('w_' + str(key) + "," + str(0)).lb = val
@@ -134,8 +139,16 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
         # Add functionality binary variables for each arc in A'.
         for u, v, a in a_hat_prime:
             m.addVar(name='y_' + str(u) + "," + str(v) + "," + str(t), vtype=GRB.BINARY)
-            if T > 1:
-                m.addVar(name='y_tilde_' + str(u) + "," + str(v) + "," + str(t), vtype=GRB.BINARY)
+            m.addVar(name='y_tilde_' + str(u) + "," + str(v) + "," + str(t), vtype=GRB.BINARY)
+            # Add protection state variables for each arc
+            if t == 0:
+                m.addVar(name='y_hat_' + str(u) + "," + str(v), vtype=GRB.BINARY)
+    # Add protection state variables for each node
+    for n, d in n_hat_prime.nodes(data=True):
+        m.addVar(name='w_hat_' + str(n), vtype=GRB.BINARY)
+    # Add protection state variables for each arc
+    for u, v, a in a_hat_prime:
+        m.addVar(name='y_hat_' + str(u) + "," + str(v), vtype=GRB.BINARY)
     m.update()
 
     # Populate objective function.
@@ -145,18 +158,10 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
             for s in S:
                 obj_func += s.cost * m.getVarByName('z_' + str(s.id) + "," + str(t))
         for u, v, a in a_hat_prime:
-            if T == 1:
-                obj_func += (float(a['data']['inf_data'].reconstruction_cost) / 2.0) * m.getVarByName(
-                    'y_' + str(u) + "," + str(v) + "," + str(t))
-            else:
-                obj_func += (float(a['data']['inf_data'].reconstruction_cost) / 2.0) * m.getVarByName(
-                    'y_tilde_' + str(u) + "," + str(v) + "," + str(t))
+            obj_func += (float(a['data']['inf_data'].reconstruction_cost) / 2.0) * \
+                        m.getVarByName('y_tilde_' + str(u) + "," + str(v) + "," + str(t))
         for n, d in n_hat_prime:
-            if T == 1:
-                obj_func += d['data']['inf_data'].reconstruction_cost * m.getVarByName('w_' + str(n) + "," + str(t))
-            else:
-                obj_func += d['data']['inf_data'].reconstruction_cost * m.getVarByName(
-                    'w_tilde_' + str(n) + "," + str(t))
+            obj_func += d['data']['inf_data'].reconstruction_cost * m.getVarByName('w_tilde_' + str(n) + "," + str(t))
         for n, d in n_hat.nodes(data=True):
             obj_func += d['data']['inf_data'].oversupply_penalty * m.getVarByName('delta+_' + str(n) + "," + str(t))
             obj_func += d['data']['inf_data'].undersupply_penalty * m.getVarByName('delta-_' + str(n) + "," + str(t))
@@ -164,25 +169,30 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
                 obj_func += val['oversupply_penalty'] * m.getVarByName('delta+_' + str(n) + "," + str(t) + "," + str(l))
                 obj_func += val['undersupply_penalty'] * m.getVarByName(
                     'delta-_' + str(n) + "," + str(t) + "," + str(l))
-
         for u, v, a in n_hat.edges(data=True):
             obj_func += a['data']['inf_data'].flow_cost * m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t))
             for l, val in a['data']['inf_data'].extra_com.items():
                 obj_func += val['flow_cost'] * m.getVarByName(
                     'x_' + str(u) + "," + str(v) + "," + str(t) + "," + str(l))
 
+    for u, v, a in a_hat_prime:
+        obj_func += (float(a['data']['inf_data'].protection_cost) / 2.0) * m.getVarByName(
+            'y_hat_' + str(u) + "," + str(v))
+    for n, d in n_hat_prime:
+        obj_func += d['data']['inf_data'].protection_cost * m.getVarByName('w_hat_' + str(n))
+
     m.setObjective(obj_func, GRB.MINIMIZE)
     m.update()
 
     # Constraints.
-    # Time-dependent constraints.
-    if T > 1:
-        for n, d in n_hat_prime:
-            m.addConstr(m.getVarByName('w_' + str(n) + ",0"), GRB.EQUAL, 0,
-                        "Initial state at node " + str(n) + "," + str(0))
-        for u, v, a in a_hat_prime:
-            m.addConstr(m.getVarByName('y_' + str(u) + "," + str(v) + ",0"), GRB.EQUAL, 0,
-                        "Initial state at arc " + str(u) + "," + str(v) + "," + str(0))
+    # Initial condition constraints.
+    for n, d in n_hat_prime:
+        m.addConstr(m.getVarByName('w_' + str(n) + ",0"), GRB.EQUAL, m.getVarByName('w_hat_' + str(n)),
+                    "Initial state at node " + str(n) + "," + str(0))
+    for u, v, a in a_hat_prime:
+        m.addConstr(m.getVarByName('y_' + str(u) + "," + str(v) + ",0"), GRB.EQUAL,
+                    m.getVarByName('y_hat_' + str(u) + "," + str(v)),
+                    "Initial state at arc " + str(u) + "," + str(v) + "," + str(0))
 
     for t in range(T):
         # Time-dependent constraint.
@@ -272,7 +282,7 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
                             a['data']['inf_data'].capacity * N.G[u][v]['data']['inf_data'].functionality,
                             "Flow arc functionality constraint(" + str(u) + "," + str(v) + "," + str(t) + ")")
 
-        # Resource availability constraints.
+        # Restoration resource availability constraints.
         for rc, val in v_r.items():
             is_sep_res = False
             if isinstance(val, int):
@@ -280,9 +290,8 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
             else:
                 is_sep_res = True
                 total_resource = sum([lval for _, lval in val.items()])
-                assert len(val.keys()) == len(layers), "The number of resource \
-                    values does not match the number of layers."
-
+                assert len(val.keys()) == len(layers), "The number of restoration resource values does not match the " \
+                                                       "number of layers. "
             resource_left_constr = LinExpr()
             if is_sep_res:
                 res_left_constr_sep = {key: LinExpr() for key in val.keys()}
@@ -314,12 +323,12 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
                         res_left_constr_sep[idx_lyr] += res_use * m.getVarByName('w_tilde_' + str(n) + "," + str(t))
 
             m.addConstr(resource_left_constr, GRB.LESS_EQUAL, total_resource,
-                        "Resource availability constraint for " + rc + " at " + str(t) + ".")
+                        "Restoration resource availability constraint for " + rc + " at " + str(t) + ".")
             if is_sep_res:
                 for k, lval in val.items():
                     m.addConstr(res_left_constr_sep[k], GRB.LESS_EQUAL, lval,
-                                "Resource availability constraint for " + rc + " at " + \
-                                str(t) + " for layer " + str(k) + ".")
+                                "Restoration resource availability constraint for " + rc + " at " + str(t) + \
+                                " for layer " + str(k) + ".")
 
         # Interdependency constraints
         infeasible_actions = []
@@ -416,6 +425,41 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
         #                 dc_rhs = abs(val['demand']) - m.getVarByName('delta-_' + str(n) + "," + str(t) + "," + str(l))
         #                 m.addConstr(dc_lhs, GRB.LESS_EQUAL, dc_rhs,
         #                             "Demand completion constraints for node " + str(n) + "," + str(t) + "," + str(l))
+
+    # Protection resource availability constraints.
+    for rc, val in v_r_hat.items():
+        is_sep_res = False
+        if isinstance(val, int):
+            total_resource = val
+        else:
+            is_sep_res = True
+            total_resource = sum([lval for _, lval in val.items()])
+            assert len(val.keys()) == len(layers), "The number of protection resource values does not match the " \
+                                                   "number of layers. "
+        resource_left_constr = LinExpr()
+        if is_sep_res:
+            res_left_constr_sep = {key: LinExpr() for key in val.keys()}
+
+        for u, v, a in a_hat_prime:
+            idx_lyr = a['data']['inf_data'].layer
+            res_use = 0.5 * a['data']['inf_data'].resource_usage['h_hat_' + rc]
+            resource_left_constr += res_use * m.getVarByName('y_hat_' + str(u) + "," + str(v))
+            if is_sep_res:
+                res_left_constr_sep[idx_lyr] += res_use * m.getVarByName('y_hat_' + str(u) + "," + str(v))
+
+        for n, d in n_hat_prime:
+            idx_lyr = n[1]
+            res_use = d['data']['inf_data'].resource_usage['p_hat_' + rc]
+            resource_left_constr += res_use * m.getVarByName('w_hat_' + str(n))
+            if is_sep_res:
+                res_left_constr_sep[idx_lyr] += res_use * m.getVarByName('w_hat_' + str(n))
+
+        m.addConstr(resource_left_constr, GRB.LESS_EQUAL, total_resource,
+                    "Protection resource availability constraint for " + rc + ".")
+        if is_sep_res:
+            for k, lval in val.items():
+                m.addConstr(res_left_constr_sep[k], GRB.LESS_EQUAL, lval,
+                            "Protection resource availability constraint for " + rc + " for layer " + str(k) + ".")
     #    print "Solving..."
     m.update()
     if solution_pool:
@@ -430,9 +474,9 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
             print('\nOptimizer time limit, gap = %1.3f\n' % m.MIPGap)
         results = collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S, coloc=co_location)
         results.add_run_time(t, run_time)
-        if solution_pool:
-            sol_pool_results = collect_solution_pool(m, T, n_hat_prime, a_hat_prime)
-            return [m, results, sol_pool_results]
+        # if solution_pool:
+        #     sol_pool_results = collect_solution_pool(m, T, n_hat_prime, a_hat_prime)
+        #     return [m, results, sol_pool_results]
         return [m, results]
     else:
         m.computeIIS()
@@ -489,6 +533,8 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
     for t in range(T):
         node_cost = 0.0
         arc_cost = 0.0
+        node_protect_cost = 0.0
+        arc_protect_cost = 0.0
         flow_cost = 0.0
         over_supp_cost = 0.0
         under_supp_cost = 0.0
@@ -496,6 +542,8 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
         space_prep_cost = 0.0
         node_cost_layer = {l: 0.0 for l in layers}
         arc_cost_layer = {l: 0.0 for l in layers}
+        node_protect_cost_layer = {l: 0.0 for l in layers}
+        arc_protect_cost_layer = {l: 0.0 for l in layers}
         flow_cost_layer = {l: 0.0 for l in layers}
         over_supp_cost_layer = {l: 0.0 for l in layers}
         under_supp_cost_layer = {l: 0.0 for l in layers}
@@ -504,16 +552,12 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
         # Record node recovery actions.
         for n, d in n_hat_prime:
             node_var = 'w_tilde_' + str(n) + "," + str(t)
-            if T == 1:
-                node_var = 'w_' + str(n) + "," + str(t)
             if round(m.getVarByName(node_var).x) == 1:
                 action = str(n[0]) + "." + str(n[1])
                 indp_results.add_action(t, action)
         # Record edge recovery actions.
         for u, v, a in a_hat_prime:
             arc_var = 'y_tilde_' + str(u) + "," + str(v) + "," + str(t)
-            if T == 1:
-                arc_var = 'y_' + str(u) + "," + str(v) + "," + str(t)
             if round(m.getVarByName(arc_var).x) == 1:
                 action = str(u[0]) + "." + str(u[1]) + "/" + str(v[0]) + "." + str(v[1])
                 indp_results.add_action(t, action)
@@ -522,19 +566,15 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
             for s in S:
                 space_prep_cost += s.cost * m.getVarByName('z_' + str(s.id) + "," + str(t)).x
         indp_results.add_cost(t, "Space Prep", space_prep_cost, space_prep_cost_layer)
-        # Calculate arc preparation costs.
+        # Calculate arc restoration costs.
         for u, v, a in a_hat_prime:
             arc_var = 'y_tilde_' + str(u) + "," + str(v) + "," + str(t)
-            if T == 1:
-                arc_var = 'y_' + str(u) + "," + str(v) + "," + str(t)
             arc_cost += (a['data']['inf_data'].reconstruction_cost / 2.0) * m.getVarByName(arc_var).x
             arc_cost_layer[u[1]] += (a['data']['inf_data'].reconstruction_cost / 2.0) * m.getVarByName(arc_var).x
         indp_results.add_cost(t, "Arc", arc_cost, arc_cost_layer)
-        # Calculate node preparation costs.
+        # Calculate node restoration costs.
         for n, d in n_hat_prime:
             node_var = 'w_tilde_' + str(n) + "," + str(t)
-            if T == 1:
-                node_var = 'w_' + str(n) + "," + str(t)
             node_cost += d['data']['inf_data'].reconstruction_cost * m.getVarByName(node_var).x
             node_cost_layer[n[1]] += d['data']['inf_data'].reconstruction_cost * m.getVarByName(node_var).x
         indp_results.add_cost(t, "Node", node_cost, node_cost_layer)
@@ -570,55 +610,146 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
                               under_supp_cost + space_prep_cost, total_lyr)
         indp_results.add_cost(t, "Total no disconnection", space_prep_cost + arc_cost + \
                               flow_cost + node_cost, total_nd_lyr)
+
+    # Record node protection actions.
+    for n, d in n_hat_prime:
+        node_var = 'w_hat_' + str(n)
+        if round(m.getVarByName(node_var).x) == 1:
+            protect = str(n[0]) + "." + str(n[1])
+            indp_results.add_action(-1, protect)
+    # Record edge protection actions.
+    for u, v, a in a_hat_prime:
+        arc_var = 'y_hat_' + str(u) + "," + str(v)
+        if round(m.getVarByName(arc_var).x) == 1:
+            protect = str(u[0]) + "." + str(u[1]) + "/" + str(v[0]) + "." + str(v[1])
+            indp_results.add_action(-1, protect)
+    # Calculate arc protection costs.
+    for u, v, a in a_hat_prime:
+        arc_var = 'y_hat_' + str(u) + "," + str(v)
+        arc_cost += (a['data']['inf_data'].protection_cost / 2.0) * m.getVarByName(arc_var).x
+        arc_cost_layer[u[1]] += (a['data']['inf_data'].protection_cost / 2.0) * m.getVarByName(arc_var).x
+    indp_results.add_cost(-1, "Arc", arc_cost, arc_cost_layer)
+    # Calculate node protection costs.
+    for n, d in n_hat_prime:
+        node_var = 'w_tilde_' + str(n) + "," + str(t)
+        node_cost += d['data']['inf_data'].protection_cost * m.getVarByName(node_var).x
+        node_cost_layer[n[1]] += d['data']['inf_data'].protection_cost * m.getVarByName(node_var).x
+    indp_results.add_cost(-1, "Node", node_cost, node_cost_layer)
     return indp_results
 
 
-def collect_solution_pool(m, T, n_hat_prime, a_hat_prime):
+def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=1, save=True, suffix="",
+             forced_actions=False, save_model=False, print_cmd_line=True, co_location=True):
     """
-    This function collect the result (list of repaired nodes and arcs) for all feasible solutions in the solution pool
+    This function runs iINDP (T=1) or td-INDP for a given number of time steps and input parameters
 
     Parameters
     ----------
-    m : gurobi.Model
-        The object containing the solved optimization problem.
-    T : int
-        Number of time steps in the optimization (T=1 for iINDP, and T>=1 for td-INDP).
-    n_hat_prime : list
-        List of damaged nodes in controlled network.
-    a_hat_prime : list
-        List of damaged arcs in controlled network.
+    params : dict
+        Parameters that are needed to run the indp optimization.
+    layers : list
+        List of layers in the interdependent network. The default is 'None', which sets the list to [1, 2, 3].
+    controlled_layers : list
+        List of layers that are included in the analysis. The default is 'None', which sets the list equal to layers.
+    functionality : dict
+        This dictionary is used to assign functionality values elements in the network before the analysis starts. The
+        default is 'None'.
+    T : int, optional
+        Number of time steps to optimize over. T=1 shows an iINDP analysis and T>1 shows a td-INDP. The default is 1.
+    save : bool
+        If the results should be saved to file. The default is True.
+    suffix : str
+        The suffix that should be added to the output files when saved. The default is ''.
+    forced_actions : bool
+        If True, the optimizer is forced to repair at least one element in each time step. The default is False.
+    save_model : bool
+        If the gurobi optimization model should be saved to file. The default is False.
+    print_cmd_line : bool
+        If full information about the analysis should be written to the console. The default is True.
+    co_location : bool
+        If co-location and geographical interdependency should be considered in the analysis. The default is True.
 
     Returns
     -------
-    sol_pool_results : dict
-    A dictionary containing one dictionary per solution that contain list of repaired node and arcs in the solution.
+    indp_results : INDPResults
+    A :class:`~indputils.INDPResults` object containing the optimal restoration decisions.
 
     """
-    sol_pool_results = {}
-    current_sol_count = 0
-    for sol in range(m.SolCount):
-        m.setParam('SolutionNumber', sol)
-        # print(m.PoolObjVal)
-        sol_pool_results[sol] = {'nodes': [], 'arcs': []}
-        for t in range(T):
-            # Record node recovery actions.
-            for n, d in n_hat_prime:
-                node_var = 'w_tilde_' + str(n) + "," + str(t)
-                if T == 1:
-                    node_var = 'w_' + str(n) + "," + str(t)
-                if round(m.getVarByName(node_var).xn) == 1:
-                    sol_pool_results[sol]['nodes'].append(n)
-            # Record edge recovery actions.
-            for u, v, a in a_hat_prime:
-                arc_var = 'y_tilde_' + str(u) + "," + str(v) + "," + str(t)
-                if T == 1:
-                    arc_var = 'y_' + str(u) + "," + str(v) + "," + str(t)
-                if round(m.getVarByName(arc_var).x) == 1:
-                    sol_pool_results[sol]['arcs'].append((u, v))
-        if sol > 0 and sol_pool_results[sol] == sol_pool_results[current_sol_count]:
-            del sol_pool_results[sol]
-        elif sol > 0:
-            current_sol_count = sol
-    return sol_pool_results
 
+    # Initialize failure scenario.
+    global original_N
+    if functionality is None:
+        functionality = {}
+    if layers is None:
+        layers = [1, 2, 3]
+    if controlled_layers is None:
+        controlled_layers = layers
 
+    if "N" not in params:
+        interdependent_net = indp.initialize_network(base_dir="../data/INDP_7-20-2015/",
+                                                     sim_number=params['SIM_NUMBER'], magnitude=params["MAGNITUDE"])
+    else:
+        interdependent_net = params["N"]
+    if "NUM_ITERATIONS" not in params:
+        params["NUM_ITERATIONS"] = 1
+
+    out_dir_suffix_res = indp.get_resource_suffix(params)
+    indp_results = INDPResults(params["L"])
+    num_time_windows = 1
+    time_window_length = T
+    is_first_iteration = True
+    if "WINDOW_LENGTH" in params:
+        time_window_length = params["WINDOW_LENGTH"]
+        num_time_windows = T
+    output_dir = params["OUTPUT_DIR"] + '_L' + str(len(layers)) + "_m" + str(params["MAGNITUDE"]) + "_v" + \
+                 out_dir_suffix_res
+
+    print("Running INMRP (T=" + str(T) + ", Window size=" + str(time_window_length) + ")")
+    # Initial percolation calculations.
+    v_0 = {x: 0 for x in params["V"].keys()}
+    results = inmrp(interdependent_net, v_0, v_0, 1, layers, controlled_layers=controlled_layers,
+                    functionality=functionality, co_location=co_location)
+    indp_results = results[1]
+    indp_results.add_components(0, INDPComponents.calculate_components(results[0], interdependent_net,
+                                                                       layers=controlled_layers))
+    for n in range(num_time_windows):
+        print("-Time window (td-INDP)", n + 1, "/", num_time_windows)
+        functionality_t = {}
+        # Slide functionality matrix according to sliding time window.
+        if functionality:
+            for t in functionality:
+                if t in range(n, time_window_length + n + 1):
+                    functionality_t[t - n] = functionality[t]
+            if len(functionality_t) < time_window_length + 1:
+                diff = time_window_length + 1 - len(functionality_t)
+                max_t = max(functionality_t.keys())
+                for d in range(diff):
+                    functionality_t[max_t + d + 1] = functionality_t[max_t]
+        # Run td-INDP.
+        results = inmrp(interdependent_net, params["V"], params["V_hat"], time_window_length + 1, layers,
+                        controlled_layers=controlled_layers, functionality=functionality_t,
+                        forced_actions=forced_actions, co_location=co_location)
+        if save_model:
+            indp.save_indp_model_to_file(results[0], output_dir + "/Model", n + 1)
+        if "WINDOW_LENGTH" in params:
+            indp_results.extend(results[1], t_offset=n + 1, t_start=1, t_end=2)
+            # Modify network for recovery actions and calculate components.
+            indp.apply_recovery(interdependent_net, results[1], 1)
+            indp_results.add_components(n + 1, INDPComponents.calculate_components(results[0], interdependent_net, 1,
+                                                                                   layers=controlled_layers))
+        else:
+            indp_results.extend(results[1], t_offset=0)
+            for t in range(1, T):
+                # Modify network to account for recovery actions.
+                indp.apply_recovery(interdependent_net, indp_results, t)
+                indp_results.add_components(1, INDPComponents.calculate_components(results[0], interdependent_net, t,
+                                                                                   layers=controlled_layers))
+    # Save results of current simulation.
+    if save:
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        indp_results.to_csv(output_dir, params["SIM_NUMBER"], suffix=suffix)
+        if not os.path.exists(output_dir + '/agents'):
+            os.makedirs(output_dir + '/agents')
+        indp_results.to_csv_layer(output_dir + '/agents', params["SIM_NUMBER"], suffix=suffix)
+    return indp_results

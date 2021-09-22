@@ -35,7 +35,7 @@ import pickle
 
 # %%
 # plt.close('all')
-# runutils.run_sample_problems()
+runutils.run_sample_problems()
 
 # %%
 """
@@ -406,15 +406,15 @@ make output figures:
 # %%
 plt.close('all')
 ### Getting back the objects ###
-import pickle
-
-results_dir = OUTPUT_DIR
-with open(results_dir + 'postprocess_dicts.pkl', 'rb') as f:
-    [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
-     ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF, REL_ACTION_DF] = pickle.load(f)
-plots.plot_performance_curves(BASE_DF,
-                              cost_type='Total', ci=None,
-                              deaggregate=False, plot_resilience=True)
+# import pickle
+#
+# results_dir = OUTPUT_DIR
+# with open(results_dir + 'postprocess_dicts.pkl', 'rb') as f:
+#     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
+#      ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF, REL_ACTION_DF] = pickle.load(f)
+# plots.plot_performance_curves(BASE_DF,
+#                               cost_type='Total', ci=None,
+#                               deaggregate=False, plot_resilience=True)
 # plots.plot_relative_performance(LAMBDA_DF[(LAMBDA_DF['auction_type'] != 'UNIFORM') & \
 #                                           ((LAMBDA_DF['no_resources'] != 8)&(LAMBDA_DF['no_resources'] != 12))],
 #                                 lambda_type='U')

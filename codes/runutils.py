@@ -143,11 +143,22 @@ def run_indp_sample(layers):
 def run_tdindp_sample(layers):
     interdep_net = indp.initialize_sample_network(layers=layers)
     params = {"OUTPUT_DIR": '../results/tdindp_sample_12Node_results', "V": {'': len(layers)},
-              "T": 7, "L": layers, "ALGORITHM": "INDP", "WINDOW_LENGTH": 3,
-              "N": interdep_net, "MAGNITUDE": 0, "SIM_NUMBER": 0}  # "WINDOW_LENGTH":6,
+              "T": 7, "L": layers, "ALGORITHM": "INDP", "WINDOW_LENGTH": 3, "N": interdep_net, "MAGNITUDE": 0,
+              "SIM_NUMBER": 0}  # "WINDOW_LENGTH":6,
     indp.run_indp(params, layers=layers, T=params["T"], suffix="", save_model=True, print_cmd_line=True)
     print('\n\nPlot restoration plan by INDP')
     indp.plot_indp_sample(params)
+    plt.show()
+
+
+def run_inmrp_sample(layers):
+    interdep_net = indp.initialize_sample_network(layers=layers)
+    params = {"OUTPUT_DIR": '../results/inmrp_sample_12Node_results', "V": {'': len(layers)},
+              "V_hat": {'': 2*len(layers)}, "T": 7, "L": layers, "ALGORITHM": "INDP", "WINDOW_LENGTH": 1,
+              "N": interdep_net, "MAGNITUDE": 0, "SIM_NUMBER": 0}
+    indp.run_inmrp(params, layers=layers, T=params["T"], suffix="", save_model=True, print_cmd_line=True)
+    # print('\n\nPlot restoration plan by INDP')
+    # indp.plot_indp_sample(params)
     plt.show()
 
 
@@ -289,8 +300,9 @@ def run_sample_problems():
     auction_type = ['UNIFORM']  # "MCA", "MAA", "MDA", "LAYER_FIXED"
     valuation_type = ["DTC"]
     judge_types = ["OPTIMISTIC"]  # "PESSIMISTIC",
-    run_indp_sample(layers)
+    # run_indp_sample(layers)
     # run_tdindp_sample(layers)
+    run_inmrp_sample(layers)
     # run_jc_sample(layers, judge_types, auction_type, valuation_type)
     # run_game_sample(layers, judge_types, auction_type, valuation_type,
     #                 game_type="NORMALGAME", reduced_act='EDM')
