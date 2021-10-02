@@ -144,7 +144,7 @@ def inmrp(N, v_r, v_r_hat, T=1, layers=None, controlled_layers=None, functionali
             if t == 0:
                 m.addVar(name='y_hat_' + str(u) + "," + str(v), vtype=GRB.BINARY)
     # Add protection state variables for each node
-    for n, d in n_hat_prime.nodes(data=True):
+    for n, d in n_hat_prime:
         m.addVar(name='w_hat_' + str(n), vtype=GRB.BINARY)
     # Add protection state variables for each arc
     for u, v, a in a_hat_prime:
@@ -176,10 +176,11 @@ def inmrp(N, v_r, v_r_hat, T=1, layers=None, controlled_layers=None, functionali
                     'x_' + str(u) + "," + str(v) + "," + str(t) + "," + str(l))
 
     for u, v, a in a_hat_prime:
-        obj_func += (float(a['data']['inf_data'].protection_cost) / 2.0) * m.getVarByName(
-            'y_hat_' + str(u) + "," + str(v))
+        obj_func += (float(a['data']['inf_data'].protection_cost) - float( a['data']['inf_data'].reconstruction_cost))\
+                    / 2.0 * m.getVarByName('y_hat_' + str(u) + "," + str(v))
     for n, d in n_hat_prime:
-        obj_func += d['data']['inf_data'].protection_cost * m.getVarByName('w_hat_' + str(n))
+        obj_func += (d['data']['inf_data'].protection_cost - d['data']['inf_data'].reconstruction_cost) * \
+                    m.getVarByName('w_hat_' + str(n))
 
     m.setObjective(obj_func, GRB.MINIMIZE)
     m.update()
@@ -187,26 +188,26 @@ def inmrp(N, v_r, v_r_hat, T=1, layers=None, controlled_layers=None, functionali
     # Constraints.
     # Initial condition constraints.
     for n, d in n_hat_prime:
-        m.addConstr(m.getVarByName('w_' + str(n) + ",0"), GRB.EQUAL, m.getVarByName('w_hat_' + str(n)),
+        m.addConstr(m.getVarByName('w_tilde_' + str(n) + ",0"), GRB.EQUAL, m.getVarByName('w_hat_' + str(n)),
                     "Initial state at node " + str(n) + "," + str(0))
     for u, v, a in a_hat_prime:
-        m.addConstr(m.getVarByName('y_' + str(u) + "," + str(v) + ",0"), GRB.EQUAL,
+        m.addConstr(m.getVarByName('y_tilde_' + str(u) + "," + str(v) + ",0"), GRB.EQUAL,
                     m.getVarByName('y_hat_' + str(u) + "," + str(v)),
                     "Initial state at arc " + str(u) + "," + str(v) + "," + str(0))
 
     for t in range(T):
         # Time-dependent constraint.
         for n, d in n_hat_prime:
-            if t > 0:
+            if t > -1:
                 w_tilde_sum = LinExpr()
-                for t_prime in range(1, t + 1):
+                for t_prime in range(0, t + 1):
                     w_tilde_sum += m.getVarByName('w_tilde_' + str(n) + "," + str(t_prime))
                 m.addConstr(m.getVarByName('w_' + str(n) + "," + str(t)), GRB.LESS_EQUAL, w_tilde_sum,
                             "Time dependent recovery constraint at node " + str(n) + "," + str(t))
         for u, v, a in a_hat_prime:
-            if t > 0:
+            if t > -1:
                 y_tilde_sum = LinExpr()
-                for t_prime in range(1, t + 1):
+                for t_prime in range(0, t + 1):
                     y_tilde_sum += m.getVarByName('y_tilde_' + str(u) + "," + str(v) + "," + str(t_prime))
                 m.addConstr(m.getVarByName('y_' + str(u) + "," + str(v) + "," + str(t)), GRB.LESS_EQUAL, y_tilde_sum,
                             "Time dependent recovery constraint at arc " + str(u) + "," + str(v) + "," + str(t))
@@ -533,8 +534,7 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
     for t in range(T):
         node_cost = 0.0
         arc_cost = 0.0
-        node_protect_cost = 0.0
-        arc_protect_cost = 0.0
+
         flow_cost = 0.0
         over_supp_cost = 0.0
         under_supp_cost = 0.0
@@ -542,8 +542,6 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
         space_prep_cost = 0.0
         node_cost_layer = {l: 0.0 for l in layers}
         arc_cost_layer = {l: 0.0 for l in layers}
-        node_protect_cost_layer = {l: 0.0 for l in layers}
-        arc_protect_cost_layer = {l: 0.0 for l in layers}
         flow_cost_layer = {l: 0.0 for l in layers}
         over_supp_cost_layer = {l: 0.0 for l in layers}
         under_supp_cost_layer = {l: 0.0 for l in layers}
@@ -612,6 +610,10 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
                               flow_cost + node_cost, total_nd_lyr)
 
     # Record node protection actions.
+    node_protect_cost = 0.0
+    arc_protect_cost = 0.0
+    node_protect_cost_layer = {l: 0.0 for l in layers}
+    arc_protect_cost_layer = {l: 0.0 for l in layers}
     for n, d in n_hat_prime:
         node_var = 'w_hat_' + str(n)
         if round(m.getVarByName(node_var).x) == 1:
@@ -626,20 +628,20 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
     # Calculate arc protection costs.
     for u, v, a in a_hat_prime:
         arc_var = 'y_hat_' + str(u) + "," + str(v)
-        arc_cost += (a['data']['inf_data'].protection_cost / 2.0) * m.getVarByName(arc_var).x
-        arc_cost_layer[u[1]] += (a['data']['inf_data'].protection_cost / 2.0) * m.getVarByName(arc_var).x
-    indp_results.add_cost(-1, "Arc", arc_cost, arc_cost_layer)
+        arc_protect_cost += (a['data']['inf_data'].protection_cost / 2.0) * m.getVarByName(arc_var).x
+        arc_protect_cost_layer[u[1]] += (a['data']['inf_data'].protection_cost / 2.0) * m.getVarByName(arc_var).x
+    indp_results.add_cost(-1, "Arc", arc_protect_cost, arc_protect_cost_layer)
     # Calculate node protection costs.
     for n, d in n_hat_prime:
         node_var = 'w_tilde_' + str(n) + "," + str(t)
-        node_cost += d['data']['inf_data'].protection_cost * m.getVarByName(node_var).x
-        node_cost_layer[n[1]] += d['data']['inf_data'].protection_cost * m.getVarByName(node_var).x
-    indp_results.add_cost(-1, "Node", node_cost, node_cost_layer)
+        node_protect_cost += d['data']['inf_data'].protection_cost * m.getVarByName(node_var).x
+        node_protect_cost_layer[n[1]] += d['data']['inf_data'].protection_cost * m.getVarByName(node_var).x
+    indp_results.add_cost(-1, "Node", node_protect_cost, node_protect_cost_layer)
     return indp_results
 
 
-def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=1, save=True, suffix="",
-             forced_actions=False, save_model=False, print_cmd_line=True, co_location=True):
+def run_inmrp(params, layers=None, controlled_layers=None, functionality=None, T=1, save=True, suffix="",
+              forced_actions=False, save_model=False, print_cmd_line=True, co_location=True):
     """
     This function runs iINDP (T=1) or td-INDP for a given number of time steps and input parameters
 
@@ -705,10 +707,10 @@ def run_indp(params, layers=None, controlled_layers=None, functionality=None, T=
                  out_dir_suffix_res
 
     print("Running INMRP (T=" + str(T) + ", Window size=" + str(time_window_length) + ")")
-    # Initial percolation calculations.
+    # Initial condition calculations.
     v_0 = {x: 0 for x in params["V"].keys()}
-    results = inmrp(interdependent_net, v_0, v_0, 1, layers, controlled_layers=controlled_layers,
-                    functionality=functionality, co_location=co_location)
+    results = indp.indp(interdependent_net, v_0, 1, layers, controlled_layers=controlled_layers,
+                        functionality=functionality, co_location=co_location)
     indp_results = results[1]
     indp_results.add_components(0, INDPComponents.calculate_components(results[0], interdependent_net,
                                                                        layers=controlled_layers))

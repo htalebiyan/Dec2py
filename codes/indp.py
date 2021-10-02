@@ -655,6 +655,21 @@ def apply_recovery(N, indp_results, t):
             N.G.nodes[node]['data']['inf_data'].repaired = 1.0
             N.G.nodes[node]['data']['inf_data'].functionality = 1.0
 
+    if -1 in indp_results.results.keys():
+        for action in indp_results[-1]['actions']:
+            if "/" in action:
+                # Edge recovery action.
+                data = action.split("/")
+                src = tuple([int(x) for x in data[0].split(".")])
+                dst = tuple([int(x) for x in data[1].split(".")])
+                N.G[src][dst]['data']['inf_data'].functionality = 1.0
+            else:
+                # Node recovery action.
+                node = tuple([int(x) for x in action.split(".")])
+                # print "Applying recovery:",node
+                N.G.nodes[node]['data']['inf_data'].repaired = 1.0
+                N.G.nodes[node]['data']['inf_data'].functionality = 1.0
+
 
 def create_functionality_matrix(N, T, layers, actions, strategy_type="OPTIMISTIC"):
     """
@@ -1022,6 +1037,7 @@ def initialize_sample_network(layers=None):
         nn.oversupply_penalty = 50
         nn.undersupply_penalty = 50
         nn.resource_usage['p_'] = 1
+        nn.resource_usage['p_hat_'] = 1
         if n in failed_nodes:
             nn.functionality = 0.0
             nn.repaired = 0.0
@@ -1207,6 +1223,16 @@ def get_resource_suffix(params):
                 out_dir_suffix_res += str(val)
         else:
             out_dir_suffix_res += rc[0] + str(sum([lval for _, lval in val.items()])) + '_fixed_layer_Cap'
+    if 'V_hat' in params.keys():
+        for rc, val in params["V_hat"].items():
+            out_dir_suffix_res += '_vhat_'
+            if isinstance(val, int):
+                if rc != '':
+                    out_dir_suffix_res += rc[0] + str(val)
+                else:
+                    out_dir_suffix_res += str(val)
+            else:
+                out_dir_suffix_res += rc[0] + str(sum([lval for _, lval in val.items()])) + '_fixed_layer_Cap'
     return out_dir_suffix_res
 
 

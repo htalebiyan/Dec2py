@@ -8,6 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
 import indp
+import inmrp
 import dindputils
 import plots
 import gametree
@@ -154,9 +155,9 @@ def run_tdindp_sample(layers):
 def run_inmrp_sample(layers):
     interdep_net = indp.initialize_sample_network(layers=layers)
     params = {"OUTPUT_DIR": '../results/inmrp_sample_12Node_results', "V": {'': len(layers)},
-              "V_hat": {'': 2*len(layers)}, "T": 7, "L": layers, "ALGORITHM": "INDP", "WINDOW_LENGTH": 1,
+              "V_hat": {'': len(layers)}, "T": 1, "L": layers, "ALGORITHM": "INDP", "WINDOW_LENGTH": 2,
               "N": interdep_net, "MAGNITUDE": 0, "SIM_NUMBER": 0}
-    indp.run_inmrp(params, layers=layers, T=params["T"], suffix="", save_model=True, print_cmd_line=True)
+    inmrp.run_inmrp(params, layers=layers, T=params["T"], suffix="", save_model=True, print_cmd_line=True)
     # print('\n\nPlot restoration plan by INDP')
     # indp.plot_indp_sample(params)
     plt.show()
