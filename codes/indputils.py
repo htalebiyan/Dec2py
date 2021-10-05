@@ -178,8 +178,6 @@ class INDPResults:
         for new_t, t in zip([x + t_offset for x in range(t_end - t_start)],
                             [y + t_start for y in range(t_end - t_start)]):
             self.results[new_t] = indp_result.results[t]
-        if -1 in indp_result.results.keys():
-            self.results[-1] = indp_result.results[-1]
         if self.layers:
             if t_end == 0:
                 t_end = len(indp_result[self.layers[0]])
@@ -187,8 +185,6 @@ class INDPResults:
                 for new_t, t in zip([x + t_offset for x in range(t_end - t_start)],
                                     [y + t_start for y in range(t_end - t_start)]):
                     self.results_layer[l][new_t] = indp_result.results_layer[l][t]
-                if -1 in indp_result.results_layer[l].keys():
-                    self.results_layer[l][-1] = indp_result.results_layer[l][-1]
 
     def add_cost(self, t, cost_type, cost, cost_layer=None):
         """
