@@ -526,24 +526,27 @@ def load_infrastructure_data(base_dir, T, cost_scale=1.0, extra_commodity=None):
                             a = InfrastructureArc(int(end_id), int(start_id), net)
                         G.G.add_edge((a.source, a.layer), (a.dest, a.layer), data={'inf_data': a})
                         arc_main_data = G.G[(a.source, a.layer)][(a.dest, a.layer)]['data']['inf_data']
-                        arc_main_data.flow_cost = float(v[1]['c']) * cost_scale
-                        arc_main_data.reconstruction_cost = float(v[1]['f']) * cost_scale
-                        arc_main_data.capacity = float(v[1]['u'])
+                        arc_main_data.flow_cost = {t: float(v[1]['c_t' + str(t)]) * cost_scale for t in range(T + 1)}
+                        arc_main_data.reconstruction_cost = {t: float(v[1]['f_t' + str(t)]) * cost_scale for t in
+                                                             range(T + 1)}
+                        arc_main_data.capacity = {t: float(v[1]['u_t' + str(t)]) * cost_scale for t in range(T + 1)}
                         if 'guid' in v[1].index.values:
                             arc_main_data.guid = v[1]['guid']
                         resource_names = [x for x in list(v[1].index.values) if x[:2] == 'h_']
                         if len(resource_names) > 0:
                             a.set_resource_usage(resource_names)
                             for rc in resource_names:
-                                a.resource_usage[rc] = v[1][rc]
+                                a.resource_usage[rc] = {t: float(v[1][rc + '_t' + str(t)]) * cost_scale for t in
+                                                        range(T + 1)}
                         else:
-                            a.resource_usage['h_'] = 1
+                            a.resource_usage['h_'] = {t: 1 for t in range(T + 1)}
                         if extra_commodity:
                             a.set_extra_commodity(extra_commodity[net])
                             for l in extra_commodity[net]:
                                 ext_com_data = \
                                     G.G[(a.source, a.layer)][(a.dest, a.layer)]['data']['inf_data'].extra_com[l]
-                                ext_com_data['flow_cost'] = float(v[1]['c_' + l]) * cost_scale
+                                ext_com_data['flow_cost'] = {t: float(v[1]['c' + l + '_t' + str(t)]) * cost_scale for t
+                                                             in range(T + 1)}
     for file in files:
         fname = file[0:-4]
         if fname in ['beta', 'alpha', 'g', 'Interdep']:
@@ -653,27 +656,21 @@ def add_wu_failure_scenario(G, dam_dir, no_set=0, no_sce=0):
         for k in range(1, len(net_names.keys()) + 1):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                dam_nodes[k] = np.loadtxt(folder_dir + 'Net_%s_Damaged_Nodes.txt' \
-                                          % net_names[k]).astype('int')
-                dam_arcs[k] = np.loadtxt(folder_dir + 'Net_%s_Damaged_Arcs.txt' \
-                                         % net_names[k]).astype('int')
+                dam_nodes[k] = np.loadtxt(folder_dir + 'Net_%s_Damaged_Nodes.txt' % net_names[k]).astype('int')
+                dam_arcs[k] = np.loadtxt(folder_dir + 'Net_%s_Damaged_Arcs.txt' % net_names[k]).astype('int')
         for k in range(1, len(net_names.keys()) + 1):
             if dam_nodes[k].size != 0:
                 if dam_nodes[k].size == 1:
                     dam_nodes[k] = [dam_nodes[k]]
                 for v in dam_nodes[k]:
-                    G.G.nodes[(v + offset, k)]['data']['inf_data'].functionality = 0.0
                     G.G.nodes[(v + offset, k)]['data']['inf_data'].repaired = 0.0
                     # print("Node (",`v+offset`+","+`k`+") broken.")
             if dam_arcs[k].size != 0:
                 if dam_arcs[k].size == 2:
                     dam_arcs[k] = [dam_arcs[k]]
                 for a in dam_arcs[k]:
-                    G.G[(a[0] + offset, k)][(a[1] + offset, k)]['data']['inf_data'].functionality = 0.0
                     G.G[(a[0] + offset, k)][(a[1] + offset, k)]['data']['inf_data'].repaired = 0.0
                     # print("Arc ((",`a[0]+offset`+","+`k`+"),("+`a[1]+offset`+","+`k`+")) broken.")
-
-                    G.G[(a[1] + offset, k)][(a[0] + offset, k)]['data']['inf_data'].functionality = 0.0
                     G.G[(a[1] + offset, k)][(a[0] + offset, k)]['data']['inf_data'].repaired = 0.0
                     # print("Arc ((",`a[1]+offset`+","+`k`+"),("+`a[0]+offset`+","+`k`+")) broken.")
     else:

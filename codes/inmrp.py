@@ -1,8 +1,8 @@
 import sys
-
+import os
 import infrastructure_v2
 import indp
-from indputils import *
+import indputils_v2
 from gurobipy import GRB, Model, LinExpr
 import string
 import networkx as nx
@@ -430,7 +430,7 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
 
     """
     layers = controlled_layers
-    indp_results = INDPResults(layers)
+    indp_results = indputils_v2.INDPResults(layers)
     # compute total demand of all layers and each layer
     total_demand = {t: 0 for t in range(T + 1)}
     total_demand_layer = {t: {l: 0.0 for l in layers} for t in range(T + 1)}
@@ -609,15 +609,15 @@ def run_inmrp(params, layers=None, controlled_layers=None, functionality=None, T
     else:
         interdependent_net = params["N"]
 
-    indp_results = INDPResults(params["L"])
+    indp_results = indputils_v2.INDPResults(params["L"])
     out_dir_suffix_res = get_resource_suffix(params)
     num_time_windows = 1
     time_window_length = T
     if "WINDOW_LENGTH" in params:
         time_window_length = params["WINDOW_LENGTH"]
         num_time_windows = T
-    output_dir = params["OUTPUT_DIR"] + '_L' + str(len(layers)) + "_m" + str(
-        params["MAGNITUDE"]) + "_v" + out_dir_suffix_res
+    output_dir = params["OUTPUT_DIR"] + '_L' + str(len(layers)) + "_m" + str(params["L1_INDEX"]) + "_v" + \
+                 out_dir_suffix_res
 
     print("Running INMRP (T=" + str(T) + ", Window size=" + str(time_window_length) + ")")
     for n in range(num_time_windows):
@@ -645,17 +645,17 @@ def run_inmrp(params, layers=None, controlled_layers=None, functionality=None, T
             indp.apply_recovery(interdependent_net, results[1], 0)
         else:
             indp_results.extend(results[1], t_offset=0)
-            for t in range(T+1):
+            for t in range(T + 1):
                 # Modify network to account for recovery actions.
                 apply_recovery(interdependent_net, indp_results, t)
     # Save results of current simulation.
     if save:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        indp_results.to_csv(output_dir, params["SIM_NUMBER"], suffix=suffix)
+        indp_results.to_csv(output_dir, params["L2_INDEX"], suffix=suffix)
         if not os.path.exists(output_dir + '/agents'):
             os.makedirs(output_dir + '/agents')
-        indp_results.to_csv_layer(output_dir + '/agents', params["SIM_NUMBER"], suffix=suffix)
+        indp_results.to_csv_layer(output_dir + '/agents', params["L2_INDEX"], suffix=suffix)
     return indp_results
 
 
@@ -700,7 +700,7 @@ def initialize_network(base_dir="", T=10, cost_scale=1, l1_index=0, l2_index=0, 
     layers_temp = []
     v_temp = 0
     if infrastructure_data:
-        interdep_net = infrastructure_v2.load_infrastructure_data(base_dir=base_dir, cost_scale=cost_scale,
+        interdep_net = infrastructure_v2.load_infrastructure_data(base_dir=base_dir, cost_scale=cost_scale, T=T,
                                                                   extra_commodity=extra_commodity)
     else:
         interdep_net, v_temp, layers_temp = infrastructure_v2.load_synthetic_network(base_dir=base_dir,
@@ -897,9 +897,9 @@ def plot_indp_sample(params, folder_suffix="", suffix="", T=1):
         pos_moved[key][1] = pos[key][1] + 0.17
 
     out_dir_suffix_res = get_resource_suffix(params)
-    output_dir = params["OUTPUT_DIR"] + '_L' + str(len(params["L"])) + '_m' + str(params["MAGNITUDE"]) + "_v" + \
+    output_dir = params["OUTPUT_DIR"] + '_L' + str(len(params["L"])) + '_m' + str(params["L1_RANGE"]) + "_v" + \
                  out_dir_suffix_res + folder_suffix
-    action_file = output_dir + "/actions_" + str(params["SIM_NUMBER"]) + "_" + suffix + ".csv"
+    action_file = output_dir + "/actions_" + str(params["L2_RANGE"]) + "_" + suffix + ".csv"
     actions = {0: []}
     if os.path.isfile(action_file):
         with open(action_file) as f:

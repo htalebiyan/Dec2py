@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import pickle
 import inmrp
 import dislocationutils
+import infrastructure_v2
 
 
 # %%
@@ -61,8 +62,8 @@ def batch_run(params, fail_sce_param):
             output_dir_full = ''
             if params["ALGORITHM"] in ["INMRP"]:
                 out_dir_suffix_res = inmrp.get_resource_suffix(params)
-                output_dir_full = params["OUTPUT_DIR"] + '_L' + str(len(params["L"])) + '_m' + \
-                                  str(params["MAGNITUDE"]) + "_v" + out_dir_suffix_res + '/actions_' + str(i) + '_.csv'
+                output_dir_full = params["OUTPUT_DIR"] + '_L' + str(len(params["L"])) + '_m' + str(
+                    params["L1_INDEX"]) + "_v" + out_dir_suffix_res + '/actions_' + str(i) + '_.csv'
             if os.path.exists(output_dir_full):
                 print('results are already there\n')
                 continue
@@ -86,15 +87,15 @@ def batch_run(params, fail_sce_param):
                 params['DYNAMIC_PARAMS']['DEMAND_DATA'] = dyn_dmnd
 
             if fail_sce_param['TYPE'] == 'WU':
-                inmrp.add_wu_failure_scenario(params["N"], dam_dir=damage_dir, no_set=i, no_sce=m)
+                infrastructure_v2.add_wu_failure_scenario(params["N"], dam_dir=damage_dir, no_set=i, no_sce=m)
             elif fail_sce_param['TYPE'] == 'from_csv':
-                inmrp.add_from_csv_failure_scenario(params["N"], sample=i, dam_dir=damage_dir)
+                infrastructure_v2.add_from_csv_failure_scenario(params["N"], sample=i, dam_dir=damage_dir)
             elif fail_sce_param['TYPE'] == 'synthetic':
-                inmrp.add_synthetic_failure_scenario(params["N"], dam_dir=base_dir, topology=topology, config=m,
-                                                     sample=i)
+                infrastructure_v2.add_synthetic_failure_scenario(params["N"], dam_dir=base_dir, topology=topology,
+                                                                 config=m, sample=i)
 
             if params["ALGORITHM"] == "INMRP":
-                inmrp.run_inmrp(params, save_model=False, print_cmd_line=False, co_location=False)
+                inmrp.run_inmrp(params, save_model=True, print_cmd_line=False, co_location=False)
 
 
 def run_inmrp_sample(layers):
@@ -133,7 +134,9 @@ def run_method(fail_sce_param, v_r, T, layers, method, output_dir='..', misc=Non
     method : str
         Name of the analysis method. Options are: `INMRP`
     output_dir : str, optional
-        DESCRIPTION. The default is '..'.
+        Address of the output directory. The default is '..'.
+    misc: dict
+        Dictionary containing additional information for analysis.
     Returns
     -------
     None.  Writes to file

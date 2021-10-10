@@ -17,14 +17,16 @@ import runutils_v2
 import plots
 import pickle
 
+plt.close('all')
+
 # %%
 """
 ## Run a toy example using different methods 
 """
 
 # %%
-plt.close('all')
-runutils_v2.run_sample_problems()
+
+# runutils_v2.run_sample_problems()
 
 # %%
 """
@@ -40,7 +42,7 @@ remove less damaging scenarios from the list of damage scenarios. Set it to *Non
 """
 
 # %%
-BASE_DIR = "../data/Extended_Shelby_County/"
+BASE_DIR = "../data/Extended_Shelby_County_dp/"
 # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # "../data/Extended_Shelby_County/"
 # 'C:/Users/ht20/Box Sync/Shelby County Database/Node_arc_info'
@@ -136,13 +138,12 @@ for which, the dictionary should have the following items:
 '''
 
 # %%
-# FAIL_SCE_PARAM = {'TYPE': "synthetic", 'SAMPLE_RANGE': range(5), 'MAGS': range(100),
-#                   'FILTER_SCE': FILTER_SCE, 'TOPO': 'General', 'BASE_DIR': BASE_DIR,
-#                   'DAMAGE_DIR': DAMAGE_DIR}
-# FAIL_SCE_PARAM = {'TYPE': "WU", 'SAMPLE_RANGE': range(50), 'MAGS': range(96),
-#                   'FILTER_SCE': FILTER_SCE, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
-FAIL_SCE_PARAM = {'TYPE': "from_csv", 'L2_RANGE': range(0, 1), 'L1_RANGE': [1000],
-                  'FILTER_SCE': None, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
+# FAIL_SCE_PARAM = {'TYPE': "synthetic", 'L2_RANGE': range(5), 'L1_RANGE': range(100), 'TOPO': 'General',
+#                   'BASE_DIR': BASE_DIR, 'FILTER_SCE': FILTER_SCE, 'DAMAGE_DIR': DAMAGE_DIR}
+FAIL_SCE_PARAM = {'TYPE': "WU", 'L2_RANGE': range(7), 'L1_RANGE': range(3), 'BASE_DIR': BASE_DIR,
+                  'DAMAGE_DIR': DAMAGE_DIR, 'FILTER_SCE': FILTER_SCE}
+# FAIL_SCE_PARAM = {'TYPE': "from_csv", 'L2_RANGE': range(0, 1), 'L1_RANGE': [1000],
+#                   'FILTER_SCE': None, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
 
 DYNAMIC_PARAMS = None
 # DYNAMIC_PARAMS = {'TYPE': 'shelby_adopted', 'RETURN': 'step_function',
@@ -170,10 +171,12 @@ if FAIL_SCE_PARAM['TYPE'] == 'synthetic':
 
 EXTRA_COMMODITY = None
 # {1:['PW'], 3:[]}
+
 # %%
 ''' 
 ### Set analysis parameters 
-1. `RC`: list of resource caps or the number of available resources in each step of the
+1. `T`: number of time steps of the analysis. 
+2. `RC`: list of resource caps or the number of available resources in each step of the
 analysis. Each item of the list is a dictionary whose items show the type of resource and the available number of that
 type of resource. For example:
     * If `FAIL_SCE_PARAM[TYPE']`=*synthetic*, this item is not necessary since `R_c` is
@@ -187,18 +190,18 @@ type of resource. For example:
     are 2 layers, then the analysis is done for the case where each layer gets 1 resource of type 'budget', AND
     the case where layer 1 gets 1 and layer 2 gets 2 resources of type 'budget', AND 
     the case where each layer gets 3 resource of type 'budget' (Prescribed resource for each layer).
-2. `T`: number of time steps of the analysis. 
 3. `LAYERS`: list of layers in the analysis. 
     * If `FAIL_SCE_PARAM[TYPE']`=*synthetic*, this item is not necessary. `LAYERS` is
     adjusted for each configuration. Set it to to `LAYERS`=[0]
 '''
 
 # %%
-RC = [{'': 3}, {'': 6}]
+T = 10
+RC = [{'': {t: 4 for t in range(T+1)}}]
+RC[0][''][0] = 1
 # [{'budget': 120000, 'time': 35}], [{'': 3}]
 # Prescribed for each layer -> RC = [{'budget':{1:60000, 3:700}, 'time':{1:2, 3:10}}] 
-T = 10
-LAYERS = [1, 2, 3, 4]  # [1, 2, 3, 4]
+LAYERS = [1, 2, 3, 4]
 
 # %%
 ''' 
@@ -212,7 +215,7 @@ misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TI
 '''
 
 # %%
-runutils_v2.run_method(FAIL_SCE_PARAM, RC, T, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
+runutils_v2.run_method(FAIL_SCE_PARAM, RC, T, LAYERS, method='INMRP', output_dir=OUTPUT_DIR,
                        misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY,
                              'TIME_RESOURCE': False})
 
