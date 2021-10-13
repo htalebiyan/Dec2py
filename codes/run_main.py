@@ -35,7 +35,7 @@ import pickle
 
 # %%
 # plt.close('all')
-runutils.run_sample_problems()
+# runutils.run_sample_problems()
 
 # %%
 """
@@ -180,7 +180,7 @@ the following items:
 # FAIL_SCE_PARAM = {'TYPE': "synthetic", 'SAMPLE_RANGE': range(5), 'MAGS': range(100),
 #                   'FILTER_SCE': FILTER_SCE, 'TOPO': 'General', 'BASE_DIR': BASE_DIR,
 #                   'DAMAGE_DIR': DAMAGE_DIR}
-FAIL_SCE_PARAM = {'TYPE': "WU", 'SAMPLE_RANGE': range(50), 'MAGS': range(96),
+FAIL_SCE_PARAM = {'TYPE': "WU", 'SAMPLE_RANGE': range(7), 'MAGS': range(3),
                   'FILTER_SCE': FILTER_SCE, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
 # FAIL_SCE_PARAM = {'TYPE': "from_csv", 'SAMPLE_RANGE': range(0, 1), 'MAGS': [1000],
 #                   'FILTER_SCE': None, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
@@ -244,7 +244,7 @@ method [cite], i.e. when `RES_ALLOC_TYPE` includes at least one of the options *
 '''
 
 # %%
-RC = [{'': 3}, {'': 6}]
+RC = [{'': 4}]
 # [{'budget': 120000, 'time': 35}], [{'': 3}]
 # Prescribed for each layer -> RC = [{'budget':{1:60000, 3:700}, 'time':{1:2, 3:10}}] 
 
@@ -297,8 +297,8 @@ print('CF is 2 ')
 
 # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
 #                     misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TIME_RESOURCE': False})
-# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
-#                     misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TIME_RESOURCE': True})
+runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
+                    misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TIME_RESOURCE': False})
 # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
 #                     res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
 #                     misc={'STM_MODEL': STM_MODEL_DICT, 'DYNAMIC_PARAMS': DYNAMIC_PARAMS,

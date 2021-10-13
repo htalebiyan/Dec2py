@@ -99,12 +99,12 @@ def batch_run(params, fail_sce_param):
 
 
 def run_inmrp_sample(layers):
-    T = 6
+    T = 3
     interdep_net = inmrp.initialize_sample_network(layers=layers, T=T)
-    resource = {'': {t: len(layers) for t in range(T + 1)}}
+    resource = {'': {t: len(layers) for t in range(T)}}
     resource[''][0] = resource[''][0] * 2
     params = {"OUTPUT_DIR": '../results/inmrp_sample_12Node_results', "V": resource, "T": T, "L": layers,
-              "ALGORITHM": "INMRP", "N": interdep_net, "L1_RANGE": 0, "L2_RANGE": 0, "WINDOW_LENGTH": 2}
+              "ALGORITHM": "INMRP", "N": interdep_net, "L1_INDEX": 0, "L2_INDEX": 0}#, "WINDOW_LENGTH": 2
     inmrp.run_inmrp(params, layers=layers, T=params["T"], suffix="", save_model=True, print_cmd_line=True)
     print('\n\nPlot restoration plan by INDP')
     inmrp.plot_indp_sample(params, T=T)
@@ -145,7 +145,7 @@ def run_method(fail_sce_param, v_r, T, layers, method, output_dir='..', misc=Non
     for v in v_r:
         if method == 'INMRP':
             params = {"OUTPUT_DIR": output_dir + '/inmrp_results', "V": v, "T": T, 'L': layers, "ALGORITHM": method}
-            # "WINDOW_LENGTH":3
+            #, "WINDOW_LENGTH": 1
         else:
             sys.exit('Wrong method name: ' + method)
 

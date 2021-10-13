@@ -25,10 +25,6 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
         Dictionary of the number of restoration resources of different types in the analysis.
         If the value is a scale for a type, it shows the total number of resources of that type for all layers .
         If the value is a list for a type, it shows the total number of resources of that type given to each layer.
-    v_r_hat : dict
-        Dictionary of the number of protection resources of different types in the analysis.
-        If the value is a scale for a type, it shows the total number of resources of that type for all layers .
-        If the value is a list for a type, it shows the total number of resources of that type given to each layer.
     T : int, optional
         Number of time steps to optimize over. T=1 shows an iINDP analysis and T>1 shows a td-INDP. The default is 1.
     layers : list, optional
@@ -111,7 +107,7 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
                             interdep_nodes[t][v] = []
                         interdep_nodes[t][v].append((u, a['data']['inf_data'].gamma))
 
-    for t in range(T + 1):
+    for t in range(T):
         # Add geographical space variables.
         if co_location:
             for s in S:
@@ -144,7 +140,7 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
 
     # Populate objective function.
     obj_func = LinExpr()
-    for t in range(T + 1):
+    for t in range(T):
         if co_location:
             for s in S:
                 obj_func += s.cost * m.getVarByName('z_' + str(s.id) + "," + str(t))
@@ -163,27 +159,26 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
                 obj_func += val['undersupply_penalty'][t] * m.getVarByName(
                     'delta-_' + str(n) + "," + str(t) + "," + str(l))
         for u, v, a in n_hat.edges(data=True):
-            if not a['data']['inf_data'].is_interdep:
-                obj_func += a['data']['inf_data'].flow_cost[t] * m.getVarByName(
-                    'x_' + str(u) + "," + str(v) + "," + str(t))
-                for l, val in a['data']['inf_data'].extra_com.items():
-                    obj_func += val['flow_cost'][t] * m.getVarByName(
-                        'x_' + str(u) + "," + str(v) + "," + str(t) + "," + str(l))
+            obj_func += a['data']['inf_data'].flow_cost[t] * m.getVarByName(
+                'x_' + str(u) + "," + str(v) + "," + str(t))
+            for l, val in a['data']['inf_data'].extra_com.items():
+                obj_func += val['flow_cost'][t] * m.getVarByName(
+                    'x_' + str(u) + "," + str(v) + "," + str(t) + "," + str(l))
     m.setObjective(obj_func, GRB.MINIMIZE)
     m.update()
 
     # Constraints.
-    for t in range(T + 1):
+    for t in range(T):
         # Time-dependent constraint.
         for n, d in n_hat_prime:
             w_tilde_sum = LinExpr()
-            for t_prime in range(0, t + 1):
+            for t_prime in range(0, t+1):
                 w_tilde_sum += m.getVarByName('w_tilde_' + str(n) + "," + str(t_prime))
             m.addConstr(m.getVarByName('w_' + str(n) + "," + str(t)), GRB.LESS_EQUAL, w_tilde_sum,
                         "Time dependent recovery constraint at node " + str(n) + "," + str(t))
         for u, v, a in a_hat_prime:
             y_tilde_sum = LinExpr()
-            for t_prime in range(0, t + 1):
+            for t_prime in range(0, t+1):
                 y_tilde_sum += m.getVarByName('y_tilde_' + str(u) + "," + str(v) + "," + str(t_prime))
             m.addConstr(m.getVarByName('y_' + str(u) + "," + str(v) + "," + str(t)), GRB.LESS_EQUAL, y_tilde_sum,
                         "Time dependent recovery constraint at arc " + str(u) + "," + str(v) + "," + str(t))
@@ -225,35 +220,34 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
         else:
             interdep_nodes_list = interdep_nodes[t].keys()  # Interdependent nodes with a damaged dependee node
         for u, v, a in n_hat.edges(data=True):
-            if not a['data']['inf_data'].is_interdep:
-                lhs = m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t)) + \
-                      sum([m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t) + "," + str(l)) \
-                           for l in a['data']['inf_data'].extra_com.keys()])
-                if (u in [n for (n, d) in n_hat_prime]) | (u in interdep_nodes_list):
-                    m.addConstr(lhs, GRB.LESS_EQUAL,
-                                a['data']['inf_data'].capacity[t] * m.getVarByName('w_' + str(u) + "," + str(t)),
-                                "Flow in functionality constraint(" + str(u) + "," + str(v) + "," + str(t) + ")")
-                else:
-                    m.addConstr(lhs, GRB.LESS_EQUAL,
-                                a['data']['inf_data'].capacity[t] * N.G.nodes[u]['data']['inf_data'].functionality,
-                                "Flow in functionality constraint (" + str(u) + "," + str(v) + "," + str(t) + ")")
-                if (v in [n for (n, d) in n_hat_prime]) | (v in interdep_nodes_list):
-                    m.addConstr(lhs, GRB.LESS_EQUAL,
-                                a['data']['inf_data'].capacity[t] * m.getVarByName('w_' + str(v) + "," + str(t)),
-                                "Flow out functionality constraint(" + str(u) + "," + str(v) + "," + str(t) + ")")
-                else:
-                    m.addConstr(lhs, GRB.LESS_EQUAL,
-                                a['data']['inf_data'].capacity[t] * N.G.nodes[v]['data']['inf_data'].functionality,
-                                "Flow out functionality constraint (" + str(u) + "," + str(v) + "," + str(t) + ")")
-                if (u, v, a) in a_hat_prime:
-                    m.addConstr(lhs, GRB.LESS_EQUAL,
-                                a['data']['inf_data'].capacity[t] * m.getVarByName(
-                                    'y_' + str(u) + "," + str(v) + "," + str(t)),
-                                "Flow arc functionality constraint (" + str(u) + "," + str(v) + "," + str(t) + ")")
-                else:
-                    m.addConstr(lhs, GRB.LESS_EQUAL,
-                                a['data']['inf_data'].capacity[t] * N.G[u][v]['data']['inf_data'].functionality,
-                                "Flow arc functionality constraint(" + str(u) + "," + str(v) + "," + str(t) + ")")
+            lhs = m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t)) + \
+                  sum([m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t) + "," + str(l)) \
+                       for l in a['data']['inf_data'].extra_com.keys()])
+            if (u in [n for (n, d) in n_hat_prime]) | (u in interdep_nodes_list):
+                m.addConstr(lhs, GRB.LESS_EQUAL,
+                            a['data']['inf_data'].capacity[t] * m.getVarByName('w_' + str(u) + "," + str(t)),
+                            "Flow in functionality constraint(" + str(u) + "," + str(v) + "," + str(t) + ")")
+            else:
+                m.addConstr(lhs, GRB.LESS_EQUAL,
+                            a['data']['inf_data'].capacity[t] * N.G.nodes[u]['data']['inf_data'].functionality,
+                            "Flow in functionality constraint (" + str(u) + "," + str(v) + "," + str(t) + ")")
+            if (v in [n for (n, d) in n_hat_prime]) | (v in interdep_nodes_list):
+                m.addConstr(lhs, GRB.LESS_EQUAL,
+                            a['data']['inf_data'].capacity[t] * m.getVarByName('w_' + str(v) + "," + str(t)),
+                            "Flow out functionality constraint(" + str(u) + "," + str(v) + "," + str(t) + ")")
+            else:
+                m.addConstr(lhs, GRB.LESS_EQUAL,
+                            a['data']['inf_data'].capacity[t] * N.G.nodes[v]['data']['inf_data'].functionality,
+                            "Flow out functionality constraint (" + str(u) + "," + str(v) + "," + str(t) + ")")
+            if (u, v, a) in a_hat_prime:
+                m.addConstr(lhs, GRB.LESS_EQUAL,
+                            a['data']['inf_data'].capacity[t] * m.getVarByName(
+                                'y_' + str(u) + "," + str(v) + "," + str(t)),
+                            "Flow arc functionality constraint (" + str(u) + "," + str(v) + "," + str(t) + ")")
+            else:
+                m.addConstr(lhs, GRB.LESS_EQUAL,
+                            a['data']['inf_data'].capacity[t] * N.G[u][v]['data']['inf_data'].functionality,
+                            "Flow arc functionality constraint(" + str(u) + "," + str(v) + "," + str(t) + ")")
 
         # Restoration resource availability constraints.
         for rc, val in v_r.items():
@@ -432,15 +426,15 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
     layers = controlled_layers
     indp_results = indputils_v2.INDPResults(layers)
     # compute total demand of all layers and each layer
-    total_demand = {t: 0 for t in range(T + 1)}
-    total_demand_layer = {t: {l: 0.0 for l in layers} for t in range(T + 1)}
-    for t in range(T + 1):
+    total_demand = {t: 0 for t in range(T)}
+    total_demand_layer = {t: {l: 0.0 for l in layers} for t in range(T)}
+    for t in range(T):
         for n, d in n_hat.nodes(data=True):
             demand_value = d['data']['inf_data'].demand[t]
             if demand_value < 0:
                 total_demand[t] += demand_value
                 total_demand_layer[t][n[1]] += demand_value
-    for t in range(T + 1):
+    for t in range(T):
         node_cost = 0.0
         arc_cost = 0.0
         flow_cost = 0.0
@@ -501,11 +495,10 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
         indp_results.add_cost(t, "Under Supply Perc", under_supp / total_demand[t], under_supp_layer)
         # Calculate flow costs.
         for u, v, a in n_hat.edges(data=True):
-            if not a['data']['inf_data'].is_interdep:
-                flow_cost += a['data']['inf_data'].flow_cost[t] * m.getVarByName(
-                    'x_' + str(u) + "," + str(v) + "," + str(t)).x
-                flow_cost_layer[u[1]] += a['data']['inf_data'].flow_cost[t] * m.getVarByName(
-                    'x_' + str(u) + "," + str(v) + "," + str(t)).x
+            flow_cost += a['data']['inf_data'].flow_cost[t] * m.getVarByName(
+                'x_' + str(u) + "," + str(v) + "," + str(t)).x
+            flow_cost_layer[u[1]] += a['data']['inf_data'].flow_cost[t] * m.getVarByName(
+                'x_' + str(u) + "," + str(v) + "," + str(t)).x
         indp_results.add_cost(t, "Flow", flow_cost, flow_cost_layer)
         # Calculate total costs.
         total_lyr = {}
@@ -621,31 +614,40 @@ def run_inmrp(params, layers=None, controlled_layers=None, functionality=None, T
 
     print("Running INMRP (T=" + str(T) + ", Window size=" + str(time_window_length) + ")")
     for n in range(num_time_windows):
-        print("-Time window (td-INDP)", n + 1, "/", num_time_windows)
-        functionality_t = {}
+        print("-Time window (td-INDP)", n, "/", num_time_windows)
         # Slide functionality matrix according to sliding time window.
+        functionality_t = {}
         if functionality:
             for t in functionality:
-                if t in range(n, time_window_length + n + 1):
+                if t in range(n, time_window_length + n):
                     functionality_t[t - n] = functionality[t]
-            if len(functionality_t) < time_window_length + 1:
-                diff = time_window_length + 1 - len(functionality_t)
+            if len(functionality_t) < time_window_length:
+                diff = time_window_length - len(functionality_t)
                 max_t = max(functionality_t.keys())
                 for d in range(diff):
-                    functionality_t[max_t + d + 1] = functionality_t[max_t]
-        # Run td-INDP.
-        results = inmrp(interdependent_net, params["V"], time_window_length, layers,
+                    functionality_t[max_t + d] = functionality_t[max_t]
+        # Slide resource vector.
+        resource_t = {}
+        for rc, val in params["V"].items():
+            resource_t[rc] = {}
+            for t in range(n, time_window_length + n):
+                if t in val.keys():
+                    resource_t[rc][t - n] = val[t]
+                else:
+                    resource_t[rc][t - n] = 0
+        # Run INMRP.
+        results = inmrp(interdependent_net, resource_t, time_window_length, layers,
                         controlled_layers=controlled_layers, functionality=functionality_t,
                         forced_actions=forced_actions, co_location=co_location)
         if save_model:
-            indp.save_indp_model_to_file(results[0], output_dir + "/Model", n + 1)
+            indp.save_indp_model_to_file(results[0], output_dir + "/Model", n)
         if "WINDOW_LENGTH" in params:
             indp_results.extend(results[1], t_offset=n, t_start=0, t_end=time_window_length)
             # Modify network for recovery actions
             indp.apply_recovery(interdependent_net, results[1], 0)
         else:
             indp_results.extend(results[1], t_offset=0)
-            for t in range(T + 1):
+            for t in range(T):
                 # Modify network to account for recovery actions.
                 apply_recovery(interdependent_net, indp_results, t)
     # Save results of current simulation.
@@ -783,12 +785,12 @@ def initialize_sample_network(layers=None, T=1):
     global_index = 1
     for n in node_to_demand_dict:
         nn = infrastructure_v2.InfrastructureNode(global_index, n[1], n[0])
-        nn.demand = {t: node_to_demand_dict[n] for t in range(T + 1)}
-        nn.reconstruction_cost = {t: abs(nn.demand[t]) for t in range(T + 1)}
+        nn.demand = {t: node_to_demand_dict[n] for t in range(T)}
+        nn.reconstruction_cost = {t: abs(nn.demand[t]) for t in range(T)}
         nn.reconstruction_cost[0] = nn.reconstruction_cost[0] + 1
-        nn.oversupply_penalty = {t: 50 for t in range(T + 1)}
-        nn.undersupply_penalty = {t: 50 for t in range(T + 1)}
-        nn.resource_usage['p_'] = {t: 1 for t in range(T + 1)}
+        nn.oversupply_penalty = {t: 50 for t in range(T)}
+        nn.undersupply_penalty = {t: 50 for t in range(T)}
+        nn.resource_usage['p_'] = {t: 1 for t in range(T)}
         nn.resource_usage['p_'][0] = 2
         if n in failed_nodes:
             nn.repaired = 0.0
@@ -800,11 +802,13 @@ def initialize_sample_network(layers=None, T=1):
             interdependent_net.G.nodes[n]['data']['inf_data'].space = s
     for a in arc_list:
         aa = infrastructure_v2.InfrastructureArc(a[0][0], a[1][0], a[0][1])
-        aa.flow_cost = {t: 1 for t in range(T + 1)}
-        aa.capacity = {t: 50 for t in range(T + 1)}
+        aa.flow_cost = {t: 1 for t in range(T)}
+        aa.capacity = {t: 50 for t in range(T)}
         interdependent_net.G.add_edge((aa.source, aa.layer), (aa.dest, aa.layer), data={'inf_data': aa})
     for g in interdep_list:
         aa = infrastructure_v2.InfrastructureInterdepArc(g[0][0], g[1][0], g[0][1], g[1][1], 1.0)
+        aa.flow_cost = {t: 0 for t in range(T)}
+        aa.capacity = {t: 0 for t in range(T)}
         interdependent_net.G.add_edge((aa.source, aa.source_layer), (aa.dest, aa.dest_layer), data={'inf_data': aa})
     return interdependent_net
 
@@ -897,9 +901,9 @@ def plot_indp_sample(params, folder_suffix="", suffix="", T=1):
         pos_moved[key][1] = pos[key][1] + 0.17
 
     out_dir_suffix_res = get_resource_suffix(params)
-    output_dir = params["OUTPUT_DIR"] + '_L' + str(len(params["L"])) + '_m' + str(params["L1_RANGE"]) + "_v" + \
+    output_dir = params["OUTPUT_DIR"] + '_L' + str(len(params["L"])) + '_m' + str(params["L1_INDEX"]) + "_v" + \
                  out_dir_suffix_res + folder_suffix
-    action_file = output_dir + "/actions_" + str(params["L2_RANGE"]) + "_" + suffix + ".csv"
+    action_file = output_dir + "/actions_" + str(params["L2_INDEX"]) + "_" + suffix + ".csv"
     actions = {0: []}
     if os.path.isfile(action_file):
         with open(action_file) as f:

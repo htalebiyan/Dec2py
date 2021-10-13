@@ -197,8 +197,8 @@ type of resource. For example:
 
 # %%
 T = 10
-RC = [{'': {t: 4 for t in range(T+1)}}]
-RC[0][''][0] = 1
+RC = [{'': {t: 4 for t in range(T)}}]
+RC[0][''][0] = 0
 # [{'budget': 120000, 'time': 35}], [{'': 3}]
 # Prescribed for each layer -> RC = [{'budget':{1:60000, 3:700}, 'time':{1:2, 3:10}}] 
 LAYERS = [1, 2, 3, 4]

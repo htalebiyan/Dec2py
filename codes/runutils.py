@@ -8,7 +8,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
 import indp
-import inmrp
 import dindputils
 import plots
 import gametree
@@ -112,8 +111,7 @@ def batch_run(params, fail_sce_param):
 
             if params["ALGORITHM"] == "INDP":
                 indp.run_indp(params, layers=params['L'], controlled_layers=params['L'], T=params["T"],
-                              save_model=False,
-                              print_cmd_line=False, co_location=False)
+                              save_model=True, print_cmd_line=False, co_location=False)
             if params["ALGORITHM"] == "MH":
                 mh.run_mh(params, validate=False, T=params["T"], layers=params['L'],
                           controlled_layers=params['L'], saveModel=True, print_cmd_line=False, co_location=True)
@@ -149,19 +147,6 @@ def run_tdindp_sample(layers):
     indp.run_indp(params, layers=layers, T=params["T"], suffix="", save_model=True, print_cmd_line=True)
     print('\n\nPlot restoration plan by INDP')
     indp.plot_indp_sample(params)
-    plt.show()
-
-
-def run_inmrp_sample(layers):
-    T = 6
-    interdep_net = inmrp.initialize_sample_network(layers=layers, T=T)
-    resource = {'': {t: len(layers) for t in range(T+1)}}
-    resource[''][0] = resource[''][0]*2
-    params = {"OUTPUT_DIR": '../results/inmrp_sample_12Node_results', "V": resource, "T": T, "L": layers,
-              "ALGORITHM": "INDP", "N": interdep_net, "MAGNITUDE": 0, "SIM_NUMBER": 0, "WINDOW_LENGTH": 2}
-    inmrp.run_inmrp(params, layers=layers, T=params["T"], suffix="", save_model=True, print_cmd_line=True)
-    # print('\n\nPlot restoration plan by INDP')
-    inmrp.plot_indp_sample(params, T=T)
     plt.show()
 
 
@@ -254,7 +239,7 @@ def run_method(fail_sce_param, v_r, layers, method, judgment_type=None,
     """
     for v in v_r:
         if method == 'INDP':
-            params = {"NUM_ITERATIONS": 20, "OUTPUT_DIR": output_dir + 'indp_results', "V": v,
+            params = {"NUM_ITERATIONS": 10, "OUTPUT_DIR": output_dir + 'indp_results', "V": v,
                       "T": 1, 'L': layers, "ALGORITHM": "INDP"}
         elif method == 'TDINDP':
             params = {"OUTPUT_DIR": output_dir + '/tdindp_results', "V": v, "T": 10, 'L': layers,
@@ -305,7 +290,6 @@ def run_sample_problems():
     judge_types = ["OPTIMISTIC"]  # "PESSIMISTIC",
     # run_indp_sample(layers)
     # run_tdindp_sample(layers)
-    run_inmrp_sample(layers)
     # run_jc_sample(layers, judge_types, auction_type, valuation_type)
     # run_game_sample(layers, judge_types, auction_type, valuation_type,
     #                 game_type="NORMALGAME", reduced_act='EDM')

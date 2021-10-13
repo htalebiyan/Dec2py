@@ -570,6 +570,8 @@ def load_infrastructure_data(base_dir, T, cost_scale=1.0, extra_commodity=None):
                         j = int(v[1]['Depender Node'])
                         net_j = net_names[v[1]['Depender Network']]
                         a = InfrastructureInterdepArc(i, j, net_i, net_j, gamma=1.0)
+                        a.capacity = {t: 0 for t in range(T + 1)}
+                        a.flow_cost = {t: 0 for t in range(T + 1)}
                         G.G.add_edge((a.source, a.source_layer), (a.dest, a.dest_layer), data={'inf_data': a})
                         if extra_commodity:
                             a.set_extra_commodity(extra_commodity[net_i])
