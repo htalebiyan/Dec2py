@@ -42,14 +42,15 @@ remove less damaging scenarios from the list of damage scenarios. Set it to *Non
 """
 
 # %%
-BASE_DIR = "../data/Extended_Shelby_County_dp/"
+BASE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info_v2/"
 # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # "../data/Extended_Shelby_County/"
+# "../data/Extended_Shelby_County_dp/"
 # 'C:/Users/ht20/Box Sync/Shelby County Database/Node_arc_info'
 # "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
 # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info/"
 
-DAMAGE_DIR = "../data/Wu_Damage_scenarios/"
+DAMAGE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/cumulative_1000yr_initial_damage/"
 # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # ../data/random_disruption_shelby/"
 # "../data/Wu_Damage_scenarios/"
@@ -67,7 +68,7 @@ OUTPUT_DIR = '../results/'
 # 'C:/Users/ht20/Documents/Files/Shelby_data_paper/Restoration_results/'
 # FAIL_SCE_PARAM['TOPO']+'/results/'
 
-FILTER_SCE = '../data/damagedElements_sliceQuantile_0.90.csv'
+FILTER_SCE = None
 # '../data/damagedElements_sliceQuantile_0.90.csv'
 
 # %%
@@ -140,28 +141,23 @@ for which, the dictionary should have the following items:
 # %%
 # FAIL_SCE_PARAM = {'TYPE': "synthetic", 'L2_RANGE': range(5), 'L1_RANGE': range(100), 'TOPO': 'General',
 #                   'BASE_DIR': BASE_DIR, 'FILTER_SCE': FILTER_SCE, 'DAMAGE_DIR': DAMAGE_DIR}
-FAIL_SCE_PARAM = {'TYPE': "WU", 'L2_RANGE': range(7), 'L1_RANGE': range(3), 'BASE_DIR': BASE_DIR,
-                  'DAMAGE_DIR': DAMAGE_DIR, 'FILTER_SCE': FILTER_SCE}
-# FAIL_SCE_PARAM = {'TYPE': "from_csv", 'L2_RANGE': range(0, 1), 'L1_RANGE': [1000],
-#                   'FILTER_SCE': None, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
+# FAIL_SCE_PARAM = {'TYPE': "WU", 'L2_RANGE': range(7), 'L1_RANGE': range(3), 'BASE_DIR': BASE_DIR,
+#                   'DAMAGE_DIR': DAMAGE_DIR, 'FILTER_SCE': FILTER_SCE}
+FAIL_SCE_PARAM = {'TYPE': "from_csv", 'L2_RANGE': range(0, 1), 'L1_RANGE': [1000],
+                  'FILTER_SCE': None, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
 
 DYNAMIC_PARAMS = None
-# DYNAMIC_PARAMS = {'TYPE': 'shelby_adopted', 'RETURN': 'step_function',
-#                   'DIR': 'C:/Users/ht20/Documents/Files/dynamic_demand/'}
-
 # ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/"
 # POP_DISLOC_DATA = ROOT_DISLOC+'Joplin_testbed/pop-dislocation-results.csv'
 # DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED':'joplin',
 #                   'OUT_DIR': BASE_DIR, 'POP_DISLOC_DATA': POP_DISLOC_DATA ,
 #                   'MAPPING': {'POWER': ROOT_DISLOC+'/Power/Joplin interdependency table - buildings,\
 #                               substations, and poles/Joplin_interdependency_table.csv'}}
-
-# ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
-# DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED': 'seaside',
-#                   'OUT_DIR': ROOT_DISLOC + 'Dislocation_models/',
-#                   'POP_DISLOC_DATA': ROOT_DISLOC + 'Dislocation_models/',
-#                   'MAPPING': {'POWER': ROOT_DISLOC + 'Power/bldgs2elec_Seaside.csv',
-#                               'WATER': ROOT_DISLOC + 'Water/bldgs2wter_Seaside.csv'}}
+ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
+DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED': 'seaside', 'OUT_DIR': OUTPUT_DIR,
+                  'POP_DISLOC_DATA': ROOT_DISLOC + 'Seaside_notebook/output/1000yr/',
+                  'MAPPING': {'POWER': ROOT_DISLOC + 'Power/bldgs2elec_Seaside.csv',
+                              'WATER': ROOT_DISLOC + 'Water/bldgs2wter_Seaside.csv'}}
 
 # Adjust output and base dir for synthetic database based on `FAIL_SCE_PARAM`
 SYNTH_DIR = None
@@ -197,11 +193,12 @@ type of resource. For example:
 
 # %%
 T = 10
-RC = [{'': {t: 4 for t in range(T)}}]
-RC[0][''][0] = 0
-# [{'budget': 120000, 'time': 35}], [{'': 3}]
-# Prescribed for each layer -> RC = [{'budget':{1:60000, 3:700}, 'time':{1:2, 3:10}}] 
-LAYERS = [1, 2, 3, 4]
+RC = [{'budget': {t: 2.4e5 for t in range(T)}, 'time': {t: 70 for t in range(T)}}]
+RC[0]['budget'][0] = 4.4e5
+RC[0]['time'][0] = 700
+# RC = [{'': {t: 4 for t in range(T)}}]
+# RC[0][''][0] = 0
+LAYERS = [1, 3]
 
 # %%
 ''' 
@@ -254,9 +251,9 @@ optimal solution.
 
 # %%
 COST_TYPES = ['Total']  # 'Under Supply', 'Over Supply'
-REF_METHOD = 'indp'
-METHOD_NAMES = ['indp', 'bgRRRRUUUU']
-# 'ng', 'jc', 'tdindp', 'ng', 'bgCCCCUUUU', 'dp_indp', 'dp_jc', 'bgCNUU',
+REF_METHOD = 'inmrp'
+METHOD_NAMES = ['inmrp']
+# 'ng', 'jc', 'tdindp', 'ng', 'bgCCCCUUUU', 'dp_indp', 'dp_jc', 'bgCNUU', 'inmrp'
 
 # COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
 #                                                         FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
