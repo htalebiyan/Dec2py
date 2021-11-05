@@ -8,6 +8,8 @@ import string
 import networkx as nx
 import matplotlib.pyplot as plt
 import copy
+import pandas as pd
+import numpy as np
 import time
 import dislocationutils
 
@@ -172,13 +174,13 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
         # Time-dependent constraint.
         for n, d in n_hat_prime:
             w_tilde_sum = LinExpr()
-            for t_prime in range(0, t+1):
+            for t_prime in range(0, t + 1):
                 w_tilde_sum += m.getVarByName('w_tilde_' + str(n) + "," + str(t_prime))
             m.addConstr(m.getVarByName('w_' + str(n) + "," + str(t)), GRB.LESS_EQUAL, w_tilde_sum,
                         "Time dependent recovery constraint at node " + str(n) + "," + str(t))
         for u, v, a in a_hat_prime:
             y_tilde_sum = LinExpr()
-            for t_prime in range(0, t+1):
+            for t_prime in range(0, t + 1):
                 y_tilde_sum += m.getVarByName('y_tilde_' + str(u) + "," + str(v) + "," + str(t_prime))
             m.addConstr(m.getVarByName('y_' + str(u) + "," + str(v) + "," + str(t)), GRB.LESS_EQUAL, y_tilde_sum,
                         "Time dependent recovery constraint at arc " + str(u) + "," + str(v) + "," + str(t))
@@ -252,7 +254,7 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
         # Restoration resource availability constraints.
         for rc, val in v_r.items():
             is_sep_res = False
-            if isinstance(val[t], int):
+            if isinstance(val[t], int) or isinstance(val[t], float):
                 total_resource = val[t]
             else:
                 is_sep_res = True
@@ -373,10 +375,16 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
     run_time = time.time() - start_time
     # Save results.
     if m.getAttr("Status") == GRB.OPTIMAL or m.status == 9:
+        results = collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S, coloc=co_location)
+        for t in range(T):
+            results.add_run_time(t, run_time)
         if m.status == 9:
             print('\nOptimizer time limit, gap = %1.3f\n' % m.MIPGap)
-        results = collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S, coloc=co_location)
-        results.add_run_time(t, run_time)
+            for t in range(T):
+                results.add_optimality_gap(t, m.MIPGap)
+        else:
+            for t in range(T):
+                results.add_optimality_gap(t, 0.0)
         # if solution_pool:
         #     sol_pool_results = collect_solution_pool(m, T, n_hat_prime, a_hat_prime)
         #     return [m, results, sol_pool_results]
@@ -636,9 +644,9 @@ def run_inmrp(params, layers=None, controlled_layers=None, functionality=None, T
                 else:
                     resource_t[rc][t - n] = 0
         # Run INMRP.
-        results = inmrp(interdependent_net, resource_t, time_window_length, layers,
-                        controlled_layers=controlled_layers, functionality=functionality_t,
-                        forced_actions=forced_actions, co_location=co_location)
+        results = inmrp(interdependent_net, resource_t, time_window_length, layers, controlled_layers=controlled_layers,
+                        functionality=functionality_t, forced_actions=forced_actions, co_location=co_location,
+                        time_limit=5)
         if save_model:
             indp.save_indp_model_to_file(results[0], output_dir + "/Model", n)
         if "WINDOW_LENGTH" in params:
@@ -729,7 +737,7 @@ def get_resource_suffix(params):
     """
     out_dir_suffix_res = ''
     for rc, val in params["V"].items():
-        if isinstance(val[0], int):
+        if isinstance(val[0], int) or isinstance(val[0], float):
             sum_res = sum([valt for _, valt in val.items()])
             if rc != '':
                 out_dir_suffix_res += rc[0] + str(sum_res)
@@ -963,3 +971,117 @@ def plot_indp_sample(params, folder_suffix="", suffix="", T=1):
             node_dict[l * 10 + 3] = []
     plt.tight_layout()
     plt.savefig(output_dir + '/plot_net' + suffix + '.png', dpi=300)
+
+
+def time_resource_usage_curves(base_dir, damage_dir, sample_num, T):
+    """
+    This module calculates the repair time for nodes and arcs for the current scenario based on their damage state, and
+    writes them to the input files of INDP. Currently, it is only compatible with NIST testbeds.
+
+    .. todo::
+        The calculated repair time and costs are written to node and arc info input
+        files. It makes it impossible to run the analyses in parallel because there
+        might be a conflict between two processes. Consider correcting this.
+
+    Parameters
+    ----------
+    base_dir : dir
+        The address of the folder where the basic network information (topology, parameters, etc.) are stored.
+    damage_dir : dir
+        the address of the folder where the damage information are stored.
+    sample_num : int
+        The sample number of the damage scenarios for which the repair data are calculated.
+    T : int
+        Number of time steps of the analysis
+
+    Returns
+    -------
+    None.
+
+    """
+    files = [f for f in os.listdir(base_dir) if os.path.isfile(os.path.join(base_dir, f))]
+    nodes_reptime_func = pd.read_csv(base_dir + 'repair_time_curves_nodes.csv')
+    nodes_damge_ratio = pd.read_csv(base_dir + 'damage_ratio_nodes.csv')
+    arcs_reptime_func = pd.read_csv(base_dir + 'repair_time_curves_arcs.csv')
+    arcs_damge_ratio = pd.read_csv(base_dir + 'damage_ratio_arcs.csv')
+    dmg_sce_data = pd.read_csv(damage_dir + 'Initial_node_ds.csv', delimiter=',', header=0)
+    net_names = {'Water': 1, 'Power': 3}
+
+    for file in files:
+        fname = file[0:-4]
+        if fname[-5:] == 'Nodes':
+            with open(base_dir + file) as f:
+                node_data = pd.read_csv(f, delimiter=',')
+                for v in node_data.iterrows():
+                    try:
+                        node_type = v[1]['Node Type']
+                        node_id = int(v[1]['ID'])
+                    except KeyError:
+                        node_type = v[1]['utilfcltyc']
+                        node_id = int(v[1]['nodenwid'])
+
+                    reptime_func_node = nodes_reptime_func[nodes_reptime_func['Type'] == node_type]
+                    dr_data = nodes_damge_ratio[nodes_damge_ratio['Type'] == node_type]
+                    rep_time = 0
+                    repair_cost = 0
+                    if not reptime_func_node.empty:
+                        node_name = '(' + str(node_id) + ',' + str(net_names[fname[:5]]) + ')'
+                        ds = dmg_sce_data[dmg_sce_data['name'] == node_name][str(sample_num)].values[0]
+                        rep_time = np.random.normal(reptime_func_node[ds+'_mean'], reptime_func_node[ds+'_sd'], 1)[0]
+                        dr = np.random.uniform(dr_data.iloc[0][ds + '_min'], dr_data.iloc[0][ds + '_max'], 1)[0]
+                        repair_cost = v[1]['replacement_cost'] * dr
+                    for t in range(T + 1):
+                        node_data.loc[v[0], 'p_time_t' + str(t)] = rep_time if rep_time > 0 else 0
+                        node_data.loc[v[0], 'p_budget_t' + str(t)] = repair_cost
+                        node_data.loc[v[0], 'q_t' + str(t)] = repair_cost
+                node_data.to_csv(base_dir + file)
+
+    for file in files:
+        fname = file[0:-4]
+        if fname[-4:] == 'Arcs':
+            with open(base_dir + file) as f:
+                data = pd.read_csv(f, delimiter=',')
+                dmg_data_all = pd.read_csv(damage_dir + 'pipe_dmg.csv', delimiter=',')
+                for v in data.iterrows():
+                    dmg_data_arc = dmg_data_all[dmg_data_all['guid'] == v[1]['guid']]
+                    rep_time = 0
+                    repair_cost = 0
+                    if not dmg_data_arc.empty:
+                        if v[1]['diameter'] > 20:
+                            reptime_func_arc = arcs_reptime_func[arcs_reptime_func['Type'] == '>20 in']
+                            dr_data = arcs_damge_ratio[arcs_damge_ratio['Type'] == '>20 in']
+                        else:
+                            reptime_func_arc = arcs_reptime_func[arcs_reptime_func['Type'] == '<20 in']
+                            dr_data = arcs_damge_ratio[arcs_damge_ratio['Type'] == '<20 in']
+                        try:
+                            pipe_length = v[1]['Length (km)']
+                            pipe_length_ft = v[1]['Length (ft)']
+                        except KeyError:
+                            pipe_length = v[1]['length_km']
+                            pipe_length_ft = v[1]['Length']
+                        rep_rate = {'break': dmg_data_arc.iloc[0]['breakrate'],
+                                    'leak': dmg_data_arc.iloc[0]['leakrate']}
+                        rep_time = (rep_rate['break'] * reptime_func_arc['# Fixed Breaks/Day/Worker'] + \
+                                    rep_rate['leak'] * reptime_func_arc['# Fixed Leaks/Day/Worker']) * \
+                                   pipe_length / 4  # assuming a 4-person crew per HAZUS
+                        dr = {'break': np.random.uniform(dr_data.iloc[0]['break_min'],
+                                                         dr_data.iloc[0]['break_max'], 1)[0],
+                              'leak': np.random.uniform(dr_data.iloc[0]['leak_min'],
+                                                         dr_data.iloc[0]['leak_max'], 1)[0]}
+                        num_20_ft_seg = pipe_length_ft / 20
+                        num_breaks = rep_rate['break'] * pipe_length
+                        if num_breaks > num_20_ft_seg:
+                            repair_cost += v[1]['replacement_cost'] * dr['break']
+                        else:
+                            repair_cost += v[1]['replacement_cost'] / num_20_ft_seg * num_breaks * dr['break']
+                        num_leaks = rep_rate['leak'] * pipe_length
+                        if num_leaks > num_20_ft_seg:
+                            repair_cost += v[1]['replacement_cost'] * dr['leak']
+                        else:
+                            repair_cost += v[1]['replacement_cost'] / num_20_ft_seg * num_leaks * dr['leak']
+                        repair_cost = min(repair_cost, v[1]['replacement_cost'])
+                    for t in range(T + 1):
+                        data.loc[v[0], 'h_time_t' + str(t)] = float(rep_time)
+                        data.loc[v[0], 'h_budget_t' + str(t)] = repair_cost
+                        data.loc[v[0], 'f_t' + str(t)] = repair_cost
+                data.to_csv(base_dir + file)

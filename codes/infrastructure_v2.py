@@ -448,6 +448,8 @@ def load_infrastructure_data(base_dir, T, cost_scale=1.0, extra_commodity=None):
     ----------
     base_dir : str
         The address of the folder where the basic network information (topology, parameters, etc.) are stored
+    T : int
+        Number of time steps of analysis
     cost_scale : float
         The factor by which all cost values has to multiplied. The default is 1.0.
     extra_commodity :
@@ -472,14 +474,14 @@ def load_infrastructure_data(base_dir, T, cost_scale=1.0, extra_commodity=None):
                 net = net_names[fname[:-5]]
                 for v in data.iterrows():
                     try:
-                        node_id = v[1]['ID']
+                        node_id = int(v[1]['ID'])
                     except KeyError:
-                        node_id = v[1]['nodenwid']
+                        node_id = int(v[1]['nodenwid'])
                     n = InfrastructureNode(global_index, net, int(node_id))
                     G.G.add_node((n.local_id, n.net_id), data={'inf_data': n})
                     global_index += 1
                     node_main_data = G.G.nodes[(n.local_id, n.net_id)]['data']['inf_data']
-                    node_main_data.reconstruction_cost = {t: float(v[1]['q (complete DS)_t' + str(t)]) * cost_scale for
+                    node_main_data.reconstruction_cost = {t: float(v[1]['q_t' + str(t)]) * cost_scale for
                                                           t in range(T + 1)}
                     node_main_data.oversupply_penalty = {t: float(v[1]['Mp_t' + str(t)]) * cost_scale for t in
                                                          range(T + 1)}
@@ -488,7 +490,7 @@ def load_infrastructure_data(base_dir, T, cost_scale=1.0, extra_commodity=None):
                     node_main_data.demand = {t: float(v[1]['Demand_t' + str(t)]) * cost_scale for t in range(T + 1)}
                     if 'guid' in v[1].index.values:
                         node_main_data.guid = v[1]['guid']
-                    resource_names = list(set([x for x in list(v[1].index.values) if x[:2] == 'p_']))
+                    resource_names = list(set([x.rsplit('_t', 1)[0] for x in list(v[1].index.values) if x[:2] == 'p_']))
                     if len(resource_names) > 0:
                         n.set_resource_usage(resource_names)
                         for rc in resource_names:
@@ -532,7 +534,7 @@ def load_infrastructure_data(base_dir, T, cost_scale=1.0, extra_commodity=None):
                         arc_main_data.capacity = {t: float(v[1]['u_t' + str(t)]) * cost_scale for t in range(T + 1)}
                         if 'guid' in v[1].index.values:
                             arc_main_data.guid = v[1]['guid']
-                        resource_names = [x for x in list(v[1].index.values) if x[:2] == 'h_']
+                        resource_names = list(set([x.rsplit('_t', 1)[0] for x in list(v[1].index.values) if x[:2] == 'h_']))
                         if len(resource_names) > 0:
                             a.set_resource_usage(resource_names)
                             for rc in resource_names:
@@ -598,31 +600,28 @@ def add_from_csv_failure_scenario(G, sample, dam_dir=""):
     None.
 
     """
-    # print("Initialize Random Damage...")
-    with open(dam_dir + 'Initial_node.csv') as csv_file:
-        data = csv.reader(csv_file, delimiter=',')
-        for row in data:
-            raw_n = row[0]
-            raw_n = raw_n.split(',')
-            n = (int(raw_n[0].strip(' )(')), int(raw_n[1].strip(' )(')))
-            state = float(row[sample + 1])
-            G.G.nodes[n]['data']['inf_data'].functionality = state
-            G.G.nodes[n]['data']['inf_data'].repaired = state
+    data = pd.read_csv(dam_dir + 'Initial_node.csv', delimiter=',', header=0)
+    for row in data.iterrows():
+        raw_n = row[1]['name']
+        raw_n = raw_n.split(',')
+        n = (int(raw_n[0].strip(' )(')), int(raw_n[1].strip(' )(')))
+        state = float(row[1][str(sample)])
+        G.G.nodes[n]['data']['inf_data'].functionality = state
+        G.G.nodes[n]['data']['inf_data'].repaired = state
 
-    with open(dam_dir + 'Initial_link.csv') as csv_file:
-        data = csv.reader(csv_file, delimiter=',')
-        for row in data:
-            raw_uv = row[0]
-            raw_uv = raw_uv.split(',')
-            u = (int(raw_uv[0].strip(' )(')), int(raw_uv[1].strip(' )(')))
-            v = (int(raw_uv[2].strip(' )(')), int(raw_uv[3].strip(' )(')))
-            state = float(row[sample + 1])
-            if state == 0.0:
-                G.G[u][v]['data']['inf_data'].functionality = state
-                G.G[u][v]['data']['inf_data'].repaired = state
+    data = pd.read_csv(dam_dir + 'Initial_link.csv', delimiter=',', header=0)
+    for row in data.iterrows():
+        raw_uv = row[1]['name']
+        raw_uv = raw_uv.split(',')
+        u = (int(raw_uv[0].strip(' )(')), int(raw_uv[1].strip(' )(')))
+        v = (int(raw_uv[2].strip(' )(')), int(raw_uv[3].strip(' )(')))
+        state = float(row[1][str(sample)])
+        if state == 0.0:
+            G.G[u][v]['data']['inf_data'].functionality = state
+            G.G[u][v]['data']['inf_data'].repaired = state
 
-                G.G[v][u]['data']['inf_data'].functionality = state
-                G.G[v][u]['data']['inf_data'].repaired = state
+            G.G[v][u]['data']['inf_data'].functionality = state
+            G.G[v][u]['data']['inf_data'].repaired = state
 
 
 def add_wu_failure_scenario(G, dam_dir, no_set=0, no_sce=0):
