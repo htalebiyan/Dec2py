@@ -17,6 +17,7 @@ class INDPComponents:
     gc_size : int
         Size of the largest component of the network
     """
+
     def __init__(self):
         self.components = []
         self.num_components = 0
@@ -257,6 +258,29 @@ class INDPResults:
                         'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
                 self.results_layer[l][t]['run_time'] = run_time
 
+    def add_optimality_gap(self, t, gap):
+        """
+        This function adds optimality gap to the results.
+
+        Parameters
+        ----------
+        t : int
+            The time steps to which the run time should be added
+        gap : float
+            The optimality gap
+
+        Returns
+        -------
+        None.
+
+        """
+        if t not in self.results:
+            self.results[t] = {
+                'costs': {"Space Prep": 0.0, "Arc": 0.0, "Node": 0.0, "Over Supply": 0.0, "Under Supply": 0.0,
+                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0}, 'actions': [], 'gc_size': 0,
+                'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0, 'gap': 0.0}
+        self.results[t]['gap'] = gap
+
     def add_action(self, t, action, save_layer=True):
         """
         This function adds restoration actions to the results.
@@ -394,12 +418,13 @@ class INDPResults:
             for t in self.results:
                 f.write(str(t) + "," + str(self.results[t]['run_time']) + "\n")
         with open(costs_file, 'w') as f:
-            f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Under Supply Perc\n")
+            f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Under Supply Perc, gap\n")
             for t in self.results:
                 costs = self.results[t]['costs']
-                f.write(str(t) + "," + str(costs["Space Prep"]) + "," + str(costs["Arc"]) + "," + str(
-                    costs["Node"]) + "," + str(costs["Over Supply"]) + "," + str(costs["Under Supply"]) + "," + str(
-                    costs["Flow"]) + "," + str(costs["Total"]) + "," + str(costs["Under Supply Perc"]) + "\n")
+                f.write(str(t) + "," + str(costs["Space Prep"]) + "," + str(costs["Arc"]) + "," + str(costs["Node"]) +
+                        "," + str(costs["Over Supply"]) + "," + str(costs["Under Supply"]) + "," + str(costs["Flow"]) +
+                        "," + str(costs["Total"]) + "," + str(costs["Under Supply Perc"]) + "," +
+                        str(self.results[t]['gap']) + "\n")
 
     #        with open(perc_file,'w') as f:
     #            f.write("t,gc_size,num_components\n")
