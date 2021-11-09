@@ -632,7 +632,7 @@ def apply_recovery(N, indp_results, t):
     N : :class:`~infrastructure.InfrastructureNetwork`
         The model of the interdependent network.
     indp_results : INDPResults
-        A :class:`~indputils.INDPResults` object containing the optimal restoration decisions..
+        A :class:`~indputils_v2.INDPResults` object containing the optimal restoration decisions..
     t : int
         The time step to which the results should apply.
 
@@ -647,6 +647,7 @@ def apply_recovery(N, indp_results, t):
             data = action.split("/")
             src = tuple([int(x) for x in data[0].split(".")])
             dst = tuple([int(x) for x in data[1].split(".")])
+            N.G[src][dst]['data']['inf_data'].repaired = 1.0
             N.G[src][dst]['data']['inf_data'].functionality = 1.0
         else:
             # Node recovery action.

@@ -14,6 +14,7 @@ Interdependent Network Design Problem (INDP) [cite] and time-dependent INDP (td-
 import os
 import matplotlib.pyplot as plt
 import runutils_v2
+import dindputils_v2
 import plots
 import pickle
 
@@ -214,7 +215,7 @@ misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TI
 # %%
 runutils_v2.run_method(FAIL_SCE_PARAM, RC, T, LAYERS, method='INMRP', output_dir=OUTPUT_DIR,
                        misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY,
-                             'TIME_RESOURCE': False})
+                             'TIME_RESOURCE': True})
 
 # %%
 ''' 
@@ -250,31 +251,29 @@ optimal solution.
 '''
 
 # %%
-COST_TYPES = ['Total']  # 'Under Supply', 'Over Supply'
-REF_METHOD = 'inmrp'
-METHOD_NAMES = ['inmrp']
-# 'ng', 'jc', 'tdindp', 'ng', 'bgCCCCUUUU', 'dp_indp', 'dp_jc', 'bgCNUU', 'inmrp'
-
-# COMBS, OPTIMAL_COMBS = dindputils.generate_combinations(FAIL_SCE_PARAM['TYPE'],
-#                                                         FAIL_SCE_PARAM['MAGS'], FAIL_SCE_PARAM['SAMPLE_RANGE'], LAYERS,
-#                                                         RC, METHOD_NAMES, JUDGE_TYPE, RES_ALLOC_TYPE, VAL_TYPE,
-#                                                         list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
-#                                                         synthetic_dir=SYNTH_DIR)
-
-# BASE_DF, objs = dindputils.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES,
-#                                         root_result_dir=OUTPUT_DIR, deaggregate=True)
-
-# LAMBDA_DF = dindputils.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS, ref_method=REF_METHOD,
-#                                             cost_type=COST_TYPES[0], deaggregate=True)
-# RES_ALLOC_DF, ALLOC_GAP_DF = dindputils.read_resource_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
-#                                                                   objs, root_result_dir=OUTPUT_DIR,
-#                                                                   ref_method=REF_METHOD)
-# RUN_TIME_DF = dindputils.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
-# ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
-# REL_ACTION_DF = gameutils.relative_actions(ANALYZE_NE_DF, COMBS)
-
-# COOP_GAIN, COOP_GAIN_TIME = gameutils.cooperation_gain(BASE_DF, LAMBDA_DF, COMBS, ref_state='bgNNUU',
-#                                                         states=['bgCCUU', 'bgCNUU', 'bgNCUU'])
+# COST_TYPES = ['Total']  # 'Under Supply', 'Over Supply'
+# REF_METHOD = 'dp_inmrp'
+# METHOD_NAMES = ['dp_inmrp']
+# # 'ng', 'jc', 'tdindp', 'ng', 'bgCCCCUUUU', 'dp_indp', 'dp_jc', 'bgCNUU', 'inmrp', 'dp_inmrp'
+#
+# COMBS, OPTIMAL_COMBS = dindputils_v2.generate_combinations(FAIL_SCE_PARAM['TYPE'], FAIL_SCE_PARAM['L1_RANGE'],
+#                                                            FAIL_SCE_PARAM['L2_RANGE'], LAYERS, RC, METHOD_NAMES,
+#                                                            list_high_dam_add=FAIL_SCE_PARAM['FILTER_SCE'],
+#                                                            synthetic_dir=SYNTH_DIR)
+#
+# BASE_DF, objs = dindputils_v2.read_results(COMBS, OPTIMAL_COMBS, COST_TYPES, root_result_dir=OUTPUT_DIR, deaggregate=True)
+#
+# # LAMBDA_DF =  dindputils_v2.relative_performance(BASE_DF, COMBS, OPTIMAL_COMBS, ref_method=REF_METHOD,
+# #                                             cost_type=COST_TYPES[0], deaggregate=True)
+# # RES_ALLOC_DF, ALLOC_GAP_DF =  dindputils_v2.read_resource_allocation(BASE_DF, COMBS, OPTIMAL_COMBS,
+# #                                                                   objs, root_result_dir=OUTPUT_DIR,
+# #                                                                   ref_method=REF_METHOD)
+# # RUN_TIME_DF =  dindputils_v2.read_run_time(COMBS, OPTIMAL_COMBS, objs, root_result_dir=OUTPUT_DIR)
+# # ANALYZE_NE_DF = gameutils.analyze_NE(objs, COMBS, OPTIMAL_COMBS)
+# # REL_ACTION_DF = gameutils.relative_actions(ANALYZE_NE_DF, COMBS)
+#
+# # COOP_GAIN, COOP_GAIN_TIME = gameutils.cooperation_gain(BASE_DF, LAMBDA_DF, COMBS, ref_state='bgNNUU',
+# #                                                         states=['bgCCUU', 'bgCNUU', 'bgNCUU'])
 
 # %%
 ''' 
@@ -316,7 +315,7 @@ plt.close('all')
 #     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
 #      ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF, REL_ACTION_DF] = pickle.load(f)
 # plots.plot_performance_curves(BASE_DF,
-#                               cost_type='Total', ci=None,
+#                               cost_type='Total', ci=95,
 #                               deaggregate=False, plot_resilience=True)
 # plots.plot_relative_performance(LAMBDA_DF[(LAMBDA_DF['auction_type'] != 'UNIFORM') & \
 #                                           ((LAMBDA_DF['no_resources'] != 8)&(LAMBDA_DF['no_resources'] != 12))],

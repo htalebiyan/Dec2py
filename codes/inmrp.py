@@ -512,13 +512,13 @@ def collect_results(m, controlled_layers, T, n_hat, n_hat_prime, a_hat_prime, S,
         total_lyr = {}
         total_nd_lyr = {}
         for l in layers:
-            total_lyr[l] = flow_cost_layer[l] + arc_cost_layer[l] + node_cost_layer[l] + \
-                           over_supp_cost_layer[l] + under_supp_cost_layer[l] + space_prep_cost_layer[l]
-            total_nd_lyr[l] = space_prep_cost_layer[l] + arc_cost_layer[l] + flow_cost + node_cost_layer[l]
-        indp_results.add_cost(t, "Total", flow_cost + arc_cost + node_cost + over_supp_cost + \
-                              under_supp_cost + space_prep_cost, total_lyr)
-        indp_results.add_cost(t, "Total no disconnection", space_prep_cost + arc_cost + \
-                              flow_cost + node_cost, total_nd_lyr)
+            total_lyr[l] = flow_cost_layer[l] + arc_cost_layer[l] + node_cost_layer[l] + over_supp_cost_layer[l] + \
+                           under_supp_cost_layer[l] + space_prep_cost_layer[l]
+            total_nd_lyr[l] = space_prep_cost_layer[l] + arc_cost_layer[l] + flow_cost_layer[l] + node_cost_layer[l]
+        indp_results.add_cost(t, "Total", flow_cost + arc_cost + node_cost + over_supp_cost + under_supp_cost +
+                              space_prep_cost, total_lyr)
+        indp_results.add_cost(t, "Total no disconnection", space_prep_cost + arc_cost + flow_cost + node_cost,
+                              total_nd_lyr)
     return indp_results
 
 
@@ -646,7 +646,7 @@ def run_inmrp(params, layers=None, controlled_layers=None, functionality=None, T
         # Run INMRP.
         results = inmrp(interdependent_net, resource_t, time_window_length, layers, controlled_layers=controlled_layers,
                         functionality=functionality_t, forced_actions=forced_actions, co_location=co_location,
-                        time_limit=5)
+                        time_limit=10)
         if save_model:
             indp.save_indp_model_to_file(results[0], output_dir + "/Model", n)
         if "WINDOW_LENGTH" in params:
@@ -1027,14 +1027,15 @@ def time_resource_usage_curves(base_dir, damage_dir, sample_num, T):
                     if not reptime_func_node.empty:
                         node_name = '(' + str(node_id) + ',' + str(net_names[fname[:5]]) + ')'
                         ds = dmg_sce_data[dmg_sce_data['name'] == node_name][str(sample_num)].values[0]
-                        rep_time = np.random.normal(reptime_func_node[ds+'_mean'], reptime_func_node[ds+'_sd'], 1)[0]
+                        rep_time = np.random.normal(reptime_func_node[ds + '_mean'], reptime_func_node[ds + '_sd'], 1)[
+                            0]
                         dr = np.random.uniform(dr_data.iloc[0][ds + '_min'], dr_data.iloc[0][ds + '_max'], 1)[0]
                         repair_cost = v[1]['replacement_cost'] * dr
                     for t in range(T + 1):
                         node_data.loc[v[0], 'p_time_t' + str(t)] = rep_time if rep_time > 0 else 0
                         node_data.loc[v[0], 'p_budget_t' + str(t)] = repair_cost
                         node_data.loc[v[0], 'q_t' + str(t)] = repair_cost
-                node_data.to_csv(base_dir + file)
+                node_data.to_csv(base_dir + file, index=False)
 
     for file in files:
         fname = file[0:-4]
@@ -1067,7 +1068,7 @@ def time_resource_usage_curves(base_dir, damage_dir, sample_num, T):
                         dr = {'break': np.random.uniform(dr_data.iloc[0]['break_min'],
                                                          dr_data.iloc[0]['break_max'], 1)[0],
                               'leak': np.random.uniform(dr_data.iloc[0]['leak_min'],
-                                                         dr_data.iloc[0]['leak_max'], 1)[0]}
+                                                        dr_data.iloc[0]['leak_max'], 1)[0]}
                         num_20_ft_seg = pipe_length_ft / 20
                         num_breaks = rep_rate['break'] * pipe_length
                         if num_breaks > num_20_ft_seg:
@@ -1084,4 +1085,4 @@ def time_resource_usage_curves(base_dir, damage_dir, sample_num, T):
                         data.loc[v[0], 'h_time_t' + str(t)] = float(rep_time)
                         data.loc[v[0], 'h_budget_t' + str(t)] = repair_cost
                         data.loc[v[0], 'f_t' + str(t)] = repair_cost
-                data.to_csv(base_dir + file)
+                data.to_csv(base_dir + file, index=False)

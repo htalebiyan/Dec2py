@@ -8,8 +8,8 @@ from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 sns.set(context='notebook', style='darkgrid', font_scale=1)
-plt.rc('text', usetex=True)
-plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+# plt.rc('text', usetex=True)
+# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 
 def plot_performance_curves(df, cost_type='Total', ci=None, normalize=False, deaggregate=False, plot_resilience=False):
