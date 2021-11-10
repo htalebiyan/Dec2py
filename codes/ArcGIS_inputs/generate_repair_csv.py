@@ -8,7 +8,7 @@ sample = 0
 net_names = {1: 'Water', 3: 'Power'}
 initial_damage_folder = 'C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios' \
                         '/cumulative_1000yr_initial_damage/'
-results_folder = '../../results/dp_inmrp_results_L2_m1000_vb2600000.0t1330/'
+results_folder = '../../results/dp_inmrp_results_L2_m1000_vb2100000t675/'
 
 repair_data = pd.read_csv(results_folder + 'actions_' + str(sample) + '_.csv', low_memory=False)
 repair_dict = pd.DataFrame(columns=['name', 'element', 'net', 'guid', 'damaged', 'protected', 'repair_time'])
@@ -43,4 +43,4 @@ for _, val in repair_data.iterrows():
         repair_dict.loc[repair_dict.name == name_dup, 'repair_time'] = int(repair_time)
         if repair_time == 0:
             repair_dict.loc[repair_dict.name == name_dup, 'protected'] = True
-repair_dict.to_csv('repair_dict.csv', sep=',', header=True)
+repair_dict.to_csv(results_folder+'repair_dict.csv', sep=',', header=True)

@@ -166,8 +166,7 @@ if FAIL_SCE_PARAM['TYPE'] == 'synthetic':
     SYNTH_DIR = BASE_DIR + FAIL_SCE_PARAM['TOPO'] + 'Networks/'
     OUTPUT_DIR += FAIL_SCE_PARAM['TOPO'] + '/results/'
 
-EXTRA_COMMODITY = None
-# {1:['PW'], 3:[]}
+EXTRA_COMMODITY = None #{1: ['PW'], 3: []}
 
 # %%
 ''' 
@@ -194,9 +193,9 @@ type of resource. For example:
 
 # %%
 T = 10
-RC = [{'budget': {t: 2.4e5 for t in range(T)}, 'time': {t: 70 for t in range(T)}}]
-RC[0]['budget'][0] = 4.4e5
-RC[0]['time'][0] = 700
+RC = [{'budget': {t: 200000 for t in range(T)}, 'time': {t: 75 for t in range(T)}}]
+RC[0]['budget'][0] = 300000
+RC[0]['time'][0] = 0
 # RC = [{'': {t: 4 for t in range(T)}}]
 # RC[0][''][0] = 0
 LAYERS = [1, 3]
