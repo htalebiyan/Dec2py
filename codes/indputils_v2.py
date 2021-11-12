@@ -422,12 +422,14 @@ class INDPResults:
             for t in self.results:
                 f.write(str(t) + "," + str(self.results[t]['run_time']) + "\n")
         with open(costs_file, 'w') as f:
-            f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Under Supply Perc, gap\n")
+            f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Total no disconnection,Under Supply Perc,"
+                    " gap\n")
             for t in self.results:
                 costs = self.results[t]['costs']
                 f.write(str(t) + "," + str(costs["Space Prep"]) + "," + str(costs["Arc"]) + "," + str(costs["Node"]) +
                         "," + str(costs["Over Supply"]) + "," + str(costs["Under Supply"]) + "," + str(costs["Flow"]) +
-                        "," + str(costs["Total"]) + "," + str(costs["Under Supply Perc"]) + "," +
+                        "," + str(costs["Total"]) + "," + str(costs["Total no disconnection"]) + "," +
+                        str(costs["Under Supply Perc"]) + "," +
                         str(self.results[t]['gap']) + "\n")
 
     #        with open(perc_file,'w') as f:
@@ -471,12 +473,14 @@ class INDPResults:
                 for t in self.results_layer[l]:
                     f.write(str(t) + "," + str(self.results_layer[l][t]['run_time']) + "\n")
             with open(costs_file, 'w') as f:
-                f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Under Supply Perc\n")
+                f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Total no disconnection,"
+                        "Under Supply Perc\n")
                 for t in self.results_layer[l]:
                     costs = self.results_layer[l][t]['costs']
                     f.write(str(t) + "," + str(costs["Space Prep"]) + "," + str(costs["Arc"]) + "," + str(
                         costs["Node"]) + "," + str(costs["Over Supply"]) + "," + str(costs["Under Supply"]) + "," + str(
-                        costs["Flow"]) + "," + str(costs["Total"]) + "," + str(costs["Under Supply Perc"]) + "\n")
+                        costs["Flow"]) + "," + str(costs["Total"]) + "," + "," + str(costs["Total no disconnection"]) +
+                        str(costs["Under Supply Perc"]) + "\n")
 
     @classmethod
     def from_csv(clss, out_dir, sample_num=1, suffix=""):

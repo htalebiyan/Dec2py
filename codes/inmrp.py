@@ -15,7 +15,7 @@ import dislocationutils
 
 
 def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, forced_actions=False,
-          fixed_nodes=None, print_cmd=True, time_limit=None, co_location=True, solution_pool=None):
+          fixed_nodes=None, print_cmd=True, time_limit=None, co_location=True, solution_pool=None, time_offset=0):
     """
     INMRP optimization problem.
 
@@ -49,6 +49,8 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
     solution_pool : int, optional
         The number of solutions that should be retrieved from the optimizer in addition to
         the optimal one. The default is None.
+    time_offset: int, optional
+        The current time in the analysis. The default is 0.
 
     Returns
     -------
@@ -147,24 +149,24 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
             for s in S:
                 obj_func += s.cost * m.getVarByName('z_' + str(s.id) + "," + str(t))
         for u, v, a in a_hat_prime:
-            obj_func += (float(a['data']['inf_data'].reconstruction_cost[t]) / 2.0) * \
+            obj_func += (float(a['data']['inf_data'].reconstruction_cost[t+time_offset]) / 2.0) * \
                         m.getVarByName('y_tilde_' + str(u) + "," + str(v) + "," + str(t))
         for n, d in n_hat_prime:
-            obj_func += d['data']['inf_data'].reconstruction_cost[t] * m.getVarByName(
+            obj_func += d['data']['inf_data'].reconstruction_cost[t+time_offset] * m.getVarByName(
                 'w_tilde_' + str(n) + "," + str(t))
         for n, d in n_hat.nodes(data=True):
-            obj_func += d['data']['inf_data'].oversupply_penalty[t] * m.getVarByName('delta+_' + str(n) + "," + str(t))
-            obj_func += d['data']['inf_data'].undersupply_penalty[t] * m.getVarByName('delta-_' + str(n) + "," + str(t))
+            obj_func += d['data']['inf_data'].oversupply_penalty[t+time_offset] * m.getVarByName('delta+_' + str(n) + "," + str(t))
+            obj_func += d['data']['inf_data'].undersupply_penalty[t+time_offset] * m.getVarByName('delta-_' + str(n) + "," + str(t))
             for l, val in d['data']['inf_data'].extra_com.items():
-                obj_func += val['oversupply_penalty'][t] * m.getVarByName(
+                obj_func += val['oversupply_penalty'][t+time_offset] * m.getVarByName(
                     'delta+_' + str(n) + "," + str(t) + "," + str(l))
-                obj_func += val['undersupply_penalty'][t] * m.getVarByName(
+                obj_func += val['undersupply_penalty'][t+time_offset] * m.getVarByName(
                     'delta-_' + str(n) + "," + str(t) + "," + str(l))
         for u, v, a in n_hat.edges(data=True):
-            obj_func += a['data']['inf_data'].flow_cost[t] * m.getVarByName(
+            obj_func += a['data']['inf_data'].flow_cost[t+time_offset] * m.getVarByName(
                 'x_' + str(u) + "," + str(v) + "," + str(t))
             for l, val in a['data']['inf_data'].extra_com.items():
-                obj_func += val['flow_cost'][t] * m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t) + "," +
+                obj_func += val['flow_cost'][t+time_offset] * m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t) + "," +
                                                                  str(l))
     m.setObjective(obj_func, GRB.MINIMIZE)
     m.update()
@@ -198,7 +200,7 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
                 out_flow_constr += m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t))
             for u, v, a in n_hat.in_edges(n, data=True):
                 in_flow_constr += m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t))
-            demand_constr += d['data']['inf_data'].demand[t] - m.getVarByName(
+            demand_constr += d['data']['inf_data'].demand[t+time_offset] - m.getVarByName(
                 'delta+_' + str(n) + "," + str(t)) + m.getVarByName('delta-_' + str(n) + "," + str(t))
             m.addConstr(out_flow_constr - in_flow_constr, GRB.EQUAL, demand_constr,
                         "Flow conservation constraint " + str(n) + "," + str(t))
@@ -210,7 +212,7 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
                     out_flow_constr += m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t) + "," + str(l))
                 for u, v, a in n_hat.in_edges(n, data=True):
                     in_flow_constr += m.getVarByName('x_' + str(u) + "," + str(v) + "," + str(t) + "," + str(l))
-                demand_constr += val['demand'][t] - \
+                demand_constr += val['demand'][t+time_offset] - \
                                  m.getVarByName('delta+_' + str(n) + "," + str(t) + "," + str(l)) + \
                                  m.getVarByName('delta-_' + str(n) + "," + str(t) + "," + str(l))
                 m.addConstr(out_flow_constr - in_flow_constr, GRB.EQUAL, demand_constr,
@@ -227,28 +229,28 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
                        for l in a['data']['inf_data'].extra_com.keys()])
             if (u in [n for (n, d) in n_hat_prime]) | (u in interdep_nodes_list):
                 m.addConstr(lhs, GRB.LESS_EQUAL,
-                            a['data']['inf_data'].capacity[t] * m.getVarByName('w_' + str(u) + "," + str(t)),
+                            a['data']['inf_data'].capacity[t+time_offset] * m.getVarByName('w_' + str(u) + "," + str(t)),
                             "Flow in functionality constraint(" + str(u) + "," + str(v) + "," + str(t) + ")")
             else:
                 m.addConstr(lhs, GRB.LESS_EQUAL,
-                            a['data']['inf_data'].capacity[t] * N.G.nodes[u]['data']['inf_data'].functionality,
+                            a['data']['inf_data'].capacity[t+time_offset] * N.G.nodes[u]['data']['inf_data'].functionality,
                             "Flow in functionality constraint (" + str(u) + "," + str(v) + "," + str(t) + ")")
             if (v in [n for (n, d) in n_hat_prime]) | (v in interdep_nodes_list):
                 m.addConstr(lhs, GRB.LESS_EQUAL,
-                            a['data']['inf_data'].capacity[t] * m.getVarByName('w_' + str(v) + "," + str(t)),
+                            a['data']['inf_data'].capacity[t+time_offset] * m.getVarByName('w_' + str(v) + "," + str(t)),
                             "Flow out functionality constraint(" + str(u) + "," + str(v) + "," + str(t) + ")")
             else:
                 m.addConstr(lhs, GRB.LESS_EQUAL,
-                            a['data']['inf_data'].capacity[t] * N.G.nodes[v]['data']['inf_data'].functionality,
+                            a['data']['inf_data'].capacity[t+time_offset] * N.G.nodes[v]['data']['inf_data'].functionality,
                             "Flow out functionality constraint (" + str(u) + "," + str(v) + "," + str(t) + ")")
             if (u, v, a) in a_hat_prime:
                 m.addConstr(lhs, GRB.LESS_EQUAL,
-                            a['data']['inf_data'].capacity[t] * m.getVarByName(
+                            a['data']['inf_data'].capacity[t+time_offset] * m.getVarByName(
                                 'y_' + str(u) + "," + str(v) + "," + str(t)),
                             "Flow arc functionality constraint (" + str(u) + "," + str(v) + "," + str(t) + ")")
             else:
                 m.addConstr(lhs, GRB.LESS_EQUAL,
-                            a['data']['inf_data'].capacity[t] * N.G[u][v]['data']['inf_data'].functionality,
+                            a['data']['inf_data'].capacity[t+time_offset] * N.G[u][v]['data']['inf_data'].functionality,
                             "Flow arc functionality constraint(" + str(u) + "," + str(v) + "," + str(t) + ")")
 
         # Restoration resource availability constraints.
@@ -268,7 +270,7 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
 
             for u, v, a in a_hat_prime:
                 idx_lyr = a['data']['inf_data'].layer
-                res_use = 0.5 * a['data']['inf_data'].resource_usage['h_' + rc][t]
+                res_use = 0.5 * a['data']['inf_data'].resource_usage['h_' + rc][t+time_offset]
                 resource_left_constr += res_use * m.getVarByName('y_tilde_' + str(u) + "," + str(v) + "," + str(t))
                 if is_sep_res:
                     res_left_constr_sep[idx_lyr] += res_use * m.getVarByName(
@@ -276,7 +278,7 @@ def inmrp(N, v_r, T=1, layers=None, controlled_layers=None, functionality=None, 
 
             for n, d in n_hat_prime:
                 idx_lyr = n[1]
-                res_use = d['data']['inf_data'].resource_usage['p_' + rc][t]
+                res_use = d['data']['inf_data'].resource_usage['p_' + rc][t+time_offset]
                 resource_left_constr += res_use * m.getVarByName('w_tilde_' + str(n) + "," + str(t))
                 if is_sep_res:
                     res_left_constr_sep[idx_lyr] += res_use * m.getVarByName('w_tilde_' + str(n) + "," + str(t))
@@ -646,7 +648,7 @@ def run_inmrp(params, layers=None, controlled_layers=None, functionality=None, T
         # Run INMRP.
         results = inmrp(interdependent_net, resource_t, time_window_length, layers, controlled_layers=controlled_layers,
                         functionality=functionality_t, forced_actions=forced_actions, co_location=co_location,
-                        time_limit=100)
+                        time_limit=500, time_offset=n)
         if save_model:
             indp.save_indp_model_to_file(results[0], output_dir + "/Model", n)
         if "WINDOW_LENGTH" in params:
@@ -1035,7 +1037,7 @@ def time_resource_usage_curves(base_dir, damage_dir, sample_num, T):
                         # todo.. uncomment uncertainty in damage ratio here
                         # dr = np.random.uniform(dr_data.iloc[0][ds + '_min'], dr_data.iloc[0][ds + '_max'], 1)[0]
                         repair_cost = v[1]['replacement_cost'] * dr
-                    for t in range(T + 1):
+                    for t in range(1, T + 1):
                         node_data.loc[v[0], 'p_time_t' + str(t)] = rep_time if rep_time > 0 else 0
                         node_data.loc[v[0], 'p_budget_t' + str(t)] = repair_cost
                         node_data.loc[v[0], 'q_t' + str(t)] = repair_cost
@@ -1087,7 +1089,7 @@ def time_resource_usage_curves(base_dir, damage_dir, sample_num, T):
                         else:
                             repair_cost += v[1]['replacement_cost'] / num_20_ft_seg * num_leaks * dr['leak']
                         repair_cost = min(repair_cost, v[1]['replacement_cost'])
-                    for t in range(T + 1):
+                    for t in range(1, T + 1):
                         data.loc[v[0], 'h_time_t' + str(t)] = float(rep_time)
                         data.loc[v[0], 'h_budget_t' + str(t)] = repair_cost
                         data.loc[v[0], 'f_t' + str(t)] = repair_cost

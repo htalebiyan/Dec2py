@@ -10,7 +10,7 @@ import numpy as np
 import math
 
 
-def create_dynamic_param(base_dir, params):
+def create_dynamic_param(base_dir, params, extend=5):
     """
     This function computes the change of demand values over time based on population dislocation models.
 
@@ -19,14 +19,16 @@ def create_dynamic_param(base_dir, params):
     base_dir : str
         Address of the directory where network data is stored
     params : dict
-        Parameters that are needed to run the INDP optimization.
+        Parameters that are needed to run the INDP optimization.\
+    extend: int
+        number of time steps beyond the analysis length for which the dislocation should be calculated
 
     Returns
     -------
      dynamic_params : dict
          Dictionary of dynamic demand value for nodes
     """
-    T = params['T']
+    T = params['T'] + extend
     dynamic_param_dict = params['DYNAMIC_PARAMS']
     return_type = dynamic_param_dict['RETURN']
     dp_dict_col = ['time', 'node', 'current pop', 'total pop']
@@ -140,7 +142,6 @@ def apply_dynamic_demand(base_dir, dfs, extra_commodity=None):
                             if original_demand_ec < 0 and 'Demand_' + ec + '_t' + str(int(t) + 1) in net_data.columns:
                                 net_data.loc[idxn, 'Demand_' + ec + '_t' + str(
                                     int(t) + 1)] = original_demand_ec * current_pop / total_pop
-
         net_data.to_csv(base_dir + net_name + 'Nodes.csv', index=False)
 
 

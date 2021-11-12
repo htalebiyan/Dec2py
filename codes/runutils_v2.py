@@ -79,7 +79,7 @@ def batch_run(params, fail_sce_param):
 
             print("Initializing network...")
             if infrastructure_data:
-                params["N"], _, _ = inmrp.initialize_network(base_dir=base_dir, T=params['T'],
+                params["N"], _, _ = inmrp.initialize_network(base_dir=base_dir, T=params['T']+2,
                                                              infrastructure_data=infrastructure_data,
                                                              extra_commodity=params["EXTRA_COMMODITY"])
             else:

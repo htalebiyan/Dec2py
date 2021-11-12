@@ -8,7 +8,7 @@ sample = 0
 net_names = {1: 'Water', 3: 'Power'}
 initial_damage_folder = 'C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios' \
                         '/cumulative_1000yr_initial_damage/'
-results_folder = '../../results/dp_inmrp_results_L2_m1000_vb2100000t675/'
+results_folder = '../../results/dp_inmrp_results_L2_m1000_vb5587439t1764/'
 
 repair_data = pd.read_csv(results_folder + 'actions_' + str(sample) + '_.csv', low_memory=False)
 repair_dict = pd.DataFrame(columns=['name', 'element', 'net', 'guid', 'damaged', 'protected', 'repair_time'])

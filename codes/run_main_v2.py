@@ -192,9 +192,10 @@ type of resource. For example:
 '''
 
 # %%
-T = 10
-RC = [{'budget': {t: 200000 for t in range(T)}, 'time': {t: 75 for t in range(T)}}]
-RC[0]['budget'][0] = 300000
+T = 15
+RC = [{'budget': {t: 349215*(+1/13*(t-1)+.5) for t in range(T)},
+       'time': {t: 126*(+1/13*(t-1)+.5) for t in range(T)}}]
+RC[0]['budget'][0] = 698429
 RC[0]['time'][0] = 0
 # RC = [{'': {t: 4 for t in range(T)}}]
 # RC[0][''][0] = 0
