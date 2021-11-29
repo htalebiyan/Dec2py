@@ -534,7 +534,8 @@ def load_infrastructure_data(base_dir, T, cost_scale=1.0, extra_commodity=None):
                         arc_main_data.capacity = {t: float(v[1]['u_t' + str(t)]) * cost_scale for t in range(T + 1)}
                         if 'guid' in v[1].index.values:
                             arc_main_data.guid = v[1]['guid']
-                        resource_names = list(set([x.rsplit('_t', 1)[0] for x in list(v[1].index.values) if x[:2] == 'h_']))
+                        resource_names = list(
+                            set([x.rsplit('_t', 1)[0] for x in list(v[1].index.values) if x[:2] == 'h_']))
                         if len(resource_names) > 0:
                             a.set_resource_usage(resource_names)
                             for rc in resource_names:
@@ -545,10 +546,9 @@ def load_infrastructure_data(base_dir, T, cost_scale=1.0, extra_commodity=None):
                         if extra_commodity:
                             a.set_extra_commodity(extra_commodity[net])
                             for l in extra_commodity[net]:
-                                ext_com_data = \
-                                    G.G[(a.source, a.layer)][(a.dest, a.layer)]['data']['inf_data'].extra_com[l]
-                                ext_com_data['flow_cost'] = {t: float(v[1]['c' + l + '_t' + str(t)]) * cost_scale for t
-                                                             in range(T + 1)}
+                                G.G[(a.source, a.layer)][(a.dest, a.layer)]['data']['inf_data'].extra_com[l][
+                                    'flow_cost'] = {t: float(v[1]['c_' + l + '_t' + str(t)]) * cost_scale for t in
+                                                    range(T + 1)}
     for file in files:
         fname = file[0:-4]
         if fname in ['beta', 'alpha', 'g', 'Interdep']:

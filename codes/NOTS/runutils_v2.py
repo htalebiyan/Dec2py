@@ -72,20 +72,20 @@ def batch_run(params, fail_sce_param):
             if params['TIME_RESOURCE']:
                 print('Computing repair times...')
                 inmrp.time_resource_usage_curves(base_dir, damage_dir, i, params['T'])
+            if params['DYNAMIC_PARAMS']:
+                print("Computing dislocation data...")
+                dyn_dmnd = dislocationutils.create_dynamic_param(base_dir, params)
+                dislocationutils.apply_dynamic_demand(base_dir, dyn_dmnd, extra_commodity=params["EXTRA_COMMODITY"])
+
             print("Initializing network...")
             if infrastructure_data:
-                params["N"], _, _ = inmrp.initialize_network(base_dir=base_dir, T=params['T'],
+                params["N"], _, _ = inmrp.initialize_network(base_dir=base_dir, T=params['T']+2,
                                                              infrastructure_data=infrastructure_data,
                                                              extra_commodity=params["EXTRA_COMMODITY"])
             else:
                 params["N"], params["V"], params['L'] = inmrp.initialize_network(base_dir=base_dir, l1_index=m,
                                                                                  l2_index=i, topology=topology,
                                                                                  infrastructure_data=infrastructure_data)
-            if params['DYNAMIC_PARAMS']:
-                print("Computing dislocation data...")
-                dyn_dmnd = dislocationutils.create_dynamic_param(params, N=params["N"], T=params["NUM_ITERATIONS"])
-                params['DYNAMIC_PARAMS']['DEMAND_DATA'] = dyn_dmnd
-
             if fail_sce_param['TYPE'] == 'WU':
                 infrastructure_v2.add_wu_failure_scenario(params["N"], dam_dir=damage_dir, no_set=i, no_sce=m)
             elif fail_sce_param['TYPE'] == 'from_csv':
@@ -93,7 +93,6 @@ def batch_run(params, fail_sce_param):
             elif fail_sce_param['TYPE'] == 'synthetic':
                 infrastructure_v2.add_synthetic_failure_scenario(params["N"], dam_dir=base_dir, topology=topology,
                                                                  config=m, sample=i)
-
             if params["ALGORITHM"] == "INMRP":
                 inmrp.run_inmrp(params, save_model=True, print_cmd_line=False, co_location=False)
 

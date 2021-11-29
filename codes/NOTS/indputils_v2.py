@@ -139,7 +139,8 @@ class INDPResults:
     results_layer : int
         Dictionary containing INDP results for each layer including actions, costs, run time, and components
     """
-    cost_types = ["Space Prep", "Arc", "Node", "Over Supply", "Under Supply", "Flow", "Total", "Under Supply Perc"]
+    cost_types = ["Space Prep", "Arc", "Node", "Over Supply", "Under Supply", "Flow", "Total", "Total no disconnection",
+                  "Under Supply Perc"]
 
     def __init__(self, layers=None):
         if layers is None:
@@ -197,7 +198,7 @@ class INDPResults:
             The time steps to which the costs should be added
         cost_type : str
             The cost types that is added. The options are: "Space Prep", "Arc", "Node", "Over Supply", "Under Supply",
-            "Flow", "Total", "Under Supply Perc"
+            "Flow", "Total", "Total no disconnection", "Under Supply Perc"
         cost : float
             The cost value that is added
         cost_layer : dict
@@ -213,16 +214,17 @@ class INDPResults:
         if t not in self.results:
             self.results[t] = {
                 'costs': {"Space Prep": 0.0, "Arc": 0.0, "Node": 0.0, "Over Supply": 0.0, "Under Supply": 0.0,
-                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0}, 'actions': [], 'gc_size': 0,
-                'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
+                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0, "Total no disconnection": 0.0},
+                'actions': [], 'gc_size': 0, 'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
         self.results[t]['costs'][cost_type] = cost
         if self.layers:
             for l in cost_layer.keys():
                 if t not in self.results_layer[l]:
                     self.results_layer[l][t] = {
                         'costs': {"Space Prep": 0.0, "Arc": 0.0, "Node": 0.0, "Over Supply": 0.0, "Under Supply": 0.0,
-                                  "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0}, 'actions': [], 'gc_size': 0,
-                        'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
+                                  "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0, "Total no disconnection": 0.0},
+                        'actions': [], 'gc_size': 0, 'num_components': 0, 'components': INDPComponents(),
+                        'run_time': 0.0}
                 self.results_layer[l][t]['costs'][cost_type] = cost_layer[l]
 
     def add_run_time(self, t, run_time, save_layer=True):
@@ -246,16 +248,17 @@ class INDPResults:
         if t not in self.results:
             self.results[t] = {
                 'costs': {"Space Prep": 0.0, "Arc": 0.0, "Node": 0.0, "Over Supply": 0.0, "Under Supply": 0.0,
-                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0}, 'actions': [], 'gc_size': 0,
-                'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
+                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0, "Total no disconnection": 0.0},
+                'actions': [], 'gc_size': 0, 'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
         self.results[t]['run_time'] = run_time
         if self.layers and save_layer:
             for l in self.layers:
                 if t not in self.results_layer[l]:
                     self.results_layer[l][t] = {
                         'costs': {"Space Prep": 0.0, "Arc": 0.0, "Node": 0.0, "Over Supply": 0.0, "Under Supply": 0.0,
-                                  "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0}, 'actions': [], 'gc_size': 0,
-                        'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
+                                  "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0, "Total no disconnection": 0.0},
+                        'actions': [], 'gc_size': 0, 'num_components': 0, 'components': INDPComponents(),
+                        'run_time': 0.0}
                 self.results_layer[l][t]['run_time'] = run_time
 
     def add_optimality_gap(self, t, gap):
@@ -277,8 +280,9 @@ class INDPResults:
         if t not in self.results:
             self.results[t] = {
                 'costs': {"Space Prep": 0.0, "Arc": 0.0, "Node": 0.0, "Over Supply": 0.0, "Under Supply": 0.0,
-                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0}, 'actions': [], 'gc_size': 0,
-                'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0, 'gap': 0.0}
+                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0, "Total no disconnection": 0.0},
+                'actions': [], 'gc_size': 0, 'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0,
+                'gap': 0.0}
         self.results[t]['gap'] = gap
 
     def add_action(self, t, action, save_layer=True):
@@ -302,16 +306,16 @@ class INDPResults:
         if t not in self.results:
             self.results[t] = {
                 'costs': {"Space Prep": 0.0, "Arc": 0.0, "Node": 0.0, "Over Supply": 0.0, "Under Supply": 0.0,
-                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0}, 'actions': [], 'gc_size': 0,
-                'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
+                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0, "Total no disconnection": 0.0},
+                'actions': [], 'gc_size': 0, 'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
         self.results[t]['actions'].append(action)
         if self.layers and save_layer:
             action_layer = int(action[-1])
             if t not in self.results_layer[action_layer]:
                 self.results_layer[action_layer][t] = {
                     'costs': {"Space Prep": 0.0, "Arc": 0.0, "Node": 0.0, "Over Supply": 0.0, "Under Supply": 0.0,
-                              "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0}, 'actions': [], 'gc_size': 0,
-                    'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
+                              "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0, "Total no disconnection": 0.0},
+                    'actions': [], 'gc_size': 0, 'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
             self.results_layer[action_layer][t]['actions'].append(action)
 
     def add_gc_size(self, t, gc_size):
@@ -333,8 +337,8 @@ class INDPResults:
         if t not in self.results:
             self.results[t] = {
                 'costs': {"Space Prep": 0.0, "Arc": 0.0, "Node": 0.0, "Over Supply": 0.0, "Under Supply": 0.0,
-                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0}, 'actions': [], 'gc_size': 0,
-                'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
+                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0, "Total no disconnection": 0.0},
+                'actions': [], 'gc_size': 0, 'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
         self.results[t]['gc_size'] = gc_size
 
     def add_num_components(self, t, num_components):
@@ -356,8 +360,8 @@ class INDPResults:
         if t not in self.results:
             self.results[t] = {
                 'costs': {"Space Prep": 0.0, "Arc": 0.0, "Node": 0.0, "Over Supply": 0.0, "Under Supply": 0.0,
-                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0}, 'actions': [], 'gc_size': 0,
-                'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
+                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0, "Total no disconnection": 0.0},
+                'actions': [], 'gc_size': 0, 'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
         self.results[t]['num_components'] = num_components
 
     def add_components(self, t, components):
@@ -379,8 +383,8 @@ class INDPResults:
         if t not in self.results:
             self.results[t] = {
                 'costs': {"Space Prep": 0.0, "Arc": 0.0, "Node": 0.0, "Over Supply": 0.0, "Under Supply": 0.0,
-                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0}, 'actions': [], 'gc_size': 0,
-                'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
+                          "Under Supply Perc": 0.0, "Flow": 0.0, "Total": 0.0, "Total no disconnection": 0.0},
+                'actions': [], 'gc_size': 0, 'num_components': 0, 'components': INDPComponents(), 'run_time': 0.0}
         self.results[t]['components'] = components
         self.add_num_components(t, components.num_components)
         self.add_gc_size(t, components.gc_size)
@@ -418,12 +422,14 @@ class INDPResults:
             for t in self.results:
                 f.write(str(t) + "," + str(self.results[t]['run_time']) + "\n")
         with open(costs_file, 'w') as f:
-            f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Under Supply Perc, gap\n")
+            f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Total no disconnection,Under Supply Perc,"
+                    " gap\n")
             for t in self.results:
                 costs = self.results[t]['costs']
                 f.write(str(t) + "," + str(costs["Space Prep"]) + "," + str(costs["Arc"]) + "," + str(costs["Node"]) +
                         "," + str(costs["Over Supply"]) + "," + str(costs["Under Supply"]) + "," + str(costs["Flow"]) +
-                        "," + str(costs["Total"]) + "," + str(costs["Under Supply Perc"]) + "," +
+                        "," + str(costs["Total"]) + "," + str(costs["Total no disconnection"]) + "," +
+                        str(costs["Under Supply Perc"]) + "," +
                         str(self.results[t]['gap']) + "\n")
 
     #        with open(perc_file,'w') as f:
@@ -467,12 +473,14 @@ class INDPResults:
                 for t in self.results_layer[l]:
                     f.write(str(t) + "," + str(self.results_layer[l][t]['run_time']) + "\n")
             with open(costs_file, 'w') as f:
-                f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Under Supply Perc\n")
+                f.write("t,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Total no disconnection,"
+                        "Under Supply Perc\n")
                 for t in self.results_layer[l]:
                     costs = self.results_layer[l][t]['costs']
                     f.write(str(t) + "," + str(costs["Space Prep"]) + "," + str(costs["Arc"]) + "," + str(
                         costs["Node"]) + "," + str(costs["Over Supply"]) + "," + str(costs["Under Supply"]) + "," + str(
-                        costs["Flow"]) + "," + str(costs["Total"]) + "," + str(costs["Under Supply Perc"]) + "\n")
+                        costs["Flow"]) + "," + str(costs["Total"]) + "," + "," + str(costs["Total no disconnection"]) +
+                        str(costs["Under Supply Perc"]) + "\n")
 
     @classmethod
     def from_csv(clss, out_dir, sample_num=1, suffix=""):
@@ -573,7 +581,7 @@ class INDPResults:
     #             if t not in avg_results.results:
     #                 avg_results.results[t] = {
     #                     'costs': {"Space Prep": 0.0, "Arc": 0.0, "Node": 0.0, "Over Supply": 0.0, "Under Supply": 0.0,
-    #                               "Flow": 0.0, "Total": 0.0}, 'gc_size': 0.0, 'num_components': 0.0}
+    #                               "Flow": 0.0, "Total": 0.0, "Total no disconnection": 0.0}, 'gc_size': 0.0, 'num_components': 0.0}
     #             for c in clss.cost_types:
     #                 avg_results[t]['costs'][c] += float(sample_result[t]['costs'][c])
     #             avg_results[t]['gc_size'] += float(sample_result[t]['gc_size'])
