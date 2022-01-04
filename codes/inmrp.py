@@ -648,7 +648,7 @@ def run_inmrp(params, layers=None, controlled_layers=None, functionality=None, T
         # Run INMRP.
         results = inmrp(interdependent_net, resource_t, time_window_length, layers, controlled_layers=controlled_layers,
                         functionality=functionality_t, forced_actions=forced_actions, co_location=co_location,
-                        time_limit=500, time_offset=n)
+                        time_limit=1800, time_offset=n)
         if save_model:
             indp.save_indp_model_to_file(results[0], output_dir + "/Model", n)
         if "WINDOW_LENGTH" in params:
