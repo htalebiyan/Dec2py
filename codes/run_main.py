@@ -297,8 +297,8 @@ print('CF is 2 ')
 
 # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='INDP', output_dir=OUTPUT_DIR,
 #                     misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TIME_RESOURCE': False})
-runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
-                    misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TIME_RESOURCE': False})
+# runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='TDINDP', output_dir=OUTPUT_DIR,
+#                     misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TIME_RESOURCE': False})
 # runutils.run_method(FAIL_SCE_PARAM, RC, LAYERS, method='JC', judgment_type=JUDGE_TYPE,
 #                     res_alloc_type=RES_ALLOC_TYPE, valuation_type=VAL_TYPE, output_dir=OUTPUT_DIR,
 #                     misc={'STM_MODEL': STM_MODEL_DICT, 'DYNAMIC_PARAMS': DYNAMIC_PARAMS,
@@ -408,10 +408,11 @@ plt.close('all')
 ### Getting back the objects ###
 # import pickle
 #
-# results_dir = OUTPUT_DIR
-# with open(results_dir + 'postprocess_dicts.pkl', 'rb') as f:
-#     [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
-#      ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF, REL_ACTION_DF] = pickle.load(f)
+results_dir = OUTPUT_DIR
+results_dir = "C:/Users/ht20/Documents/Files/Game_synthetic/v4.1/postprocess/"
+with open(results_dir + 'postprocess_dicts_EDM10.pkl', 'rb') as f:
+    [COMBS, OPTIMAL_COMBS, BASE_DF, METHOD_NAMES, LAMBDA_DF, RES_ALLOC_DF,
+     ALLOC_GAP_DF, RUN_TIME_DF, COST_TYPE, ANALYZE_NE_DF, REL_ACTION_DF] = pickle.load(f)
 # plots.plot_performance_curves(BASE_DF,
 #                               cost_type='Total', ci=None,
 #                               deaggregate=False, plot_resilience=True)
@@ -420,7 +421,11 @@ plt.close('all')
 #                                 lambda_type='U')
 # plots.plot_ne_analysis(ANALYZE_NE_DF, ci=None)
 # plots.plot_ne_cooperation(ANALYZE_NE_DF, ci=None)
-# plots.plot_relative_actions(REL_ACTION_DF)
+# # [(ANALYZE_NE_DF['auction_type'] == 'UNIFORM') & \
+# #                                         (ANALYZE_NE_DF['decision_type'] == 'ng') & \
+# #                                         (ANALYZE_NE_DF['rationality'] == 'bounded') & \
+# #                                         (ANALYZE_NE_DF['Magnitude'] == 1) & (ANALYZE_NE_DF['sample'] == 0)]
+plots.plot_relative_actions(REL_ACTION_DF)
 
 # plots.plot_cooperation_gain(COOP_GAIN, ref_state = 'bgNNUU',
 #                             states = ['bgCCUU', 'bgCNUU', 'bgNCUU'])

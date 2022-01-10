@@ -7,9 +7,11 @@ import pandas as pd
 from matplotlib.patches import Rectangle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-sns.set(context='notebook', style='darkgrid', font_scale=1)
-# plt.rc('text', usetex=True)
-# plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+sns.set(context='notebook', style='darkgrid', font_scale=1.2)
+
+
+plt.rc('text', usetex=True)
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 
 def plot_performance_curves(df, cost_type='Total', ci=None, normalize=False, deaggregate=False, plot_resilience=False):
@@ -752,9 +754,6 @@ def plot_ne_cooperation(df, x='t', ci=None):
     row_plot = [auction_type, 'auction_type']  # topology, auction_type
     col_plot = [decision_type, 'decision_type']  # no_resources, judgment_type,rationality
 
-    # value_vars = ['cooperative', 'partially_cooperative', 'OA', 'NA', 'NA_possible',
-    #               'opt_cooperative', 'opt_partially_cooperative', 'opt_OA',
-    #               'opt_NA', 'opt_NA_possible']
     value_vars_c = ['cooperative', 'partially_cooperative',
                     'opt_cooperative', 'opt_partially_cooperative']
     value_vars_nc = ['OA', 'NA', 'NA_possible', 'opt_OA',
@@ -766,9 +765,11 @@ def plot_ne_cooperation(df, x='t', ci=None):
         dpi = 300
         fig, axs = plt.subplots(len(row_plot[0]), len(col_plot[0]), sharex=True, sharey='row',
                                 figsize=(1500 / dpi, 1000 / dpi))
-        # colors = ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
-        # pal = sns.color_palette(colors)
-        pal = sns.color_palette()
+        if idxvv == 0:
+            colors = ['#dbb539', 'k']  # ['#154352', '#007268', '#5d9c51', '#dbb539', 'k']
+            pal = sns.color_palette(colors)
+        else:
+            pal = sns.color_palette()
         for idx_c, val_c in enumerate(col_plot[0]):
             for idx_r, val_r in enumerate(row_plot[0]):
                 ax, _, _ = find_ax(axs, row_plot[0], col_plot[0], idx_r, idx_c)
@@ -789,16 +790,16 @@ def plot_ne_cooperation(df, x='t', ci=None):
                 with pal:
                     sns.lineplot(x=x, y='value', hue='Cooperation Status', style='Decision Type',
                                  markers=True, ci=ci, ax=ax, data=ne_data,
-                                 **{'markersize': 5})  # style_order=['Optimal', 'ng']
+                                 **{'markersize': 5}, style_order=['Optimal', 'ng'])  # style_order=['Optimal', 'ng']
                 ax.set(xlabel=r'time step $t$', ylabel='\% of Players, ' + row_plot[0][idx_r])
                 ax.get_legend().set_visible(False)
                 ax.xaxis.set_ticks(np.arange(1, T + 1, 1.0))  # ax.get_xlim()
-                # ax.set_ylim(-.05,1.05)
+                ax.set_ylim(-.05, 1.05)
         # Rebuild legend
         handles, labels = ax.get_legend_handles_labels()
         handles = [x for x in handles if isinstance(x, mplt.lines.Line2D)]
         labels = correct_legend_labels(labels)
-        fig.legend(handles, labels, loc='center right', ncol=1, framealpha=0.35,
+        fig.legend(handles, labels, loc='center left', ncol=1, framealpha=0.35,
                    bbox_to_anchor=(.92, 0.7), fontsize='x-small')
         # Add overll x- and y-axis titles
         _, axs_c, axs_r = find_ax(axs, row_plot[0], col_plot[0])
@@ -844,7 +845,7 @@ def plot_relative_actions(df, act_types=None):
     col_plot = act_types
     row_plot = [auction_type, 'auction_type']  # valuation_type, topology
     hue_type = [decision_type, 'decision_type']  # rationality,decision_type
-    x = 'no_resources'  # 'no_resources', rationality
+    x = 'rationality'  # 'no_resources', rationality
     # Initialize plot properties
     dpi = 300
     fig, axs = plt.subplots(len(row_plot[0]), len(col_plot), sharex=True,
