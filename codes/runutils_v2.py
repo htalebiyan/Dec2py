@@ -144,7 +144,7 @@ def run_method(fail_sce_param, v_r, T, layers, method, output_dir='..', misc=Non
     for v in v_r:
         if method == 'INMRP':
             params = {"OUTPUT_DIR": output_dir + '/inmrp_results', "V": v, "T": T, 'L': layers, "ALGORITHM": method,
-            "WINDOW_LENGTH": 1}
+            "WINDOW_LENGTH": 3}
         else:
             sys.exit('Wrong method name: ' + method)
 

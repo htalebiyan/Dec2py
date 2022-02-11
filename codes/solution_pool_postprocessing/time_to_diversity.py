@@ -5,14 +5,16 @@ import networkx as nx
 from scipy.spatial import distance
 import matplotlib.pyplot as plt
 
-sp_file_address = "../../results/inmrp_results_L1_m1000_vb737199t130/solution_pool/solution_pool_t0_.pkl"
+sp_file_address = "../../results/inmrp_results_L1_m1000_vb737199t130/solution_pool/solution_pool_t2_.pkl"
 with open(sp_file_address, 'rb') as f:
     [elements, solutions] = pickle.load(f)
 # Choose a slice of solutions
 solution_copy = {}
+count = 0
 for key, val in solutions.items():
-    if key < 75:
+    if count < 2000:
         solution_copy[key] = val
+    count += 1
 
 solution_df = pd.DataFrame({'id': elements})
 len_rep_elements = []
@@ -22,23 +24,28 @@ for idx, sol in solution_copy.items():
     for n in sol[0]['nodes']:
         solution_df.loc[solution_df['id'] == str(n), idx] = 1
 
-distance_threshold = np.mean(len_rep_elements)/len(elements)/8
+distance_threshold = np.mean(len_rep_elements) / len(elements) / 8
 
 num_of_sol = len(solution_copy)
 A = np.zeros((num_of_sol, num_of_sol))
 W = np.zeros((num_of_sol, num_of_sol))
+count1 = 0
 for idx1 in solution_copy.keys():
+    count2 = 0
     for idx2 in solution_copy.keys():
-        dist = distance.hamming(solution_df[idx1], solution_df[idx2])
-        W[idx1, idx2] = dist
-        W[idx2, idx1] = dist
-        if idx1 < idx2 and dist < distance_threshold:
-            A[idx1, idx2] = 1
-            A[idx2, idx1] = 1
+        if idx1 < idx2:
+            dist = distance.hamming(solution_df[idx1], solution_df[idx2])
+            W[count1, count2] = dist
+            W[count2, count1] = dist
+            if dist < distance_threshold:
+                A[count1, count2] = 1
+                A[count2, count1] = 1
+        count2 += 1
+    count1 += 1
 G = nx.from_numpy_matrix(A)
-inp_set = nx.algorithms.mis.maximal_independent_set(G)
+inp_set = nx.algorithms.mis.maximal_independent_set(G, seed=1)
 print('Size of the independent set:', len(inp_set))
-print('Size of the independent set/Number of solutions:', len(inp_set)/num_of_sol)
+print('Size of the independent set/Number of solutions:', len(inp_set) / num_of_sol)
 
 # Plot Weight Matrix
 plt.figure(1)
@@ -67,19 +74,19 @@ plt.ylabel('Frequency')
 plt.savefig('num_of_rep_elements.png', dpi=300)
 plt.show()
 plt.close(2)
-# Plot Solution Net
-plt.figure(4)
-color_map = []
-sizes = []
-for node in G:
-    if node < 1:
-        color_map.append('red')
-        sizes.append(20)
-    else:
-        color_map.append('blue')
-        sizes.append(5)
-pos = nx.spring_layout(G, seed=110)
-nx.draw(G, pos=pos, node_color=color_map, with_labels=False, node_size=sizes)
-plt.savefig('solution_net.png', dpi=300)
-plt.show()
-plt.close(4)
+# # Plot Solution Net
+# plt.figure(4)
+# color_map = []
+# sizes = []
+# for node in G:
+#     if node < 1:
+#         color_map.append('red')
+#         sizes.append(20)
+#     else:
+#         color_map.append('blue')
+#         sizes.append(5)
+# pos = nx.spring_layout(G, seed=110)
+# nx.draw(G, pos=pos, node_color=color_map, with_labels=False, node_size=sizes)
+# plt.savefig('solution_net.png', dpi=300)
+# plt.show()
+# plt.close(4)
