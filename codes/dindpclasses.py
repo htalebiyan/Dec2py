@@ -12,7 +12,7 @@ import numpy as np
 import gurobipy
 import indp
 import indputils
-import stm
+# import stm
 import indpalt
 
 

@@ -43,7 +43,7 @@ remove less damaging scenarios from the list of damage scenarios. Set it to *Non
 """
 
 # %%
-BASE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info_v2/"
+BASE_DIR = "C:/Users/Hesam/GitHub/NIST_testbeds/Seaside/Node_arc_info_v2/"
 # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # "../data/Extended_Shelby_County/"
 # "../data/Extended_Shelby_County_dp/"
@@ -51,7 +51,7 @@ BASE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info_v
 # "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
 # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info/"
 
-DAMAGE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/cumulative_1000yr_initial_damage/"
+DAMAGE_DIR = "C:/Users/Hesam/GitHub/NIST_testbeds/Seaside/Damage_scenarios/cumulative_1000yr_initial_damage/"
 # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # ../data/random_disruption_shelby/"
 # "../data/Wu_Damage_scenarios/"
@@ -144,7 +144,7 @@ for which, the dictionary should have the following items:
 #                   'BASE_DIR': BASE_DIR, 'FILTER_SCE': FILTER_SCE, 'DAMAGE_DIR': DAMAGE_DIR}
 # FAIL_SCE_PARAM = {'TYPE': "WU", 'L2_RANGE': range(7), 'L1_RANGE': range(3), 'BASE_DIR': BASE_DIR,
 #                   'DAMAGE_DIR': DAMAGE_DIR, 'FILTER_SCE': FILTER_SCE}
-FAIL_SCE_PARAM = {'TYPE': "from_csv", 'L2_RANGE': range(0, 30), 'L1_RANGE': [1000],
+FAIL_SCE_PARAM = {'TYPE': "from_csv", 'L2_RANGE': range(0, 1), 'L1_RANGE': [1000],
                   'FILTER_SCE': None, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
 
 DYNAMIC_PARAMS = None
@@ -154,11 +154,11 @@ DYNAMIC_PARAMS = None
 #                   'OUT_DIR': BASE_DIR, 'POP_DISLOC_DATA': POP_DISLOC_DATA ,
 #                   'MAPPING': {'POWER': ROOT_DISLOC+'/Power/Joplin interdependency table - buildings,\
 #                               substations, and poles/Joplin_interdependency_table.csv'}}
-ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
-DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED': 'seaside', 'OUT_DIR': OUTPUT_DIR,
-                  'POP_DISLOC_DATA': ROOT_DISLOC + 'Seaside_notebook/output/1000yr/',
-                  'MAPPING': {'POWER': ROOT_DISLOC + 'Power/bldgs2elec_Seaside.csv',
-                              'WATER': ROOT_DISLOC + 'Water/bldgs2wter_Seaside.csv'}}
+# ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
+# DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED': 'seaside', 'OUT_DIR': OUTPUT_DIR,
+#                   'POP_DISLOC_DATA': ROOT_DISLOC + 'Seaside_notebook/output/1000yr/',
+#                   'MAPPING': {'POWER': ROOT_DISLOC + 'Power/bldgs2elec_Seaside.csv',
+#                               'WATER': ROOT_DISLOC + 'Water/bldgs2wter_Seaside.csv'}}
 
 # Adjust output and base dir for synthetic database based on `FAIL_SCE_PARAM`
 SYNTH_DIR = None
@@ -192,21 +192,10 @@ type of resource. For example:
 '''
 
 # %%
-T = 15
-RC = [{'budget': {t: 245733 for t in range(T)}, 'time': {t: 65 for t in range(T)}},
-      {'budget': {t: 245733 for t in range(T)}, 'time': {t: 65 for t in range(T)}},
-      {'budget': {t: 245733 for t in range(T)}, 'time': {t: 65 for t in range(T)}},
-      {'budget': {t: 245733 for t in range(T)}, 'time': {t: 65 for t in range(T)}}]  # 349215*(+1/13*(t-1)+.5)
+T = 3
+RC = [{'budget': {t: 245733 for t in range(T)}, 'time': {t: 65 for t in range(T)}}]  # 349215*(+1/13*(t-1)+.5)
 RC[0]['budget'][0] = 245733
 RC[0]['time'][0] = 0
-RC[1]['budget'][0] = 491466
-RC[1]['time'][0] = 0
-RC[2]['budget'][0] = 737199
-RC[2]['time'][0] = 0
-RC[3]['budget'][0] = 982932
-RC[3]['time'][0] = 0
-# RC = [{'': {t: 4 for t in range(T)}}]
-# RC[0][''][0] = 0
 LAYERS = [3]
 
 # %%
@@ -223,7 +212,7 @@ misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TI
 # %%
 runutils_v2.run_method(FAIL_SCE_PARAM, RC, T, LAYERS, method='INMRP', output_dir=OUTPUT_DIR,
                        misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY,
-                             'TIME_RESOURCE': True})
+                             'TIME_RESOURCE': False})
 
 # %%
 ''' 

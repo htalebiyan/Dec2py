@@ -3,6 +3,7 @@ import os
 import infrastructure_v2
 import indp
 import indputils_v2
+import _pickle as pickle
 from gurobipy import GRB, Model, LinExpr
 import string
 import networkx as nx
@@ -573,22 +574,21 @@ def collect_solution_pool(m, T, n_hat, n_hat_prime, a_hat_prime, S, coloc=True):
                                      'space_prep_cost': 0.0, 'arc_cost': 0.0, 'node_cost': 0.0, 'flow_cost': 0.0,
                                      'nodes': [], 'arcs': []} for t in range(T)}
         for t in range(T):
-            # # Record node recovery actions.
-            # for n, d in n_hat_prime:
-            #     node_var = 'w_tilde_' + str(n) + "," + str(t)
-            #     if T == 1:
-            #         node_var = 'w_' + str(n) + "," + str(t)
-            #     if round(m.getVarByName(node_var).xn) == 1:
-            #         sol_pool_results[sol][t]['nodes'].append(n)
-            # # Record edge recovery actions.
-            # for u, v, a in a_hat_prime:
-            #     arc_var = 'y_tilde_' + str(u) + "," + str(v) + "," + str(t)
-            #     if T == 1:
-            #         arc_var = 'y_' + str(u) + "," + str(v) + "," + str(t)
-            #     if round(m.getVarByName(arc_var).xn) == 1:
-            #         sol_pool_results[sol][t]['arcs'].append((u, v))
+            # Record node recovery actions.
+            for n, d in n_hat_prime:
+                node_var = 'w_tilde_' + str(n) + "," + str(t)
+                if T == 1:
+                    node_var = 'w_' + str(n) + "," + str(t)
+                if round(m.getVarByName(node_var).xn) == 1:
+                    sol_pool_results[sol][t]['nodes'].append(n)
+            # Record edge recovery actions.
+            for u, v, a in a_hat_prime:
+                arc_var = 'y_tilde_' + str(u) + "," + str(v) + "," + str(t)
+                if T == 1:
+                    arc_var = 'y_' + str(u) + "," + str(v) + "," + str(t)
+                if round(m.getVarByName(arc_var).xn) == 1:
+                    sol_pool_results[sol][t]['arcs'].append((u, v))
 
-            # Calculate under/oversupply percentage and total cost.
             # Calculate space preparation costs.
             if coloc:
                 for s in S:
@@ -604,6 +604,7 @@ def collect_solution_pool(m, T, n_hat, n_hat_prime, a_hat_prime, S, coloc=True):
                 node_var = 'w_tilde_' + str(n) + "," + str(t)
                 sol_pool_results[sol][t]['node_cost'] += d['data']['inf_data'].reconstruction_cost[t] * m.getVarByName(
                     node_var).xn
+            # Calculate under/oversupply percentage and total cost.
             for n, d in n_hat.nodes(data=True):
                 sol_pool_results[sol][t]['under_supp'] += m.getVarByName('delta-_' + str(n) + "," + str(t)).xn / \
                                                           total_demand[t]
@@ -758,7 +759,8 @@ def run_inmrp(params, layers=None, controlled_layers=None, functionality=None, T
         if save_model:
             indp.save_indp_model_to_file(results[0], output_dir + "/Model", n)
         if solution_pool:
-            write_solution_pool_to_file(results[2], output_dir + "/solution_pool", n)
+            write_solution_pool_to_file(interdependent_net, controlled_layers, results[2],
+                                        output_dir + "/solution_pool", n)
         if "WINDOW_LENGTH" in params:
             indp_results.extend(results[1], t_offset=n, t_start=0, t_end=time_window_length)
             # Modify network for recovery actions
@@ -1204,7 +1206,7 @@ def time_resource_usage_curves(base_dir, damage_dir, sample_num, T):
                 data.to_csv(base_dir + file, index=False)
 
 
-def write_solution_pool_to_file(solutions, out_model_dir, t, suffix=''):
+def write_solution_pool_to_file(N, controlled_layers, solutions, out_model_dir, t, suffix=''):
     """
     This function write solution pool to file.
 
@@ -1213,8 +1215,12 @@ def write_solution_pool_to_file(solutions, out_model_dir, t, suffix=''):
 
     Parameters
     ----------
-    model : gurobipy.Model
-        Gurobi optimization model
+    N : :class:`~infrastructure.InfrastructureNetwork`
+        An InfrastructureNetwork instance.
+    controlled_layers : list
+        List of layers that are included in the analysis. The default is 'None', which sets the list equal to layers.
+    solutions : dict
+        optimization solution pool
     out_model_dir : str
         Directory to which the solutions should be written
     t : int
@@ -1228,7 +1234,7 @@ def write_solution_pool_to_file(solutions, out_model_dir, t, suffix=''):
     """
     if not os.path.exists(out_model_dir):
         os.makedirs(out_model_dir)
-    file_name = "/solution_pool_t%d_%s.csv" % (t, suffix)
+    file_name = "/solution_pool_costs_t%d_%s.csv" % (t, suffix)
     file_id = open(out_model_dir + file_name, 'w')
     file_id.write('id,Space Prep,Arc,Node,Over Supply,Under Supply,Flow,Total,Total no disconnection,Under Supply '
                   'Perc\n')
@@ -1241,3 +1247,14 @@ def write_solution_pool_to_file(solutions, out_model_dir, t, suffix=''):
                                                                'under_supp_cost'],
                                                            sol['under_supp']))
     file_id.close()
+    # Make the list of elements.
+    elements = []
+    for n in N.G.nodes():
+        if n[1] in controlled_layers:
+            elements.append(str(n))
+    # for u, v in N.G.edges(): #..todo uncomment this when there is edge damage
+    #     if u[1] in controlled_layers and v[1] in controlled_layers:
+    #         elements.append('(' + str(u) + ',' + str(v) + ')')
+    # Pickle the solution pool
+    with open(out_model_dir + "/solution_pool_t%d_%s.pkl" % (t, suffix), 'wb') as f:
+        pickle.dump([elements, solutions], f)
