@@ -71,7 +71,10 @@ def batch_run(params, fail_sce_param):
             print('---Running Magnitude ' + str(m) + ' sample ' + str(i) + '...')
             if params['TIME_RESOURCE']:
                 print('Computing repair times...')
-                inmrp.time_resource_usage_curves(base_dir, damage_dir, i, params['T'])
+                num_of_time_steps = params['T']
+                if "WINDOW_LENGTH" in params.keys():
+                    num_of_time_steps += params["WINDOW_LENGTH"]
+                inmrp.time_resource_usage_curves(base_dir, damage_dir, i, num_of_time_steps)
             if params['DYNAMIC_PARAMS']:
                 print("Computing dislocation data...")
                 dyn_dmnd = dislocationutils.create_dynamic_param(base_dir, params)
@@ -94,7 +97,7 @@ def batch_run(params, fail_sce_param):
                 infrastructure_v2.add_synthetic_failure_scenario(params["N"], dam_dir=base_dir, topology=topology,
                                                                  config=m, sample=i)
             if params["ALGORITHM"] == "INMRP":
-                inmrp.run_inmrp(params, save_model=True, print_cmd_line=False, co_location=False, solution_pool=2000)
+                inmrp.run_inmrp(params, save_model=True, print_cmd_line=False, co_location=False, solution_pool=None)
 
 
 def run_inmrp_sample(layers):
