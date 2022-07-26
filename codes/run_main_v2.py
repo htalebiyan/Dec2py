@@ -57,7 +57,7 @@ DAMAGE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenar
 # "../data/Wu_Damage_scenarios/"
 # "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
 # 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios'
-# "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/eq_1000yr_initial_damage/"
+# "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/eq_250yr_initial_damage/"
 
 OUTPUT_DIR = '../results/'
 # '/home/hesam/Desktop/Files/Game_synthetic/v4.1/results_temp/'
@@ -144,7 +144,7 @@ for which, the dictionary should have the following items:
 #                   'BASE_DIR': BASE_DIR, 'FILTER_SCE': FILTER_SCE, 'DAMAGE_DIR': DAMAGE_DIR}
 # FAIL_SCE_PARAM = {'TYPE': "WU", 'L2_RANGE': range(7), 'L1_RANGE': range(3), 'BASE_DIR': BASE_DIR,
 #                   'DAMAGE_DIR': DAMAGE_DIR, 'FILTER_SCE': FILTER_SCE}
-FAIL_SCE_PARAM = {'TYPE': "from_csv", 'L2_RANGE': range(0, 30), 'L1_RANGE': [250],
+FAIL_SCE_PARAM = {'TYPE': "from_csv", 'L2_RANGE': range(0, 1), 'L1_RANGE': [250],
                   'FILTER_SCE': None, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
 
 DYNAMIC_PARAMS = None
@@ -192,9 +192,9 @@ type of resource. For example:
 '''
 
 # %%
-T = 15
+T = 2
 RC = [{'budget': {t: 245733 for t in range(T)}, 'time': {t: 65 for t in range(T)}}]  # 349215*(+1/13*(t-1)+.5)
-RC[0]['budget'][0] = 0
+RC[0]['budget'][0] = 245733
 RC[0]['time'][0] = 0
 LAYERS = [3]
 
