@@ -43,21 +43,23 @@ remove less damaging scenarios from the list of damage scenarios. Set it to *Non
 """
 
 # %%
-BASE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info_v2/"
+BASE_DIR = "../data/Extended_Shelby_County_dp/"
 # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # "../data/Extended_Shelby_County/"
 # "../data/Extended_Shelby_County_dp/"
 # 'C:/Users/ht20/Box Sync/Shelby County Database/Node_arc_info'
 # "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
 # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info/"
+# "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Node_arc_info_v2/"
 
-DAMAGE_DIR = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/cumulative_250yr_initial_damage/"
+DAMAGE_DIR = "../data/Wu_Damage_scenarios/"
 # '/home/hesam/Desktop/Files/Generated_Network_Dataset_v4.1/'
 # ../data/random_disruption_shelby/"
 # "../data/Wu_Damage_scenarios/"
 # "C:/Users/ht20/Documents/Files/Generated_Network_Dataset_v4.1/"
 # 'C:/Users/ht20/Box Sync/Shelby County Database/Damage_scenarios'
 # "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/eq_250yr_initial_damage/"
+# "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/Damage_scenarios/cumulative_250yr_initial_damage/"
 
 OUTPUT_DIR = '../results/'
 # '/home/hesam/Desktop/Files/Game_synthetic/v4.1/results_temp/'
@@ -142,10 +144,10 @@ for which, the dictionary should have the following items:
 # %%
 # FAIL_SCE_PARAM = {'TYPE': "synthetic", 'L2_RANGE': range(5), 'L1_RANGE': range(100), 'TOPO': 'General',
 #                   'BASE_DIR': BASE_DIR, 'FILTER_SCE': FILTER_SCE, 'DAMAGE_DIR': DAMAGE_DIR}
-# FAIL_SCE_PARAM = {'TYPE': "WU", 'L2_RANGE': range(7), 'L1_RANGE': range(3), 'BASE_DIR': BASE_DIR,
-#                   'DAMAGE_DIR': DAMAGE_DIR, 'FILTER_SCE': FILTER_SCE}
-FAIL_SCE_PARAM = {'TYPE': "from_csv", 'L2_RANGE': range(0, 1), 'L1_RANGE': [250],
-                  'FILTER_SCE': None, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
+FAIL_SCE_PARAM = {'TYPE': "WU", 'L2_RANGE': range(7), 'L1_RANGE': range(3), 'BASE_DIR': BASE_DIR,
+                  'DAMAGE_DIR': DAMAGE_DIR, 'FILTER_SCE': FILTER_SCE}
+# FAIL_SCE_PARAM = {'TYPE': "from_csv", 'L2_RANGE': range(0, 1), 'L1_RANGE': [250],
+#                   'FILTER_SCE': None, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
 
 DYNAMIC_PARAMS = None
 # ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Joplin/"
@@ -154,11 +156,11 @@ DYNAMIC_PARAMS = None
 #                   'OUT_DIR': BASE_DIR, 'POP_DISLOC_DATA': POP_DISLOC_DATA ,
 #                   'MAPPING': {'POWER': ROOT_DISLOC+'/Power/Joplin interdependency table - buildings,\
 #                               substations, and poles/Joplin_interdependency_table.csv'}}
-ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
-DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED': 'seaside', 'OUT_DIR': OUTPUT_DIR,
-                  'POP_DISLOC_DATA': ROOT_DISLOC + 'Seaside_notebook/output/250yr/',
-                  'MAPPING': {'POWER': ROOT_DISLOC + 'Power/bldgs2elec_Seaside.csv',
-                              'WATER': ROOT_DISLOC + 'Water/bldgs2wter_Seaside.csv'}}
+# ROOT_DISLOC = "C:/Users/ht20/Documents/GitHub/NIST_testbeds/Seaside/"
+# DYNAMIC_PARAMS = {'TYPE': 'incore', 'RETURN': 'step_function', 'TESTBED': 'seaside', 'OUT_DIR': OUTPUT_DIR,
+#                   'POP_DISLOC_DATA': ROOT_DISLOC + 'Seaside_notebook/output/250yr/',
+#                   'MAPPING': {'POWER': ROOT_DISLOC + 'Power/bldgs2elec_Seaside.csv',
+#                               'WATER': ROOT_DISLOC + 'Water/bldgs2wter_Seaside.csv'}}
 
 # Adjust output and base dir for synthetic database based on `FAIL_SCE_PARAM`
 SYNTH_DIR = None
@@ -194,9 +196,9 @@ type of resource. For example:
 # %%
 T = 2
 RC = [{'budget': {t: 245733 for t in range(T)}, 'time': {t: 65 for t in range(T)}}]  # 349215*(+1/13*(t-1)+.5)
-RC[0]['budget'][0] = 245733
+RC[0]['budget'][0] = 0 #245733
 RC[0]['time'][0] = 0
-LAYERS = [3]
+LAYERS = [1, 2, 3, 4]
 
 # %%
 ''' 
