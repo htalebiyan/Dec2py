@@ -97,7 +97,7 @@ def batch_run(params, fail_sce_param):
                 infrastructure_v2.add_synthetic_failure_scenario(params["N"], dam_dir=base_dir, topology=topology,
                                                                  config=m, sample=i)
             if params["ALGORITHM"] == "INMRP":
-                inmrp.run_inmrp(params, save_model=True, print_cmd_line=False, co_location=False, solution_pool=2000)
+                inmrp.run_inmrp(params, save_model=True, print_cmd_line=False, co_location=True, solution_pool=None)
 
 
 def run_inmrp_sample(layers):

@@ -144,7 +144,7 @@ for which, the dictionary should have the following items:
 # %%
 # FAIL_SCE_PARAM = {'TYPE': "synthetic", 'L2_RANGE': range(5), 'L1_RANGE': range(100), 'TOPO': 'General',
 #                   'BASE_DIR': BASE_DIR, 'FILTER_SCE': FILTER_SCE, 'DAMAGE_DIR': DAMAGE_DIR}
-FAIL_SCE_PARAM = {'TYPE': "WU", 'L2_RANGE': range(7), 'L1_RANGE': range(3), 'BASE_DIR': BASE_DIR,
+FAIL_SCE_PARAM = {'TYPE': "WU", 'L2_RANGE': range(3, 15), 'L1_RANGE': range(2, 10), 'BASE_DIR': BASE_DIR,
                   'DAMAGE_DIR': DAMAGE_DIR, 'FILTER_SCE': FILTER_SCE}
 # FAIL_SCE_PARAM = {'TYPE': "from_csv", 'L2_RANGE': range(0, 1), 'L1_RANGE': [250],
 #                   'FILTER_SCE': None, 'BASE_DIR': BASE_DIR, 'DAMAGE_DIR': DAMAGE_DIR}
@@ -194,10 +194,10 @@ type of resource. For example:
 '''
 
 # %%
-T = 2
-RC = [{'budget': {t: 245733 for t in range(T)}, 'time': {t: 65 for t in range(T)}}]  # 349215*(+1/13*(t-1)+.5)
+T = 7
+RC = [{'budget': {t: 245733 for t in range(T)}}, {'budget': {t: 4515616 for t in range(T)}}]#, 'time': {t: 65 for t in range(T)}}]  # 349215*(+1/13*(t-1)+.5)
 RC[0]['budget'][0] = 0 #245733
-RC[0]['time'][0] = 0
+# RC[0]['time'][0] = 0
 LAYERS = [1, 2, 3, 4]
 
 # %%
@@ -214,7 +214,7 @@ misc = {'DYNAMIC_PARAMS':DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY, 'TI
 # %%
 runutils_v2.run_method(FAIL_SCE_PARAM, RC, T, LAYERS, method='INMRP', output_dir=OUTPUT_DIR,
                        misc={'DYNAMIC_PARAMS': DYNAMIC_PARAMS, 'EXTRA_COMMODITY': EXTRA_COMMODITY,
-                             'TIME_RESOURCE': True})
+                             'TIME_RESOURCE': False})
 
 # %%
 ''' 
